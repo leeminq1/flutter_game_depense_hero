@@ -1,0 +1,14 @@
+Primary sources:
+- https://developers.google.com/ad-manager/mobile-ads-sdk/flutter/quick-start
+- https://developers.google.com/ad-manager/mobile-ads-sdk/flutter/rewarded
+- https://developers.google.com/ad-manager/mobile-ads-sdk/flutter/privacy
+
+Distilled notes:
+- Google recommends initializing the Mobile Ads SDK early in app startup.
+- Rewarded ads should grant rewards only through the reward callback and should be tested with dedicated test ad units.
+- Privacy flow should call `requestConsentInfoUpdate()` on launch and use `canRequestAds()` before requesting ads.
+- Interstitial-style formats are intended for natural transition points.
+
+Applied to this repo:
+- Ads are planned only at safe boundaries such as post-stage results or optional revive/reward surfaces.
+- Reward persistence is modeled transactionally in the local schema and reliability docs.

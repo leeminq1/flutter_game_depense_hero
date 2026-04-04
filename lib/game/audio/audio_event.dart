@@ -1,0 +1,17 @@
+enum AudioEvent {
+  uiClick,
+  uiSelect,
+  uiConfirm,
+  uiError,
+  towerPlace,
+  towerUpgrade,
+  arrowShot,
+  slashHit,
+  armorHit,
+  magicHit,
+  enemyDeathElite,
+  coinGain,
+  waveClear,
+  stageClear,
+  baseDamage,
+}

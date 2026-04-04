@@ -1,0 +1,8 @@
+{
+  "name": "depense-lpc-export",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "playwright": "^1.53.0"
+  }
+}

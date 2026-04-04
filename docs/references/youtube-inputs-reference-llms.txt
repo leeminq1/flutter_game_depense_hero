@@ -1,0 +1,15 @@
+User-provided references:
+- Playlist: https://www.youtube.com/playlist?list=PL1-_rCwRcnbNknvJ4fbnsn46_ww8V4CVh
+- Video: https://www.youtube.com/watch?v=g-lXs03vDfE
+- Video: https://www.youtube.com/watch?v=sxVuAzI0mLk
+
+User-described intent:
+- Flutter game optimization guidance
+- Asset material and character generation workflow
+
+Current use in this harness:
+- Treat the videos as inputs for future refinement of runtime optimization and asset workflow.
+- Reflect that priority in architecture, content pipeline, and tech debt docs.
+
+Known limitation:
+- Full machine-readable metadata and transcript extraction were not available during this setup pass, so the notes above are based on the user description plus compatible Flame documentation.

@@ -1,0 +1,13 @@
+Source:
+- https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+- https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator
+
+Distilled notes:
+- The LPC generator is a modular pixel-art character generator centered on fantasy-style humanoid spritesheets.
+- The project explicitly notes that users must credit the authors for the artwork they use.
+- The repository explains that generated sprite selections can include different open licenses, so attribution and license export should be preserved.
+
+Applied to this repo:
+- Choose a fantasy world built around humanoid enemy factions.
+- Use LPC for fast production of bandits, undead, cultists, knights, and similar units.
+- Record credits and license metadata as part of the asset pipeline.

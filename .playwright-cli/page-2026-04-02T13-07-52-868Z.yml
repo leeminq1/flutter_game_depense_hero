@@ -1,0 +1,197 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - heading "Universal LPC Spritesheet Generator View on GitHub" [level=1] [ref=e4]:
+      - text: Universal LPC Spritesheet Generator
+      - link "View on GitHub" [ref=e5] [cursor=pointer]:
+        - /url: https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator
+        - img "View on GitHub" [ref=e6]
+    - generic [ref=e7]:
+      - text: Free/Libre pixel art from the
+      - link "Liberated Pixel Cup" [ref=e8] [cursor=pointer]:
+        - /url: https://lpc.opengameart.org
+      - text: "| You must"
+      - link "credit the authors" [ref=e9] [cursor=pointer]:
+        - /url: "#credits-section"
+  - generic [ref=e10]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: ▼
+          - heading "Download" [level=3] [ref=e17]
+        - generic [ref=e19]:
+          - button "Spritesheet (PNG)" [ref=e20] [cursor=pointer]
+          - button "Credits (TXT)" [ref=e21] [cursor=pointer]
+          - button "Credits (CSV)" [ref=e22] [cursor=pointer]
+          - 'button "ZIP: Split by animation" [ref=e23] [cursor=pointer]'
+          - 'button "ZIP: Split by item" [ref=e24] [cursor=pointer]'
+          - 'button "ZIP: Split by animation and item" [ref=e25] [cursor=pointer]'
+          - 'button "ZIP: Split by animation and frame" [ref=e26] [cursor=pointer]'
+          - button "Export to Clipboard (JSON)" [ref=e27] [cursor=pointer]
+          - button "Import from Clipboard (JSON)" [ref=e28] [cursor=pointer]
+      - generic [ref=e29]:
+        - generic [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]: ▼
+          - heading "Filters" [level=3] [ref=e32]
+        - generic [ref=e33]:
+          - generic [ref=e35]:
+            - generic [ref=e36]: "Search:"
+            - searchbox "Search" [ref=e37]: robe
+          - generic [ref=e38]:
+            - generic [ref=e41] [cursor=pointer]:
+              - generic [ref=e42]: ▶
+              - text: License Filters(5/5 enabled)
+            - generic [ref=e45] [cursor=pointer]:
+              - generic [ref=e46]: ▶
+              - text: Animation Filters(All)
+          - generic [ref=e48]:
+            - heading "Current Selections" [level=3] [ref=e49]
+            - generic [ref=e50]:
+              - 'generic "Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0 Animations: spellcast, thrust, walk, slash, shoot, hurt, watering, idle, jump, run, sit, emote, climb, combat, 1h_slash, 1h_backslash, 1h_halfslash" [ref=e51]':
+                - generic [ref=e52]: Body color (light)
+                - button [ref=e53] [cursor=pointer]
+              - 'generic "Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0 Animations: spellcast, thrust, walk, slash, shoot, hurt, watering, idle, jump, run, sit, emote, climb, combat, 1h_slash, 1h_backslash, 1h_halfslash" [ref=e54]':
+                - generic [ref=e55]: Human Male (light)
+                - button [ref=e56] [cursor=pointer]
+              - 'generic "Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0 Animations: spellcast, thrust, walk, slash, shoot, watering, idle, jump, run, sit, emote, combat, 1h_slash, 1h_backslash, 1h_halfslash" [ref=e57]':
+                - generic [ref=e58]: Neutral (light)
+                - button [ref=e59] [cursor=pointer]
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - heading "Available Items" [level=3] [ref=e62]
+              - generic [ref=e63]:
+                - button "Reset all" [ref=e64] [cursor=pointer]
+                - button "Collapse All" [ref=e65] [cursor=pointer]
+                - button "Expand Selected" [ref=e66] [cursor=pointer]
+                - button "CompactDisplay" [ref=e67] [cursor=pointer]
+            - generic [ref=e68]:
+              - generic "When enabled, changing body color will automatically update all compatible items (heads, ears, noses, etc.) to the same color variant" [ref=e69] [cursor=pointer]:
+                - checkbox "Match body color" [checked] [ref=e70]
+                - text: Match body color
+              - paragraph [ref=e71]: Auto-update heads, ears, and other items when body color changes
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - generic [ref=e74] [cursor=pointer]:
+                  - generic [ref=e75]: ▼
+                  - text: Body Type
+                - generic [ref=e77]:
+                  - button "Male" [ref=e78] [cursor=pointer]
+                  - button "Female" [ref=e79] [cursor=pointer]
+                  - button "Teen" [ref=e80] [cursor=pointer]
+                  - button "Child" [ref=e81] [cursor=pointer]
+                  - button "Muscular" [ref=e82] [cursor=pointer]
+                  - button "Pregnant" [ref=e83] [cursor=pointer]
+              - generic [ref=e99]:
+                - generic "null" [ref=e100] [cursor=pointer]:
+                  - generic [ref=e101]: ▼
+                  - text: Torso
+                - generic [ref=e205]:
+                  - generic "null" [ref=e207] [cursor=pointer]:
+                    - generic [ref=e208]: ▼
+                    - text: Shirts
+                  - generic [ref=e209]:
+                    - generic "null" [ref=e210] [cursor=pointer]:
+                      - generic [ref=e211]: ▼
+                      - text: Waist
+                    - generic [ref=e213]:
+                      - 'generic "Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0 Animations: spellcast, thrust, walk, slash, shoot, hurt, watering" [ref=e214] [cursor=pointer]':
+                        - generic [ref=e215]: ▼
+                        - text: Robe Belt
+                      - generic [ref=e227]:
+                        - 'generic "Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0 Animations: spellcast, thrust, walk, slash, shoot, hurt, watering" [ref=e228] [cursor=pointer]':
+                          - generic [ref=e229]: Teal
+                        - 'generic "Licenses: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0 Animations: spellcast, thrust, walk, slash, shoot, hurt, watering" [ref=e231] [cursor=pointer]':
+                          - generic [ref=e232]: White
+      - generic [ref=e114]:
+        - generic [ref=e115] [cursor=pointer]:
+          - generic [ref=e116]: ▼
+          - heading "Credits & Attribution" [level=3] [ref=e117]
+        - generic [ref=e118]:
+          - paragraph [ref=e119]:
+            - text: You must credit the authors of this artwork.
+            - link "Detailed attribution instructions" [ref=e120] [cursor=pointer]:
+              - /url: https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator/blob/master/README.md
+          - paragraph [ref=e121]:
+            - text: License information for all spritesheets in this generator is available
+            - link "here" [ref=e122] [cursor=pointer]:
+              - /url: https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator/raw/refs/heads/master/CREDITS.csv
+          - generic [ref=e123]:
+            - generic [ref=e124]:
+              - strong [ref=e125]: body/bodies/male/walk.png
+              - paragraph [ref=e126]: see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)
+              - paragraph [ref=e127]:
+                - strong [ref=e128]: "Licenses:"
+                - text: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+              - paragraph [ref=e129]:
+                - strong [ref=e130]: "Authors:"
+                - text: bluecarrot16, JaidynReiman, Benjamin K. Smith (BenCreating), Evert, Eliza Wyatt (ElizaWy), TheraHedwig, MuffinElZangano, Durrani, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+            - generic [ref=e131]:
+              - strong [ref=e132]: head/heads/human/male/walk.png
+              - paragraph [ref=e133]: original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16
+              - paragraph [ref=e134]:
+                - strong [ref=e135]: "Licenses:"
+                - text: OGA-BY 3.0, CC-BY-SA 3.0, GPL 3.0
+              - paragraph [ref=e136]:
+                - strong [ref=e137]: "Authors:"
+                - text: bluecarrot16, Benjamin K. Smith (BenCreating), Stephen Challener (Redshrike)
+            - generic [ref=e138]:
+              - strong [ref=e139]: head/faces/male/neutral/walk.png
+              - paragraph [ref=e140]: Original by Redshrike, Expressions by ElizaWy, mapped to all frames by JaidynReiman
+              - paragraph [ref=e141]:
+                - strong [ref=e142]: "Licenses:"
+                - text: OGA-BY 3.0
+              - paragraph [ref=e143]:
+                - strong [ref=e144]: "Authors:"
+                - text: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+          - generic [ref=e145]:
+            - button "Download TXT" [ref=e146] [cursor=pointer]
+            - button "Download CSV" [ref=e147] [cursor=pointer]
+      - generic [ref=e149] [cursor=pointer]:
+        - generic [ref=e150]: ▶
+        - heading "Advanced Tools" [level=3] [ref=e151]
+    - generic [ref=e152]:
+      - generic [ref=e154]:
+        - generic [ref=e155] [cursor=pointer]:
+          - generic [ref=e156]: ▼
+          - heading "Animation Preview" [level=3] [ref=e157]
+        - generic [ref=e159]:
+          - generic [ref=e161]:
+            - generic [ref=e163]: Animation
+            - generic [ref=e165]:
+              - combobox [ref=e168] [cursor=pointer]:
+                - option "Spellcast"
+                - option "Thrust"
+                - option "Walk" [selected]
+                - option "Slash"
+                - option "Shoot"
+                - option "Hurt"
+                - option "Climb"
+                - option "Idle"
+                - option "Jump"
+                - option "Sit"
+                - option "Emote"
+                - option "Run"
+                - option "Watering"
+                - option "Combat Idle"
+                - option "1-Handed Slash"
+                - option "1-Handed Backslash"
+                - option "1-Handed Halfslash"
+              - generic [ref=e169]:
+                - generic: 1-2-3-4-5-6-7-8
+          - generic [ref=e171]:
+            - generic [ref=e173]: "Zoom: 100%"
+            - slider [ref=e177]: "1"
+      - generic [ref=e182]:
+        - generic [ref=e183] [cursor=pointer]:
+          - generic [ref=e184]: ▼
+          - heading "Full Spritesheet Preview" [level=3] [ref=e185]
+        - generic [ref=e187]:
+          - generic [ref=e188]:
+            - generic [ref=e190] [cursor=pointer]:
+              - checkbox "Show transparency grid" [checked] [ref=e191]
+              - text: Show transparency grid
+            - generic [ref=e193] [cursor=pointer]:
+              - checkbox "Replace Mask (Pink)" [ref=e194]
+              - text: Replace Mask (Pink)
+          - generic [ref=e196]:
+            - generic [ref=e198]: "Zoom: 100%"
+            - slider [ref=e202]: "1"

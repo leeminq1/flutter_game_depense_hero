@@ -1,0 +1,15 @@
+Primary references:
+- https://docs.flame-engine.org/latest/flame/components.html
+- https://docs.flame-engine.org/latest/flame/collision_detection.html
+
+Distilled notes:
+- Flame organizes runtime behavior around components under a single game root.
+- Collision systems should use deliberate hitboxes and only where needed.
+- Performance improves when visuals and entities are structured for reuse instead of many bespoke component trees.
+- For a defense game, projectile count, enemy density, and death effects are likely hot paths.
+
+Applied to this repo:
+- Keep simulation logic centralized.
+- Prefer simple hitboxes or path checks over expensive collision usage when possible.
+- Budget VFX and spawn spikes early.
+- Design content definitions so towers and enemies can be instantiated from data.

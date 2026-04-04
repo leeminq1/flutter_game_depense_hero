@@ -1,0 +1,64 @@
+[
+    {
+        "preferredFrame":  1,
+        "selections":  [
+                           [
+                               "torso_armour_leather",
+                               "forest"
+                           ],
+                           [
+                               "shoulders_leather",
+                               "forest"
+                           ],
+                           [
+                               "belt_double",
+                               "leather"
+                           ],
+                           [
+                               "feet_boots_basic",
+                               "brown"
+                           ],
+                           [
+                               "hat_hood_cloth",
+                               "hood_brown"
+                           ],
+                           [
+                               "weapon_ranged_bow_normal",
+                               "dark"
+                           ],
+                           [
+                               "cape_tattered",
+                               "forest"
+                           ]
+                       ],
+        "id":  "scout",
+        "bodyType":  "teen"
+    },
+    {
+        "preferredFrame":  1,
+        "selections":  [
+                           [
+                               "torso_armour_plate",
+                               "steel"
+                           ],
+                           [
+                               "shoulders_legion",
+                               "steel"
+                           ],
+                           [
+                               "hat_helmet_legion",
+                               "steel"
+                           ],
+                           [
+                               "shield_kite",
+                               "kite green gray"
+                           ],
+                           [
+                               "weapon_sword_arming",
+                               "steel"
+                           ]
+                       ],
+        "id":  "shield_infantry",
+        "bodyType":  "male"
+    }
+]

@@ -1,0 +1,86 @@
+{
+  "towers": [
+    {
+      "id": "archer",
+      "assetPath": "assets/sprites/towers/archer_tower.png",
+      "generatorHint": "wooden archer post, green hood banner, fantasy defense tower"
+    },
+    {
+      "id": "guardBarracks",
+      "assetPath": "assets/sprites/towers/guard_barracks.png",
+      "generatorHint": "small fantasy barracks, shield rack, brown timber guard post"
+    },
+    {
+      "id": "mageObelisk",
+      "assetPath": "assets/sprites/towers/mage_obelisk.png",
+      "generatorHint": "arcane obelisk, violet crystal, fantasy magic tower"
+    },
+    {
+      "id": "frostShrine",
+      "assetPath": "assets/sprites/towers/frost_shrine.png",
+      "generatorHint": "icy shrine, blue crystal altar, frost defense tower"
+    },
+    {
+      "id": "coinMill",
+      "assetPath": "assets/sprites/towers/coin_mill.png",
+      "generatorHint": "golden coin mill, fantasy workshop, economic support building"
+    },
+    {
+      "id": "ballista",
+      "assetPath": "assets/sprites/towers/ballista.png",
+      "generatorHint": "heavy ballista emplacement, siege wood frame, defense turret"
+    },
+    {
+      "id": "emberkeep",
+      "assetPath": "assets/sprites/towers/emberkeep.png",
+      "generatorHint": "fire brazier keep, ember brazier, fantasy flame tower"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "raider",
+      "assetPath": "assets/sprites/enemies/raider.png",
+      "generatorHint": "bandit raider, rugged leather armor, fantasy pixel enemy"
+    },
+    {
+      "id": "scout",
+      "assetPath": "assets/sprites/enemies/scout.png",
+      "generatorHint": "fast rogue scout, light gear, fantasy pixel enemy"
+    },
+    {
+      "id": "shieldInfantry",
+      "assetPath": "assets/sprites/enemies/shield_infantry.png",
+      "generatorHint": "armored infantry, shield bearer, fantasy pixel enemy"
+    },
+    {
+      "id": "cultAdept",
+      "assetPath": "assets/sprites/enemies/cult_adept.png",
+      "generatorHint": "hooded cult adept, ritual caster, fantasy pixel enemy"
+    },
+    {
+      "id": "skeleton",
+      "assetPath": "assets/sprites/enemies/skeleton.png",
+      "generatorHint": "animated skeleton soldier, bone warrior, fantasy pixel enemy"
+    },
+    {
+      "id": "graveGuard",
+      "assetPath": "assets/sprites/enemies/grave_guard.png",
+      "generatorHint": "undead grave guard, heavy armor, dark green elite enemy"
+    },
+    {
+      "id": "corruptedKnight",
+      "assetPath": "assets/sprites/enemies/corrupted_knight.png",
+      "generatorHint": "corrupted knight, dark plate armor, cursed elite enemy"
+    },
+    {
+      "id": "warlock",
+      "assetPath": "assets/sprites/enemies/warlock.png",
+      "generatorHint": "warlock summoner, purple robes, dark fantasy pixel caster"
+    },
+    {
+      "id": "bastionOverlord",
+      "assetPath": "assets/sprites/enemies/bastion_overlord.png",
+      "generatorHint": "final boss overlord, cursed fortress lord, huge dark fantasy pixel enemy"
+    }
+  ]
+}

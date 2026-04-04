@@ -1,0 +1,13 @@
+Source: https://openai.com/index/harness-engineering
+
+Distilled notes:
+- Keep AGENTS.md short and use it as a map.
+- Put durable repository knowledge in a structured docs tree.
+- Use progressive disclosure so agents load only the docs they need.
+- Version active plans, completed plans, tech debt, and generated references together.
+- Enforce knowledge hygiene mechanically over time.
+
+Applied to this repo:
+- AGENTS.md stays brief.
+- Product, design, architecture, quality, reliability, and security each get a stable home.
+- Execution plans are first-class artifacts for multi-step game work.

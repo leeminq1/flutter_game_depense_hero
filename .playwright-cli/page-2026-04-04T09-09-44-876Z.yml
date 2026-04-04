@@ -1,0 +1,13 @@
+- generic [ref=e3]:
+  - heading "Universal LPC Spritesheet Generator View on GitHub" [level=1] [ref=e4]:
+    - text: Universal LPC Spritesheet Generator
+    - link "View on GitHub" [ref=e5] [cursor=pointer]:
+      - /url: https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator
+      - img "View on GitHub" [ref=e6]
+  - generic [ref=e7]:
+    - text: Free/Libre pixel art from the
+    - link "Liberated Pixel Cup" [ref=e8] [cursor=pointer]:
+      - /url: https://lpc.opengameart.org
+    - text: "| You must"
+    - link "credit the authors" [ref=e9] [cursor=pointer]:
+      - /url: "#credits-section"

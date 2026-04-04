@@ -1,0 +1,17 @@
+Primary sources:
+- https://pub.dev/packages/flame_audio
+- https://docs.flame-engine.org/latest/bridge_packages/flame_audio/audio.html
+- https://docs.flame-engine.org/latest/bridge_packages/flame_audio/bgm.html
+- https://docs.flame-engine.org/latest/bridge_packages/flame_audio/audio_pool.html
+
+Distilled notes:
+- `flame_audio` is the official Flame audio bridge package and `assets/audio` is the default asset root.
+- `FlameAudio.audioCache.load` and `loadAll` should be used to preload hot sounds and avoid first-play delay.
+- `FlameAudio.bgm.initialize()` is required for lifecycle-aware looping background music.
+- `AudioPool` exists specifically for very frequent or overlapping short sounds and reduces latency versus creating players on demand.
+- Flame documentation warns that `playLongAudio` and `loopLongAudio` can create frame rate drops and loop gaps; shorter optimized methods should be preferred whenever possible.
+
+Applied to this repo:
+- Short SFX are selected and grouped for pooled playback.
+- BGM is treated as its own lifecycle-managed subsystem.
+- Audio architecture is being documented before runtime code is written.

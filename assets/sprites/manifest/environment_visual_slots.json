@@ -1,0 +1,110 @@
+{
+  "stageBrackets": [
+    {
+      "stages": "1-5",
+      "theme": "frontier-road",
+      "landmarkSlots": [
+        "assets/sprites/environment/landmarks/village_gate.png",
+        "assets/sprites/environment/landmarks/watch_post.png"
+      ],
+      "propSlots": [
+        "assets/sprites/environment/props/road_signpost.png",
+        "assets/sprites/environment/props/wooden_fence_segment.png",
+        "assets/sprites/environment/props/supply_crate.png",
+        "assets/sprites/environment/props/well.png"
+      ]
+    },
+    {
+      "stages": "6-10",
+      "theme": "bandit-crossroads",
+      "landmarkSlots": [
+        "assets/sprites/environment/landmarks/bandit_stockade.png",
+        "assets/sprites/environment/landmarks/checkpoint_tower.png"
+      ],
+      "propSlots": [
+        "assets/sprites/environment/props/spike_barricade.png",
+        "assets/sprites/environment/props/wagon_wreck.png",
+        "assets/sprites/environment/props/broken_barrel.png",
+        "assets/sprites/environment/props/campfire.png"
+      ]
+    },
+    {
+      "stages": "11-15",
+      "theme": "grave-fields",
+      "landmarkSlots": [
+        "assets/sprites/environment/landmarks/mausoleum_gate.png",
+        "assets/sprites/environment/landmarks/cemetery_statue.png"
+      ],
+      "propSlots": [
+        "assets/sprites/environment/props/grave_marker_tall.png",
+        "assets/sprites/environment/props/dead_tree_twisted.png",
+        "assets/sprites/environment/props/bone_pile.png",
+        "assets/sprites/environment/props/broken_coffin.png"
+      ]
+    },
+    {
+      "stages": "16-20",
+      "theme": "cursed-chapel-belt",
+      "landmarkSlots": [
+        "assets/sprites/environment/landmarks/cursed_chapel_front.png",
+        "assets/sprites/environment/landmarks/ritual_arch.png"
+      ],
+      "propSlots": [
+        "assets/sprites/environment/props/chapel_rubble.png",
+        "assets/sprites/environment/props/ritual_altar.png",
+        "assets/sprites/environment/props/ward_stone.png",
+        "assets/sprites/environment/props/candle_cluster.png"
+      ]
+    },
+    {
+      "stages": "21-25",
+      "theme": "bastion-approach",
+      "landmarkSlots": [
+        "assets/sprites/environment/landmarks/bastion_wall_chunk.png",
+        "assets/sprites/environment/landmarks/gate_ruin.png"
+      ],
+      "propSlots": [
+        "assets/sprites/environment/props/siege_crate.png",
+        "assets/sprites/environment/props/spear_rack.png",
+        "assets/sprites/environment/props/chain_post.png",
+        "assets/sprites/environment/props/brazier_stand.png"
+      ]
+    },
+    {
+      "stages": "26-30",
+      "theme": "throne-march",
+      "landmarkSlots": [
+        "assets/sprites/environment/landmarks/infernal_gate.png",
+        "assets/sprites/environment/landmarks/throne_road_monument.png"
+      ],
+      "propSlots": [
+        "assets/sprites/environment/props/brazier_large.png",
+        "assets/sprites/environment/props/obsidian_stake.png",
+        "assets/sprites/environment/props/chain_post_heavy.png",
+        "assets/sprites/environment/props/ember_pile.png"
+      ]
+    }
+  ],
+  "sharedProps": [
+    "assets/sprites/environment/props/road_signpost.png",
+    "assets/sprites/environment/props/wooden_fence_segment.png",
+    "assets/sprites/environment/props/supply_crate.png",
+    "assets/sprites/environment/props/wagon_wreck.png",
+    "assets/sprites/environment/props/grave_marker_tall.png",
+    "assets/sprites/environment/props/dead_tree_twisted.png",
+    "assets/sprites/environment/props/bone_pile.png",
+    "assets/sprites/environment/props/chapel_rubble.png",
+    "assets/sprites/environment/props/ritual_altar.png",
+    "assets/sprites/environment/props/fort_wall_breach.png",
+    "assets/sprites/environment/props/brazier_large.png",
+    "assets/sprites/environment/props/chain_post.png"
+  ],
+  "generatedLandmarks": [
+    "assets/sprites/environment/landmarks/village_gate.png",
+    "assets/sprites/environment/landmarks/bandit_stockade.png",
+    "assets/sprites/environment/landmarks/mausoleum_gate.png",
+    "assets/sprites/environment/landmarks/cursed_chapel_front.png",
+    "assets/sprites/environment/landmarks/bastion_wall_chunk.png",
+    "assets/sprites/environment/landmarks/infernal_gate.png"
+  ]
+}
