@@ -10,6 +10,7 @@ import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/game_visual_registry.dart';
+import 'package:depense_game/game/rendering/map_texture_planner.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -36,29 +37,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
       fontWeight: FontWeight.w700,
     ),
   );
-  final Paint _pathPaint = Paint()
-    ..color = const Color(0xFFB89568)
-    ..strokeWidth = 28
-    ..style = PaintingStyle.stroke
-    ..strokeCap = StrokeCap.round
-    ..strokeJoin = StrokeJoin.round;
-  final Paint _pathGlowPaint = Paint()
-    ..color = const Color(0x33F4D58D)
-    ..strokeWidth = 42
-    ..style = PaintingStyle.stroke
-    ..strokeCap = StrokeCap.round
-    ..strokeJoin = StrokeJoin.round;
-  final Paint _slotPaint = Paint()
-    ..color = const Color(0xAAE8C97B)
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 3;
-  final Paint _slotFillPaint = Paint()
-    ..color = const Color(0x227B6332)
-    ..style = PaintingStyle.fill;
   final GameVisualRegistry _visualRegistry = GameVisualRegistry();
 
   late List<Vector2> _pathPoints;
   late List<_TowerSlot> _slots;
+  Path _pathRenderPath = Path();
+  MapTexturePlan _mapTexturePlan = MapTexturePlan.empty;
 
   final List<_Enemy> _enemies = [];
   final List<_TowerPlacement> _towers = [];
@@ -91,6 +75,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     _baseHealth = stage.baseHealth + metaUpgrades.bonusBaseHealth;
     _pathPoints = [Vector2.zero(), Vector2.all(1)];
     _slots = [];
+    _pathRenderPath = Path();
+    _mapTexturePlan = MapTexturePlan.empty;
     sessionController.hydrate(
       stageNumber: stage.number,
       totalStages: SampleCampaign.totalStages,
@@ -111,6 +97,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     _slots = stage.buildSlots
         .map((node) => _TowerSlot(Vector2(node.dx * size.x, node.dy * size.y)))
         .toList();
+    _pathRenderPath = _buildPathRenderPath();
+    _mapTexturePlan = MapTexturePlanner.build(
+      stageNumber: stage.number,
+      theme: stage.environmentTheme,
+      canvasSize: size,
+      pathPoints: _pathPoints,
+      buildSlots: [for (final slot in _slots) slot.position.toOffset()],
+      decorations: stage.decorations,
+    );
   }
 
   void selectBuildable(TowerKind? towerKind) {
@@ -286,9 +281,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
 
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.x, size.y),
-      Paint()..color = const Color(0xFF1F2B1A),
+      Paint()..shader = _backgroundShader(),
     );
 
+    _drawGroundTexture(canvas);
+    _drawEnvironmentDecorations(canvas, StageDecorationLayer.background);
     _drawPath(canvas);
     _drawSlots(canvas);
     _drawPulses(canvas);
@@ -296,6 +293,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     _drawProjectiles(canvas);
     _drawEnemies(canvas);
     _drawImpacts(canvas);
+    _drawEnvironmentDecorations(canvas, StageDecorationLayer.foreground);
     _drawHints(canvas);
   }
 
@@ -1253,24 +1251,57 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     audioService.play(AudioEvent.waveClear);
   }
 
+  Path _buildPathRenderPath() {
+    final path = Path();
+    if (_pathPoints.isEmpty) {
+      return path;
+    }
+    path.moveTo(_pathPoints.first.x, _pathPoints.first.y);
+    for (final point in _pathPoints.skip(1)) {
+      path.lineTo(point.x, point.y);
+    }
+    return path;
+  }
+
   void _drawPath(Canvas canvas) {
     if (_pathPoints.isEmpty) {
       return;
     }
 
-    final path = Path()..moveTo(_pathPoints.first.x, _pathPoints.first.y);
-    for (final point in _pathPoints.skip(1)) {
-      path.lineTo(point.x, point.y);
-    }
+    final pathGlowPaint = Paint()
+      ..color = _pathGlowColor()
+      ..strokeWidth = 42
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final pathPaint = Paint()
+      ..color = _pathBaseColor()
+      ..strokeWidth = 28
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
-    canvas.drawPath(path, _pathGlowPaint);
-    canvas.drawPath(path, _pathPaint);
+    canvas.drawPath(_pathRenderPath, pathGlowPaint);
+    canvas.drawPath(_pathRenderPath, pathPaint);
+    for (final mark in _mapTexturePlan.pathMarks) {
+      _drawTextureMark(canvas, mark);
+    }
+    for (final mark in _mapTexturePlan.anchorMarks) {
+      _drawTextureMark(canvas, mark);
+    }
   }
 
   void _drawSlots(Canvas canvas) {
+    final slotFillPaint = Paint()
+      ..color = _slotFillColor()
+      ..style = PaintingStyle.fill;
+    final slotPaint = Paint()
+      ..color = _slotRingColor()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
     for (final slot in _slots) {
-      canvas.drawCircle(slot.position.toOffset(), 24, _slotFillPaint);
-      canvas.drawCircle(slot.position.toOffset(), 24, _slotPaint);
+      canvas.drawCircle(slot.position.toOffset(), 24, slotFillPaint);
+      canvas.drawCircle(slot.position.toOffset(), 24, slotPaint);
     }
   }
 
@@ -1281,6 +1312,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
       final sprite = _visualRegistry.towerSprite(
         tower.definition.kind,
         level: tower.level,
+        branchId: tower.branchId,
       );
       final center = tower.position.toOffset();
       final isSelected = i == _selectedTowerIndex;
@@ -1323,6 +1355,158 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
           Vector2(center.dx - 10, center.dy + 15),
         );
       }
+    }
+  }
+
+  Shader _backgroundShader() {
+    final colors = switch (stage.environmentTheme) {
+      StageEnvironmentTheme.frontierRoad => const [
+          Color(0xFF314328),
+          Color(0xFF1F2B1A),
+        ],
+      StageEnvironmentTheme.banditCrossroads => const [
+          Color(0xFF403122),
+          Color(0xFF241A13),
+        ],
+      StageEnvironmentTheme.graveFields => const [
+          Color(0xFF31403A),
+          Color(0xFF1B221D),
+        ],
+      StageEnvironmentTheme.cursedChapel => const [
+          Color(0xFF35293F),
+          Color(0xFF1C1522),
+        ],
+      StageEnvironmentTheme.bastionApproach => const [
+          Color(0xFF34353D),
+          Color(0xFF1D1D22),
+        ],
+      StageEnvironmentTheme.throneMarch => const [
+          Color(0xFF462A20),
+          Color(0xFF1C1210),
+        ],
+    };
+    return ui.Gradient.linear(
+      const Offset(0, 0),
+      Offset(size.x, size.y),
+      colors,
+    );
+  }
+
+  Color _pathBaseColor() {
+    return switch (stage.environmentTheme) {
+      StageEnvironmentTheme.frontierRoad => const Color(0xFFB89568),
+      StageEnvironmentTheme.banditCrossroads => const Color(0xFFAA8C63),
+      StageEnvironmentTheme.graveFields => const Color(0xFFA99979),
+      StageEnvironmentTheme.cursedChapel => const Color(0xFF9B876E),
+      StageEnvironmentTheme.bastionApproach => const Color(0xFF9C8A73),
+      StageEnvironmentTheme.throneMarch => const Color(0xFFB08C61),
+    };
+  }
+
+  Color _pathGlowColor() {
+    return switch (stage.environmentTheme) {
+      StageEnvironmentTheme.frontierRoad => const Color(0x33F4D58D),
+      StageEnvironmentTheme.banditCrossroads => const Color(0x33E2BE7A),
+      StageEnvironmentTheme.graveFields => const Color(0x338FC09B),
+      StageEnvironmentTheme.cursedChapel => const Color(0x33C7A5F0),
+      StageEnvironmentTheme.bastionApproach => const Color(0x33D3C0A8),
+      StageEnvironmentTheme.throneMarch => const Color(0x33F1B16B),
+    };
+  }
+
+  Color _slotRingColor() {
+    return switch (stage.environmentTheme) {
+      StageEnvironmentTheme.frontierRoad => const Color(0xAAE8C97B),
+      StageEnvironmentTheme.banditCrossroads => const Color(0xAAD9B56A),
+      StageEnvironmentTheme.graveFields => const Color(0xAAAEC89B),
+      StageEnvironmentTheme.cursedChapel => const Color(0xAACFB4F4),
+      StageEnvironmentTheme.bastionApproach => const Color(0xAACFC4B5),
+      StageEnvironmentTheme.throneMarch => const Color(0xAAEAB06B),
+    };
+  }
+
+  Color _slotFillColor() {
+    return switch (stage.environmentTheme) {
+      StageEnvironmentTheme.frontierRoad => const Color(0x227B6332),
+      StageEnvironmentTheme.banditCrossroads => const Color(0x226E4F2B),
+      StageEnvironmentTheme.graveFields => const Color(0x22435A45),
+      StageEnvironmentTheme.cursedChapel => const Color(0x22463659),
+      StageEnvironmentTheme.bastionApproach => const Color(0x223E4148),
+      StageEnvironmentTheme.throneMarch => const Color(0x2254332B),
+    };
+  }
+
+  void _drawGroundTexture(Canvas canvas) {
+    for (final mark in _mapTexturePlan.groundMarks) {
+      _drawTextureMark(canvas, mark);
+    }
+  }
+
+  void _drawTextureMark(Canvas canvas, MapTextureMark mark) {
+    final paint = Paint()..color = mark.color;
+    switch (mark.shape) {
+      case MapTextureMarkShape.oval:
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: mark.center,
+            width: mark.width,
+            height: mark.height,
+          ),
+          paint,
+        );
+        break;
+      case MapTextureMarkShape.rect:
+        canvas.drawRect(
+          Rect.fromCenter(
+            center: mark.center,
+            width: mark.width,
+            height: mark.height,
+          ),
+          paint,
+        );
+        break;
+      case MapTextureMarkShape.roundedRect:
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: mark.center,
+              width: mark.width,
+              height: mark.height,
+            ),
+            Radius.circular(mark.cornerRadius),
+          ),
+          paint,
+        );
+        break;
+      case MapTextureMarkShape.circle:
+        canvas.drawCircle(mark.center, mark.radius, paint);
+        break;
+    }
+  }
+
+  void _drawEnvironmentDecorations(Canvas canvas, StageDecorationLayer layer) {
+    for (final decoration in stage.decorations) {
+      if (decoration.layer != layer) {
+        continue;
+      }
+      final sprite = _visualRegistry.environmentSprite(decoration.assetPath);
+      if (sprite == null) {
+        continue;
+      }
+      final isLandmark = decoration.assetPath.contains('/landmarks/');
+      final baseSize = isLandmark ? 86.0 : 44.0;
+      final center = Offset(
+        decoration.position.dx * size.x,
+        decoration.position.dy * size.y,
+      );
+      _drawSprite(
+        canvas,
+        sprite,
+        center: center,
+        size: baseSize * decoration.scale,
+        fallbackTint: Colors.white,
+        opacity: decoration.opacity,
+      );
     }
   }
 
@@ -1660,6 +1844,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     required Offset center,
     required double size,
     required Color fallbackTint,
+    double opacity = 1.0,
   }) {
     final dst = Rect.fromCenter(
       center: center,
@@ -1674,7 +1859,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
       dst,
-      Paint(),
+      Paint()..color = Colors.white.withValues(alpha: opacity.clamp(0.0, 1.0)),
     );
   }
 

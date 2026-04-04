@@ -158,6 +158,99 @@ def infernal_gate():
     return img
 
 
+def ritual_arch():
+    img = new_canvas()
+    d = ImageDraw.Draw(img)
+    shadow(d, (10, 82, 86, 92))
+    rect(d, (20, 48, 34, 86), STONE_DARK, OUTLINE)
+    rect(d, (62, 48, 76, 86), STONE_DARK, OUTLINE)
+    rect(d, (28, 28, 68, 42), STONE, STONE_DARK)
+    poly(d, [(28, 28), (48, 12), (68, 28)], PURPLE, OUTLINE)
+    line(d, (30, 56, 30, 74), fill=PURPLE_LIGHT, width=2)
+    line(d, (66, 56, 66, 74), fill=PURPLE_LIGHT, width=2)
+    line(d, (38, 36, 58, 36), fill=PURPLE_LIGHT, width=2)
+    poly(d, [(48, 21), (54, 31), (48, 40), (42, 31)], PURPLE_LIGHT, OUTLINE)
+    rect(d, (18, 78, 78, 84), STONE, STONE_DARK)
+    return img
+
+
+def throne_road_monument():
+    img = new_canvas()
+    d = ImageDraw.Draw(img)
+    shadow(d, (8, 82, 88, 92))
+    rect(d, (24, 72, 72, 84), OBSIDIAN, OUTLINE)
+    rect(d, (32, 56, 64, 72), OBSIDIAN, OUTLINE)
+    poly(d, [(48, 16), (62, 56), (34, 56)], GOLD, OUTLINE)
+    poly(d, [(48, 26), (56, 54), (40, 54)], FIRE, OUTLINE)
+    rect(d, (18, 58, 28, 78), OBSIDIAN, OUTLINE)
+    rect(d, (68, 58, 78, 78), OBSIDIAN, OUTLINE)
+    line(d, (23, 58, 23, 42), fill=EMBER, width=2)
+    line(d, (73, 58, 73, 42), fill=EMBER, width=2)
+    rect(d, (14, 38, 32, 46), RED_DARK, OUTLINE)
+    rect(d, (64, 38, 82, 46), RED_DARK, OUTLINE)
+    return img
+
+
+def watch_post():
+    img = new_canvas()
+    d = ImageDraw.Draw(img)
+    shadow(d, (12, 82, 84, 92))
+    rect(d, (28, 62, 68, 74), WOOD, WOOD_DARK)
+    rect(d, (34, 36, 62, 62), WOOD_LIGHT, WOOD_DARK)
+    line(d, (36, 62, 26, 84), fill=WOOD_DARK, width=3)
+    line(d, (60, 62, 70, 84), fill=WOOD_DARK, width=3)
+    line(d, (40, 62, 38, 84), fill=WOOD_DARK, width=3)
+    line(d, (56, 62, 58, 84), fill=WOOD_DARK, width=3)
+    poly(d, [(32, 36), (48, 20), (64, 36)], GREEN, WOOD_DARK)
+    rect(d, (42, 44, 54, 62), WOOD_DARK, OUTLINE)
+    rect(d, (62, 42, 72, 50), GREEN, WOOD_DARK)
+    return img
+
+
+def checkpoint_tower():
+    img = new_canvas()
+    d = ImageDraw.Draw(img)
+    shadow(d, (12, 82, 84, 92))
+    rect(d, (24, 56, 72, 84), STONE, STONE_DARK)
+    rect(d, (30, 30, 66, 56), WOOD, WOOD_DARK)
+    poly(d, [(28, 30), (48, 16), (68, 30)], RED, RED_DARK)
+    rect(d, (42, 40, 54, 56), WOOD_DARK, OUTLINE)
+    rect(d, (18, 60, 24, 84), STONE, STONE_DARK)
+    rect(d, (72, 60, 78, 84), STONE, STONE_DARK)
+    rect(d, (16, 48, 26, 56), RED, WOOD_DARK)
+    line(d, (54, 24, 70, 16), fill=WOOD_DARK, width=2)
+    return img
+
+
+def cemetery_statue():
+    img = new_canvas()
+    d = ImageDraw.Draw(img)
+    shadow(d, (16, 82, 80, 92))
+    rect(d, (26, 70, 70, 84), STONE_DARK, OUTLINE)
+    rect(d, (34, 56, 62, 70), STONE, STONE_DARK)
+    rect(d, (40, 34, 56, 56), STONE_LIGHT, STONE_DARK)
+    poly(d, [(48, 18), (56, 28), (52, 40), (44, 40), (40, 28)], STONE, OUTLINE)
+    line(d, (48, 30, 48, 54), fill=STONE_DARK, width=1)
+    line(d, (44, 37, 52, 37), fill=STONE_DARK, width=1)
+    rect(d, (28, 62, 34, 84), MOSS, STONE_DARK)
+    rect(d, (62, 64, 68, 84), MOSS, STONE_DARK)
+    return img
+
+
+def gate_ruin():
+    img = new_canvas()
+    d = ImageDraw.Draw(img)
+    shadow(d, (10, 82, 86, 92))
+    rect(d, (18, 50, 34, 86), STONE, STONE_DARK)
+    rect(d, (62, 42, 78, 86), STONE, STONE_DARK)
+    rect(d, (28, 28, 72, 42), STONE_DARK, OUTLINE)
+    poly(d, [(28, 28), (48, 14), (72, 28)], STONE_LIGHT)
+    poly(d, [(34, 86), (40, 58), (48, 58), (54, 86)], (0, 0, 0, 0), None)
+    rect(d, (16, 62, 24, 70), IRON_DARK, OUTLINE)
+    rect(d, (70, 58, 82, 66), IRON_DARK, OUTLINE)
+    return img
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     landmarks = {
@@ -167,6 +260,12 @@ def main():
         "cursed_chapel_front.png": cursed_chapel_front(),
         "bastion_wall_chunk.png": bastion_wall_chunk(),
         "infernal_gate.png": infernal_gate(),
+        "ritual_arch.png": ritual_arch(),
+        "throne_road_monument.png": throne_road_monument(),
+        "watch_post.png": watch_post(),
+        "checkpoint_tower.png": checkpoint_tower(),
+        "cemetery_statue.png": cemetery_statue(),
+        "gate_ruin.png": gate_ruin(),
     }
     for filename, image in landmarks.items():
         image.save(OUT_DIR / filename)

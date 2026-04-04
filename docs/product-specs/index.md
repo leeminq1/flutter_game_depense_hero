@@ -8,6 +8,7 @@
 | [economy-and-monetization.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/economy-and-monetization.md) | drafted | Currency, retention, and ad-safe monetization rules |
 | [campaign-structure.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/campaign-structure.md) | drafted | 30-stage campaign, wave scaling, and content pacing |
 | [roster-and-buildables.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/roster-and-buildables.md) | drafted | Initial tower, structure, and enemy roster for the campaign |
+| [map-production-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/map-production-plan.md) | drafted | How stage maps move from path data and assets into real authored battlefield scenes |
 
 ## Rule
 

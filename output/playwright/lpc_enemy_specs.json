@@ -3,41 +3,6 @@
         "preferredFrame":  1,
         "selections":  [
                            [
-                               "torso_armour_leather",
-                               "forest"
-                           ],
-                           [
-                               "shoulders_leather",
-                               "forest"
-                           ],
-                           [
-                               "belt_double",
-                               "leather"
-                           ],
-                           [
-                               "feet_boots_basic",
-                               "brown"
-                           ],
-                           [
-                               "hat_hood_cloth",
-                               "hood_brown"
-                           ],
-                           [
-                               "weapon_ranged_bow_normal",
-                               "dark"
-                           ],
-                           [
-                               "cape_tattered",
-                               "forest"
-                           ]
-                       ],
-        "id":  "scout",
-        "bodyType":  "teen"
-    },
-    {
-        "preferredFrame":  1,
-        "selections":  [
-                           [
                                "torso_armour_plate",
                                "steel"
                            ],

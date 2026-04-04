@@ -25,27 +25,8 @@ References:
 - `assets/sprites/environment/props/fort_wall_breach.png`
 - `assets/sprites/environment/props/brazier_large.png`
 - `assets/sprites/environment/props/chain_post.png`
-
-## Generated Crest-Stage Landmarks
-
-- `assets/sprites/environment/landmarks/village_gate.png`
-- `assets/sprites/environment/landmarks/bandit_stockade.png`
-- `assets/sprites/environment/landmarks/mausoleum_gate.png`
-- `assets/sprites/environment/landmarks/cursed_chapel_front.png`
-- `assets/sprites/environment/landmarks/bastion_wall_chunk.png`
-- `assets/sprites/environment/landmarks/infernal_gate.png`
-
-## Reserved Next-Batch Slots
-
-- `assets/sprites/environment/landmarks/watch_post.png`
-- `assets/sprites/environment/landmarks/checkpoint_tower.png`
-- `assets/sprites/environment/landmarks/cemetery_statue.png`
-- `assets/sprites/environment/landmarks/ritual_arch.png`
-- `assets/sprites/environment/landmarks/gate_ruin.png`
-- `assets/sprites/environment/landmarks/throne_road_monument.png`
 - `assets/sprites/environment/props/well.png`
 - `assets/sprites/environment/props/spike_barricade.png`
-- `assets/sprites/environment/props/broken_barrel.png`
 - `assets/sprites/environment/props/campfire.png`
 - `assets/sprites/environment/props/broken_coffin.png`
 - `assets/sprites/environment/props/ward_stone.png`
@@ -56,6 +37,26 @@ References:
 - `assets/sprites/environment/props/obsidian_stake.png`
 - `assets/sprites/environment/props/chain_post_heavy.png`
 - `assets/sprites/environment/props/ember_pile.png`
+- `assets/sprites/environment/props/broken_barrel.png`
+
+## Generated Crest-Stage Landmarks
+
+- `assets/sprites/environment/landmarks/village_gate.png`
+- `assets/sprites/environment/landmarks/bandit_stockade.png`
+- `assets/sprites/environment/landmarks/mausoleum_gate.png`
+- `assets/sprites/environment/landmarks/cursed_chapel_front.png`
+- `assets/sprites/environment/landmarks/bastion_wall_chunk.png`
+- `assets/sprites/environment/landmarks/infernal_gate.png`
+- `assets/sprites/environment/landmarks/ritual_arch.png`
+- `assets/sprites/environment/landmarks/throne_road_monument.png`
+- `assets/sprites/environment/landmarks/watch_post.png`
+- `assets/sprites/environment/landmarks/checkpoint_tower.png`
+- `assets/sprites/environment/landmarks/cemetery_statue.png`
+- `assets/sprites/environment/landmarks/gate_ruin.png`
+
+## Reserved Next-Batch Slots
+
+- no reserved slots remain from the current environment manifest batch
 
 ## Size Reminder
 
@@ -67,6 +68,6 @@ References:
 
 1. Shared reusable props
 2. Stage crest landmarks
-3. Tower second-pass detail upgrade
-4. Tower upgrade-tier variants
-5. Stage-specific set dressing
+3. Crest-stage hand-authored placements
+4. Stage-specific set dressing polish
+5. Future biome-specific premium props beyond the current manifest

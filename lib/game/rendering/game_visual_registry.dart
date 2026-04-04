@@ -10,6 +10,7 @@ class GameVisualRegistry {
   final Map<String, ui.Image> _towerSprites = {};
   final Map<String, ui.Image> _enemySprites = {};
   final Map<String, ui.Image> _supportSprites = {};
+  final Map<String, ui.Image> _environmentSprites = {};
 
   bool _warmed = false;
 
@@ -32,6 +33,19 @@ class GameVisualRegistry {
           continue;
         }
         _towerSprites[tierAssetPath] = await _loadImage(tierAssetPath);
+      }
+      for (final branch in TowerCatalog.byKind(kind).branches) {
+        for (var level = 2; level <= TowerVisualCatalog.maxTier; level += 1) {
+          final branchAssetPath = TowerVisualCatalog.branchTierAssetPath(
+            kind,
+            level,
+            branch.id,
+          );
+          if (!assetKeys.contains(branchAssetPath)) {
+            continue;
+          }
+          _towerSprites[branchAssetPath] = await _loadImage(branchAssetPath);
+        }
       }
     }
 
@@ -58,10 +72,29 @@ class GameVisualRegistry {
       _supportSprites[assetPath] = await _loadImage(assetPath);
     }
 
+    for (final assetPath in assetKeys) {
+      if (!assetPath.startsWith('assets/sprites/environment/') ||
+          !assetPath.endsWith('.png')) {
+        continue;
+      }
+      _environmentSprites[assetPath] = await _loadImage(assetPath);
+    }
+
     _warmed = true;
   }
 
-  ui.Image? towerSprite(TowerKind kind, {int level = 1}) {
+  ui.Image? towerSprite(TowerKind kind, {int level = 1, String? branchId}) {
+    if (branchId != null && level >= 2) {
+      final branchAssetPath = TowerVisualCatalog.branchTierAssetPath(
+        kind,
+        level,
+        branchId,
+      );
+      final branchSprite = _towerSprites[branchAssetPath];
+      if (branchSprite != null) {
+        return branchSprite;
+      }
+    }
     final tierAssetPath = TowerVisualCatalog.tierAssetPath(kind, level);
     final fallbackAssetPath = TowerVisualCatalog.byKind(kind).assetPath;
     return _towerSprites[tierAssetPath] ?? _towerSprites[fallbackAssetPath];
@@ -82,6 +115,10 @@ class GameVisualRegistry {
     );
     final fallbackPath = BarracksDefenderVisualCatalog.assetPath(level: level);
     return _supportSprites[assetPath] ?? _supportSprites[fallbackPath];
+  }
+
+  ui.Image? environmentSprite(String assetPath) {
+    return _environmentSprites[assetPath];
   }
 
   Future<ui.Image> _loadImage(String assetPath) async {

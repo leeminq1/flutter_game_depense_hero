@@ -64,6 +64,18 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-04: Tower rendering now supports tier-specific sprite files so level 1, 2, and 3 towers can show distinct visuals at runtime.
 - 2026-04-04: The LPC enemy export pipeline now runs through a dedicated Node + Playwright tool, resolving the earlier Windows command-line length limit and restoring full batch re-export capability.
 - 2026-04-04: Targeted LPC rerenders now work for selected enemy ids, and Cult Adept, Grave Guard, and Warlock received the first focused third-pass rerender after the pipeline fix.
+- 2026-04-04: Scout and Shield Infantry received a focused follow-up rerender with multi-agent silhouette review, improving the fast-ranged read and shield-frontline read without needing another full-roster export.
+- 2026-04-04: Single-id LPC reruns now serialize correctly after fixing a PowerShell JSON array edge case discovered during the Shield Infantry A/B pass.
+- 2026-04-04: Map production is now explicitly staged as a follow-up layer after current tower/building passes, with a dedicated plan for environment placements, runtime map rendering, and crest-stage authored layouts.
+- 2026-04-04: Tower branch-specific `T2/T3` sprite assets now exist and runtime rendering prefers branch variants when a specialization has been chosen.
+- 2026-04-04: Stage data now carries environment themes and decorative prop or landmark placements, and the battlefield renderer draws current environment sprites behind combat.
+- 2026-04-04: Crest stages 5, 10, 15, 20, 25, and 30 now use hand-authored decoration layouts, and a second environment asset batch fills key missing props and landmarks for those scenes.
+- 2026-04-04: Stage themes now tint path and build-slot visuals, and a crest-stage preview generator exists for quick scene-composition review outside the live runtime.
+- 2026-04-04: The current environment manifest batch is now fully generated, including watch posts, checkpoint towers, cemetery statues, gate ruins, and the last reserved prop fillers.
+- 2026-04-04: Runtime maps and crest-stage preview sheets now include lightweight biome-specific ground accents and path motifs, making each campaign bracket read more like a real place without sacrificing lane clarity.
+- 2026-04-04: Map texture logic now reserves quiet buffers around slots and larger props, while giving spawn, core approach, and major bends a small amount of manual-looking emphasis for better battlefield orientation.
+- 2026-04-04: Cached map texture planning now exists as a separate rendering-layer utility, so terrain marks are computed once per stage layout change instead of being regenerated inline during every render pass.
+- 2026-04-04: Runtime map texture sampling is now cached through `MapTexturePlanner`, reducing per-frame texture planning work and making the map pass easier to evolve without tangling combat rendering code.
 
 ## Risks
 
@@ -106,3 +118,15 @@ Create the first playable vertical slice and the documentation discipline needed
 - Every current tower now has generated T1/T2/T3 sprite assets, and the runtime selects the matching tier sprite when available.
 - LPC enemy rerendering is no longer blocked by the old inline CLI payload limit, so future art passes can iterate from the generator again instead of only local overlays.
 - High-priority caster and undead targets can now be rerendered independently without forcing a whole-roster export, making iterative art passes much faster.
+- Scout and Shield Infantry now have cleaner production-ready silhouettes, so the next LPC-heavy enemy art work can stay concentrated on higher-value caster and undead targets.
+- One-enemy LPC experiments are now stable, which makes future art A/B testing much cheaper when comparing shield, helm, or body-type variants.
+- The project now has a documented bridge from stage data and environment assets to real in-game map scenes, reducing ambiguity about whether map production is in scope.
+- Tower specialization is now represented visually in runtime art, not only in combat numbers and UI text.
+- Maps are no longer only abstract path lines; they now have the first runtime pass of environment identity using the existing prop and landmark asset batches.
+- Crest stages now have stronger authored map identity instead of relying only on bracket-default decoration templates.
+- Map review is now easier because crest-stage scene previews can be regenerated as a static sheet while iterating on environment placements.
+- Environment production is no longer blocked by missing first-batch slots, so future work can focus on scene polish and bespoke stage composition.
+- Biome identity now comes from ground language as well as props, which reduces the risk that maps feel like recolored variants of the same abstract board.
+- Map texture density is now intentionally uneven, with gameplay-critical lanes and placement zones kept cleaner than decorative dead space.
+- Terrain rendering is now easier to scale because cached map-texture planning separates generation logic from the main combat renderer.
+- Map texture rendering now has a clearer separation between planning and drawing, which lowers risk as future biome rules or crest-stage exceptions are added.

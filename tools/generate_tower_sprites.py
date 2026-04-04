@@ -7,6 +7,15 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "assets" / "sprites" / "towers"
 SIZE = 64
 TIERS = (1, 2, 3)
+BRANCH_VARIANTS = {
+    "archer_tower": ("ranger", "multishot"),
+    "guard_barracks": ("vanguard", "sentinel"),
+    "mage_obelisk": ("storm", "rune"),
+    "frost_shrine": ("glacier", "shatter"),
+    "coin_mill": ("mint", "tribute"),
+    "ballista": ("siege", "harpoon"),
+    "emberkeep": ("inferno", "cinder"),
+}
 
 
 def rgba(hex_value: str, alpha: int = 255):
@@ -66,6 +75,13 @@ def draw_banner(draw, x, y, color, accent):
         outline=OUTLINE,
     )
     draw.line((x + 2, y + 2, x + 8, y + 2), fill=accent)
+
+
+def draw_chain(draw, points, fill, width=1):
+    for index in range(len(points) - 1):
+        draw.line((*points[index], *points[index + 1]), fill=fill, width=width)
+    for x, y in points[1:-1]:
+        draw_ellipse(draw, (x - 1, y - 1, x + 1, y + 1), fill, OUTLINE)
 
 
 def archer_tower(tier):
@@ -270,6 +286,118 @@ def emberkeep(tier):
     return img
 
 
+def apply_branch_variant(base_name, img, tier, branch_id):
+    if tier < 2:
+        return img
+
+    d = ImageDraw.Draw(img)
+
+    if base_name == "archer_tower":
+        if branch_id == "ranger":
+            draw_rect(d, (18, 8, 46, 12), WOOD_LIGHT, WOOD_DARK)
+            d.line((20, 13, 20, 26), fill=WOOD_DARK, width=2)
+            d.line((44, 13, 44, 26), fill=WOOD_DARK, width=2)
+            d.line((19, 18, 45, 18), fill=GOLD_LIGHT, width=1)
+            draw_banner(d, 12, 10, GREEN, GREEN_LIGHT)
+            draw_banner(d, 46, 10, GREEN, GREEN_LIGHT)
+        elif branch_id == "multishot":
+            d.line((15, 28, 9, 34), fill=WOOD_DARK, width=2)
+            d.line((49, 28, 55, 34), fill=WOOD_DARK, width=2)
+            d.arc((8, 28, 17, 38), 250, 70, fill=GOLD_LIGHT, width=2)
+            d.arc((47, 28, 56, 38), 110, 290, fill=GOLD_LIGHT, width=2)
+            draw_rect(d, (25, 18, 39, 22), WOOD_DARK, OUTLINE)
+            d.line((28, 23, 28, 29), fill=WOOD_LIGHT, width=1)
+            d.line((32, 23, 32, 31), fill=WOOD_LIGHT, width=1)
+            d.line((36, 23, 36, 29), fill=WOOD_LIGHT, width=1)
+
+    elif base_name == "guard_barracks":
+        if branch_id == "vanguard":
+            draw_rect(d, (16, 33, 48, 41), STONE_DARK, OUTLINE)
+            draw_polygon(d, [(32, 19), (41, 24), (39, 39), (32, 44), (25, 39), (23, 24)], STONE_LIGHT, OUTLINE)
+            d.line((28, 31, 36, 31), fill=RED_LIGHT)
+            draw_rect(d, (19, 40, 25, 46), STONE, STONE_DARK)
+            draw_rect(d, (39, 40, 45, 46), STONE, STONE_DARK)
+        elif branch_id == "sentinel":
+            draw_rect(d, (10, 29, 54, 33), WOOD_DARK, OUTLINE)
+            d.line((18, 15, 14, 38), fill=IRON_DARK, width=2)
+            d.line((46, 15, 50, 38), fill=IRON_DARK, width=2)
+            d.line((14, 20, 20, 16), fill=IRON, width=2)
+            d.line((50, 20, 44, 16), fill=IRON, width=2)
+            draw_banner(d, 9, 17, RED, RED_LIGHT)
+
+    elif base_name == "mage_obelisk":
+        if branch_id == "storm":
+            draw_polygon(d, [(24, 12), (28, 19), (24, 26), (20, 19)], PURPLE_LIGHT, OUTLINE)
+            draw_polygon(d, [(40, 12), (44, 19), (40, 26), (36, 19)], PURPLE_LIGHT, OUTLINE)
+            d.line((24, 26, 20, 36), fill=PURPLE_LIGHT, width=1)
+            d.line((40, 26, 44, 36), fill=PURPLE_LIGHT, width=1)
+            d.line((23, 19, 18, 15), fill=PURPLE, width=1)
+            d.line((41, 19, 46, 15), fill=PURPLE, width=1)
+        elif branch_id == "rune":
+            draw_rect(d, (18, 37, 46, 43), STONE_LIGHT, STONE_DARK)
+            draw_rect(d, (22, 20, 26, 35), STONE, STONE_DARK)
+            draw_rect(d, (38, 20, 42, 35), STONE, STONE_DARK)
+            d.line((23, 39, 41, 39), fill=PURPLE_LIGHT, width=1)
+            d.line((25, 41, 39, 41), fill=PURPLE, width=1)
+
+    elif base_name == "frost_shrine":
+        if branch_id == "glacier":
+            draw_polygon(d, [(12, 18), (17, 28), (12, 40), (8, 28)], ICE, OUTLINE)
+            draw_polygon(d, [(52, 18), (56, 28), (52, 40), (48, 28)], ICE, OUTLINE)
+            draw_rect(d, (14, 48, 50, 52), STONE_LIGHT, STONE_DARK)
+            d.line((18, 44, 46, 44), fill=BLUE_LIGHT)
+        elif branch_id == "shatter":
+            draw_polygon(d, [(23, 16), (29, 8), (32, 16), (29, 18)], ICE, OUTLINE)
+            draw_polygon(d, [(32, 11), (39, 4), (41, 15), (37, 18)], BLUE_LIGHT, OUTLINE)
+            draw_polygon(d, [(41, 16), (47, 9), (49, 20), (45, 22)], ICE, OUTLINE)
+            d.line((18, 34, 12, 28), fill=ICE, width=2)
+            d.line((46, 34, 52, 28), fill=ICE, width=2)
+
+    elif base_name == "coin_mill":
+        if branch_id == "mint":
+            draw_rect(d, (17, 17, 47, 21), GREEN_LIGHT, OUTLINE)
+            draw_rect(d, (19, 33, 45, 39), WOOD, WOOD_DARK)
+            draw_rect(d, (40, 34, 48, 42), GOLD, OUTLINE)
+            draw_ellipse(d, (42, 36, 46, 40), GOLD_LIGHT, OUTLINE)
+            d.line((24, 10, 40, 10), fill=WOOD_DARK, width=1)
+        elif branch_id == "tribute":
+            draw_banner(d, 12, 14, RED, GOLD_LIGHT)
+            draw_banner(d, 44, 14, RED, GOLD_LIGHT)
+            draw_rect(d, (18, 34, 25, 42), GOLD, OUTLINE)
+            draw_rect(d, (39, 34, 46, 42), GOLD, OUTLINE)
+            d.line((21, 36, 23, 40), fill=GOLD_LIGHT, width=1)
+            d.line((42, 36, 44, 40), fill=GOLD_LIGHT, width=1)
+
+    elif base_name == "ballista":
+        if branch_id == "siege":
+            draw_rect(d, (14, 39, 50, 45), IRON, IRON_DARK)
+            d.polygon([(31, 8), (45, 18), (31, 29), (34, 22), (17, 22), (17, 18), (34, 18)], fill=IRON_DARK, outline=OUTLINE)
+            draw_rect(d, (19, 46, 45, 51), STONE_LIGHT, STONE_DARK)
+            d.line((17, 24, 13, 16), fill=IRON_DARK, width=2)
+            d.line((47, 24, 51, 16), fill=IRON_DARK, width=2)
+        elif branch_id == "harpoon":
+            d.line((31, 12, 49, 12), fill=IRON, width=2)
+            d.line((49, 12, 54, 19), fill=IRON_DARK, width=2)
+            d.line((50, 13, 55, 11), fill=GOLD_LIGHT, width=1)
+            draw_chain(d, [(18, 37), (15, 42), (13, 47)], IRON_DARK, width=1)
+            draw_chain(d, [(46, 37), (49, 42), (51, 47)], IRON_DARK, width=1)
+
+    elif base_name == "emberkeep":
+        if branch_id == "inferno":
+            draw_polygon(d, [(32, 1), (41, 14), (36, 15), (42, 30), (32, 23), (22, 30), (28, 15), (23, 14)], FIRE, OUTLINE)
+            d.line((21, 45, 43, 45), fill=FIRE, width=1)
+            draw_rect(d, (18, 47, 46, 51), STONE_LIGHT, STONE_DARK)
+        elif branch_id == "cinder":
+            draw_rect(d, (24, 14, 40, 18), STONE_DARK, OUTLINE)
+            draw_rect(d, (29, 9, 35, 14), STONE, STONE_DARK)
+            draw_rect(d, (19, 31, 23, 39), STONE_DARK, OUTLINE)
+            draw_rect(d, (41, 31, 45, 39), STONE_DARK, OUTLINE)
+            d.line((23, 32, 18, 28), fill=RED_LIGHT, width=1)
+            d.line((41, 32, 46, 28), fill=RED_LIGHT, width=1)
+
+    return img
+
+
 def save_tiered_series(base_name, renderer):
     tier_one_image = None
     for tier in TIERS:
@@ -277,6 +405,11 @@ def save_tiered_series(base_name, renderer):
         image.save(OUT_DIR / f"{base_name}_t{tier}.png")
         if tier == 1:
             tier_one_image = image
+        if tier >= 2:
+            for branch_id in BRANCH_VARIANTS.get(base_name, ()):
+                branch_image = apply_branch_variant(base_name, image.copy(), tier, branch_id)
+                branch_image.save(OUT_DIR / f"{base_name}_{branch_id}_t{tier}.png")
+                print(f"saved {base_name}_{branch_id}_t{tier}.png")
         print(f"saved {base_name}_t{tier}.png")
     if tier_one_image is not None:
         tier_one_image.save(OUT_DIR / f"{base_name}.png")

@@ -170,7 +170,7 @@ New-Item -ItemType Directory -Force -Path $enemyOutputDir | Out-Null
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
 [IO.File]::WriteAllText(
   $specPath,
-  (@($enemySpecs) | ConvertTo-Json -Depth 8),
+  (ConvertTo-Json -InputObject @($enemySpecs) -Depth 8),
   [Text.UTF8Encoding]::new($false)
 )
 

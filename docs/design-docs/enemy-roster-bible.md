@@ -229,15 +229,15 @@ Reviewed on `2026-04-04` with multi-agent feedback and a local polish pass layer
 
 - `Warlock`: still the most important future LPC regeneration target because late-game enabler status needs an even clearer headpiece and magical focal prop
 - `Cult Adept`: improved, but still wants a more ceremonial support-caster read than a generic robed unit
-- `Shield Infantry`: improved tank read, but future full LPC regeneration should push the centered shield silhouette even harder
 - `Grave Guard`: improved slab and trim read, but should gain even more torso mass in a later pass
-- `Scout`: speed read is better, but still the lightest silhouette polish candidate for a future dedicated rerender
+- `Scout`: speed read is now solid enough for production, but it remains the lightest candidate for a future personality pass if the bandit faction needs more flair
 
 ### Current Production Rule
 
 - Keep the current polished PNG set in use for runtime readability
 - Full LPC regeneration is now unblocked again through the Node-based exporter
 - Use further LPC regeneration later for `Warlock`, `Cult Adept`, and `Grave Guard` first if another silhouette jump is needed
+- Keep the current `Shield Infantry` batch asset unless a future battlefield camera change makes the shield read less prominent
 - Preserve faction palette discipline when rerendering so the campaign still feels coherent
 
 ### Current Third-Pass Outcome
@@ -254,6 +254,21 @@ Current result:
 - `Cult Adept` now reads more like a ritual support unit than a generic robe silhouette
 - `Grave Guard` now keeps a heavier armored-undead tank read while staying distinct from `Corrupted Knight`
 - the current asset pass intentionally pushes `cult_adept` toward ritual-support cues and `warlock` toward late-game caster authority so they do not collapse into one shared robe silhouette
+
+### Current Fourth-Pass Outcome
+
+Reviewed on `2026-04-04` through a focused scout / tank pass with multi-agent input plus local preview review.
+
+Applied to:
+
+- `Scout`
+- `Shield Infantry`
+
+Current result:
+
+- `Scout` now reads more clearly as a fast ranged skirmisher through a lighter teen body silhouette, forest hood, and smaller torso mass
+- `Shield Infantry` now lands cleanly as a shield-first frontline unit through a stronger green kite-shield read and a more disciplined legion-helm profile
+- the current batch is good enough to keep in production without blocking tower or environment art follow-up
 
 ## Current Second-Pass Polish Notes
 

@@ -10,6 +10,7 @@ class SampleCampaign {
   static StageDefinition stage(int number) {
     final safeStage = number.clamp(1, totalStages);
     final biome = _biomeForStage(safeStage);
+    final environmentTheme = _environmentThemeForStage(safeStage);
     final pathTemplate = _pathTemplates[(safeStage - 1) % _pathTemplates.length];
     final slotTemplate = _slotTemplates[(safeStage - 1) % _slotTemplates.length];
     final waveCount = safeStage >= 21 ? 5 : (safeStage >= 6 ? 4 : 3);
@@ -21,8 +22,10 @@ class SampleCampaign {
       description: _stageDescription(safeStage, biome),
       startingCoins: 170 + (safeStage * 10),
       baseHealth: math.max(12, 20 - ((safeStage - 1) ~/ 6)),
+      environmentTheme: environmentTheme,
       pathNodes: pathTemplate,
       buildSlots: slotTemplate,
+      decorations: _decorationsForStage(safeStage, environmentTheme),
       objectives: _objectivesForStage(safeStage),
       unlockRequirements: _unlockRequirementsForStage(safeStage),
       waves: List.generate(
@@ -325,6 +328,25 @@ class SampleCampaign {
     }
   }
 
+  static StageEnvironmentTheme _environmentThemeForStage(int stage) {
+    if (stage <= 5) {
+      return StageEnvironmentTheme.frontierRoad;
+    }
+    if (stage <= 10) {
+      return StageEnvironmentTheme.banditCrossroads;
+    }
+    if (stage <= 15) {
+      return StageEnvironmentTheme.graveFields;
+    }
+    if (stage <= 20) {
+      return StageEnvironmentTheme.cursedChapel;
+    }
+    if (stage <= 25) {
+      return StageEnvironmentTheme.bastionApproach;
+    }
+    return StageEnvironmentTheme.throneMarch;
+  }
+
   static _BiomeProfile _biomeForStage(int stage) {
     if (stage <= 8) {
       return const _BiomeProfile(
@@ -517,6 +539,155 @@ class SampleCampaign {
     }
 
     return requirements;
+  }
+
+  static List<StageDecorationDefinition> _decorationsForStage(
+    int stage,
+    StageEnvironmentTheme theme,
+  ) {
+    if (stage == 30 || stage % 5 == 0) {
+      return _crestDecorationsForStage(stage, theme);
+    }
+
+    final variant = (stage - 1) % 3;
+
+    switch (theme) {
+      case StageEnvironmentTheme.frontierRoad:
+        return [
+          _dec('assets/sprites/environment/props/road_signpost.png', 0.09, variant == 0 ? 0.17 : 0.22, scale: 0.86),
+          _dec('assets/sprites/environment/props/wooden_fence_segment.png', 0.11, 0.83, scale: 1.0),
+          _dec('assets/sprites/environment/props/well.png', 0.84, 0.18, scale: 0.92),
+          _dec('assets/sprites/environment/props/wagon_wreck.png', 0.88, 0.82, scale: 1.08),
+          if (variant == 2)
+            _dec('assets/sprites/environment/landmarks/watch_post.png', 0.56, 0.15, scale: 1.18),
+        ];
+      case StageEnvironmentTheme.banditCrossroads:
+        return [
+          _dec('assets/sprites/environment/props/spike_barricade.png', 0.10, 0.18, scale: 1.0),
+          _dec('assets/sprites/environment/props/wagon_wreck.png', 0.14, 0.84, scale: 1.04),
+          _dec('assets/sprites/environment/props/campfire.png', 0.85, variant == 1 ? 0.21 : 0.17, scale: 0.92),
+          _dec('assets/sprites/environment/props/supply_crate.png', 0.88, 0.79, scale: 0.84),
+          if (variant == 2)
+            _dec('assets/sprites/environment/landmarks/checkpoint_tower.png', 0.58, 0.15, scale: 1.22),
+        ];
+      case StageEnvironmentTheme.graveFields:
+        return [
+          _dec('assets/sprites/environment/props/grave_marker_tall.png', 0.09, 0.18, scale: 0.98),
+          _dec('assets/sprites/environment/props/dead_tree_twisted.png', 0.12, 0.83, scale: 1.04),
+          _dec('assets/sprites/environment/props/broken_coffin.png', 0.88, 0.18, scale: 0.92),
+          _dec('assets/sprites/environment/props/candle_cluster.png', 0.90, 0.82, scale: 0.94),
+          if (variant == 1)
+            _dec('assets/sprites/environment/landmarks/cemetery_statue.png', 0.57, 0.16, scale: 1.18),
+        ];
+      case StageEnvironmentTheme.cursedChapel:
+        return [
+          if (variant == 0)
+            _dec('assets/sprites/environment/landmarks/ritual_arch.png', 0.57, 0.15, scale: 1.16),
+          _dec('assets/sprites/environment/props/chapel_rubble.png', 0.10, 0.18, scale: 1.0),
+          _dec('assets/sprites/environment/props/ward_stone.png', 0.13, 0.84, scale: 1.02),
+          _dec('assets/sprites/environment/props/dead_tree_twisted.png', 0.88, 0.17, scale: 1.0),
+          _dec('assets/sprites/environment/props/brazier_stand.png', 0.89, 0.83, scale: 0.92),
+        ];
+      case StageEnvironmentTheme.bastionApproach:
+        return [
+          _dec('assets/sprites/environment/props/fort_wall_breach.png', 0.11, 0.18, scale: 1.02),
+          _dec('assets/sprites/environment/props/spear_rack.png', 0.13, 0.84, scale: 0.96),
+          _dec('assets/sprites/environment/props/siege_crate.png', 0.87, 0.18, scale: 0.92),
+          _dec('assets/sprites/environment/props/brazier_stand.png', 0.90, 0.82, scale: 0.96),
+          if (variant == 1)
+            _dec('assets/sprites/environment/landmarks/gate_ruin.png', 0.57, 0.15, scale: 1.22),
+        ];
+      case StageEnvironmentTheme.throneMarch:
+        return [
+          if (variant == 2)
+            _dec('assets/sprites/environment/landmarks/throne_road_monument.png', 0.58, 0.15, scale: 1.18),
+          _dec('assets/sprites/environment/props/chain_post_heavy.png', 0.10, 0.17, scale: 1.0),
+          _dec('assets/sprites/environment/props/brazier_large.png', 0.12, 0.84, scale: 1.02),
+          _dec('assets/sprites/environment/props/obsidian_stake.png', 0.87, 0.18, scale: 0.96),
+          _dec('assets/sprites/environment/props/ember_pile.png', 0.90, 0.83, scale: 1.0),
+        ];
+    }
+  }
+
+  static List<StageDecorationDefinition> _crestDecorationsForStage(
+    int stage,
+    StageEnvironmentTheme theme,
+  ) {
+    switch (stage) {
+      case 5:
+        return [
+          _dec('assets/sprites/environment/landmarks/village_gate.png', 0.55, 0.14, scale: 1.38),
+          _dec('assets/sprites/environment/props/wagon_wreck.png', 0.10, 0.20, scale: 0.98),
+          _dec('assets/sprites/environment/props/wooden_fence_segment.png', 0.16, 0.82, scale: 0.98),
+          _dec('assets/sprites/environment/props/road_signpost.png', 0.77, 0.20, scale: 0.85),
+          _dec('assets/sprites/environment/props/well.png', 0.86, 0.79, scale: 0.94),
+          _dec('assets/sprites/environment/props/wooden_fence_segment.png', 0.93, 0.92, scale: 1.04, opacity: 0.95, layer: StageDecorationLayer.foreground),
+        ];
+      case 10:
+        return [
+          _dec('assets/sprites/environment/landmarks/bandit_stockade.png', 0.56, 0.15, scale: 1.42),
+          _dec('assets/sprites/environment/props/spike_barricade.png', 0.10, 0.20, scale: 0.98),
+          _dec('assets/sprites/environment/props/campfire.png', 0.17, 0.80, scale: 0.95),
+          _dec('assets/sprites/environment/props/supply_crate.png', 0.78, 0.25, scale: 0.95),
+          _dec('assets/sprites/environment/props/road_signpost.png', 0.89, 0.72, scale: 0.85),
+          _dec('assets/sprites/environment/props/spike_barricade.png', 0.93, 0.90, scale: 1.02, opacity: 0.95, layer: StageDecorationLayer.foreground),
+        ];
+      case 15:
+        return [
+          _dec('assets/sprites/environment/landmarks/mausoleum_gate.png', 0.55, 0.14, scale: 1.42),
+          _dec('assets/sprites/environment/props/broken_coffin.png', 0.14, 0.23, scale: 0.96),
+          _dec('assets/sprites/environment/props/dead_tree_twisted.png', 0.19, 0.79, scale: 1.0),
+          _dec('assets/sprites/environment/props/bone_pile.png', 0.77, 0.22, scale: 0.92),
+          _dec('assets/sprites/environment/props/candle_cluster.png', 0.88, 0.76, scale: 0.9),
+          _dec('assets/sprites/environment/props/grave_marker_tall.png', 0.93, 0.90, scale: 1.0, opacity: 0.94, layer: StageDecorationLayer.foreground),
+        ];
+      case 20:
+        return [
+          _dec('assets/sprites/environment/landmarks/cursed_chapel_front.png', 0.55, 0.14, scale: 1.46),
+          _dec('assets/sprites/environment/landmarks/ritual_arch.png', 0.15, 0.77, scale: 1.08),
+          _dec('assets/sprites/environment/props/brazier_stand.png', 0.20, 0.24, scale: 0.92),
+          _dec('assets/sprites/environment/props/chapel_rubble.png', 0.79, 0.24, scale: 0.95),
+          _dec('assets/sprites/environment/props/ward_stone.png', 0.88, 0.79, scale: 0.94),
+          _dec('assets/sprites/environment/props/candle_cluster.png', 0.92, 0.90, scale: 0.98, opacity: 0.95, layer: StageDecorationLayer.foreground),
+        ];
+      case 25:
+        return [
+          _dec('assets/sprites/environment/landmarks/bastion_wall_chunk.png', 0.55, 0.14, scale: 1.5),
+          _dec('assets/sprites/environment/props/fort_wall_breach.png', 0.11, 0.22, scale: 0.98),
+          _dec('assets/sprites/environment/props/siege_crate.png', 0.18, 0.79, scale: 0.96),
+          _dec('assets/sprites/environment/props/spear_rack.png', 0.79, 0.23, scale: 0.95),
+          _dec('assets/sprites/environment/props/brazier_stand.png', 0.89, 0.76, scale: 0.94),
+          _dec('assets/sprites/environment/props/chain_post.png', 0.93, 0.90, scale: 1.0, opacity: 0.95, layer: StageDecorationLayer.foreground),
+        ];
+      case 30:
+        return [
+          _dec('assets/sprites/environment/landmarks/infernal_gate.png', 0.55, 0.13, scale: 1.52),
+          _dec('assets/sprites/environment/landmarks/throne_road_monument.png', 0.18, 0.76, scale: 1.12),
+          _dec('assets/sprites/environment/props/chain_post_heavy.png', 0.10, 0.21, scale: 0.98),
+          _dec('assets/sprites/environment/props/obsidian_stake.png', 0.80, 0.21, scale: 0.95),
+          _dec('assets/sprites/environment/props/ember_pile.png', 0.90, 0.78, scale: 1.0),
+          _dec('assets/sprites/environment/props/chain_post_heavy.png', 0.93, 0.90, scale: 1.02, opacity: 0.96, layer: StageDecorationLayer.foreground),
+        ];
+      default:
+        return _decorationsForStage(stage, theme);
+    }
+  }
+
+  static StageDecorationDefinition _dec(
+    String assetPath,
+    double x,
+    double y, {
+    double scale = 1.0,
+    double opacity = 1.0,
+    StageDecorationLayer layer = StageDecorationLayer.background,
+  }) {
+    return StageDecorationDefinition(
+      assetPath: assetPath,
+      position: Offset(x, y),
+      scale: scale,
+      opacity: opacity,
+      layer: layer,
+    );
   }
 
   static const List<List<Offset>> _pathTemplates = [

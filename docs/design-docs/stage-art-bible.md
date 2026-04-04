@@ -184,11 +184,65 @@ Every stage should define:
 
 - one ground palette family
 - one path edge treatment
+- one cheap ground motif family
 - one landmark prop family
 - one secondary clutter family
 - one banner, crystal, fire, or ritual accent
 
 Avoid mixing two strong landmark families in the same stage unless it is a boss or crest stage.
+
+## Ground Motif Language By Bracket
+
+Ground motifs should support the lane, not compete with it.
+
+Anchor emphasis rule:
+
+- spawn area should read slightly more worn and directional than the middle of the lane
+- core approach should be cleaner, more legible, and slightly more intentional than the rest of the map
+- large bends should get stronger texture on the outer edge, not the apex
+- large props and landmarks should own their silhouette with quieter terrain directly around them
+
+### Frontier Road
+
+- packed dirt bands
+- wagon-rut ovals
+- tiny pebble dots
+- light grass-edge tufts
+
+### Bandit Crossroads
+
+- trampled mud patches
+- fork scuffs
+- plank chips
+- harsher road-edge wear
+
+### Grave Fields
+
+- cold soil mottling
+- shallow sink patches
+- dead-weed specks
+- flat grave-stone chips
+
+### Cursed Chapel Belt
+
+- cracked slab seams
+- soot smears
+- tiny wax or stain pools
+- restrained rune residue at the edges only
+
+### Bastion Approach
+
+- worn block seams
+- rubble fans
+- metal patch plates
+- directional military scuffs
+
+### Throne March
+
+- obsidian plate seams
+- ember dust
+- narrow corruption veins
+- soft scorch borders
 
 ## Crest Stage Rule
 
@@ -202,6 +256,12 @@ Examples:
 - Stage 20: cursed chapel ruins
 - Stage 25: broken bastion wall segment
 - Stage 30: infernal gate, braziers, throne-road motifs
+
+Current production note:
+
+- these six crest stages now have dedicated stage-level decoration layouts in campaign data
+- future environment work should preserve their authored identity instead of collapsing them back into bracket-generic scenes
+- crest-stage preview sheets can now be generated to compare composition consistency before runtime tuning
 
 ## Asset Priority Rule
 

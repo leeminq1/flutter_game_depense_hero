@@ -125,6 +125,22 @@ class TowerVisualCatalog {
     final suffix = visual.assetPath.substring(dotIndex);
     return '${prefix}_t$tier$suffix';
   }
+
+  static String branchTierAssetPath(
+    TowerKind kind,
+    int level,
+    String branchId,
+  ) {
+    final visual = byKind(kind);
+    final tier = level.clamp(1, maxTier);
+    final dotIndex = visual.assetPath.lastIndexOf('.');
+    if (dotIndex == -1) {
+      return '${visual.assetPath}_${branchId}_t$tier';
+    }
+    final prefix = visual.assetPath.substring(0, dotIndex);
+    final suffix = visual.assetPath.substring(dotIndex);
+    return '${prefix}_${branchId}_t$tier$suffix';
+  }
 }
 
 class BarracksDefenderVisualCatalog {

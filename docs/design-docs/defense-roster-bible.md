@@ -50,6 +50,9 @@ Visual implications:
   - T1: simple field tower with one banner
   - T2: reinforced upper deck and clearer bow housing
   - T3: taller platform, stronger trim, elite marksman silhouette
+- Current branch sprite direction:
+  - `Ranger`: taller watchpost with twin banners and a stronger vertical sentry read
+  - `Multishot`: wider firing deck with side bow arms and denser volley gear
 
 ### Guard Barracks
 
@@ -68,6 +71,9 @@ Visual implications:
   - T1: modest field barracks
   - T2: reinforced roof and shield plating
   - T3: command-post feel with larger crest and sturdier stone base
+- Current branch sprite direction:
+  - `Vanguard`: heavier shield-front gatehouse and thicker plated facade
+  - `Sentinel`: longer outpost feel with wider guard platform and polearm cues
 
 ### Mage Obelisk
 
@@ -86,6 +92,9 @@ Visual implications:
   - T1: compact obelisk
   - T2: wider rune base and brighter side channels
   - T3: taller crystal crown and stronger magical frame
+- Current branch sprite direction:
+  - `Storm`: split crystal crown and branching side rods
+  - `Rune`: thicker monolith with heavier rune-slab framing
 
 ### Frost Shrine
 
@@ -104,6 +113,9 @@ Visual implications:
   - T1: simple shrine base
   - T2: stronger side crystals and ritual banding
   - T3: larger ice crown and pronounced sacred platform
+- Current branch sprite direction:
+  - `Glacier`: broader shrine with larger side ice pillars
+  - `Shatter`: sharper spear-ice crown and more aggressive crystal accents
 
 ### Coin Mill
 
@@ -122,6 +134,9 @@ Visual implications:
   - T1: simple cottage with coin mark
   - T2: larger mill arm and reinforced workshop body
   - T3: richer merchant-house look with stronger gold signage
+- Current branch sprite direction:
+  - `Mint`: taller workshop with clearer coin signage and storehouse feel
+  - `Tribute`: more ceremonial tax-house silhouette with banners and gold markers
 
 ### Ballista
 
@@ -141,6 +156,9 @@ Visual implications:
   - T1: field ballista
   - T2: sturdier frame and metal reinforcement
   - T3: elite siege emplacement with larger bow arm and plated base
+- Current branch sprite direction:
+  - `Siege`: bulkier siege bed with armored braces and heavier front arm
+  - `Harpoon`: slimmer launcher silhouette with hook-tip and chain support read
 
 ### Emberkeep
 
@@ -160,6 +178,15 @@ Visual implications:
   - T1: compact ember keep
   - T2: hotter flame core and reinforced walls
   - T3: larger infernal crown and heavier stone body
+- Current branch sprite direction:
+  - `Inferno`: expanded brazier mouth and taller flame plume
+  - `Cinder`: lower furnace silhouette with chimney and ember vents
+
+## Current Runtime Art Rule
+
+- generic `T1/T2/T3` tower sprites remain the default fallback path
+- when a branch is chosen, `T2/T3` now prefer branch-specific sprite files if present
+- branch art should strengthen silhouette and role clarity first, and color differences second
 
 ## Summoned Defenders
 

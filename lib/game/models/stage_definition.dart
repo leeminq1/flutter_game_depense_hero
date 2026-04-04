@@ -2,6 +2,20 @@ import 'dart:ui';
 
 import 'package:depense_game/game/models/enemy_definition.dart';
 
+enum StageEnvironmentTheme {
+  frontierRoad,
+  banditCrossroads,
+  graveFields,
+  cursedChapel,
+  bastionApproach,
+  throneMarch,
+}
+
+enum StageDecorationLayer {
+  background,
+  foreground,
+}
+
 enum StageObjectiveType {
   clearStage,
   keepBaseHealth,
@@ -84,6 +98,22 @@ class StageEvaluationResult {
   final List<StageObjectiveResult> objectiveResults;
 }
 
+class StageDecorationDefinition {
+  const StageDecorationDefinition({
+    required this.assetPath,
+    required this.position,
+    this.scale = 1.0,
+    this.opacity = 1.0,
+    this.layer = StageDecorationLayer.background,
+  });
+
+  final String assetPath;
+  final Offset position;
+  final double scale;
+  final double opacity;
+  final StageDecorationLayer layer;
+}
+
 class StageDefinition {
   const StageDefinition({
     required this.number,
@@ -91,10 +121,12 @@ class StageDefinition {
     required this.description,
     required this.startingCoins,
     required this.baseHealth,
+    required this.environmentTheme,
     required this.pathNodes,
     required this.buildSlots,
     required this.waves,
     required this.objectives,
+    this.decorations = const [],
     this.unlockRequirements = const [],
     this.slotTapRadius = 28,
   });
@@ -104,10 +136,12 @@ class StageDefinition {
   final String description;
   final int startingCoins;
   final int baseHealth;
+  final StageEnvironmentTheme environmentTheme;
   final List<Offset> pathNodes;
   final List<Offset> buildSlots;
   final List<WaveDefinition> waves;
   final List<StageObjectiveDefinition> objectives;
+  final List<StageDecorationDefinition> decorations;
   final List<StageUnlockRequirement> unlockRequirements;
   final double slotTapRadius;
 

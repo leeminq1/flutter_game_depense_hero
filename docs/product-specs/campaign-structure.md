@@ -110,6 +110,12 @@ Use those multipliers to derive:
 - The game should stay readable while the player is placing during combat.
 - Placement UI must remain fast and low-friction on mobile.
 
+## Map Presentation Rule
+
+- Stages now carry environment bracket themes in addition to wave and path data.
+- Decorative props and landmarks should support stage identity without obscuring path readability or build-slot clarity.
+- Crest stages should receive stronger landmark presence than ordinary stages in the same bracket.
+
 ## Buildable Content Categories
 
 - Damage towers
