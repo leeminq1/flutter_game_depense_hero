@@ -35,6 +35,7 @@ class GameSettingsRecord {
   late double musicVolume;
   late double sfxVolume;
   late bool muted;
+  late bool tutorialDismissed;
 }
 
 @collection

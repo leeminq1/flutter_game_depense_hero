@@ -54,7 +54,8 @@ class LocalProgressStore {
           ..masterVolume = 0.85
           ..musicVolume = 0.55
           ..sfxVolume = 0.90
-          ..muted = false,
+          ..muted = false
+          ..tutorialDismissed = false,
       );
 
       await isar.stageProgressRecords.put(
@@ -76,7 +77,8 @@ class LocalProgressStore {
       ..masterVolume = 0.85
       ..musicVolume = 0.55
       ..sfxVolume = 0.90
-      ..muted = false;
+      ..muted = false
+      ..tutorialDismissed = false;
 
     await isar.writeTxn(() async {
       await isar.gameSettingsRecords.put(fallback);
@@ -86,6 +88,7 @@ class LocalProgressStore {
   }
 
   Future<void> saveAudioSettings(AudioSettingsController controller) async {
+    final existing = await loadOrCreateSettings();
     await isar.writeTxn(() async {
       await isar.gameSettingsRecords.put(
         GameSettingsRecord()
@@ -93,19 +96,38 @@ class LocalProgressStore {
           ..masterVolume = controller.masterVolume
           ..musicVolume = controller.musicVolume
           ..sfxVolume = controller.sfxVolume
-          ..muted = controller.muted,
+          ..muted = controller.muted
+          ..tutorialDismissed = existing.tutorialDismissed,
       );
     });
   }
 
-  Future<CampaignOverview> loadCampaignOverview({required int totalStages}) async {
+  Future<bool> isTutorialDismissed() async {
+    final settings = await loadOrCreateSettings();
+    return settings.tutorialDismissed;
+  }
+
+  Future<void> setTutorialDismissed(bool dismissed) async {
+    final settings = await loadOrCreateSettings();
+    settings.tutorialDismissed = dismissed;
+    await isar.writeTxn(() async {
+      await isar.gameSettingsRecords.put(settings);
+    });
+  }
+
+  Future<CampaignOverview> loadCampaignOverview({
+    required int totalStages,
+  }) async {
     final profile = await _loadOrCreateProfile();
     final allRecords = await isar.stageProgressRecords.where().findAll();
     final byStage = {
       for (final record in allRecords) record.stageNumber: record,
     };
     final metaUpgrades = await _loadMetaUpgrades();
-    final totalStars = allRecords.fold<int>(0, (sum, record) => sum + record.stars);
+    final totalStars = allRecords.fold<int>(
+      0,
+      (sum, record) => sum + record.stars,
+    );
 
     final stages = List<StageProgressSnapshot>.generate(totalStages, (index) {
       final stageNumber = index + 1;
@@ -123,9 +145,12 @@ class LocalProgressStore {
         stars: record?.stars ?? 0,
         cleared: (record?.stars ?? 0) > 0,
         description: definition.description,
-        objectives: definition.objectives.map((objective) => objective.label).toList(),
-        unlockRequirementLabels:
-            definition.unlockRequirements.map((requirement) => requirement.label).toList(),
+        objectives: definition.objectives
+            .map((objective) => objective.label)
+            .toList(),
+        unlockRequirementLabels: definition.unlockRequirements
+            .map((requirement) => requirement.label)
+            .toList(),
         lockReason: unlockCheck.lockReason,
       );
     });
@@ -150,8 +175,38 @@ class LocalProgressStore {
     final starsAwarded = evaluation.starsAwarded;
     final xpAwarded = (stageNumber * 12) + (starsAwarded * 8);
     final metaEffects = await loadResolvedMetaUpgrades();
+    final existingRecord = await isar.stageProgressRecords
+        .filter()
+        .stageNumberEqualTo(stageNumber)
+        .findFirst();
+    final previousStars = existingRecord?.stars ?? 0;
+    final isFirstClear = existingRecord?.firstClearedAt == null;
+    final newStarsEarned = (starsAwarded - previousStars).clamp(0, 3);
+    final stageBandRewardMultiplier = switch (stageNumber) {
+      >= 6 && <= 10 => 1.12,
+      >= 11 && <= 15 => 1.16,
+      >= 16 && <= 20 => 1.20,
+      >= 21 && <= 25 => 1.24,
+      >= 26 && <= 30 => 1.28,
+      _ => 1.0,
+    };
+    final baseSoftCurrencyAwarded =
+        (((stageNumber * 18) + (starsAwarded * 7)) *
+                metaEffects.stageRewardMultiplier *
+                stageBandRewardMultiplier)
+            .round();
+    final firstClearBonusAwarded = isFirstClear ? 18 + (stageNumber * 4) : 0;
+    final starUpgradeBonusAwarded = newStarsEarned > 0
+        ? newStarsEarned * (6 + (stageNumber ~/ 3))
+        : 0;
+    final crestBonusAwarded = isFirstClear && stageNumber % 5 == 0
+        ? 30 + (stageNumber * 3)
+        : 0;
     final softCurrencyAwarded =
-        (((stageNumber * 18) + (starsAwarded * 7)) * metaEffects.stageRewardMultiplier).round();
+        baseSoftCurrencyAwarded +
+        firstClearBonusAwarded +
+        starUpgradeBonusAwarded +
+        crestBonusAwarded;
 
     int totalStars = starsAwarded;
 
@@ -163,19 +218,14 @@ class LocalProgressStore {
       profile.accountLevel = 1 + (profile.totalXp ~/ 150);
       await isar.playerProfiles.put(profile);
 
-      final existing = await isar.stageProgressRecords
-          .filter()
-          .stageNumberEqualTo(stageNumber)
-          .findFirst();
-
-      final record = existing ?? (StageProgressRecord()..stageNumber = stageNumber);
+      final record =
+          existingRecord ?? (StageProgressRecord()..stageNumber = stageNumber);
       record.unlocked = true;
       record.stars = starsAwarded > record.stars ? starsAwarded : record.stars;
       record.firstClearedAt ??= DateTime.now();
       record.lastClearedAt = DateTime.now();
       totalStars = record.stars;
       await isar.stageProgressRecords.put(record);
-
     });
 
     int? unlockedNextStage;
@@ -184,7 +234,10 @@ class LocalProgressStore {
       final byStage = {
         for (final record in allRecords) record.stageNumber: record,
       };
-      final totalAccumulatedStars = allRecords.fold<int>(0, (sum, record) => sum + record.stars);
+      final totalAccumulatedStars = allRecords.fold<int>(
+        0,
+        (sum, record) => sum + record.stars,
+      );
       final metaUpgrades = await _loadMetaUpgrades();
       final nextStage = SampleCampaign.stage(stageNumber + 1);
       final unlocked = _checkStageUnlocked(
@@ -203,6 +256,10 @@ class LocalProgressStore {
       starsAwarded: starsAwarded,
       totalStars: totalStars,
       xpAwarded: xpAwarded,
+      baseSoftCurrencyAwarded: baseSoftCurrencyAwarded,
+      firstClearBonusAwarded: firstClearBonusAwarded,
+      starUpgradeBonusAwarded: starUpgradeBonusAwarded,
+      crestBonusAwarded: crestBonusAwarded,
       softCurrencyAwarded: softCurrencyAwarded,
       unlockedNextStage: unlockedNextStage,
       objectives: [
@@ -220,7 +277,10 @@ class LocalProgressStore {
     required int amount,
   }) async {
     final claimKey = 'stage_bonus_$stageNumber';
-    final existing = await isar.rewardClaimRecords.filter().claimKeyEqualTo(claimKey).findFirst();
+    final existing = await isar.rewardClaimRecords
+        .filter()
+        .claimKeyEqualTo(claimKey)
+        .findFirst();
     if (existing != null) {
       final profile = await _loadOrCreateProfile();
       return RewardClaimResult(
@@ -264,16 +324,11 @@ class LocalProgressStore {
 
   Future<List<MetaUpgradeSnapshot>> _loadMetaUpgrades() async {
     final records = await isar.upgradeNodeRecords.where().findAll();
-    final byId = {
-      for (final record in records) record.nodeId: record.level,
-    };
+    final byId = {for (final record in records) record.nodeId: record.level};
 
     return [
       for (final definition in MetaUpgradeCatalog.upgrades)
-        MetaUpgradeSnapshot(
-          id: definition.id,
-          level: byId[definition.id] ?? 0,
-        ),
+        MetaUpgradeSnapshot(id: definition.id, level: byId[definition.id] ?? 0),
     ];
   }
 
@@ -284,7 +339,10 @@ class LocalProgressStore {
 
   Future<MetaUpgradePurchaseResult> purchaseMetaUpgrade(String nodeId) async {
     final definition = MetaUpgradeCatalog.byId(nodeId);
-    final existing = await isar.upgradeNodeRecords.filter().nodeIdEqualTo(nodeId).findFirst();
+    final existing = await isar.upgradeNodeRecords
+        .filter()
+        .nodeIdEqualTo(nodeId)
+        .findFirst();
     final currentLevel = existing?.level ?? 0;
 
     if (currentLevel >= definition.maxLevel) {
@@ -410,10 +468,7 @@ class LocalProgressStore {
 }
 
 class _UnlockCheck {
-  const _UnlockCheck({
-    required this.unlocked,
-    required this.lockReason,
-  });
+  const _UnlockCheck({required this.unlocked, required this.lockReason});
 
   final bool unlocked;
   final String? lockReason;

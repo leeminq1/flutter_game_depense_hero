@@ -15,9 +15,6 @@
 - `assets/audio/sfx/ui/select_primary.ogg`
 - `assets/audio/sfx/ui/confirm_primary.ogg`
 - `assets/audio/sfx/ui/error_primary.ogg`
-- `assets/audio/sfx/ui/back_primary.ogg`
-- `assets/audio/sfx/ui/panel_open.ogg`
-- `assets/audio/sfx/ui/panel_close.ogg`
 
 ### Build
 
@@ -38,7 +35,6 @@
 - `assets/audio/sfx/combat/hit_magic_02.ogg`
 - `assets/audio/sfx/combat/projectile_slice_01.ogg`
 - `assets/audio/sfx/combat/projectile_slice_02.ogg`
-- `assets/audio/sfx/combat/projectile_chop_01.ogg`
 - `assets/audio/sfx/combat/enemy_death_elite_01.ogg`
 
 ### Economy And Progression
@@ -61,6 +57,7 @@
 - tower placement and upgrade cues
 - light and heavy impact families
 - reward and result jingles
+- current bundled files are trimmed to sounds referenced by `AudioCatalog`
 
 ## Missing Or Weak Categories
 

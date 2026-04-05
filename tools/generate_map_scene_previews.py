@@ -40,6 +40,7 @@ PATH_COLORS = {
 
 CREST_STAGES = [
     {
+        "number": 5,
         "label": "Stage 5",
         "theme": "frontier",
         "path": [(0.03, 0.68), (0.23, 0.68), (0.23, 0.32), (0.49, 0.32), (0.49, 0.72), (0.75, 0.72), (0.75, 0.44), (0.95, 0.44)],
@@ -54,6 +55,7 @@ CREST_STAGES = [
         ],
     },
     {
+        "number": 10,
         "label": "Stage 10",
         "theme": "bandit",
         "path": [(0.03, 0.38), (0.18, 0.38), (0.18, 0.74), (0.40, 0.74), (0.40, 0.24), (0.67, 0.24), (0.67, 0.70), (0.95, 0.70)],
@@ -68,6 +70,7 @@ CREST_STAGES = [
         ],
     },
     {
+        "number": 15,
         "label": "Stage 15",
         "theme": "grave",
         "path": [(0.05, 0.22), (0.28, 0.22), (0.28, 0.75), (0.55, 0.75), (0.55, 0.35), (0.82, 0.35), (0.82, 0.65), (0.95, 0.65)],
@@ -82,6 +85,7 @@ CREST_STAGES = [
         ],
     },
     {
+        "number": 20,
         "label": "Stage 20",
         "theme": "chapel",
         "path": [(0.04, 0.58), (0.20, 0.58), (0.20, 0.86), (0.52, 0.86), (0.52, 0.18), (0.78, 0.18), (0.78, 0.55), (0.96, 0.55)],
@@ -96,6 +100,7 @@ CREST_STAGES = [
         ],
     },
     {
+        "number": 25,
         "label": "Stage 25",
         "theme": "bastion",
         "path": [(0.02, 0.48), (0.18, 0.48), (0.18, 0.18), (0.45, 0.18), (0.45, 0.82), (0.72, 0.82), (0.72, 0.28), (0.97, 0.28)],
@@ -110,6 +115,7 @@ CREST_STAGES = [
         ],
     },
     {
+        "number": 30,
         "label": "Stage 30",
         "theme": "throne",
         "path": [(0.03, 0.68), (0.23, 0.68), (0.23, 0.32), (0.49, 0.32), (0.49, 0.72), (0.75, 0.72), (0.75, 0.44), (0.95, 0.44)],
@@ -247,6 +253,34 @@ def draw_anchor_cluster(draw, theme, center):
         draw.ellipse((px - 11, py + 4, px - 8, py + 7), fill=detail)
 
 
+def draw_crest_overlay(draw, config):
+    label = config["label"]
+    path = config["path"]
+    scaled = [(x * CELL_W, y * CELL_H) for x, y in path]
+    mid = scaled[len(scaled) // 2]
+    late = scaled[(len(scaled) * 3) // 4]
+    if label == "Stage 5":
+        draw.ellipse((mid[0] - 35, mid[1] - 12, mid[0] - 1, mid[1]), fill=(111, 90, 52, 63))
+        draw.ellipse((mid[0] + 4, mid[1] + 1, mid[0] + 16, mid[1] + 7), fill=(227, 203, 147, 68))
+    elif label == "Stage 10":
+        draw.rectangle((mid[0] + 3, mid[1] - 14, mid[0] + 29, mid[1] - 6), fill=(89, 59, 36, 69))
+        draw.rectangle((late[0] - 13, late[1] + 5, late[0] - 3, late[1] + 8), fill=(217, 183, 126, 68))
+    elif label == "Stage 15":
+        draw.ellipse((mid[0] - 20, mid[1], mid[0] - 4, mid[1] + 16), fill=(79, 94, 87, 63))
+        draw.rectangle((late[0] + 1, late[1] - 7, late[0] + 15, late[1] - 5), fill=(183, 196, 184, 68))
+    elif label == "Stage 20":
+        draw.rounded_rectangle((mid[0] + 8, mid[1] - 2, mid[0] + 28, mid[1] + 6), radius=4, fill=(106, 75, 136, 74))
+        draw.ellipse((late[0] - 13, late[1] - 11, late[0] - 7, late[1] - 5), fill=(207, 170, 245, 68))
+        draw.ellipse((late[0] - 5, late[1] - 5, late[0] - 1, late[1] - 1), fill=(138, 99, 216, 51))
+    elif label == "Stage 25":
+        draw.rectangle((mid[0] - 35, mid[1] - 5, mid[0] - 5, mid[1] + 5), fill=(75, 79, 88, 70))
+        draw.rectangle((late[0] + 6, late[1] + 5, late[0] + 18, late[1] + 7), fill=(205, 195, 181, 68))
+    elif label == "Stage 30":
+        draw.ellipse((mid[0], mid[1] - 9, mid[0] + 28, mid[1] + 1), fill=(91, 43, 30, 74))
+        draw.ellipse((late[0] - 17, late[1] + 3, late[0] - 11, late[1] + 9), fill=(255, 147, 78, 68))
+        draw.ellipse((late[0] - 8, late[1] - 1, late[0] - 4, late[1] + 3), fill=(255, 108, 59, 51))
+
+
 def draw_path(draw, points, theme, config):
     scaled = [(x * CELL_W, y * CELL_H) for x, y in points]
     palette = PATH_COLORS[theme]
@@ -280,6 +314,7 @@ def draw_path(draw, points, theme, config):
         if is_texture_suppressed(bend[0], bend[1], config, padding=8):
             continue
         draw_anchor_cluster(draw, theme, bend)
+    draw_crest_overlay(draw, config)
 
 
 def draw_slots(draw, points):

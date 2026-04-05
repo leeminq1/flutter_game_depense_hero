@@ -1,8 +1,5 @@
 class MetaUpgradeSnapshot {
-  const MetaUpgradeSnapshot({
-    required this.id,
-    required this.level,
-  });
+  const MetaUpgradeSnapshot({required this.id, required this.level});
 
   final String id;
   final int level;
@@ -62,6 +59,10 @@ class StageCompletionResult {
     required this.starsAwarded,
     required this.totalStars,
     required this.xpAwarded,
+    required this.baseSoftCurrencyAwarded,
+    required this.firstClearBonusAwarded,
+    required this.starUpgradeBonusAwarded,
+    required this.crestBonusAwarded,
     required this.softCurrencyAwarded,
     required this.unlockedNextStage,
     required this.objectives,
@@ -71,6 +72,10 @@ class StageCompletionResult {
   final int starsAwarded;
   final int totalStars;
   final int xpAwarded;
+  final int baseSoftCurrencyAwarded;
+  final int firstClearBonusAwarded;
+  final int starUpgradeBonusAwarded;
+  final int crestBonusAwarded;
   final int softCurrencyAwarded;
   final int? unlockedNextStage;
   final List<ObjectiveCompletionSnapshot> objectives;

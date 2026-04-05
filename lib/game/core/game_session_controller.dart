@@ -56,8 +56,11 @@ class GameSessionController extends ChangeNotifier {
   bool stageCleared = false;
   bool stageFailed = false;
   bool isPaused = false;
+  int towersBuilt = 0;
+  int maxTowerLevel = 1;
   TowerKind? selectedBuildable;
   SelectedTowerDetails? selectedTower;
+  Set<String> builtTowerKinds = const {};
   String statusText = 'Select a tower and tap one of the glowing build slots.';
 
   void hydrate({
@@ -75,6 +78,9 @@ class GameSessionController extends ChangeNotifier {
     this.coins = coins;
     this.baseHealth = baseHealth;
     maxBaseHealth = baseHealth;
+    towersBuilt = 0;
+    maxTowerLevel = 1;
+    builtTowerKinds = const {};
     selectedTower = null;
     selectedBuildable = null;
     notifyListeners();
@@ -104,6 +110,9 @@ class GameSessionController extends ChangeNotifier {
     required bool stageCleared,
     required bool stageFailed,
     required bool isPaused,
+    required int towersBuilt,
+    required int maxTowerLevel,
+    required Set<String> builtTowerKinds,
     required String statusText,
   }) {
     this.currentWave = currentWave;
@@ -113,6 +122,9 @@ class GameSessionController extends ChangeNotifier {
     this.stageCleared = stageCleared;
     this.stageFailed = stageFailed;
     this.isPaused = isPaused;
+    this.towersBuilt = towersBuilt;
+    this.maxTowerLevel = maxTowerLevel;
+    this.builtTowerKinds = Set<String>.from(builtTowerKinds);
     this.statusText = statusText;
     notifyListeners();
   }

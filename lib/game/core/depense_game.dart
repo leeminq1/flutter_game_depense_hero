@@ -1289,6 +1289,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     for (final mark in _mapTexturePlan.anchorMarks) {
       _drawTextureMark(canvas, mark);
     }
+    for (final mark in _mapTexturePlan.crestMarks) {
+      _drawTextureMark(canvas, mark);
+    }
   }
 
   void _drawSlots(Canvas canvas) {
@@ -2016,6 +2019,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
       stageCleared: _stageCleared,
       stageFailed: _stageFailed,
       isPaused: _pausedManually,
+      towersBuilt: _towersBuilt,
+      maxTowerLevel: _towers.isEmpty
+          ? 1
+          : _towers.map((tower) => tower.level).reduce(math.max),
+      builtTowerKinds: _builtTowerKinds,
       statusText: _statusText,
     );
   }

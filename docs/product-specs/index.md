@@ -9,6 +9,7 @@
 | [campaign-structure.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/campaign-structure.md) | drafted | 30-stage campaign, wave scaling, and content pacing |
 | [roster-and-buildables.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/roster-and-buildables.md) | drafted | Initial tower, structure, and enemy roster for the campaign |
 | [map-production-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/map-production-plan.md) | drafted | How stage maps move from path data and assets into real authored battlefield scenes |
+| [first-playable-roadmap.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/first-playable-roadmap.md) | drafted | Large execution phases from internal prototype to first public playable |
 
 ## Rule
 

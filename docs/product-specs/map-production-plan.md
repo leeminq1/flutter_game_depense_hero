@@ -174,6 +174,7 @@ Current implementation status:
 - future passes should refine density and composition, not revert to generic template placement
 - a generated crest-scene overview now exists at `output/crest_stage_scene_preview.png` for quick visual review
 - the current environment manifest batch is now fully generated, so the next map work is about composition quality rather than missing core slots
+- crest stages now also receive an extra cached ground-overlay layer so they can carry bespoke stains, ritual traces, or military wear without forcing those motifs into every stage in the bracket
 
 ## Priority Backlog
 
@@ -224,6 +225,7 @@ Implementation rule:
 - keep regular stages sparser than crest stages
 - strengthen spawn and core approach with local motif clusters, but keep them weaker than active enemy or tower contrast
 - bias extra bend detail toward the outside of turns and keep the apex cleaner for enemy readability
+- allow crest stages to add one bespoke terrain-story layer on top of the shared planner, such as militia road wear, bandit choke grime, grave seep, ritual residue, siege abrasion, or infernal march scars
 
 Runtime rule:
 

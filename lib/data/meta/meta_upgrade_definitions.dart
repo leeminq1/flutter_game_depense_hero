@@ -9,7 +9,11 @@ class MetaUpgradeDefinition {
     required this.description,
     required this.maxLevel,
     required this.baseCost,
+    required this.levelCostMultipliers,
+    required this.focusLabel,
     required this.color,
+    this.milestoneLevel,
+    this.milestoneLabel,
   });
 
   final String id;
@@ -17,9 +21,16 @@ class MetaUpgradeDefinition {
   final String description;
   final int maxLevel;
   final int baseCost;
+  final List<double> levelCostMultipliers;
+  final String focusLabel;
   final Color color;
+  final int? milestoneLevel;
+  final String? milestoneLabel;
 
-  int costForLevel(int level) => (baseCost * (1 + (level * 0.65))).round();
+  int costForLevel(int level) {
+    final index = level.clamp(0, levelCostMultipliers.length - 1);
+    return (baseCost * levelCostMultipliers[index]).round();
+  }
 }
 
 class ResolvedMetaUpgrades {
@@ -74,6 +85,8 @@ class MetaUpgradeCatalog {
       description: 'Increase base durability for every stage.',
       maxLevel: 5,
       baseCost: 90,
+      levelCostMultipliers: [1.0, 1.35, 1.8, 2.45, 3.2],
+      focusLabel: 'Defense',
       color: Color(0xFFAA7846),
     ),
     MetaUpgradeDefinition(
@@ -82,15 +95,22 @@ class MetaUpgradeCatalog {
       description: 'Start each stage with more build gold.',
       maxLevel: 5,
       baseCost: 85,
+      levelCostMultipliers: [1.0, 1.32, 1.75, 2.35, 3.05],
+      focusLabel: 'Economy',
       color: Color(0xFF8B9E51),
     ),
     MetaUpgradeDefinition(
       id: 'bow_mastery',
       label: 'Bow Mastery',
-      description: 'Increase archer damage and critical volleys. Unlocks Ballista at level 2.',
+      description:
+          'Increase archer damage and critical volleys. Unlocks Ballista at level 2.',
       maxLevel: 5,
       baseCost: 100,
+      levelCostMultipliers: [1.0, 1.34, 1.9, 2.6, 3.45],
+      focusLabel: 'Unlock',
       color: Color(0xFF568C4D),
+      milestoneLevel: 2,
+      milestoneLabel: 'Ballista unlocked at level 2.',
     ),
     MetaUpgradeDefinition(
       id: 'guard_drill',
@@ -98,15 +118,24 @@ class MetaUpgradeCatalog {
       description: 'Improve barracks damage and stagger duration.',
       maxLevel: 5,
       baseCost: 100,
+      levelCostMultipliers: [1.0, 1.3, 1.82, 2.45, 3.2],
+      focusLabel: 'Control',
       color: Color(0xFF8B6A56),
+      milestoneLevel: 2,
+      milestoneLabel: 'Stronger defender line at level 2 pacing.',
     ),
     MetaUpgradeDefinition(
       id: 'arcane_mastery',
       label: 'Arcane Mastery',
-      description: 'Increase mage burst and chain output. Unlocks Emberkeep at level 2.',
+      description:
+          'Increase mage burst and chain output. Unlocks Emberkeep at level 2.',
       maxLevel: 5,
       baseCost: 110,
+      levelCostMultipliers: [1.0, 1.34, 1.88, 2.58, 3.42],
+      focusLabel: 'Unlock',
       color: Color(0xFF6D63B8),
+      milestoneLevel: 2,
+      milestoneLabel: 'Emberkeep unlocked at level 2.',
     ),
     MetaUpgradeDefinition(
       id: 'frost_focus',
@@ -114,20 +143,59 @@ class MetaUpgradeCatalog {
       description: 'Improve frost slow strength and pulse reach.',
       maxLevel: 5,
       baseCost: 100,
+      levelCostMultipliers: [1.0, 1.3, 1.8, 2.4, 3.18],
+      focusLabel: 'Control',
       color: Color(0xFF4C8E96),
+      milestoneLevel: 2,
+      milestoneLabel: 'Slows become noticeably stronger at level 2.',
     ),
     MetaUpgradeDefinition(
       id: 'commerce_guild',
       label: 'Commerce Guild',
       description: 'Increase coin mill income and stage rewards.',
       maxLevel: 5,
-      baseCost: 120,
+      baseCost: 108,
+      levelCostMultipliers: [1.0, 1.28, 1.72, 2.28, 3.0],
+      focusLabel: 'Economy',
       color: Color(0xFFB59344),
+      milestoneLevel: 2,
+      milestoneLabel: 'Coin Mill economy spikes harder from level 2 onward.',
     ),
   ];
 
   static MetaUpgradeDefinition byId(String id) {
     return upgrades.firstWhere((upgrade) => upgrade.id == id);
+  }
+
+  static String effectSummary(String id, int level) {
+    switch (id) {
+      case 'stronghold':
+        return 'Base HP +${level * 2}';
+      case 'supply_cache':
+        return 'Starting Coins +${level * 25}';
+      case 'bow_mastery':
+        final unlockText = level >= 2 ? ' • Ballista unlocked' : '';
+        return 'Archer Damage +${level * 12}%$unlockText';
+      case 'guard_drill':
+        return 'Barracks Damage +${level * 12}% • Stun +${level * 8}%';
+      case 'arcane_mastery':
+        final unlockText = level >= 2 ? ' • Emberkeep unlocked' : '';
+        return 'Mage Damage +${level * 10}%$unlockText';
+      case 'frost_focus':
+        return 'Slow +${level * 6}% • Range +${level * 8}%';
+      case 'commerce_guild':
+        return 'Coin Mill Income +$level • Stage Rewards +${level * 8}%';
+      default:
+        return 'No effect summary available';
+    }
+  }
+
+  static String nextEffectSummary(String id, int level) {
+    final definition = byId(id);
+    if (level >= definition.maxLevel) {
+      return 'Maxed';
+    }
+    return effectSummary(id, level + 1);
   }
 
   static ResolvedMetaUpgrades resolve(List<MetaUpgradeSnapshot> snapshots) {

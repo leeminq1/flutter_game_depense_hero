@@ -1873,6 +1873,11 @@ const GameSettingsRecordSchema = CollectionSchema(
       id: 3,
       name: r'sfxVolume',
       type: IsarType.double,
+    ),
+    r'tutorialDismissed': PropertySchema(
+      id: 4,
+      name: r'tutorialDismissed',
+      type: IsarType.bool,
     )
   },
   estimateSize: _gameSettingsRecordEstimateSize,
@@ -1908,6 +1913,7 @@ void _gameSettingsRecordSerialize(
   writer.writeDouble(offsets[1], object.musicVolume);
   writer.writeBool(offsets[2], object.muted);
   writer.writeDouble(offsets[3], object.sfxVolume);
+  writer.writeBool(offsets[4], object.tutorialDismissed);
 }
 
 GameSettingsRecord _gameSettingsRecordDeserialize(
@@ -1922,6 +1928,7 @@ GameSettingsRecord _gameSettingsRecordDeserialize(
   object.musicVolume = reader.readDouble(offsets[1]);
   object.muted = reader.readBool(offsets[2]);
   object.sfxVolume = reader.readDouble(offsets[3]);
+  object.tutorialDismissed = reader.readBool(offsets[4]);
   return object;
 }
 
@@ -1940,6 +1947,8 @@ P _gameSettingsRecordDeserializeProp<P>(
       return (reader.readBool(offset)) as P;
     case 3:
       return (reader.readDouble(offset)) as P;
+    case 4:
+      return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -2304,6 +2313,16 @@ extension GameSettingsRecordQueryFilter
       ));
     });
   }
+
+  QueryBuilder<GameSettingsRecord, GameSettingsRecord, QAfterFilterCondition>
+      tutorialDismissedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'tutorialDismissed',
+        value: value,
+      ));
+    });
+  }
 }
 
 extension GameSettingsRecordQueryObject
@@ -2367,6 +2386,20 @@ extension GameSettingsRecordQuerySortBy
       sortBySfxVolumeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sfxVolume', Sort.desc);
+    });
+  }
+
+  QueryBuilder<GameSettingsRecord, GameSettingsRecord, QAfterSortBy>
+      sortByTutorialDismissed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tutorialDismissed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<GameSettingsRecord, GameSettingsRecord, QAfterSortBy>
+      sortByTutorialDismissedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tutorialDismissed', Sort.desc);
     });
   }
 }
@@ -2442,6 +2475,20 @@ extension GameSettingsRecordQuerySortThenBy
       return query.addSortBy(r'sfxVolume', Sort.desc);
     });
   }
+
+  QueryBuilder<GameSettingsRecord, GameSettingsRecord, QAfterSortBy>
+      thenByTutorialDismissed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tutorialDismissed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<GameSettingsRecord, GameSettingsRecord, QAfterSortBy>
+      thenByTutorialDismissedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tutorialDismissed', Sort.desc);
+    });
+  }
 }
 
 extension GameSettingsRecordQueryWhereDistinct
@@ -2471,6 +2518,13 @@ extension GameSettingsRecordQueryWhereDistinct
       distinctBySfxVolume() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'sfxVolume');
+    });
+  }
+
+  QueryBuilder<GameSettingsRecord, GameSettingsRecord, QDistinct>
+      distinctByTutorialDismissed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'tutorialDismissed');
     });
   }
 }
@@ -2507,6 +2561,13 @@ extension GameSettingsRecordQueryProperty
       sfxVolumeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'sfxVolume');
+    });
+  }
+
+  QueryBuilder<GameSettingsRecord, bool, QQueryOperations>
+      tutorialDismissedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'tutorialDismissed');
     });
   }
 }

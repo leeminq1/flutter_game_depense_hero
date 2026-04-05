@@ -75,7 +75,19 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-04: Runtime maps and crest-stage preview sheets now include lightweight biome-specific ground accents and path motifs, making each campaign bracket read more like a real place without sacrificing lane clarity.
 - 2026-04-04: Map texture logic now reserves quiet buffers around slots and larger props, while giving spawn, core approach, and major bends a small amount of manual-looking emphasis for better battlefield orientation.
 - 2026-04-04: Cached map texture planning now exists as a separate rendering-layer utility, so terrain marks are computed once per stage layout change instead of being regenerated inline during every render pass.
+- 2026-04-05: Crest stages now support an extra bespoke terrain-story layer on top of the shared map texture planner, so milestone stages can carry stronger road wear, ritual residue, seep, siege abrasion, or infernal scar motifs without complicating regular-stage rendering.
+- 2026-04-05: Crest stages now sit on top of the shared terrain planner with a separate bespoke overlay pass, allowing stage 5, 10, 15, 20, 25, and 30 to read more like authored capstones than only bracket variants.
 - 2026-04-04: Runtime map texture sampling is now cached through `MapTexturePlanner`, reducing per-frame texture planning work and making the map pass easier to evolve without tangling combat rendering code.
+- 2026-04-05: The first five stages now use a hand-tuned onboarding balance pass, and the battle screen now shows stage-specific tutorial guidance for the first-playable learning arc.
+- 2026-04-05: A first-playable roadmap now exists as a product-spec artifact so upcoming work stays grouped by gameplay completion, content completion, stability, and public playable readiness.
+- 2026-04-05: Stages 6-10 now use a more intentional first-midgame balance bridge, and the result overlay now explains win or loss state with clearer objective and retry guidance.
+- 2026-04-05: Meta progression now uses a more intentional cost curve, first-clear and crest-stage bonus beats, and stronger upgrade-effect readouts.
+- 2026-04-05: The app now has a real camp flow with a title/home screen, dedicated settings, help, and upgrade screens instead of dropping directly into battle.
+- 2026-04-05: A cleanup audit now exists and the repo no longer keeps obvious scratch exports, temporary LPC dumps, or unused ad dependency wiring in the main app configuration.
+- 2026-04-05: Stages 11-20 now use a hand-authored upper-midgame balance band with separate grave-march and cursed-chapel learning goals instead of only generic scaling.
+- 2026-04-05: Camp-home and result overlays now surface next campaign gates and recommended meta investments so the player sees a clearer next action after both wins and losses.
+- 2026-04-05: Stages 21-30 now use a hand-authored late-campaign arc with separate bastion-pressure and throne-march bands, plus a more intentional pre-boss lead-in.
+- 2026-04-05: Late-campaign rewards and failure guidance now scale more intentionally so Warlock, Grave Guard, and boss-adjacent retries feel less opaque.
 
 ## Risks
 
@@ -129,4 +141,8 @@ Create the first playable vertical slice and the documentation discipline needed
 - Biome identity now comes from ground language as well as props, which reduces the risk that maps feel like recolored variants of the same abstract board.
 - Map texture density is now intentionally uneven, with gameplay-critical lanes and placement zones kept cleaner than decorative dead space.
 - Terrain rendering is now easier to scale because cached map-texture planning separates generation logic from the main combat renderer.
+- Crest-stage maps can now feel more authored than the rest of the bracket even when they still share the same core biome planner and prop set.
+- First-playable UX now extends beyond onboarding into the result screen, reducing the chance that players fail without understanding the next correction to make.
+- Crest-stage identity is now reinforced by both landmark layout and ground-overlay treatment, which helps those milestone stages read as bosses or checkpoints instead of only harder maps.
 - Map texture rendering now has a clearer separation between planning and drawing, which lowers risk as future biome rules or crest-stage exceptions are added.
+- The project now has a dedicated roadmap for moving from internal prototype quality toward a public first playable, with gameplay-complete work identified as the immediate focus.

@@ -11,22 +11,26 @@
 
 - Stages 1-5
   - Teach build timing, enemy lanes, and first tower counters
-  - Main enemies: bandit raiders and scouts
+  - Main enemies: raiders, scouts, and a late introduction of shield infantry
 - Stages 6-10
-  - Introduce armored units and support enemies
-  - Main enemies: bandits, shield infantry, cult adepts
+  - Hand-tuned midgame bridge that introduces armored fronts before full support pressure
+  - Main enemies: bandits, shield infantry, and a delayed cult adept introduction
 - Stages 11-15
-  - Add undead pressure, tankier waves, and mixed compositions
-  - Main enemies: skeleton infantry, grave guards, necromancers
+  - Hand-tuned grave-march teaching band
+  - Focus: revived skeleton cleanup, cult denial, and first corrupted-knight finishers
+  - Main enemies: skeleton infantry, cult adepts, shield escorts, late corrupted knights
 - Stages 16-20
-  - Increase simultaneous threat types and route pressure
-  - Main enemies: cursed knights, ranged cultists, undead elites
+  - Hand-tuned cursed-chapel pressure band
+  - Focus: faster support overlap, corrupted-knight timing checks, and readable Grave Guard introduction
+  - Main enemies: cursed knights, cult support, Grave Guards, undead elites
 - Stages 21-25
-  - Demand stronger tower synergy and upgrade timing
-  - Main enemies: elite armored factions, corrupted support units
+  - Hand-tuned bastion-pressure band
+  - Focus: warlock denial, bruiser overlap, and cleaner elite damage windows
+  - Main enemies: corrupted knights, Grave Guards, Warlocks
 - Stages 26-30
-  - Late-campaign challenge and boss-style stage capstones
-  - Main enemies: champion knights, warlocks, elite undead commanders
+  - Hand-tuned throne-march band plus final boss capstone
+  - Focus: low-recovery wave management, heavier summon overlap, and final boss preparation
+  - Main enemies: Grave Guards, Warlocks, corrupted knights, Bastion Overlord
 
 ## Unlock Structure
 
@@ -84,9 +88,13 @@ Use those multipliers to derive:
 - Stage 1
   - 3 waves
   - Mostly raiders and scouts
+  - High starting coins so the player can learn placement before pressure spikes
+- Stage 3
+  - 3 waves
+  - First shield infantry introduction to teach magic damage value
 - Stage 5
-  - 4 waves
-  - Raiders, scouts, first shield infantry
+  - 3 waves
+  - Raiders, scouts, and a denser shield-frontline final push
 - Stage 10
   - 4 waves
   - Mixed bandits and cult support
@@ -143,3 +151,56 @@ Each stage now carries three star objectives built from:
 - Difficulty should rise through composition and map design before raw stat inflation alone.
 - New enemy roles should force counterplay changes, not just bigger numbers.
 - Each 5-stage bracket should feel like a mini arc with a different faction emphasis.
+
+## First Five Stage Balance Rule
+
+The first five stages are now a hand-tuned onboarding bracket instead of fully relying on the generic campaign formula.
+
+- Stage 1-2: no support group yet, clearer pacing, extra starting coins
+- Stage 3: first shield infantry lesson
+- Stage 4: reinforce control and lane-hold timing
+- Stage 5: first crest-stage pressure while still staying in onboarding territory
+
+## Stage Six To Ten Balance Rule
+
+Stages 6-10 should act as the first real difficulty bridge after onboarding.
+
+- Stage 6-7: reinforce armored front lines and early upgrade timing
+- Stage 8-9: introduce cult support without overwhelming the lane too early
+- Stage 10: act as the first midgame crest with a clearer elite ending
+- this bracket should punish pure physical builds more clearly, but still leave room to recover through better timing
+
+## Stage Eleven To Twenty Balance Rule
+
+Stages 11-20 should now act like a two-part upper-midgame arc instead of generic stat scaling.
+
+- Stages 11-15: grave-march band
+  - teach revived-wave cleanup and support denial
+  - keep one real damage bend alive instead of encouraging full-map spread
+  - end with a crest stage that tests economy timing under elite pressure
+- Stages 16-20: cursed-chapel band
+  - introduce corrupted-knight timing earlier in the wave
+  - make Grave Guard pressure readable before the late campaign
+  - require stronger damage overlap, not only more slows
+
+## Current Reward Beat Rule
+
+- Stages `6-10`, `11-15`, and `16-20` now each carry stronger base clear multipliers than the earliest band.
+- Stages `21-25` and `26-30` now continue that reward step-up so late-campaign retries still feel economically valid.
+- First clear, improved stars, and crest-stage clears should all feel like valid reasons to revisit or push forward.
+
+## Stage Twenty-One To Thirty Balance Rule
+
+Stages 21-30 should now act as the campaign completion arc instead of generic endgame scaling.
+
+- Stages 21-25: bastion-pressure band
+  - Warlocks appear early enough to define the lane
+  - Grave Guards and corrupted knights overlap more often
+  - the player should feel pressure to build stronger anti-support windows, not only bigger tower counts
+- Stages 26-29: throne-march band
+  - less recovery room between mistakes
+  - stronger overlap between tanks, bruisers, and summons
+  - late-wave coin discipline becomes part of the challenge
+- Stage 30:
+  - four pre-boss approach waves should already feel like a campaign final exam
+  - the boss wave should confirm Ballista, elite damage overlap, and survival planning as the final learned skills

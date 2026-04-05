@@ -208,6 +208,7 @@ Anchor emphasis rule:
 - wagon-rut ovals
 - tiny pebble dots
 - light grass-edge tufts
+- crest-stage variant: militia road wear near the gate and first bend
 
 ### Bandit Crossroads
 
@@ -215,6 +216,7 @@ Anchor emphasis rule:
 - fork scuffs
 - plank chips
 - harsher road-edge wear
+- crest-stage variant: bandit choke grime and ambush scuffs near the stockade lane
 
 ### Grave Fields
 
@@ -222,6 +224,7 @@ Anchor emphasis rule:
 - shallow sink patches
 - dead-weed specks
 - flat grave-stone chips
+- crest-stage variant: grave seep and pale chip scatter on late-lane pressure points
 
 ### Cursed Chapel Belt
 
@@ -229,6 +232,7 @@ Anchor emphasis rule:
 - soot smears
 - tiny wax or stain pools
 - restrained rune residue at the edges only
+- crest-stage variant: ritual residue and altar runoff, kept faint and away from combat center
 
 ### Bastion Approach
 
@@ -236,6 +240,7 @@ Anchor emphasis rule:
 - rubble fans
 - metal patch plates
 - directional military scuffs
+- crest-stage variant: siege abrasion and dragged hardware scrape marks near wall approaches
 
 ### Throne March
 
@@ -243,6 +248,7 @@ Anchor emphasis rule:
 - ember dust
 - narrow corruption veins
 - soft scorch borders
+- crest-stage variant: infernal march scars and ember pockets on the final approach
 
 ## Crest Stage Rule
 

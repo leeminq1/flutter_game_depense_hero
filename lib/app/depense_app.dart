@@ -1,5 +1,5 @@
 import 'package:depense_game/app/bootstrap/app_bootstrap.dart';
-import 'package:depense_game/app/screens/game_screen.dart';
+import 'package:depense_game/app/screens/home_screen.dart';
 import 'package:depense_game/app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -14,7 +14,7 @@ class DepenseApp extends StatelessWidget {
       title: 'Depense Game',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.data(),
-      home: GameScreen(bootstrap: bootstrap),
+      home: HomeScreen(bootstrap: bootstrap),
     );
   }
 }

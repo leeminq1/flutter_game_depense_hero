@@ -26,6 +26,27 @@ The game should favor permanent growth over roguelike reset structure.
 - Frost Focus: stronger frost slow and range
 - Commerce Guild: more coin mill income and better stage rewards
 
+## Current Curve Notes
+
+- Upgrade costs now use per-tree curves instead of one shared slope.
+- Early levels are intentionally cheaper so the first meaningful purchase still lands within the first few clears.
+- Unlock-oriented trees keep their level 2 breakpoint readable and reachable.
+- Commerce Guild is no longer the most punishing early economy investment.
+
+## Reward Beats
+
+- Every clear still grants XP and Meta Gold.
+- First clears now grant an explicit bonus.
+- Improving a stage to a higher star result now grants an extra catch-up payout.
+- Crest stages `5/10/15/20/25/30` grant an extra first-clear milestone bonus.
+- Result UX should always show the reward breakdown so players understand why replaying a stage can still matter.
+
+## UX Requirements
+
+- The home screen should surface the next campaign gate and the most likely next upgrade target.
+- Upgrade UI should show `current effect`, `next effect`, and upcoming milestone text when relevant.
+- Account progress should feel tied to real goals, not only bigger numbers.
+
 ## Current Unlock Interaction
 
 - Some campaign stages now require total stars.

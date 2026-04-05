@@ -35,19 +35,21 @@ class MapTexturePlan {
     this.groundMarks = const [],
     this.pathMarks = const [],
     this.anchorMarks = const [],
+    this.crestMarks = const [],
   });
 
   final List<MapTextureMark> groundMarks;
   final List<MapTextureMark> pathMarks;
   final List<MapTextureMark> anchorMarks;
+  final List<MapTextureMark> crestMarks;
 
   static const empty = MapTexturePlan();
 }
 
 class MapTexturePlanner {
-  const MapTexturePlanner();
+  const MapTexturePlanner._();
 
-  MapTexturePlan build({
+  static MapTexturePlan build({
     required int stageNumber,
     required StageEnvironmentTheme theme,
     required Vector2 canvasSize,
@@ -151,11 +153,186 @@ class MapTexturePlanner {
       );
     }
 
+    final crestMarks = _crestStageMarks(
+      stageNumber: stageNumber,
+      theme: theme,
+      canvasSize: canvasSize,
+      pathPoints: pathPoints,
+      suppressionZones: suppressionZones,
+    );
+
     return MapTexturePlan(
       groundMarks: groundMarks,
       pathMarks: pathMarks,
       anchorMarks: anchorMarks,
+      crestMarks: crestMarks,
     );
+  }
+
+  static List<MapTextureMark> _crestStageMarks({
+    required int stageNumber,
+    required StageEnvironmentTheme theme,
+    required Vector2 canvasSize,
+    required List<Vector2> pathPoints,
+    required List<_SuppressionZone> suppressionZones,
+  }) {
+    final marks = <MapTextureMark>[];
+    final isCrest = switch (stageNumber) {
+      5 || 10 || 15 || 20 || 25 || 30 => true,
+      _ => false,
+    };
+    if (!isCrest || pathPoints.isEmpty) {
+      return marks;
+    }
+
+    final mid = pathPoints[pathPoints.length ~/ 2].toOffset();
+    final latePath = pathPoints[(pathPoints.length * 3 ~/ 4).clamp(0, pathPoints.length - 1)].toOffset();
+
+    void add(MapTextureMark mark, {double padding = 6}) {
+      if (_isSuppressed(mark.center, suppressionZones, padding: padding)) {
+        return;
+      }
+      marks.add(mark);
+    }
+
+    switch (stageNumber) {
+      case 5:
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.oval,
+            color: const Color(0x3F6F5A34),
+            center: mid.translate(-18, -6),
+            width: 34,
+            height: 12,
+          ),
+        );
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.oval,
+            color: const Color(0x44E3CB93),
+            center: mid.translate(10, 4),
+            width: 12,
+            height: 6,
+          ),
+        );
+        break;
+      case 10:
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.rect,
+            color: const Color(0x45593B24),
+            center: mid.translate(16, -10),
+            width: 26,
+            height: 8,
+          ),
+        );
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.rect,
+            color: const Color(0x44D9B77E),
+            center: latePath.translate(-8, 6),
+            width: 10,
+            height: 3,
+          ),
+        );
+        break;
+      case 15:
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.circle,
+            color: const Color(0x3F4F5E57),
+            center: mid.translate(-12, 8),
+            radius: 8,
+          ),
+        );
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.rect,
+            color: const Color(0x44B7C4B8),
+            center: latePath.translate(8, -6),
+            width: 14,
+            height: 2,
+          ),
+        );
+        break;
+      case 20:
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.roundedRect,
+            color: const Color(0x4A6A4B88),
+            center: mid.translate(18, 2),
+            width: 20,
+            height: 8,
+            cornerRadius: 4,
+          ),
+        );
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.circle,
+            color: const Color(0x44CFAAF5),
+            center: latePath.translate(-10, -8),
+            radius: 3,
+          ),
+        );
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.circle,
+            color: const Color(0x338A63D8),
+            center: latePath.translate(-2, -2),
+            radius: 2,
+          ),
+        );
+        break;
+      case 25:
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.rect,
+            color: const Color(0x464B4F58),
+            center: mid.translate(-20, 0),
+            width: 30,
+            height: 10,
+          ),
+        );
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.rect,
+            color: const Color(0x44CDC3B5),
+            center: latePath.translate(12, 6),
+            width: 12,
+            height: 2,
+          ),
+        );
+        break;
+      case 30:
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.oval,
+            color: const Color(0x4A5B2B1E),
+            center: mid.translate(14, -4),
+            width: 28,
+            height: 10,
+          ),
+        );
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.circle,
+            color: const Color(0x44FF934E),
+            center: latePath.translate(-14, 6),
+            radius: 3,
+          ),
+        );
+        add(
+          MapTextureMark(
+            shape: MapTextureMarkShape.circle,
+            color: const Color(0x33FF6C3B),
+            center: latePath.translate(-6, 0),
+            radius: 2,
+          ),
+        );
+        break;
+    }
+
+    return marks;
   }
 
   static List<Offset> _pathSamplePoints(List<Vector2> pathPoints, {double spacing = 54}) {
