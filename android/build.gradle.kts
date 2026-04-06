@@ -22,3 +22,24 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+subprojects {
+    val project = this
+    val fixNamespace: (Project) -> Unit = { p ->
+        if (p.name == "isar_flutter_libs") {
+            p.extensions.findByName("android")?.let { android ->
+                try {
+                    android.javaClass.getMethod("setNamespace", String::class.java).invoke(android, "dev.isar.isar_flutter_libs")
+                } catch (e: Exception) {
+                    // Fail silently or log
+                }
+            }
+        }
+    }
+
+    if (project.state.executed) {
+        fixNamespace(project)
+    } else {
+        project.afterEvaluate { fixNamespace(this) }
+    }
+}

@@ -1,52 +1,75 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static ThemeData data() {
-    const parchment = Color(0xFFF0E1C2);
-    const bark = Color(0xFF3A2A1D);
-    const moss = Color(0xFF5B7A45);
-    const ember = Color(0xFFBF6B3D);
-    const dusk = Color(0xFF17212B);
+  // ── Colors ──
+  static const Color ink = Color(0xFFF0F4F8);
+  static const Color inkMuted = Color(0xFFA1AFBF);
+  static const Color line = Color(0xFF334E68);
+  
+  static const Color panel = Color(0xFF102A43);
+  static const Color steel = Color(0xFF486581);
+  static const Color ember = Color(0xFFEF4E4E);
+  static const Color moss = Color(0xFF38D39F);
+  static const Color glowBox = Color(0xFF243B53);
 
-    final scheme = ColorScheme.fromSeed(
-      seedColor: moss,
-      brightness: Brightness.dark,
-    ).copyWith(
-      primary: moss,
-      secondary: ember,
-      surface: dusk,
-      onSurface: parchment,
-    );
+  // ── Layout ──
+  static const double cardRadius = 24.0;
+  static const double panelPadding = 16.0;
 
+  // ── Gradients ──
+  static const BoxDecoration backgroundGradient = BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color(0xFF102A43),
+        Color(0xFF071B2F),
+      ],
+    ),
+  );
+
+  static const BoxDecoration cardDecoration = BoxDecoration(
+    color: panel,
+    borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black26,
+        blurRadius: 12,
+        offset: Offset(0, 4),
+      ),
+    ],
+  );
+
+  static ThemeData get theme {
     return ThemeData(
-      colorScheme: scheme,
-      scaffoldBackgroundColor: dusk,
       useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF071B2F),
       textTheme: const TextTheme(
-        headlineMedium: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
-          color: parchment,
+        displayLarge: TextStyle(
+          fontSize: 48,
+          fontWeight: FontWeight.w900,
+          color: ink,
+          fontFamily: 'Inter',
+        ),
+        headlineLarge: TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.w800,
+          color: ink,
         ),
         titleLarge: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: parchment,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: ink,
         ),
         bodyMedium: TextStyle(
-          fontSize: 14,
-          color: parchment,
+          fontSize: 16,
+          color: ink,
         ),
-      ),
-      cardTheme: const CardThemeData(
-        color: bark,
-        elevation: 0,
-        margin: EdgeInsets.zero,
-      ),
-      sliderTheme: SliderThemeData(
-        activeTrackColor: ember,
-        thumbColor: parchment,
-        inactiveTrackColor: bark.withValues(alpha: 0.8),
+        bodySmall: TextStyle(
+          fontSize: 12,
+          color: inkMuted,
+        ),
       ),
     );
   }

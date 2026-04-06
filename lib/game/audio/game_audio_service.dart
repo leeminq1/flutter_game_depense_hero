@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 
 import 'package:depense_game/game/audio/audio_catalog.dart';
 import 'package:depense_game/game/audio/audio_event.dart';
@@ -14,22 +15,32 @@ class GameAudioService {
   final Random _random = Random();
 
   Future<void> initialize() async {
-    await FlameAudio.bgm.initialize();
-
+    // Note: FlameAudio.bgm.initialize() is often not required and can crash on some platforms.
+    // bgm will initialize its player automatically on the first play() call.
+    
     final files = <String>{
       for (final entry in AudioCatalog.events.values) ...entry.assets,
     }.toList();
 
-    await FlameAudio.audioCache.loadAll(files);
-
-    for (final definition in AudioCatalog.events.values.where((e) => e.pooled)) {
-      for (final asset in definition.assets) {
-        _pools[asset] = await FlameAudio.createPool(
-          asset,
-          maxPlayers: definition.maxPlayers,
-          minPlayers: 1,
-        );
+    try {
+      // Load all SFX assets into cache.
+      await FlameAudio.audioCache.loadAll(files);
+      
+      // Initialize pools for frequently played sounds (SFX).
+      for (final definition in AudioCatalog.events.values.where((e) => e.pooled)) {
+        for (final asset in definition.assets) {
+          _pools[asset] = await FlameAudio.createPool(
+            asset,
+            maxPlayers: definition.maxPlayers,
+            minPlayers: 1,
+          );
+        }
       }
+    } catch (e, stack) {
+      debugPrint('GameAudioService: Initialization error: $e');
+      debugPrint(stack.toString());
+      // Re-throw to inform bootstrap, but we've logged the detail.
+      rethrow;
     }
   }
 

@@ -61,7 +61,15 @@ class GameSessionController extends ChangeNotifier {
   TowerKind? selectedBuildable;
   SelectedTowerDetails? selectedTower;
   Set<String> builtTowerKinds = const {};
-  String statusText = 'Select a tower and tap one of the glowing build slots.';
+  String statusText = '전장에 타워를 배치하거나 설치된 타워를 선택하세요.';
+  
+  // NEW: UI 지원용 필드
+  int _remainingEnemies = 0;
+  double _speedMultiplier = 1.0;
+
+  int get remainingEnemies => _remainingEnemies;
+  double get speedMultiplier => _speedMultiplier;
+  String get speedLabel => '${_speedMultiplier.toStringAsFixed(1)}x';
 
   void hydrate({
     required int stageNumber,
@@ -83,6 +91,8 @@ class GameSessionController extends ChangeNotifier {
     builtTowerKinds = const {};
     selectedTower = null;
     selectedBuildable = null;
+    _speedMultiplier = 1.0;
+    _remainingEnemies = 0;
     notifyListeners();
   }
 
@@ -102,6 +112,11 @@ class GameSessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setSpeedMultiplier(double speed) {
+    _speedMultiplier = speed;
+    notifyListeners();
+  }
+
   void updateRuntime({
     required int currentWave,
     required int coins,
@@ -114,6 +129,7 @@ class GameSessionController extends ChangeNotifier {
     required int maxTowerLevel,
     required Set<String> builtTowerKinds,
     required String statusText,
+    int remainingEnemies = 0,
   }) {
     this.currentWave = currentWave;
     this.coins = coins;
@@ -126,6 +142,7 @@ class GameSessionController extends ChangeNotifier {
     this.maxTowerLevel = maxTowerLevel;
     this.builtTowerKinds = Set<String>.from(builtTowerKinds);
     this.statusText = statusText;
+    _remainingEnemies = remainingEnemies;
     notifyListeners();
   }
 }

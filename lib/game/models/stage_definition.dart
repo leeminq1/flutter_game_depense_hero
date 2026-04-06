@@ -114,6 +114,16 @@ class StageDecorationDefinition {
   final StageDecorationLayer layer;
 }
 
+class StageBuildZoneDefinition {
+  const StageBuildZoneDefinition({
+    required this.region,
+    this.label = 'Build Zone',
+  });
+
+  final Rect region;
+  final String label;
+}
+
 class StageDefinition {
   const StageDefinition({
     required this.number,
@@ -126,6 +136,9 @@ class StageDefinition {
     required this.buildSlots,
     required this.waves,
     required this.objectives,
+    this.buildZones = const [],
+    this.pathClearance = 40.0,
+    this.buildGridSpacing = 10.0,
     this.decorations = const [],
     this.unlockRequirements = const [],
     this.slotTapRadius = 28,
@@ -141,6 +154,9 @@ class StageDefinition {
   final List<Offset> buildSlots;
   final List<WaveDefinition> waves;
   final List<StageObjectiveDefinition> objectives;
+  final List<StageBuildZoneDefinition> buildZones;
+  final double pathClearance;
+  final double buildGridSpacing;
   final List<StageDecorationDefinition> decorations;
   final List<StageUnlockRequirement> unlockRequirements;
   final double slotTapRadius;

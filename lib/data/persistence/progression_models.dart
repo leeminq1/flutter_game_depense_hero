@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 class MetaUpgradeSnapshot {
   const MetaUpgradeSnapshot({required this.id, required this.level});
 
@@ -11,12 +13,18 @@ class PlayerProgressSnapshot {
     required this.totalXp,
     required this.softCurrency,
     required this.premiumCurrency,
+    this.currentCampaignStage = 1,
+    this.clearedStageCount = 0,
+    this.hasResumableRun = false,
   });
 
   final int accountLevel;
   final int totalXp;
   final int softCurrency;
   final int premiumCurrency;
+  final int currentCampaignStage;
+  final int clearedStageCount;
+  final bool hasResumableRun;
 }
 
 class StageProgressSnapshot {
@@ -51,6 +59,18 @@ class CampaignOverview {
   final PlayerProgressSnapshot player;
   final List<StageProgressSnapshot> stages;
   final List<MetaUpgradeSnapshot> metaUpgrades;
+
+  bool get hasMeaningfulProgress => 
+    player.clearedStageCount > 0 || metaUpgrades.any((u) => u.level > 0);
+
+  int get totalStars => stages.fold(0, (sum, s) => sum + s.stars);
+
+  int get currentCampaignStage => player.currentCampaignStage;
+
+  StageProgressSnapshot? get recommendedStage {
+    return stages.firstWhereOrNull((s) => s.unlocked && !s.cleared) ?? 
+           stages.firstWhereOrNull((s) => s.unlocked);
+  }
 }
 
 class StageCompletionResult {

@@ -115,6 +115,16 @@ class LocalProgressStore {
     });
   }
 
+  Future<void> resetCampaignProgress() async {
+    await isar.writeTxn(() async {
+      await isar.playerProfiles.clear();
+      await isar.stageProgressRecords.clear();
+      await isar.upgradeNodeRecords.clear();
+      await isar.rewardClaimRecords.clear();
+    });
+    await _seedIfNeeded();
+  }
+
   Future<CampaignOverview> loadCampaignOverview({
     required int totalStages,
   }) async {
@@ -155,12 +165,30 @@ class LocalProgressStore {
       );
     });
 
+    var currentCampaignStage = 1;
+    for (final stage in stages) {
+      if (stage.unlocked && !stage.cleared) {
+        currentCampaignStage = stage.stageNumber;
+        break;
+      }
+      if (stage.unlocked) currentCampaignStage = stage.stageNumber;
+    }
+    final clearedStageCount = stages.where((s) => s.cleared).length;
+    final hasMeaningfulProgress =
+        profile.totalXp > 0 ||
+        profile.softCurrency > 0 ||
+        allRecords.any((r) => r.stars > 0) ||
+        metaUpgrades.any((u) => u.level > 0);
+
     return CampaignOverview(
       player: PlayerProgressSnapshot(
         accountLevel: profile.accountLevel,
         totalXp: profile.totalXp,
         softCurrency: profile.softCurrency,
         premiumCurrency: profile.premiumCurrency,
+        currentCampaignStage: currentCampaignStage,
+        clearedStageCount: clearedStageCount,
+        hasResumableRun: hasMeaningfulProgress,
       ),
       stages: stages,
       metaUpgrades: metaUpgrades,

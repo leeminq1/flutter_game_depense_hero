@@ -24,6 +24,7 @@ class UnitVisualDefinition {
     required this.baseSize,
     required this.renderScale,
     required this.generatorHint,
+    this.frames = 1,
   });
 
   final String assetPath;
@@ -33,6 +34,7 @@ class UnitVisualDefinition {
   final double baseSize;
   final double renderScale;
   final String generatorHint;
+  final int frames;
 }
 
 class TowerVisualCatalog {
@@ -50,6 +52,7 @@ class TowerVisualCatalog {
           baseSize: 18,
           renderScale: 3.0,
           generatorHint: 'wooden archer post, green hood banner, fantasy defense tower',
+          frames: 1,
         );
       case TowerKind.guardBarracks:
         return const UnitVisualDefinition(
@@ -60,6 +63,7 @@ class TowerVisualCatalog {
           baseSize: 18,
           renderScale: 3.15,
           generatorHint: 'small fantasy barracks, shield rack, brown timber guard post',
+          frames: 1,
         );
       case TowerKind.mageObelisk:
         return const UnitVisualDefinition(
@@ -70,6 +74,7 @@ class TowerVisualCatalog {
           baseSize: 18,
           renderScale: 3.0,
           generatorHint: 'arcane obelisk, violet crystal, fantasy magic tower',
+          frames: 1,
         );
       case TowerKind.frostShrine:
         return const UnitVisualDefinition(
@@ -80,6 +85,7 @@ class TowerVisualCatalog {
           baseSize: 18,
           renderScale: 3.0,
           generatorHint: 'icy shrine, blue crystal altar, frost defense tower',
+          frames: 1,
         );
       case TowerKind.coinMill:
         return const UnitVisualDefinition(
@@ -90,6 +96,7 @@ class TowerVisualCatalog {
           baseSize: 18,
           renderScale: 3.05,
           generatorHint: 'golden coin mill, fantasy workshop, economic support building',
+          frames: 1,
         );
       case TowerKind.ballista:
         return const UnitVisualDefinition(
@@ -100,6 +107,7 @@ class TowerVisualCatalog {
           baseSize: 19,
           renderScale: 3.2,
           generatorHint: 'heavy ballista emplacement, siege wood frame, defense turret',
+          frames: 1,
         );
       case TowerKind.emberkeep:
         return const UnitVisualDefinition(
@@ -110,6 +118,7 @@ class TowerVisualCatalog {
           baseSize: 19,
           renderScale: 3.1,
           generatorHint: 'fire brazier keep, ember brazier, fantasy flame tower',
+          frames: 1,
         );
     }
   }
@@ -185,6 +194,7 @@ class EnemyVisualCatalog {
           baseSize: 18,
           renderScale: 2.15,
           generatorHint: 'bandit raider, rugged leather armor, fantasy pixel enemy',
+          frames: 1,
         );
       case EnemyKind.scout:
         return const UnitVisualDefinition(
@@ -195,6 +205,7 @@ class EnemyVisualCatalog {
           baseSize: 16,
           renderScale: 2.05,
           generatorHint: 'fast rogue scout, light gear, fantasy pixel enemy',
+          frames: 1,
         );
       case EnemyKind.shieldInfantry:
         return const UnitVisualDefinition(
@@ -205,6 +216,7 @@ class EnemyVisualCatalog {
           baseSize: 18,
           renderScale: 2.15,
           generatorHint: 'armored infantry, shield bearer, fantasy pixel enemy',
+          frames: 1,
         );
       case EnemyKind.cultAdept:
         return const UnitVisualDefinition(
@@ -215,6 +227,7 @@ class EnemyVisualCatalog {
           baseSize: 18,
           renderScale: 2.1,
           generatorHint: 'hooded cult adept, ritual caster, fantasy pixel enemy',
+          frames: 1,
         );
       case EnemyKind.skeleton:
         return const UnitVisualDefinition(
@@ -225,6 +238,7 @@ class EnemyVisualCatalog {
           baseSize: 18,
           renderScale: 2.05,
           generatorHint: 'animated skeleton soldier, bone warrior, fantasy pixel enemy',
+          frames: 1,
         );
       case EnemyKind.graveGuard:
         return const UnitVisualDefinition(
@@ -235,6 +249,7 @@ class EnemyVisualCatalog {
           baseSize: 20,
           renderScale: 2.2,
           generatorHint: 'undead grave guard, heavy armor, dark green elite enemy',
+          frames: 1,
         );
       case EnemyKind.corruptedKnight:
         return const UnitVisualDefinition(
@@ -245,6 +260,7 @@ class EnemyVisualCatalog {
           baseSize: 20,
           renderScale: 2.25,
           generatorHint: 'corrupted knight, dark plate armor, cursed elite enemy',
+          frames: 1,
         );
       case EnemyKind.warlock:
         return const UnitVisualDefinition(
@@ -255,6 +271,7 @@ class EnemyVisualCatalog {
           baseSize: 19,
           renderScale: 2.15,
           generatorHint: 'warlock summoner, purple robes, dark fantasy pixel caster',
+          frames: 1,
         );
       case EnemyKind.bastionOverlord:
         return const UnitVisualDefinition(
@@ -265,6 +282,7 @@ class EnemyVisualCatalog {
           baseSize: 28,
           renderScale: 2.65,
           generatorHint: 'final boss overlord, cursed fortress lord, huge dark fantasy pixel enemy',
+          frames: 1,
         );
     }
   }

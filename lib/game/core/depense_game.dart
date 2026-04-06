@@ -61,7 +61,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
   bool _pausedManually = false;
   int _coins = 0;
   int _baseHealth = 0;
-  String _statusText = 'Select a tower and tap one of the glowing build slots.';
+  String _statusText = '타워를 선택하고 빛나는 슬롯을 탭하세요.';
   int? _selectedTowerIndex;
   int _towersBuilt = 0;
   int _towersSold = 0;
@@ -111,7 +111,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
   void selectBuildable(TowerKind? towerKind) {
     if (towerKind != null && !TowerCatalog.isUnlocked(towerKind, metaUpgrades)) {
       final definition = TowerCatalog.byKind(towerKind);
-      _statusText = definition.unlockHint ?? '${definition.label} is not unlocked yet.';
+      _statusText = definition.unlockHint ?? '${definition.label}은(는) 아직 해금되지 않았습니다.';
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
@@ -119,10 +119,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     sessionController.setSelectedBuildable(towerKind);
     _selectedTowerIndex = null;
     if (towerKind != null) {
-      _statusText = '${TowerCatalog.byKind(towerKind).label} selected. Tap a build slot.';
+      _statusText = '${TowerCatalog.byKind(towerKind).label} 선택됨. 슬롯을 탭하세요.';
       audioService.play(AudioEvent.uiSelect);
     } else {
-      _statusText = 'Build selection cleared.';
+      _statusText = '선택이 해제되었습니다.';
     }
     _syncSession();
   }
@@ -149,7 +149,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
       return;
     }
     if (_currentWaveIndex >= stage.waves.length - 1) {
-      _statusText = 'All waves are already cleared.';
+      _statusText = '모든 웨이브가 이미 완료되었습니다.';
       _syncSession();
       return;
     }
@@ -159,7 +159,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     _spawnedInGroup = 0;
     _spawnTimer = 0;
     _waveActive = true;
-    _statusText = 'Wave ${_currentWaveIndex + 1} has begun.';
+    _statusText = '웨이브 ${_currentWaveIndex + 1} 시작!';
     for (final tower in _towers.where((tower) => tower.definition.kind == TowerKind.coinMill)) {
       final waveBonus = 4 + metaUpgrades.coinMillIncomeBonus;
       _coins += waveBonus;
@@ -180,17 +180,17 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
   void upgradeSelectedTower() {
     final tower = _selectedTower;
     if (tower == null) {
-      _statusText = 'Select a tower to upgrade.';
+      _statusText = '업그레이드할 타워를 선택하세요.';
       _syncSession();
       return;
     }
     if (!tower.canUpgrade) {
-      _statusText = '${tower.definition.label} is already fully upgraded.';
+      _statusText = '${tower.definition.label}은(는) 이미 최고 레벨입니다.';
       _syncSession();
       return;
     }
     if (_coins < tower.upgradeCost) {
-      _statusText = 'Not enough coins to upgrade ${tower.definition.label}.';
+      _statusText = '${tower.definition.label} 업그레이드에 코인이 부족합니다.';
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
@@ -200,7 +200,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     tower.totalSpent += tower.upgradeCost;
     tower.level += 1;
     tower.cooldownRemaining = math.min(tower.cooldownRemaining, tower.currentCooldown);
-    _statusText = '${tower.definition.label} upgraded to level ${tower.level}.';
+    _statusText = '${tower.definition.label} 레벨 ${tower.level}(으)로 업그레이드!';
     audioService.play(AudioEvent.towerUpgrade);
     _syncSelectedTower();
     _syncSession();
@@ -210,7 +210,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     final index = _selectedTowerIndex;
     final tower = _selectedTower;
     if (index == null || tower == null) {
-      _statusText = 'Select a tower to sell.';
+      _statusText = '판매할 타워를 선택하세요.';
       _syncSession();
       return;
     }
@@ -221,7 +221,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     _towersSold += 1;
     _selectedTowerIndex = null;
     sessionController.setSelectedTower(null);
-    _statusText = '${tower.definition.label} sold for ${tower.sellValue} coins.';
+    _statusText = '${tower.definition.label} ${tower.sellValue} 코인에 판매 완료.';
     audioService.play(AudioEvent.coinGain);
     _syncSession();
   }
@@ -229,12 +229,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
   void chooseBranchForSelectedTower(String branchId) {
     final tower = _selectedTower;
     if (tower == null) {
-      _statusText = 'Select a tower first.';
+      _statusText = '먼저 타워를 선택하세요.';
       _syncSession();
       return;
     }
     if (!tower.canChooseBranch) {
-      _statusText = 'This tower cannot choose a branch right now.';
+      _statusText = '이 타워는 지금 브랜치를 선택할 수 없습니다.';
       _syncSession();
       return;
     }
@@ -247,13 +247,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
       }
     }
     if (branch == null) {
-      _statusText = 'Unknown branch selection.';
+      _statusText = '알 수 없는 브랜치 선택입니다.';
       _syncSession();
       return;
     }
 
     tower.branchId = branchId;
-    _statusText = '${tower.definition.label} specialized into ${branch.label}.';
+    _statusText = '${tower.definition.label}이(가) ${branch.label} 브랜치로 특화되었습니다.';
     audioService.play(AudioEvent.uiConfirm);
     _syncSelectedTower();
     _syncSession();
@@ -308,7 +308,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     if (towerIndex != null) {
       _selectedTowerIndex = towerIndex;
       sessionController.setSelectedTower(_towers[towerIndex].details);
-      _statusText = '${_towers[towerIndex].definition.label} selected.';
+      _statusText = '${_towers[towerIndex].definition.label} 선택됨.';
       _syncSession();
       return;
     }
@@ -321,7 +321,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     if (selection == null) {
       sessionController.setSelectedTower(null);
       _selectedTowerIndex = null;
-      _statusText = 'Choose a buildable first or tap a placed tower.';
+      _statusText = '타워 카드를 선택하거나 배치된 타워를 탭하세요.';
       _syncSession();
       return;
     }
@@ -339,20 +339,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     }
 
     if (slot == null) {
-      _statusText = 'Tap directly on an empty build slot.';
+      _statusText = '빈 빌드 슬롯을 직접 탭하세요.';
       _syncSession();
       return;
     }
 
     final definition = TowerCatalog.byKind(selection);
     if (!definition.isUnlocked(metaUpgrades)) {
-      _statusText = definition.unlockHint ?? '${definition.label} is not unlocked yet.';
+      _statusText = definition.unlockHint ?? '${definition.label}은(는) 아직 해금되지 않았습니다.';
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
     }
     if (_coins < definition.cost) {
-      _statusText = 'Not enough coins for ${definition.label}.';
+      _statusText = '${definition.label} 건설에 코인이 부족합니다.';
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
@@ -371,7 +371,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     _builtTowerKinds.add(definition.kind.name);
     _selectedTowerIndex = _towers.length - 1;
     sessionController.setSelectedBuildable(null);
-    _statusText = '${definition.label} placed. You can keep building during combat.';
+    _statusText = '${definition.label} 배치 완료. 전투 중에도 계속 건설할 수 있습니다.';
     audioService.play(AudioEvent.towerPlace);
     _syncSelectedTower();
     _syncSession();
@@ -435,7 +435,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
           _baseHealth = 0;
           _stageFailed = true;
           _waveActive = false;
-          _statusText = 'The gate has fallen. Upgrade your build and try again.';
+          _statusText = '기지가 함락되었습니다. 타워를 강화하고 다시 도전하세요.';
         }
       }
     }
@@ -1242,12 +1242,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks {
     _waveActive = false;
     if (_currentWaveIndex == stage.waves.length - 1) {
       _stageCleared = true;
-      _statusText = 'Stage cleared. Permanent progression can now be awarded.';
+      _statusText = '스테이지 클리어! 진행 보상이 지급됩니다.';
       audioService.play(AudioEvent.stageClear);
       return;
     }
 
-    _statusText = 'Wave ${_currentWaveIndex + 1} cleared. Rebuild before the next push.';
+    _statusText = '웨이브 ${_currentWaveIndex + 1} 클리어! 다음 웨이브 전에 타워를 보강하세요.';
     audioService.play(AudioEvent.waveClear);
   }
 

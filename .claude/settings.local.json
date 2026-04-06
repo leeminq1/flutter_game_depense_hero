@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(png|jpg|jpeg|svg|ogg|mp3|wav|flac|json|txt|md\\)$\")",
+      "Bash(wc -l lib/app/screens/*.dart)",
+      "Bash(flutter analyze:*)"
+    ]
+  }
+}
