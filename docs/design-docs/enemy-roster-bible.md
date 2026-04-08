@@ -58,6 +58,32 @@ Visual implications:
 - Visual recipe: wolf-like or light rogue silhouette, short cloak, compact bow or knives, minimal armor
 - LPC direction: wolf head or light hooded scout works well
 
+### Banner Captain
+
+- Faction: bandit support leader
+- Stage entry: 4
+- Threat job: turns early mixed waves into coordinated pushes
+- Movement read: leader silhouette, spear or banner read, brighter crest accent
+- Defensive profile: light to medium
+- Offensive profile: moderate by itself, high indirect pressure through buffs
+- Special trait: every 3.2 seconds grants nearby bandit-family allies `+15%` speed and `+1` base damage for `1.8s`
+- Player lesson: support leaders must be picked off before the frontline multiplies in value
+- Visual recipe: leather captain, banner pole or spear, red hood mark or plume, commanding upper-body read
+- LPC direction: captain hat plus plume is preferred over generic bandit headwear
+
+### Wolf Scout
+
+- Faction: bandit beastfolk skirmisher
+- Stage entry: 6
+- Threat job: creates a sharper speed-check variant than the base scout
+- Movement read: beast head, narrow runner body, quick ranged silhouette
+- Defensive profile: low health with one-time evasion
+- Offensive profile: low per-unit damage, high leak pressure
+- Special trait: dodges the first physical hit and gains a permanent speed boost below `60%` health
+- Player lesson: the player needs layered coverage, not only one strong lane anchor
+- Visual recipe: wolf head, light leather, slim bow read, gray-brown fur accents
+- LPC direction: use the beast head as the silhouette anchor and keep the torso mass light
+
 ### Shield Infantry
 
 - Faction: bandit to bastion transitional frontline
@@ -97,6 +123,32 @@ Visual implications:
 - Visual recipe: clear skull read, worn scraps or rusted fragments, pale desaturated palette
 - LPC direction: keep silhouette simple so revive read stays clear
 
+### Bone Archer
+
+- Faction: undead skirmisher
+- Stage entry: 12
+- Threat job: extends attrition waves and punishes weak cleanup
+- Movement read: narrow skeleton with clear bow silhouette
+- Defensive profile: low to medium
+- Offensive profile: low direct threat, high attrition value
+- Special trait: spawns one normal `Skeleton Infantry` when destroyed
+- Player lesson: cleanup and corpse-control matter once the undead roster widens
+- Visual recipe: skeleton bowman, worn scraps, pale bone with dark ranged prop
+- LPC direction: preserve the bow read even at live battlefield scale
+
+### Plague Bearer
+
+- Faction: undead support
+- Stage entry: 17
+- Threat job: sustains undead pushes without needing a boss-tier healer
+- Movement read: hooded plague silhouette, censer or ritual staff, hanging cloth mass
+- Defensive profile: medium
+- Offensive profile: indirect; converts already-good pushes into longer fights
+- Special trait: every 4.0 seconds heals nearby undead for `8%` max HP and grants `12%` damage reduction for `1.5s`
+- Player lesson: sustained support must be answered before elite damage checks become unfair
+- Visual recipe: plague hood, censer, bone-green cloth accents, sickly support aura
+- LPC direction: use cloth and prop language to separate it from both Warlock and Cult Adept
+
 ### Grave Guard
 
 - Faction: undead elite
@@ -123,6 +175,19 @@ Visual implications:
 - Visual recipe: dark plate, cursed red or ember trim, imposing shoulders, elite sword silhouette
 - LPC direction: use heavier layering than shield infantry and a cleaner elite palette
 
+### Hex Sniper
+
+- Faction: cursed ranged disruptor
+- Stage entry: 21
+- Threat job: hardens elite escorts and forces cleaner target priority
+- Movement read: narrow hood, crossbow silhouette, occult accent
+- Defensive profile: low to moderate
+- Offensive profile: indirect but tactically expensive if ignored
+- Special trait: every 5.0 seconds grants `1` ward charge to itself and the highest-priority nearby ally
+- Player lesson: support that protects elites can be as dangerous as the elites themselves
+- Visual recipe: dark hood, crossbow, violet-green focal detail, cursed support posture
+- LPC direction: keep the ranged prop and hood read stronger than the robe mass
+
 ### Warlock
 
 - Faction: late cult-bastion support
@@ -135,6 +200,19 @@ Visual implications:
 - Player lesson: kill the enabler or the lane snowballs out of control
 - Visual recipe: full robe, occult mantle, staff or tome, orange-violet energy contrast
 - LPC direction: robe and shoulders are mandatory; never leave leg or torso reads underdressed
+
+### Bastion Priest
+
+- Faction: bastion elite support
+- Stage entry: 24
+- Threat job: sustains late elite pushes and refreshes the line at the worst moment
+- Movement read: plated cleric silhouette, mace or ritual staff, pale cloth focal point
+- Defensive profile: medium-high for a support unit
+- Offensive profile: indirect; preserves elite uptime more than dealing damage itself
+- Special trait: every 4.8 seconds heals the highest-priority elite ally for `14%` max HP and refreshes `1` ward charge; if no elite ally is nearby it self-heals for half value
+- Player lesson: late-game support cannot be evaluated only by raw HP or speed
+- Visual recipe: plated cleric, white-gold cloth, ritual mace, bastion authority read
+- LPC direction: combine a plated torso with a bright cleric cloth accent so it does not collapse into normal infantry
 
 ### Bastion Overlord
 
@@ -154,31 +232,31 @@ Visual implications:
 ### Stages 1-5
 
 - primary pressure: Raider and Scout
-- support pressure: light Shield Infantry introduction
+- support pressure: Shield Infantry plus first Banner Captain rally window
 - player fantasy: "I can stabilize this lane if I place smartly"
 
 ### Stages 6-10
 
-- primary pressure: bandits plus first Cult Adept support
-- support pressure: mixed speed and armor
+- primary pressure: bandits plus Wolf Scout speed checks
+- support pressure: Banner Captain and first Cult Adept support
 - player fantasy: "I need to identify priority targets instead of only building more DPS"
 
 ### Stages 11-15
 
-- primary pressure: Skeleton Infantry attrition and armored crossover
+- primary pressure: Skeleton Infantry attrition, Bone Archer spillover, and armored crossover
 - support pressure: revive mechanics and lane fatigue
 - player fantasy: "The same solution from stage 3 is no longer enough"
 
-### Stages 16-22
+### Stages 16-20
 
-- primary pressure: Grave Guard frontline with cult and knight backing
-- support pressure: control resistance and elite spikes
+- primary pressure: Grave Guard frontline with knight backing
+- support pressure: Plague Bearer sustain and cult overlap
 - player fantasy: "My tower combinations and upgrade choices matter"
 
-### Stages 23-29
+### Stages 21-29
 
-- primary pressure: Warlock-enabled compound waves
-- support pressure: summons, shields, elite escorts
+- primary pressure: ward-heavy bastion compound waves
+- support pressure: Hex Sniper, Warlock, and Bastion Priest stacking on elite escorts
 - player fantasy: "Every leak came from a real tactical problem"
 
 ### Stage 30
@@ -192,22 +270,24 @@ Visual implications:
 | --- | --- | --- |
 | Raider | Archer, Barracks | greedy early Coin Mill openings |
 | Scout | Frost, Barracks, cheap coverage | slow single-target-only plans |
+| Banner Captain | Archer pickoff, Ballista, Barracks stall | letting buff auras sit behind the frontline |
+| Wolf Scout | Frost, layered cheap coverage, Barracks | one-lane-only single-target plans |
 | Shield Infantry | Mage, Emberkeep, Ballista | Archer-heavy lines |
 | Cult Adept | Archer focus, Ballista pickoff | ignoring backline support |
 | Skeleton Infantry | Frost plus sustained DPS | overreliance on one-shot damage |
+| Bone Archer | sustained splash cleanup, Frost, Archer support | counting on one clean kill per body |
+| Plague Bearer | Ballista pickoff, focused burst, layered mage damage | slow attrition into healing loops |
 | Grave Guard | Ballista, Mage, layered DPS | pure slow-control plans |
 | Corrupted Knight | Ballista, Barracks stall plus burst | weak anti-elite coverage |
+| Hex Sniper | Ballista pickoff, fast Archer focus | leaving support alive behind elite wards |
 | Warlock | Ballista pickoff, Archer support focus | allowing summon cycles to repeat |
+| Bastion Priest | Ballista, burst windows, anti-support focus | splitting damage across too many elites |
 | Bastion Overlord | full combined roster | one-note builds |
 
-## Future Enemy Slots
+## Expansion Notes
 
-Reserved for later expansion without breaking the current family logic:
-
-- `banner captain`: bandit aura leader
-- `plague cart`: undead support wagon
-- `hex sniper`: cursed ranged disruptor
-- `bastion priest`: elite healer or ward maintainer
+- `banner captain`, `wolf scout`, `bone archer`, `plague bearer`, `hex sniper`, and `bastion priest` are now part of the live roster
+- future enemy slots should expand with the same family logic instead of replacing these roles
 
 ## Asset Notes
 
@@ -236,6 +316,8 @@ Reviewed on `2026-04-04` with multi-agent feedback and a local polish pass layer
 
 - Keep the current polished PNG set in use for runtime readability
 - Full LPC regeneration is now unblocked again through the Node-based exporter
+- Base enemy PNGs now come from the LPC split ZIP `standard/walk/down/5.png` so the base frame matches the walk cycle
+- Keep `walk_02` and `walk_03` sourced from `standard/walk/down/3.png` and `standard/walk/down/7.png`
 - Use further LPC regeneration later for `Warlock`, `Cult Adept`, and `Grave Guard` first if another silhouette jump is needed
 - Keep the current `Shield Infantry` batch asset unless a future battlefield camera change makes the shield read less prominent
 - Preserve faction palette discipline when rerendering so the campaign still feels coherent

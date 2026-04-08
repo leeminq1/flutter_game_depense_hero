@@ -2,6 +2,12 @@ import 'dart:ui';
 
 import 'package:depense_game/game/models/enemy_definition.dart';
 
+/// Tile types for the explicit tile-based grid system.
+/// - [path]: monster walking route (not buildable)
+/// - [buildable]: player can place towers here
+/// - [blocked]: neither path nor buildable (decorative/empty)
+enum TileType { path, buildable, blocked }
+
 enum StageEnvironmentTheme {
   frontierRoad,
   banditCrossroads,
@@ -11,10 +17,7 @@ enum StageEnvironmentTheme {
   throneMarch,
 }
 
-enum StageDecorationLayer {
-  background,
-  foreground,
-}
+enum StageDecorationLayer { background, foreground }
 
 enum StageObjectiveType {
   clearStage,
@@ -142,6 +145,8 @@ class StageDefinition {
     this.decorations = const [],
     this.unlockRequirements = const [],
     this.slotTapRadius = 28,
+    this.tileGrid,
+    this.pathSequence,
   });
 
   final int number;
@@ -161,6 +166,14 @@ class StageDefinition {
   final List<StageUnlockRequirement> unlockRequirements;
   final double slotTapRadius;
 
+  /// Explicit tile grid: `tileGrid[row][col]` gives the [TileType] for that cell.
+  /// When non-null, overrides the distance-based buildable slot and path detection.
+  final List<List<TileType>>? tileGrid;
+
+  /// Ordered list of [col, row] grid coordinates defining the monster path.
+  /// Used when [tileGrid] is non-null to set enemy waypoints from tile centers.
+  final List<List<int>>? pathSequence;
+
   StageEvaluationResult evaluateRun(StageRunSummary summary) {
     final results = [
       for (final objective in objectives)
@@ -170,14 +183,20 @@ class StageDefinition {
         ),
     ];
 
-    final stars = results.where((result) => result.completed).length.clamp(0, 3);
+    final stars = results
+        .where((result) => result.completed)
+        .length
+        .clamp(0, 3);
     return StageEvaluationResult(
       starsAwarded: stars,
       objectiveResults: results,
     );
   }
 
-  bool _evaluateObjective(StageObjectiveDefinition objective, StageRunSummary summary) {
+  bool _evaluateObjective(
+    StageObjectiveDefinition objective,
+    StageRunSummary summary,
+  ) {
     switch (objective.type) {
       case StageObjectiveType.clearStage:
         return summary.cleared;

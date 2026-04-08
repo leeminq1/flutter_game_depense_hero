@@ -3,11 +3,10 @@ import 'package:depense_game/app/routing/app_flow_state.dart';
 import 'package:depense_game/app/screens/game_screen.dart';
 import 'package:depense_game/app/screens/help_screen.dart';
 import 'package:depense_game/app/screens/home_screen.dart';
-import 'package:depense_game/app/screens/meta_upgrades_screen.dart';
 import 'package:depense_game/app/screens/settings_screen.dart';
 import 'package:depense_game/app/theme/app_theme.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
-import 'package:depense_game/data/sample/sample_campaign.dart';
+import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:flutter/material.dart';
 
 class TitleScreen extends StatefulWidget {
@@ -33,7 +32,7 @@ class _TitleScreenState extends State<TitleScreen> {
 
   Future<void> _refreshOverview() async {
     final overview = await widget.bootstrap.progressStore.loadCampaignOverview(
-      totalStages: SampleCampaign.totalStages,
+      totalStages: CampaignData.totalStages,
     );
     if (!mounted) {
       return;
@@ -60,7 +59,7 @@ class _TitleScreenState extends State<TitleScreen> {
                 title: const Text('새 게임 시작'),
                 content: const Text(
                   '기존 진행 데이터를 지우고 스테이지 1부터 다시 시작합니다. '
-                  '오디오 설정은 유지되고 튜토리얼 안내는 다시 표시됩니다.',
+                  '튜토리얼 흐름과 잠금 해제도 처음 상태로 돌아갑니다.',
                 ),
                 actions: [
                   TextButton(
@@ -106,15 +105,6 @@ class _TitleScreenState extends State<TitleScreen> {
     });
   }
 
-  Future<void> _openMetaUpgrades() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => MetaUpgradesScreen(bootstrap: widget.bootstrap),
-      ),
-    );
-    await _refreshOverview();
-  }
-
   Future<void> _openSettings() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -124,11 +114,9 @@ class _TitleScreenState extends State<TitleScreen> {
   }
 
   Future<void> _openHelp() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => const HelpScreen(),
-      ),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (context) => const HelpScreen()));
   }
 
   Future<void> _returnFromBattle() async {
@@ -155,40 +143,37 @@ class _TitleScreenState extends State<TitleScreen> {
           switchOutCurve: Curves.easeIn,
           child: switch (_flow) {
             AppFlowState.splash => _TitleSplash(
-                key: const ValueKey('splash'),
-                onTap: () => setState(() => _flow = AppFlowState.menu),
-              ),
+              key: const ValueKey('splash'),
+              onTap: () => setState(() => _flow = AppFlowState.menu),
+            ),
             AppFlowState.menu => _MainMenu(
-                key: const ValueKey('menu'),
-                overview: overview,
-                busy: _busy,
-                onNewGame: _startNewGame,
-                onContinue: _continueGame,
-                onSettings: _openSettings,
-              ),
+              key: const ValueKey('menu'),
+              overview: overview,
+              busy: _busy,
+              onNewGame: _startNewGame,
+              onContinue: _continueGame,
+              onSettings: _openSettings,
+            ),
             AppFlowState.camp => HomeScreen(
-                key: const ValueKey('camp'),
-                bootstrap: widget.bootstrap,
-                overview: overview,
-                onDeployNext: () => setState(() {
-                  _selectedStage = overview.recommendedStage?.stageNumber ?? 1;
-                  _flow = AppFlowState.battle;
-                }),
-                onReplayStage: (stageNumber) => setState(() {
-                  _selectedStage = stageNumber;
-                  _flow = AppFlowState.battle;
-                }),
-                onOpenMetaUpgrades: _openMetaUpgrades,
-                onOpenSettings: _openSettings,
-                onOpenHelp: _openHelp,
-                onBackToMenu: () => setState(() => _flow = AppFlowState.menu),
-              ),
+              key: const ValueKey('camp'),
+              overview: overview,
+              onDeployNext: () => setState(() {
+                _selectedStage = overview.recommendedStage?.stageNumber ?? 1;
+                _flow = AppFlowState.battle;
+              }),
+              onReplayStage: (stageNumber) => setState(() {
+                _selectedStage = stageNumber;
+                _flow = AppFlowState.battle;
+              }),
+              onOpenHelp: _openHelp,
+              onBackToMenu: () => setState(() => _flow = AppFlowState.menu),
+            ),
             AppFlowState.battle => GameScreen(
-                key: ValueKey('battle-$_selectedStage'),
-                bootstrap: widget.bootstrap,
-                initialStageNumber: _selectedStage,
-                onExitToCamp: _returnFromBattle,
-              ),
+              key: ValueKey('battle-$_selectedStage'),
+              bootstrap: widget.bootstrap,
+              initialStageNumber: _selectedStage,
+              onExitToCamp: _returnFromBattle,
+            ),
           },
         ),
       ),
@@ -196,9 +181,6 @@ class _TitleScreenState extends State<TitleScreen> {
   }
 }
 
-// ─────────────────────────────────────────────
-//  SPLASH — premium animated title
-// ─────────────────────────────────────────────
 class _TitleSplash extends StatefulWidget {
   const _TitleSplash({super.key, required this.onTap});
 
@@ -240,7 +222,6 @@ class _TitleSplashState extends State<_TitleSplash>
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Spacer(flex: 3),
-                // ── Glowing title ──
                 AnimatedBuilder(
                   animation: _ctrl,
                   builder: (context, child) {
@@ -266,9 +247,7 @@ class _TitleSplashState extends State<_TitleSplash>
                     children: [
                       Text(
                         'DEPENSE',
-                        style: Theme.of(context)
-                            .textTheme
-                            .displayLarge
+                        style: Theme.of(context).textTheme.displayLarge
                             ?.copyWith(
                               letterSpacing: 6,
                               shadows: [
@@ -283,15 +262,14 @@ class _TitleSplashState extends State<_TitleSplash>
                       Text(
                         '세로형 타워 디펜스',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.inkMuted,
-                              letterSpacing: 2,
-                            ),
+                          color: AppTheme.inkMuted,
+                          letterSpacing: 2,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const Spacer(flex: 4),
-                // ── Pulsing tap hint ──
                 AnimatedBuilder(
                   animation: _ctrl,
                   builder: (context, child) {
@@ -303,14 +281,16 @@ class _TitleSplashState extends State<_TitleSplash>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.touch_app_rounded,
-                          size: 20, color: AppTheme.inkMuted),
+                      Icon(
+                        Icons.touch_app_rounded,
+                        size: 20,
+                        color: AppTheme.inkMuted,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         '화면을 터치하세요',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: AppTheme.inkMuted,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(color: AppTheme.inkMuted),
                       ),
                     ],
                   ),
@@ -325,9 +305,6 @@ class _TitleSplashState extends State<_TitleSplash>
   }
 }
 
-// ─────────────────────────────────────────────
-//  MAIN MENU — icon-based premium buttons
-// ─────────────────────────────────────────────
 class _MainMenu extends StatelessWidget {
   const _MainMenu({
     super.key,
@@ -354,12 +331,11 @@ class _MainMenu extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // ── Logo small ──
             Text(
               'DEPENSE',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    letterSpacing: 4,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineLarge?.copyWith(letterSpacing: 4),
             ),
             const SizedBox(height: 6),
             Container(
@@ -371,12 +347,11 @@ class _MainMenu extends StatelessWidget {
               ),
             ),
             const Spacer(flex: 2),
-            // ── Menu buttons ──
             _MenuButton(
               icon: Icons.play_arrow_rounded,
               iconColor: AppTheme.moss,
-              label: busy ? 'Loading...' : 'New Game',
-              subtitle: 'Start from Stage 1',
+              label: busy ? '로딩 중...' : '새 게임',
+              subtitle: '스테이지 1부터 다시 시작',
               glowColor: AppTheme.moss,
               onTap: busy ? null : onNewGame,
             ),
@@ -384,10 +359,10 @@ class _MainMenu extends StatelessWidget {
             _MenuButton(
               icon: Icons.fast_forward_rounded,
               iconColor: canContinue ? AppTheme.ember : AppTheme.inkMuted,
-              label: 'Continue',
+              label: '이어하기',
               subtitle: canContinue
-                  ? 'Resume Stage ${overview.currentCampaignStage}'
-                  : 'No save data',
+                  ? '스테이지 ${overview.currentCampaignStage}부터 재개'
+                  : '이어할 진행이 없습니다',
               glowColor: canContinue ? AppTheme.ember : null,
               onTap: canContinue ? onContinue : null,
             ),
@@ -395,24 +370,28 @@ class _MainMenu extends StatelessWidget {
             _MenuButton(
               icon: Icons.settings_rounded,
               iconColor: AppTheme.steel,
-              label: 'Settings',
-              subtitle: 'Audio & Tutorial',
+              label: '설정',
+              subtitle: '환경 설정과 도움말',
               onTap: busy ? null : onSettings,
             ),
             const Spacer(flex: 3),
-            // ── Stat chips ──
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _StatChip(
-                    icon: Icons.person_rounded,
-                    label: 'Lv.${overview.player.accountLevel}'),
-                const SizedBox(width: 10),
-                _StatChip(icon: Icons.star_rounded, label: '${overview.totalStars}'),
+                  icon: Icons.person_rounded,
+                  label: 'Lv.${overview.player.accountLevel}',
+                ),
                 const SizedBox(width: 10),
                 _StatChip(
-                    icon: Icons.check_circle_outline_rounded,
-                    label: '${overview.player.clearedStageCount}/30'),
+                  icon: Icons.star_rounded,
+                  label: '${overview.totalStars}',
+                ),
+                const SizedBox(width: 10),
+                _StatChip(
+                  icon: Icons.check_circle_outline_rounded,
+                  label: '${overview.player.clearedStageCount}/30',
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -470,7 +449,11 @@ class _MenuButton extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, size: 28, color: enabled ? iconColor : AppTheme.inkMuted),
+              Icon(
+                icon,
+                size: 28,
+                color: enabled ? iconColor : AppTheme.inkMuted,
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -479,15 +462,15 @@ class _MenuButton extends StatelessWidget {
                     Text(
                       label,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: enabled ? AppTheme.ink : AppTheme.inkMuted,
-                          ),
+                        color: enabled ? AppTheme.ink : AppTheme.inkMuted,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.inkMuted,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppTheme.inkMuted),
                     ),
                   ],
                 ),

@@ -1,7 +1,7 @@
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/game_collection_models.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
-import 'package:depense_game/data/sample/sample_campaign.dart';
+import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:isar/isar.dart';
@@ -142,7 +142,7 @@ class LocalProgressStore {
     final stages = List<StageProgressSnapshot>.generate(totalStages, (index) {
       final stageNumber = index + 1;
       final record = byStage[stageNumber];
-      final definition = SampleCampaign.stage(stageNumber);
+      final definition = CampaignData.stage(stageNumber);
       final unlockCheck = _checkStageUnlocked(
         stage: definition,
         byStage: byStage,
@@ -267,7 +267,7 @@ class LocalProgressStore {
         (sum, record) => sum + record.stars,
       );
       final metaUpgrades = await _loadMetaUpgrades();
-      final nextStage = SampleCampaign.stage(stageNumber + 1);
+      final nextStage = CampaignData.stage(stageNumber + 1);
       final unlocked = _checkStageUnlocked(
         stage: nextStage,
         byStage: byStage,

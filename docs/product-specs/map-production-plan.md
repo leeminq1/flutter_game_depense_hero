@@ -17,6 +17,7 @@ Map-related foundations already exist:
 
 - each stage has `pathNodes`
 - each stage has `buildSlots`
+- each stage can now also provide an explicit `tileGrid` and ordered `pathSequence`
 - stage brackets already map to biome themes through campaign data
 - reusable props and landmark sprites already exist under `assets/sprites/environment`
 - the runtime already draws lane pathing and tower placement points
@@ -142,6 +143,8 @@ Current implementation note:
 - stage themes now also generate lightweight ground accents and lane-detail motifs so the battlefield reads as dirt road, grave lane, chapel stone, bastion road, or throne march instead of only a recolored line
 - runtime ground, lane, and anchor marks are now precomputed into a cached texture plan on resize instead of being recomputed ad hoc inside every draw step
 - stage resize now builds a cached `MapTexturePlanner` result so ground marks, path detail marks, and anchor emphasis are sampled once and then reused by runtime rendering
+- the default 30-stage campaign now prefers a centered `8 x 14` tile battlefield with `52px` cells, so build placement and enemy movement can snap to authored cells instead of path-distance heuristics
+- tile visuals now use Kenney grass/path sprites, while path tiles can add trim overlays from neighbor lookups for cleaner bends and map edges
 
 ### Phase 3: Stage Bracket Presets
 
@@ -200,6 +203,7 @@ Current implementation status:
 
 - environment must never obscure enemy path readability
 - build slots must remain obvious on mobile
+- any non-path build cell that is intentionally playable should be marked directly in `tileGrid`; do not rely on path-clearance math for adjacent placement legality
 - landmark count should stay low enough that towers remain the main gameplay focal point
 - foreground accents should be rare and never cover core interactions
 - keep roughly `70%` clean gameplay space, `20%` light texture variation, and `10%` focal decoration

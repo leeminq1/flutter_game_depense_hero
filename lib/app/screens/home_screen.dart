@@ -1,4 +1,3 @@
-import 'package:depense_game/app/bootstrap/app_bootstrap.dart';
 import 'package:depense_game/app/theme/app_theme.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
 import 'package:flutter/material.dart';
@@ -6,22 +5,16 @@ import 'package:flutter/material.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
-    required this.bootstrap,
     required this.overview,
     required this.onDeployNext,
     required this.onReplayStage,
-    required this.onOpenMetaUpgrades,
-    required this.onOpenSettings,
     required this.onOpenHelp,
     required this.onBackToMenu,
   });
 
-  final AppBootstrap bootstrap;
   final CampaignOverview overview;
   final VoidCallback onDeployNext;
   final ValueChanged<int> onReplayStage;
-  final VoidCallback onOpenMetaUpgrades;
-  final VoidCallback onOpenSettings;
   final VoidCallback onOpenHelp;
   final VoidCallback onBackToMenu;
 
@@ -58,7 +51,9 @@ class HomeScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: AppTheme.panel.withValues(alpha: 0.6),
-        border: const Border(bottom: BorderSide(color: AppTheme.line, width: 1)),
+        border: const Border(
+          bottom: BorderSide(color: AppTheme.line, width: 1),
+        ),
       ),
       child: Row(
         children: [
@@ -80,8 +75,10 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                '전진 기지',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.inkMuted),
+                '작전 기지',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppTheme.inkMuted),
               ),
             ],
           ),
@@ -104,7 +101,12 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatIndicator(BuildContext context, {required IconData icon, required Color color, required String value}) {
+  Widget _buildStatIndicator(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String value,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -129,8 +131,13 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNextMissionCard(BuildContext context, StageProgressSnapshot? nextStage) {
-    if (nextStage == null) return const SizedBox.shrink();
+  Widget _buildNextMissionCard(
+    BuildContext context,
+    StageProgressSnapshot? nextStage,
+  ) {
+    if (nextStage == null) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -144,7 +151,10 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-        border: Border.all(color: AppTheme.moss.withValues(alpha: 0.3), width: 1.5),
+        border: Border.all(
+          color: AppTheme.moss.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: AppTheme.moss.withValues(alpha: 0.1),
@@ -159,7 +169,10 @@ class HomeScreen extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.moss,
                   borderRadius: BorderRadius.circular(8),
@@ -188,7 +201,9 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             nextStage.description,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.inkMuted),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.inkMuted),
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -199,7 +214,9 @@ class HomeScreen extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.moss,
                 foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 8,
                 shadowColor: AppTheme.moss.withValues(alpha: 0.5),
               ),
@@ -209,8 +226,12 @@ class HomeScreen extends StatelessWidget {
                   Icon(Icons.bolt_rounded),
                   SizedBox(width: 12),
                   Text(
-                    '작전 개시 (DEPLOY)',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1.2),
+                    '작전 개시',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ],
               ),
@@ -222,30 +243,13 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildSecondaryActions(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildActionButton(
-            context,
-            icon: Icons.trending_up_rounded,
-            label: '성장 정비',
-            subLabel: 'Meta Upgrades',
-            color: AppTheme.ember,
-            onTap: onOpenMetaUpgrades,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildActionButton(
-            context,
-            icon: Icons.help_outline_rounded,
-            label: '가이드',
-            subLabel: 'Help & Info',
-            color: AppTheme.steel,
-            onTap: onOpenHelp,
-          ),
-        ),
-      ],
+    return _buildActionButton(
+      context,
+      icon: Icons.help_outline_rounded,
+      label: '가이드',
+      subLabel: '게임 시스템과 타워 역할 보기',
+      color: AppTheme.steel,
+      onTap: onOpenHelp,
     );
   }
 
@@ -294,10 +298,14 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Row(
             children: [
-              const Icon(Icons.history_rounded, color: AppTheme.inkMuted, size: 18),
+              const Icon(
+                Icons.history_rounded,
+                color: AppTheme.inkMuted,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
-                '지난 전장 (REPLAY)',
+                '스테이지 선택',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: AppTheme.inkMuted,
                   letterSpacing: 1.5,
@@ -328,14 +336,18 @@ class HomeScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isUnlocked 
-                    ? (isCleared ? AppTheme.moss.withValues(alpha: 0.1) : AppTheme.panel)
-                    : Colors.black.withValues(alpha: 0.3),
+                  color: isUnlocked
+                      ? (isCleared
+                            ? AppTheme.moss.withValues(alpha: 0.1)
+                            : AppTheme.panel)
+                      : Colors.black.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isUnlocked 
-                      ? (isCleared ? AppTheme.moss.withValues(alpha: 0.4) : AppTheme.line)
-                      : Colors.transparent,
+                    color: isUnlocked
+                        ? (isCleared
+                              ? AppTheme.moss.withValues(alpha: 0.4)
+                              : AppTheme.line)
+                        : Colors.transparent,
                   ),
                 ),
                 child: Center(
@@ -345,7 +357,9 @@ class HomeScreen extends StatelessWidget {
                       Text(
                         '${stage.stageNumber}',
                         style: TextStyle(
-                          color: isUnlocked ? AppTheme.ink : AppTheme.inkMuted.withValues(alpha: 0.3),
+                          color: isUnlocked
+                              ? AppTheme.ink
+                              : AppTheme.inkMuted.withValues(alpha: 0.3),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -353,15 +367,24 @@ class HomeScreen extends StatelessWidget {
                         Positioned(
                           bottom: 4,
                           child: Row(
-                            children: List.generate(3, (i) => Icon(
-                              Icons.star_rounded,
-                              size: 8,
-                              color: i < stage.stars ? Colors.amber : AppTheme.inkMuted.withValues(alpha: 0.3),
-                            )),
+                            children: List.generate(
+                              3,
+                              (i) => Icon(
+                                Icons.star_rounded,
+                                size: 8,
+                                color: i < stage.stars
+                                    ? Colors.amber
+                                    : AppTheme.inkMuted.withValues(alpha: 0.3),
+                              ),
+                            ),
                           ),
                         ),
                       if (!isUnlocked)
-                        const Icon(Icons.lock_rounded, size: 14, color: AppTheme.line),
+                        const Icon(
+                          Icons.lock_rounded,
+                          size: 14,
+                          color: AppTheme.line,
+                        ),
                     ],
                   ),
                 ),

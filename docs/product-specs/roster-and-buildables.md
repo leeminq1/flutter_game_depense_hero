@@ -96,6 +96,20 @@
 - Punishes slow setup
 - Current special ability: dodges the first physical hit
 
+### Banner Captain
+
+- Early bandit support leader
+- Buff-centric pressure amplifier
+- Encourages support-target priority before the frontline snowballs
+- Current special ability: periodically grants nearby bandit-family allies bonus speed and base damage
+
+### Wolf Scout
+
+- Beastfolk speed variant
+- Faster than the base scout and harder to clean up late
+- Sharpens the lane-coverage check in early-mid stages
+- Current special ability: dodges the first physical hit and gains a permanent speed boost below `60%` health
+
 ### Shield Infantry
 
 - Moderate speed
@@ -116,6 +130,20 @@
 - Moderate speed, persistent pressure
 - Current special ability: revives once with partial health
 
+### Bone Archer
+
+- Undead skirmisher
+- Extends wave length without needing a giant HP pool
+- Makes cleanup and corpse control matter earlier
+- Current special ability: spawns one normal skeleton on death
+
+### Plague Bearer
+
+- Undead sustain support
+- Turns fair undead fights into longer attrition checks
+- Should appear behind mixed undead and elite pressure
+- Current special ability: periodically heals nearby undead and grants short damage reduction
+
 ### Grave Guard
 
 - Tankier undead elite
@@ -128,12 +156,26 @@
 - High threat, lower count
 - Current special ability: charges harder after being wounded
 
+### Hex Sniper
+
+- Late support disruptor
+- Protects elite escorts instead of front-lining itself
+- Raises the cost of ignoring backline ranged support
+- Current special ability: periodically grants a ward to itself and the highest-priority nearby ally
+
 ### Warlock
 
 - Late-game support / elite caster
 - Mix of buff, summon, or ranged spell pressure
 - Current special ability: periodically wards allies and summons reinforcements
 - Current art note: second-pass mantle and glow polish makes the support read more distinct from Cult Adept
+
+### Bastion Priest
+
+- Late elite support
+- More durable than other support casters and built to keep elite waves alive
+- Should appear in smaller counts but high-protection compositions
+- Current special ability: periodically heals the highest-priority elite ally and refreshes a ward; self-heals if no elite ally is nearby
 
 ### Bastion Overlord
 
@@ -144,10 +186,12 @@
 
 ## Faction Pacing
 
-- Stages 1-8: bandit emphasis
-- Stages 9-15: cult and armored bandit mix
-- Stages 16-22: undead pressure takes over and Grave Guard begins front-lining
-- Stages 23-30: cursed bastion waves combine Grave Guard, Corrupted Knight, and Warlock support
+- Stages 1-5: bandit emphasis with Banner Captain support entering at stage 4
+- Stages 6-10: bandit speed pressure widens through Wolf Scout and the first cult support
+- Stages 11-15: undead attrition broadens through Bone Archer spillover and armored crossover
+- Stages 16-20: undead pressure takes over and Plague Bearer sustain joins Grave Guard front-lining
+- Stages 21-25: cursed bastion waves add Hex Sniper ward support behind elite escorts
+- Stages 24-29: Bastion Priest joins the late elite-support stack without changing stage 30 boss ownership
 - Stage 30 finale: Bastion Overlord arrives in the last wave with escort summons and phase changes
 
 ## Real-Time Placement Rule

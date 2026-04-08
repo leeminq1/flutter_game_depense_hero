@@ -51,8 +51,9 @@ class TowerVisualCatalog {
           accentColor: Color(0xFFE7D99A),
           baseSize: 18,
           renderScale: 3.0,
-          generatorHint: 'wooden archer post, green hood banner, fantasy defense tower',
-          frames: 1,
+          generatorHint:
+              'wooden archer post, green hood banner, fantasy defense tower',
+          frames: 3,
         );
       case TowerKind.guardBarracks:
         return const UnitVisualDefinition(
@@ -62,8 +63,9 @@ class TowerVisualCatalog {
           accentColor: Color(0xFFF1D6AE),
           baseSize: 18,
           renderScale: 3.15,
-          generatorHint: 'small fantasy barracks, shield rack, brown timber guard post',
-          frames: 1,
+          generatorHint:
+              'small fantasy barracks, shield rack, brown timber guard post',
+          frames: 3,
         );
       case TowerKind.mageObelisk:
         return const UnitVisualDefinition(
@@ -74,7 +76,7 @@ class TowerVisualCatalog {
           baseSize: 18,
           renderScale: 3.0,
           generatorHint: 'arcane obelisk, violet crystal, fantasy magic tower',
-          frames: 1,
+          frames: 3,
         );
       case TowerKind.frostShrine:
         return const UnitVisualDefinition(
@@ -85,7 +87,7 @@ class TowerVisualCatalog {
           baseSize: 18,
           renderScale: 3.0,
           generatorHint: 'icy shrine, blue crystal altar, frost defense tower',
-          frames: 1,
+          frames: 3,
         );
       case TowerKind.coinMill:
         return const UnitVisualDefinition(
@@ -95,8 +97,9 @@ class TowerVisualCatalog {
           accentColor: Color(0xFFFBE0A2),
           baseSize: 18,
           renderScale: 3.05,
-          generatorHint: 'golden coin mill, fantasy workshop, economic support building',
-          frames: 1,
+          generatorHint:
+              'golden coin mill, fantasy workshop, economic support building',
+          frames: 3,
         );
       case TowerKind.ballista:
         return const UnitVisualDefinition(
@@ -106,8 +109,9 @@ class TowerVisualCatalog {
           accentColor: Color(0xFFF0D8B5),
           baseSize: 19,
           renderScale: 3.2,
-          generatorHint: 'heavy ballista emplacement, siege wood frame, defense turret',
-          frames: 1,
+          generatorHint:
+              'heavy ballista emplacement, siege wood frame, defense turret',
+          frames: 3,
         );
       case TowerKind.emberkeep:
         return const UnitVisualDefinition(
@@ -117,8 +121,9 @@ class TowerVisualCatalog {
           accentColor: Color(0xFFFFD0A1),
           baseSize: 19,
           renderScale: 3.1,
-          generatorHint: 'fire brazier keep, ember brazier, fantasy flame tower',
-          frames: 1,
+          generatorHint:
+              'fire brazier keep, ember brazier, fantasy flame tower',
+          frames: 3,
         );
     }
   }
@@ -168,10 +173,7 @@ class BarracksDefenderVisualCatalog {
     ];
   }
 
-  static String assetPath({
-    required int level,
-    String? branchId,
-  }) {
+  static String assetPath({required int level, String? branchId}) {
     final tier = level.clamp(1, TowerVisualCatalog.maxTier);
     if (branchId != null && tier >= 2) {
       return '$_basePath/barracks_defender_${branchId}_t$tier.png';
@@ -193,8 +195,9 @@ class EnemyVisualCatalog {
           accentColor: Color(0xFFFFC18E),
           baseSize: 18,
           renderScale: 2.15,
-          generatorHint: 'bandit raider, rugged leather armor, fantasy pixel enemy',
-          frames: 1,
+          generatorHint:
+              'bandit raider, rugged leather armor, fantasy pixel enemy',
+          frames: 3,
         );
       case EnemyKind.scout:
         return const UnitVisualDefinition(
@@ -205,7 +208,31 @@ class EnemyVisualCatalog {
           baseSize: 16,
           renderScale: 2.05,
           generatorHint: 'fast rogue scout, light gear, fantasy pixel enemy',
-          frames: 1,
+          frames: 3,
+        );
+      case EnemyKind.bannerCaptain:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/enemies/banner_captain.png',
+          shape: VisualTokenShape.square,
+          primaryColor: Color(0xFF9E523C),
+          accentColor: Color(0xFFFFD4A0),
+          baseSize: 18,
+          renderScale: 2.12,
+          generatorHint:
+              'bandit banner captain, leather leader, spear and plume, fantasy pixel enemy',
+          frames: 3,
+        );
+      case EnemyKind.wolfScout:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/enemies/wolf_scout.png',
+          shape: VisualTokenShape.diamond,
+          primaryColor: Color(0xFF8B7A57),
+          accentColor: Color(0xFFF5E5BE),
+          baseSize: 16,
+          renderScale: 2.08,
+          generatorHint:
+              'wolf scout, beastfolk skirmisher, fast dark fantasy pixel enemy',
+          frames: 3,
         );
       case EnemyKind.shieldInfantry:
         return const UnitVisualDefinition(
@@ -216,7 +243,7 @@ class EnemyVisualCatalog {
           baseSize: 18,
           renderScale: 2.15,
           generatorHint: 'armored infantry, shield bearer, fantasy pixel enemy',
-          frames: 1,
+          frames: 3,
         );
       case EnemyKind.cultAdept:
         return const UnitVisualDefinition(
@@ -226,8 +253,9 @@ class EnemyVisualCatalog {
           accentColor: Color(0xFFD5C2FF),
           baseSize: 18,
           renderScale: 2.1,
-          generatorHint: 'hooded cult adept, ritual caster, fantasy pixel enemy',
-          frames: 1,
+          generatorHint:
+              'hooded cult adept, ritual caster, fantasy pixel enemy',
+          frames: 3,
         );
       case EnemyKind.skeleton:
         return const UnitVisualDefinition(
@@ -237,8 +265,21 @@ class EnemyVisualCatalog {
           accentColor: Color(0xFFF8F4E2),
           baseSize: 18,
           renderScale: 2.05,
-          generatorHint: 'animated skeleton soldier, bone warrior, fantasy pixel enemy',
-          frames: 1,
+          generatorHint:
+              'animated skeleton soldier, bone warrior, fantasy pixel enemy',
+          frames: 3,
+        );
+      case EnemyKind.boneArcher:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/enemies/bone_archer.png',
+          shape: VisualTokenShape.diamond,
+          primaryColor: Color(0xFFC8C1AF),
+          accentColor: Color(0xFFFFF0D6),
+          baseSize: 17,
+          renderScale: 2.08,
+          generatorHint:
+              'bone archer, undead bow skirmisher, dark fantasy pixel enemy',
+          frames: 3,
         );
       case EnemyKind.graveGuard:
         return const UnitVisualDefinition(
@@ -248,8 +289,21 @@ class EnemyVisualCatalog {
           accentColor: Color(0xFFDAE5D1),
           baseSize: 20,
           renderScale: 2.2,
-          generatorHint: 'undead grave guard, heavy armor, dark green elite enemy',
-          frames: 1,
+          generatorHint:
+              'undead grave guard, heavy armor, dark green elite enemy',
+          frames: 3,
+        );
+      case EnemyKind.plagueBearer:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/enemies/plague_bearer.png',
+          shape: VisualTokenShape.caster,
+          primaryColor: Color(0xFF5E7152),
+          accentColor: Color(0xFFCDE2A8),
+          baseSize: 18,
+          renderScale: 2.12,
+          generatorHint:
+              'plague bearer, undead support, plague hood and censer, fantasy pixel enemy',
+          frames: 3,
         );
       case EnemyKind.corruptedKnight:
         return const UnitVisualDefinition(
@@ -259,8 +313,21 @@ class EnemyVisualCatalog {
           accentColor: Color(0xFFF0CBCB),
           baseSize: 20,
           renderScale: 2.25,
-          generatorHint: 'corrupted knight, dark plate armor, cursed elite enemy',
-          frames: 1,
+          generatorHint:
+              'corrupted knight, dark plate armor, cursed elite enemy',
+          frames: 3,
+        );
+      case EnemyKind.hexSniper:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/enemies/hex_sniper.png',
+          shape: VisualTokenShape.caster,
+          primaryColor: Color(0xFF5C4B73),
+          accentColor: Color(0xFFCBE4B7),
+          baseSize: 18,
+          renderScale: 2.1,
+          generatorHint:
+              'hex sniper, cursed crossbow support, dark fantasy pixel enemy',
+          frames: 3,
         );
       case EnemyKind.warlock:
         return const UnitVisualDefinition(
@@ -270,8 +337,21 @@ class EnemyVisualCatalog {
           accentColor: Color(0xFFD7BEFF),
           baseSize: 19,
           renderScale: 2.15,
-          generatorHint: 'warlock summoner, purple robes, dark fantasy pixel caster',
-          frames: 1,
+          generatorHint:
+              'warlock summoner, purple robes, dark fantasy pixel caster',
+          frames: 3,
+        );
+      case EnemyKind.bastionPriest:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/enemies/bastion_priest.png',
+          shape: VisualTokenShape.caster,
+          primaryColor: Color(0xFF8A7A5E),
+          accentColor: Color(0xFFFFE7B8),
+          baseSize: 19,
+          renderScale: 2.16,
+          generatorHint:
+              'bastion priest, plated cleric support, dark fantasy pixel enemy',
+          frames: 3,
         );
       case EnemyKind.bastionOverlord:
         return const UnitVisualDefinition(
@@ -281,9 +361,24 @@ class EnemyVisualCatalog {
           accentColor: Color(0xFFFFD5A8),
           baseSize: 28,
           renderScale: 2.65,
-          generatorHint: 'final boss overlord, cursed fortress lord, huge dark fantasy pixel enemy',
-          frames: 1,
+          generatorHint:
+              'final boss overlord, cursed fortress lord, huge dark fantasy pixel enemy',
+          frames: 3,
         );
     }
+  }
+
+  /// Returns the asset path for a specific animation frame (frame >= 1).
+  /// Frame 0 uses the base assetPath. Frame 1+ uses _walk_02, _walk_03, etc.
+  static String frameAssetPath(EnemyKind kind, int frame) {
+    final visual = byKind(kind);
+    final base = visual.assetPath;
+    if (frame <= 0) return base;
+    final dotIndex = base.lastIndexOf('.');
+    if (dotIndex == -1) return base;
+    final prefix = base.substring(0, dotIndex);
+    final suffix = base.substring(dotIndex);
+    // frame 0 → base file, frame 1 → _walk_02, frame 2 → _walk_03
+    return '${prefix}_walk_0${frame + 1}$suffix';
   }
 }

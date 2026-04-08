@@ -88,6 +88,12 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-05: Camp-home and result overlays now surface next campaign gates and recommended meta investments so the player sees a clearer next action after both wins and losses.
 - 2026-04-05: Stages 21-30 now use a hand-authored late-campaign arc with separate bastion-pressure and throne-march bands, plus a more intentional pre-boss lead-in.
 - 2026-04-05: Late-campaign rewards and failure guidance now scale more intentionally so Warlock, Grave Guard, and boss-adjacent retries feel less opaque.
+- 2026-04-08: LPC enemy export now emits `walk_02` and `walk_03` companion frames through the same 64x64 crop pipeline, so enemy walk cycles can be generated without mixing in mismatched external PNG sizes.
+- 2026-04-08: LPC enemy base PNGs now also come from the split animation ZIP at `standard/walk/down/5.png`, making base and walk frames come from one canonical source instead of mixing in idle-preview captures.
+- 2026-04-08: The live enemy roster now includes six additional LPC-derived units: Banner Captain, Wolf Scout, Bone Archer, Plague Bearer, Hex Sniper, and Bastion Priest.
+- 2026-04-08: Campaign roster profiles now use array-backed pools for common, support, elite, and boss kinds so wave sourcing can grow without adding more fixed biome slots.
+- 2026-04-08: Campaign stages now support explicit `tileGrid` and `pathSequence` data, and the default 30-stage sample campaign uses a centered `8 x 14` tile board instead of distance-only path clearance for build legality.
+- 2026-04-08: Runtime map rendering can now draw Kenney grass/path tiles from grid data, including neighbor-based path trim overlays and direct tile-center enemy waypoint conversion.
 
 ## Risks
 
@@ -96,6 +102,8 @@ Create the first playable vertical slice and the documentation discipline needed
 - Asset experimentation could outpace naming and export discipline.
 - Reward, save, and ad boundaries could create duplication bugs if not modeled transactionally.
 - Large-scale wave combat may produce too many overlapping SFX unless event categories are throttled and pooled.
+- Sustain and ward-support enemies could create late-wave stall states if heal cadence, ward uptime, or elite overlap drift too high during future balance passes.
+- The new tile-grid placement model may expose more buildable cells than the old slot template flow, so economy pacing and tower-count pressure should be watched during the next balance pass.
 
 ## Exit Criteria
 
@@ -146,3 +154,7 @@ Create the first playable vertical slice and the documentation discipline needed
 - Crest-stage identity is now reinforced by both landmark layout and ground-overlay treatment, which helps those milestone stages read as bosses or checkpoints instead of only harder maps.
 - Map texture rendering now has a clearer separation between planning and drawing, which lowers risk as future biome rules or crest-stage exceptions are added.
 - The project now has a dedicated roadmap for moving from internal prototype quality toward a public first playable, with gameplay-complete work identified as the immediate focus.
+- Enemy sprites can now include matching `walk_02` and `walk_03` frames generated from the same LPC source pipeline as the base frame, reducing runtime fallback and walk-animation asset mismatch risk.
+- Enemy bases, `walk_02`, and `walk_03` now all come from the same LPC ZIP export mapping, reducing animation mismatch and bad-source drift across rerenders.
+- The late campaign now exposes heal, ward, summon, and buff support roles through a broader 15-unit roster instead of reusing the same few enemy patterns.
+- The sample campaign battlefield is now authored as tile data first, which fixes path-adjacent placement false negatives and makes path centering consistent across the full 30-stage arc.

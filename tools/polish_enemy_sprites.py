@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -26,6 +27,8 @@ EMBER = rgba("#E77E36")
 BONE = rgba("#D1C9B7")
 BROWN = rgba("#7F5733")
 OBSIDIAN = rgba("#302A34")
+WHITE = rgba("#F2E8D5")
+TEAL = rgba("#73A8A0")
 
 
 def open_enemy(name: str):
@@ -53,6 +56,24 @@ def polish_scout():
     d.line((29, 29, 36, 26), fill=BROWN, width=1)
     d.line((18, 39, 29, 39), fill=STEEL_DARK, width=2)
     save_enemy("scout", img)
+
+
+def polish_banner_captain():
+    img = open_enemy("banner_captain")
+    d = ImageDraw.Draw(img)
+    d.line((41, 16, 41, 43), fill=STEEL_DARK, width=2)
+    d.polygon([(41, 18), (50, 21), (45, 28), (41, 26)], fill=RED, outline=OUTLINE)
+    d.line((24, 22, 30, 22), fill=GOLD, width=1)
+    save_enemy("banner_captain", img)
+
+
+def polish_wolf_scout():
+    img = open_enemy("wolf_scout")
+    d = ImageDraw.Draw(img)
+    d.line((12, 30, 18, 26), fill=BONE, width=1)
+    d.line((30, 28, 36, 24), fill=BROWN, width=1)
+    d.line((17, 42, 27, 42), fill=STEEL_DARK, width=2)
+    save_enemy("wolf_scout", img)
 
 
 def polish_shield_infantry():
@@ -83,6 +104,15 @@ def polish_skeleton():
     save_enemy("skeleton", img)
 
 
+def polish_bone_archer():
+    img = open_enemy("bone_archer")
+    d = ImageDraw.Draw(img)
+    d.line((16, 24, 22, 38), fill=BROWN, width=1)
+    d.arc((26, 20, 40, 42), start=240, end=120, fill=STEEL_DARK, width=2)
+    d.line((18, 27, 24, 27), fill=BONE, width=1)
+    save_enemy("bone_archer", img)
+
+
 def polish_grave_guard():
     img = open_enemy("grave_guard")
     d = ImageDraw.Draw(img)
@@ -93,6 +123,15 @@ def polish_grave_guard():
     save_enemy("grave_guard", img)
 
 
+def polish_plague_bearer():
+    img = open_enemy("plague_bearer")
+    d = ImageDraw.Draw(img)
+    d.line((22, 20, 22, 39), fill=BROWN, width=2)
+    d.ellipse((18, 32, 26, 40), fill=GREEN_LIGHT, outline=OUTLINE)
+    d.line((15, 40, 30, 40), fill=GREEN, width=2)
+    save_enemy("plague_bearer", img)
+
+
 def polish_corrupted_knight():
     img = open_enemy("corrupted_knight")
     d = ImageDraw.Draw(img)
@@ -100,6 +139,15 @@ def polish_corrupted_knight():
     d.rectangle((28, 13, 34, 24), fill=OBSIDIAN, outline=OUTLINE)
     d.polygon([(18, 18), (12, 24), (15, 34), (19, 29)], fill=RED_DARK, outline=OUTLINE)
     save_enemy("corrupted_knight", img)
+
+
+def polish_hex_sniper():
+    img = open_enemy("hex_sniper")
+    d = ImageDraw.Draw(img)
+    d.line((14, 31, 36, 31), fill=STEEL_DARK, width=2)
+    d.line((18, 26, 31, 36), fill=OBSIDIAN, width=1)
+    d.ellipse((22, 18, 28, 24), fill=GREEN_LIGHT, outline=OUTLINE)
+    save_enemy("hex_sniper", img)
 
 
 def polish_warlock():
@@ -113,6 +161,15 @@ def polish_warlock():
     save_enemy("warlock", img)
 
 
+def polish_bastion_priest():
+    img = open_enemy("bastion_priest")
+    d = ImageDraw.Draw(img)
+    d.line((23, 18, 23, 40), fill=GOLD, width=2)
+    d.ellipse((18, 14, 28, 24), fill=WHITE, outline=OUTLINE)
+    d.line((16, 39, 31, 39), fill=WHITE, width=2)
+    save_enemy("bastion_priest", img)
+
+
 def polish_bastion_overlord():
     img = open_enemy("bastion_overlord")
     d = ImageDraw.Draw(img)
@@ -123,16 +180,53 @@ def polish_bastion_overlord():
     save_enemy("bastion_overlord", img)
 
 
+POLISHERS = {
+    "raider": polish_raider,
+    "scout": polish_scout,
+    "banner_captain": polish_banner_captain,
+    "wolf_scout": polish_wolf_scout,
+    "shield_infantry": polish_shield_infantry,
+    "cult_adept": polish_cult_adept,
+    "skeleton": polish_skeleton,
+    "bone_archer": polish_bone_archer,
+    "grave_guard": polish_grave_guard,
+    "plague_bearer": polish_plague_bearer,
+    "corrupted_knight": polish_corrupted_knight,
+    "hex_sniper": polish_hex_sniper,
+    "warlock": polish_warlock,
+    "bastion_priest": polish_bastion_priest,
+    "bastion_overlord": polish_bastion_overlord,
+}
+
+
+def requested_ids():
+    args = sys.argv[1:]
+    if not args:
+        return list(POLISHERS.keys())
+
+    if args[0] == "--ids":
+        tokens = args[1:]
+    else:
+        tokens = args
+
+    values = []
+    for token in tokens:
+        for piece in token.split(","):
+            piece = piece.strip()
+            if piece:
+                values.append(piece)
+    return values or list(POLISHERS.keys())
+
+
 def main():
-    polish_raider()
-    polish_scout()
-    polish_shield_infantry()
-    polish_cult_adept()
-    polish_skeleton()
-    polish_grave_guard()
-    polish_corrupted_knight()
-    polish_warlock()
-    polish_bastion_overlord()
+    for enemy_id in requested_ids():
+        polisher = POLISHERS.get(enemy_id)
+        if polisher is None:
+            continue
+        target = ENEMY_DIR / f"{enemy_id}.png"
+        if not target.exists():
+            continue
+        polisher()
 
 
 if __name__ == "__main__":

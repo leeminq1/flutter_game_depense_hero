@@ -62,8 +62,8 @@ class GameSessionController extends ChangeNotifier {
   SelectedTowerDetails? selectedTower;
   Set<String> builtTowerKinds = const {};
   String statusText = '전장에 타워를 배치하거나 설치된 타워를 선택하세요.';
-  
-  // NEW: UI 지원용 필드
+
+  // UI helper fields mirrored from the live game session.
   int _remainingEnemies = 0;
   double _speedMultiplier = 1.0;
 

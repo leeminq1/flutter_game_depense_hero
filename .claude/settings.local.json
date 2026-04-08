@@ -3,7 +3,20 @@
     "allow": [
       "Bash(grep -E \"\\\\.\\(png|jpg|jpeg|svg|ogg|mp3|wav|flac|json|txt|md\\)$\")",
       "Bash(wc -l lib/app/screens/*.dart)",
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "Bash(ls c:/Users/min21/Desktop/flutter_grame/depense_game/assets/*.png)",
+      "Bash(flutter pub:*)",
+      "Bash(dart run:*)",
+      "Bash(xargs grep:*)",
+      "Bash(cp \"C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile119.png\" \"c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/grass.png\")",
+      "Bash(cp \"C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile060.png\" \"c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path.png\")",
+      "Bash(cp \"C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile055.png\" \"c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path.png\")",
+      "Bash(cp \"C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile024.png\" \"c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/grass2.png\")",
+      "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile001.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_edge_s.png)",
+      "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile023.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_edge_e.png)",
+      "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile025.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_edge_w.png)",
+      "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile026.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_corner_se.png)",
+      "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile027.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_corner_sw.png)"
     ]
   }
 }

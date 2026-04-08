@@ -1,7 +1,7 @@
 import 'package:depense_game/app/bootstrap/app_bootstrap.dart';
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
-import 'package:depense_game/data/sample/sample_campaign.dart';
+import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/core/depense_game.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
@@ -56,7 +56,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _refreshOverview() async {
     final overview = await widget.bootstrap.progressStore.loadCampaignOverview(
-      totalStages: SampleCampaign.totalStages,
+      totalStages: CampaignData.totalStages,
     );
     if (!mounted) return;
     setState(() => _overview = overview);
@@ -64,12 +64,14 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _loadStage(int stageNumber) async {
     // Ensure we have current overview
-    final overview = _overview ?? await widget.bootstrap.progressStore.loadCampaignOverview(
-      totalStages: SampleCampaign.totalStages,
-    );
-    
+    final overview =
+        _overview ??
+        await widget.bootstrap.progressStore.loadCampaignOverview(
+          totalStages: CampaignData.totalStages,
+        );
+
     final resolvedMeta = MetaUpgradeCatalog.resolve(overview.metaUpgrades);
-    final stage = SampleCampaign.stage(stageNumber);
+    final stage = CampaignData.stage(stageNumber);
 
     if (!mounted) return;
     setState(() {
@@ -87,21 +89,51 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+  Future<void> _confirmExit(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF161D26),
+        title: const Text('게임 종료', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          '캠프로 돌아가시겠습니까?\n진행 중인 웨이브는 저장되지 않습니다.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소', style: TextStyle(color: Colors.white54)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4E4E),
+            ),
+            child: const Text('나가기'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      widget.onExitToCamp();
+    }
+  }
+
   Future<void> _handleSessionChanged() async {
     final game = _game;
     if (game == null) return;
-    
+
     // Only proceed if stage ended and we aren't already evaluating
-    if ((_sessionController.stageCleared || _sessionController.stageFailed) && 
-        !_isEvaluating && _completionResult == null) {
-      
+    if ((_sessionController.stageCleared || _sessionController.stageFailed) &&
+        !_isEvaluating &&
+        _completionResult == null) {
       _isEvaluating = true;
       final evaluation = game.evaluateCurrentRun();
-      
+
       final result = await widget.bootstrap.progressStore.recordStageCompletion(
         stageNumber: _sessionController.stageNumber,
         evaluation: evaluation,
-        totalStages: SampleCampaign.totalStages,
+        totalStages: CampaignData.totalStages,
       );
 
       await _refreshOverview();
@@ -149,14 +181,14 @@ class _GameScreenState extends State<GameScreen> {
                       right: 0,
                       child: _TopHud(
                         sessionController: _sessionController,
-                        onBack: () => Navigator.of(context).maybePop(),
+                        onBack: () => _confirmExit(context),
                         onTogglePause: game.togglePaused,
                       ),
                     ),
 
                     // FLOATING WAVE BUTTON
-                    if (!_sessionController.waveInProgress && 
-                        !_sessionController.stageCleared && 
+                    if (!_sessionController.waveInProgress &&
+                        !_sessionController.stageCleared &&
                         !_sessionController.stageFailed)
                       Positioned(
                         bottom: 140,
@@ -202,17 +234,20 @@ class _GameScreenState extends State<GameScreen> {
               },
             ),
 
-    // RESULT OVERLAY
-    if (_sessionController.stageCleared || _sessionController.stageFailed)
-      _ResultOverlay(
-        sessionController: _sessionController,
-        completionResult: _completionResult,
-        stage: currentStage,
-        hasNextStage: _stageNumber < SampleCampaign.totalStages,
-        onRetry: () => _loadStage(_stageNumber),
-        onNextStage: () => _loadStage((_stageNumber + 1).clamp(1, SampleCampaign.totalStages)),
-        onReturnToCamp: widget.onExitToCamp,
-      ),
+            // RESULT OVERLAY
+            if (_sessionController.stageCleared ||
+                _sessionController.stageFailed)
+              _ResultOverlay(
+                sessionController: _sessionController,
+                completionResult: _completionResult,
+                stage: currentStage,
+                hasNextStage: _stageNumber < CampaignData.totalStages,
+                onRetry: () => _loadStage(_stageNumber),
+                onNextStage: () => _loadStage(
+                  (_stageNumber + 1).clamp(1, CampaignData.totalStages),
+                ),
+                onReturnToCamp: widget.onExitToCamp,
+              ),
           ],
         ),
       ),
@@ -239,10 +274,7 @@ class _TopHud extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.black.withValues(alpha: 0.6),
-            Colors.transparent,
-          ],
+          colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
         ),
       ),
       child: Row(
@@ -256,9 +288,11 @@ class _TopHud extends StatelessWidget {
           _StatIconItem(
             icon: Icons.favorite_rounded,
             color: const Color(0xFF98D67C),
-            value: '${sessionController.baseHealth}/${sessionController.maxBaseHealth}',
+            value:
+                '${sessionController.baseHealth}/${sessionController.maxBaseHealth}',
             isBar: true,
-            progress: sessionController.baseHealth / sessionController.maxBaseHealth,
+            progress:
+                sessionController.baseHealth / sessionController.maxBaseHealth,
           ),
           const Spacer(),
           // Coins
@@ -272,15 +306,23 @@ class _TopHud extends StatelessWidget {
           _StatIconItem(
             icon: Icons.waves_rounded,
             color: Colors.white70,
-            value: '${sessionController.currentWave}/${sessionController.totalWaves}',
+            value:
+                '${sessionController.currentWave}/${sessionController.totalWaves}',
           ),
           const SizedBox(width: 12),
           // Speed/Bug icon as per original
-          const Icon(Icons.bug_report_rounded, size: 18, color: Color(0xFFEF4E4E)),
+          const Icon(
+            Icons.bug_report_rounded,
+            size: 18,
+            color: Color(0xFFEF4E4E),
+          ),
           const SizedBox(width: 4),
           Text(
             '0',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(width: 12),
           _SmallButton(label: '1x', onPressed: () {}),
@@ -288,7 +330,9 @@ class _TopHud extends StatelessWidget {
           IconButton(
             onPressed: onTogglePause,
             icon: Icon(
-              sessionController.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+              sessionController.isPaused
+                  ? Icons.play_arrow_rounded
+                  : Icons.pause_rounded,
               color: Colors.white70,
             ),
           ),
@@ -345,7 +389,11 @@ class _StatIconItem extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             value,
-            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       );
@@ -357,7 +405,11 @@ class _StatIconItem extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           value,
-          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -380,7 +432,11 @@ class _SmallButton extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -400,7 +456,10 @@ class _WaveButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF1B2519).withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF98D67C).withValues(alpha: 0.4), width: 1.5),
+          border: Border.all(
+            color: const Color(0xFF98D67C).withValues(alpha: 0.4),
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF98D67C).withValues(alpha: 0.15),
@@ -414,7 +473,7 @@ class _WaveButton extends StatelessWidget {
             const Icon(Icons.play_arrow_rounded, color: Color(0xFF98D67C)),
             const SizedBox(width: 8),
             Text(
-              'Wave $waveNumber',
+              '웨이브 $waveNumber 출격!',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -451,7 +510,7 @@ class _BuildHint extends StatelessWidget {
   }
 }
 
-class _BuildBar extends StatelessWidget {
+class _BuildBar extends StatefulWidget {
   const _BuildBar({
     required this.sessionController,
     required this.metaUpgrades,
@@ -463,32 +522,189 @@ class _BuildBar extends StatelessWidget {
   final ValueChanged<TowerKind?> onSelect;
 
   @override
+  State<_BuildBar> createState() => _BuildBarState();
+}
+
+class _BuildBarState extends State<_BuildBar> {
+  TowerKind? _specKind;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.sessionController.addListener(_onSessionChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.sessionController.removeListener(_onSessionChanged);
+    super.dispose();
+  }
+
+  void _onSessionChanged() {
+    if (widget.sessionController.selectedBuildable == null &&
+        _specKind != null) {
+      setState(() => _specKind = null);
+    }
+  }
+
+  void _handleCardTap(TowerKind kind) {
+    final alreadySelected = widget.sessionController.selectedBuildable == kind;
+    setState(() => _specKind = alreadySelected ? null : kind);
+    widget.onSelect(alreadySelected ? null : kind);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final entries = TowerCatalog.buildMenu;
+    final specDef = _specKind != null
+        ? entries.firstWhere((t) => t.kind == _specKind)
+        : null;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       decoration: const BoxDecoration(
         color: Color(0xFF0F1720),
         border: Border(top: BorderSide(color: Colors.white10)),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (final tower in entries) ...[
-              _BuildCard(
-                tower: tower,
-                isUnlocked: tower.isUnlocked(metaUpgrades),
-                isSelected: sessionController.selectedBuildable == tower.kind,
-                onPressed: () => onSelect(
-                  sessionController.selectedBuildable == tower.kind ? null : tower.kind,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            height: specDef != null ? 72 : 0,
+            child: specDef != null
+                ? _TowerSpecPanel(definition: specDef)
+                : const SizedBox.shrink(),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final tower in entries) ...[
+                    _BuildCard(
+                      tower: tower,
+                      isUnlocked: tower.isUnlocked(widget.metaUpgrades),
+                      isSelected:
+                          widget.sessionController.selectedBuildable ==
+                          tower.kind,
+                      onPressed: () => _handleCardTap(tower.kind),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TowerSpecPanel extends StatelessWidget {
+  const _TowerSpecPanel({required this.definition});
+
+  final TowerDefinition definition;
+
+  String _koreanName(TowerKind kind) {
+    return switch (kind) {
+      TowerKind.archer => '궁수',
+      TowerKind.guardBarracks => '병영',
+      TowerKind.mageObelisk => '마법사',
+      TowerKind.frostShrine => '빙결',
+      TowerKind.coinMill => '금화 방앗간',
+      TowerKind.ballista => '발리스타',
+      TowerKind.emberkeep => '화염 요새',
+    };
+  }
+
+  String _rating(double value, double max) {
+    final score = ((value / max) * 5).clamp(0.0, 5.0);
+    final rounded = (score * 2).round() / 2;
+    if (rounded == rounded.truncateToDouble()) {
+      return '${rounded.toInt()}/5';
+    }
+    return '${rounded.toStringAsFixed(1)}/5';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rangeRating = _rating(definition.range, 175);
+    final dmgRating = _rating(definition.damage, 58);
+    final spdRating = definition.cooldown > 0
+        ? _rating(1 / definition.cooldown, 1 / 0.85)
+        : '5/5';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A1018),
+        border: Border(bottom: BorderSide(color: Colors.white10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Text(
+                '[${_koreanName(definition.kind)}]',
+                style: const TextStyle(
+                  color: Color(0xFFE4C67A),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Text(
+                      '사거리 $rangeRating',
+                      style: const TextStyle(
+                        color: Color(0xFFE4C67A),
+                        fontSize: 11,
+                      ),
+                    ),
+                    const Text(
+                      '·',
+                      style: TextStyle(color: Colors.white30, fontSize: 11),
+                    ),
+                    Text(
+                      '공격 $dmgRating',
+                      style: const TextStyle(
+                        color: Color(0xFFE4C67A),
+                        fontSize: 11,
+                      ),
+                    ),
+                    const Text(
+                      '·',
+                      style: TextStyle(color: Colors.white30, fontSize: 11),
+                    ),
+                    Text(
+                      '속도 $spdRating',
+                      style: const TextStyle(
+                        color: Color(0xFFE4C67A),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-          ],
-        ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            definition.shortDescription,
+            style: const TextStyle(color: Colors.white60, fontSize: 11),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
@@ -521,8 +737,8 @@ class _BuildCard extends StatelessWidget {
           color: isSelected ? const Color(0xFF1D2E1C) : const Color(0xFF161D26),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected 
-                ? const Color(0xFF98D67C).withValues(alpha: 0.6) 
+            color: isSelected
+                ? const Color(0xFF98D67C).withValues(alpha: 0.6)
                 : Colors.white10,
             width: isSelected ? 2 : 1,
           ),
@@ -532,7 +748,9 @@ class _BuildCard extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isUnlocked ? (isSelected ? const Color(0xFF98D67C) : tower.color) : Colors.white24,
+              color: isUnlocked
+                  ? (isSelected ? const Color(0xFF98D67C) : tower.color)
+                  : Colors.white24,
               size: 28,
             ),
             const SizedBox(height: 8),
@@ -616,10 +834,13 @@ class _TowerActionBar extends StatelessWidget {
               children: [
                 Text(
                   tower.label,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
-                  'Lv.${tower.level} ${tower.shortDescription}',
+                  '레벨 ${tower.level} · ${tower.shortDescription}',
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
               ],
@@ -633,7 +854,10 @@ class _TowerActionBar extends StatelessWidget {
           const SizedBox(width: 8),
           IconButton(
             onPressed: onSell,
-            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4E4E)),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: Color(0xFFEF4E4E),
+            ),
           ),
         ],
       ),
@@ -681,11 +905,13 @@ class _ResultOverlay extends StatelessWidget {
             Icon(
               cleared ? Icons.emoji_events_rounded : Icons.cancel_rounded,
               size: 64,
-              color: cleared ? const Color(0xFFE4C67A) : const Color(0xFFEF4E4E),
+              color: cleared
+                  ? const Color(0xFFE4C67A)
+                  : const Color(0xFFEF4E4E),
             ),
             const SizedBox(height: 16),
             Text(
-              cleared ? 'Stage Clear' : '스테이지 실패',
+              cleared ? '스테이지 클리어!' : '스테이지 실패',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 28,
@@ -700,16 +926,22 @@ class _ResultOverlay extends StatelessWidget {
                   for (var i = 0; i < 3; i++)
                     Icon(
                       Icons.star_rounded,
-                      color: (completionResult?.starsAwarded ?? 0) > i 
-                          ? const Color(0xFFE4C67A) 
+                      color: (completionResult?.starsAwarded ?? 0) > i
+                          ? const Color(0xFFE4C67A)
                           : Colors.white10,
                       size: 32,
                     ),
                 ],
               ),
               const SizedBox(height: 20),
-              _RewardRow(label: '경험치', value: '+${completionResult?.xpAwarded ?? 0}'),
-              _RewardRow(label: '메타 골드', value: '+${completionResult?.softCurrencyAwarded ?? 0}'),
+              _RewardRow(
+                label: '경험치',
+                value: '+${completionResult?.xpAwarded ?? 0}',
+              ),
+              _RewardRow(
+                label: '메타 골드',
+                value: '+${completionResult?.softCurrencyAwarded ?? 0}',
+              ),
               const SizedBox(height: 16),
               const Divider(color: Colors.white10),
               const SizedBox(height: 12),
@@ -719,15 +951,21 @@ class _ResultOverlay extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(
-                        objective.completed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                        objective.completed
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_unchecked_rounded,
                         size: 16,
-                        color: objective.completed ? const Color(0xFF98D67C) : Colors.white24,
+                        color: objective.completed
+                            ? const Color(0xFF98D67C)
+                            : Colors.white24,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         _localizeObjective(objective.label),
                         style: TextStyle(
-                          color: objective.completed ? Colors.white : Colors.white38,
+                          color: objective.completed
+                              ? Colors.white
+                              : Colors.white38,
                           fontSize: 13,
                         ),
                       ),
@@ -738,19 +976,19 @@ class _ResultOverlay extends StatelessWidget {
             const SizedBox(height: 24),
             if (cleared && hasNextStage)
               _LargeButton(
-                label: 'Next Stage',  // 영어 유지 (스크린샷 일치)
+                label: '다음 스테이지',
                 color: const Color(0xFF98D67C),
                 onPressed: onNextStage,
               ),
             const SizedBox(height: 12),
             _LargeButton(
-              label: cleared ? 'Replay Stage' : '다시 시도',
+              label: '다시 시도',
               color: const Color(0xFF486581),
               onPressed: onRetry,
             ),
             const SizedBox(height: 12),
             _LargeButton(
-              label: 'Return to Camp',  // 영어 유지 (스크린샷 일치)
+              label: '캠프로 돌아가기',
               color: Colors.transparent,
               onPressed: onReturnToCamp,
               isOutline: true,
@@ -766,7 +1004,9 @@ class _ResultOverlay extends StatelessWidget {
     if (label.contains('Defeat the Bastion Overlord')) return '기지 영주 처치';
     if (label.contains('Do not sell any towers')) return '타워 판매 금지';
     // "Finish with at least X base health" → dynamic threshold
-    final healthMatch = RegExp(r'Finish with at least (\d+) base health').firstMatch(label);
+    final healthMatch = RegExp(
+      r'Finish with at least (\d+) base health',
+    ).firstMatch(label);
     if (healthMatch != null) return '기지 체력 ${healthMatch.group(1)} 이상으로 완료';
     // Build specific tower
     if (label.contains('Build an Archer')) return '궁수 건설';
@@ -793,7 +1033,13 @@ class _RewardRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.white70)),
-          Text(value, style: const TextStyle(color: Color(0xFFE4C67A), fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFFE4C67A),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );

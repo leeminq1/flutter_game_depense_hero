@@ -3,12 +3,18 @@ import 'dart:ui';
 enum EnemyKind {
   raider,
   scout,
+  bannerCaptain,
+  wolfScout,
   shieldInfantry,
   cultAdept,
   skeleton,
+  boneArcher,
   graveGuard,
+  plagueBearer,
   corruptedKnight,
+  hexSniper,
   warlock,
+  bastionPriest,
   bastionOverlord,
 }
 

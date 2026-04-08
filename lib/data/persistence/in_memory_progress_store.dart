@@ -1,7 +1,7 @@
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/game_collection_models.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
-import 'package:depense_game/data/sample/sample_campaign.dart';
+import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 
@@ -98,7 +98,7 @@ class InMemoryProgressStore {
     final stages = List<StageProgressSnapshot>.generate(totalStages, (index) {
       final stageNumber = index + 1;
       final record = _stageRecords[stageNumber];
-      final definition = SampleCampaign.stage(stageNumber);
+      final definition = CampaignData.stage(stageNumber);
       final unlockCheck = _checkStageUnlocked(
         stage: definition,
         byStage: _stageRecords,
@@ -111,8 +111,9 @@ class InMemoryProgressStore {
         stars: record?.stars ?? 0,
         cleared: (record?.stars ?? 0) > 0,
         description: definition.description,
-        objectives:
-            definition.objectives.map((objective) => objective.label).toList(),
+        objectives: definition.objectives
+            .map((objective) => objective.label)
+            .toList(),
         unlockRequirementLabels: definition.unlockRequirements
             .map((requirement) => requirement.label)
             .toList(),
@@ -181,11 +182,14 @@ class InMemoryProgressStore {
                 stageBandRewardMultiplier)
             .round();
     final firstClearBonusAwarded = isFirstClear ? 18 + (stageNumber * 4) : 0;
-    final starUpgradeBonusAwarded =
-        newStarsEarned > 0 ? newStarsEarned * (6 + (stageNumber ~/ 3)) : 0;
-    final crestBonusAwarded =
-        isFirstClear && stageNumber % 5 == 0 ? 30 + (stageNumber * 3) : 0;
-    final softCurrencyAwarded = baseSoftCurrencyAwarded +
+    final starUpgradeBonusAwarded = newStarsEarned > 0
+        ? newStarsEarned * (6 + (stageNumber ~/ 3))
+        : 0;
+    final crestBonusAwarded = isFirstClear && stageNumber % 5 == 0
+        ? 30 + (stageNumber * 3)
+        : 0;
+    final softCurrencyAwarded =
+        baseSoftCurrencyAwarded +
         firstClearBonusAwarded +
         starUpgradeBonusAwarded +
         crestBonusAwarded;
@@ -210,7 +214,7 @@ class InMemoryProgressStore {
         (sum, r) => sum + r.stars,
       );
       final metaUpgrades = _loadMetaUpgrades();
-      final nextStage = SampleCampaign.stage(stageNumber + 1);
+      final nextStage = CampaignData.stage(stageNumber + 1);
       final unlocked = _checkStageUnlocked(
         stage: nextStage,
         byStage: _stageRecords,
@@ -346,10 +350,7 @@ class InMemoryProgressStore {
       return const _UnlockCheck(unlocked: true, lockReason: null);
     }
 
-    return _UnlockCheck(
-      unlocked: false,
-      lockReason: '이전 스테이지를 클리어하면 해금됩니다.',
-    );
+    return _UnlockCheck(unlocked: false, lockReason: '이전 스테이지를 클리어하면 해금됩니다.');
   }
 }
 

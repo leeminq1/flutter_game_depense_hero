@@ -6,29 +6,29 @@ class HelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('How To Play')),
+      appBar: AppBar(title: const Text('게임 가이드')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: const [
           _HelpCard(
-            title: 'Core Loop',
+            title: '게임 개요',
             body:
-                'Place towers on glowing slots, start waves when you are ready, and keep building or upgrading during combat. Focus damage around one or two bends instead of spreading weak towers across the full map.',
+                'DEPENSE는 세로형 타워 디펜스 게임입니다. 경로를 따라 오는 적을 막기 위해 타워를 배치하고, 업그레이드와 브랜치 선택으로 방어선을 확장합니다.',
           ),
           _HelpCard(
-            title: 'Tower Roles',
+            title: '기본 플레이',
             body:
-                'Archer is cheap damage, Barracks holds lanes, Mage breaks armor, Frost stabilizes mixed pressure, Coin Mill buys stronger mid-wave economy, Ballista hunts elites, and Emberkeep punishes clusters.',
+                '밝게 표시되는 설치 칸에 타워를 배치하고 웨이브를 시작하세요. 전투 중에도 추가 건설과 업그레이드가 가능하니, 병목 구간과 코너를 중심으로 화력을 모으는 것이 중요합니다.',
           ),
           _HelpCard(
-            title: 'Enemy Roles',
+            title: '타워 역할',
             body:
-                'Scouts leak if you wait too long, Shield Infantry punish pure physical builds, Cult Adepts buff allies, Grave Guards resist control, and Warlocks create support chaos. Fix the first enemy role that breaks your line.',
+                '궁수는 안정적인 기본 화력, 병영은 길막과 라인 유지, 마법사는 방어력 대응, 빙결은 군중 제어, 금화 방앗간은 경제 지원, 발리스타는 중장갑 처리, 화염 요새는 광역 압박에 강합니다.',
           ),
           _HelpCard(
-            title: 'Meta Progress',
+            title: '적 대응',
             body:
-                'Stage clears grant XP and Meta Gold. First clears, stronger star results, and crest stages all add bonus Meta Gold. Use that to improve openings, unlock stronger buildables, and smooth long-run pacing.',
+                '빠른 적은 초반에 끊어야 하고, 방패 보병과 중장갑 적은 발리스타나 집중 화력이 필요합니다. 지원형 적은 후열을 강화하므로 버프와 치유를 주는 적부터 우선 제거하는 편이 안전합니다.',
           ),
         ],
       ),

@@ -4,21 +4,27 @@ import 'dart:ui';
 import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 
-class SampleCampaign {
+/// Canonical authored campaign data for the playable game.
+class CampaignData {
   static const int totalStages = 30;
+  static const int _tileColumns = 8;
+  static const int _tileRows = 14;
+  static const int _buildableTopRow = 2;
+  static const int _buildableBottomRow = 11;
 
   static StageDefinition stage(int number) {
     final safeStage = number.clamp(1, totalStages);
     final biome = _biomeForStage(safeStage);
     final environmentTheme = _environmentThemeForStage(safeStage);
-    final pathTemplate =
-        _pathTemplates[(safeStage - 1) % _pathTemplates.length];
-    final buildZones =
-        _buildZoneTemplates[(safeStage - 1) % _buildZoneTemplates.length];
-    final waveCount = 5;
+    final templateIndex = (safeStage - 1) % _pathTemplates.length;
+    final pathTemplate = _pathTemplates[templateIndex];
+    final slotTemplate = _slotTemplates[templateIndex];
+    final pathSequence = _buildPathSequence(pathTemplate);
+    final tileGrid = _buildTileGrid(pathSequence, slotTemplate);
+    final waveCount = safeStage >= 21 ? 5 : (safeStage >= 6 ? 4 : 3);
     final title = safeStage == 30
-        ? '스테이지 30 - 성주의 왕좌'
-        : '스테이지 $safeStage - ${biome.title}';
+        ? 'Stage 30 - Bastion Throne'
+        : 'Stage $safeStage - ${biome.title}';
 
     return StageDefinition(
       number: safeStage,
@@ -27,12 +33,20 @@ class SampleCampaign {
       startingCoins: _startingCoinsForStage(safeStage),
       baseHealth: _baseHealthForStage(safeStage),
       environmentTheme: environmentTheme,
-      pathNodes: pathTemplate,
-      buildSlots: const [], // Added missing required parameter
-      buildZones: buildZones,
+      pathNodes: _normalizedPathNodes(pathSequence),
+      buildSlots: _normalizedBuildSlots(tileGrid),
+      buildZones: const [
+        StageBuildZoneDefinition(
+          region: Rect.fromLTWH(0, 0, 1080, 1920), // Default large build zone
+        ),
+      ],
+      pathClearance: 45.0,
+      buildGridSpacing: 12.0,
       decorations: _decorationsForStage(safeStage, environmentTheme),
       objectives: _objectivesForStage(safeStage),
       unlockRequirements: _unlockRequirementsForStage(safeStage),
+      tileGrid: tileGrid,
+      pathSequence: pathSequence,
       waves: List.generate(
         waveCount,
         (index) => _buildWave(
@@ -161,6 +175,16 @@ class SampleCampaign {
       stageNumber: stageNumber,
       intensity: 0.94 + (waveNumber * 0.07),
     );
+    final wolfScout = enemyForKind(
+      EnemyKind.wolfScout,
+      stageNumber: stageNumber,
+      intensity: 0.92 + (waveNumber * 0.08),
+    );
+    final bannerCaptain = enemyForKind(
+      EnemyKind.bannerCaptain,
+      stageNumber: stageNumber,
+      intensity: 0.88 + (waveNumber * 0.08),
+    );
     final cult = enemyForKind(
       EnemyKind.cultAdept,
       stageNumber: stageNumber,
@@ -171,11 +195,11 @@ class SampleCampaign {
       SpawnGroupDefinition(
         enemy: shield,
         count: switch (stageNumber) {
-          6 => [2, 2, 3, 3, 4][waveNumber - 1],
-          7 => [2, 3, 3, 4, 4][waveNumber - 1],
-          8 => [3, 3, 4, 4, 5][waveNumber - 1],
-          9 => [3, 4, 4, 5, 5][waveNumber - 1],
-          _ => [3, 4, 5, 5, 6][waveNumber - 1],
+          6 => [2, 2, 3, 3][waveNumber - 1],
+          7 => [2, 3, 3, 4][waveNumber - 1],
+          8 => [3, 3, 4, 4][waveNumber - 1],
+          9 => [3, 4, 4, 5][waveNumber - 1],
+          _ => [3, 4, 5, 5][waveNumber - 1],
         },
         spawnInterval: math.max(0.82, 1.1 - (stageNumber * 0.015)),
       ),
@@ -185,11 +209,11 @@ class SampleCampaign {
       SpawnGroupDefinition(
         enemy: waveNumber.isEven ? raider : scout,
         count: switch (stageNumber) {
-          6 => [4, 4, 5, 5, 6][waveNumber - 1],
-          7 => [4, 5, 5, 6, 6][waveNumber - 1],
-          8 => [4, 5, 6, 6, 7][waveNumber - 1],
-          9 => [5, 5, 6, 7, 7][waveNumber - 1],
-          _ => [5, 6, 6, 7, 8][waveNumber - 1],
+          6 => [4, 4, 5, 5][waveNumber - 1],
+          7 => [4, 5, 5, 6][waveNumber - 1],
+          8 => [4, 5, 6, 6][waveNumber - 1],
+          9 => [5, 5, 6, 7][waveNumber - 1],
+          _ => [5, 6, 6, 7][waveNumber - 1],
         },
         spawnInterval: math.max(0.76, 1.0 - (stageNumber * 0.012)),
       ),
@@ -213,7 +237,34 @@ class SampleCampaign {
       );
     }
 
-    if (stageNumber == 10 && waveNumber == 5) {
+    final wolfScoutCount = switch (stageNumber) {
+      6 => [0, 0, 0, 1][waveNumber - 1],
+      7 => [0, 0, 1, 1][waveNumber - 1],
+      8 => [0, 1, 1, 2][waveNumber - 1],
+      9 => [0, 1, 2, 2][waveNumber - 1],
+      _ => [1, 1, 2, 2][waveNumber - 1],
+    };
+    if (wolfScoutCount > 0) {
+      groups.add(
+        SpawnGroupDefinition(
+          enemy: wolfScout,
+          count: wolfScoutCount,
+          spawnInterval: 0.78,
+        ),
+      );
+    }
+
+    if (stageNumber >= 8 && waveNumber >= 2) {
+      groups.add(
+        SpawnGroupDefinition(
+          enemy: bannerCaptain,
+          count: waveNumber == 4 ? 2 : 1,
+          spawnInterval: 2.2,
+        ),
+      );
+    }
+
+    if (stageNumber == 10 && waveNumber == 4) {
       groups.add(
         SpawnGroupDefinition(
           enemy: enemyForKind(
@@ -232,7 +283,7 @@ class SampleCampaign {
     return WaveDefinition(
       number: waveNumber,
       groups: groups,
-      groupGap: waveNumber >= 4 ? 1.45 : 1.18,
+      groupGap: waveNumber == 4 ? 1.45 : 1.18,
     );
   }
 
@@ -251,6 +302,11 @@ class SampleCampaign {
       stageNumber: stageNumber,
       intensity: 0.98 + (waveNumber * 0.07),
     );
+    final boneArcher = enemyForKind(
+      EnemyKind.boneArcher,
+      stageNumber: stageNumber,
+      intensity: 0.96 + (waveNumber * 0.08),
+    );
     final cult = enemyForKind(
       EnemyKind.cultAdept,
       stageNumber: stageNumber,
@@ -266,24 +322,29 @@ class SampleCampaign {
       stageNumber: stageNumber,
       intensity: 0.92 + (waveNumber * 0.08),
     );
+    final plagueBearer = enemyForKind(
+      EnemyKind.plagueBearer,
+      stageNumber: stageNumber,
+      intensity: 0.90 + (waveNumber * 0.08),
+    );
 
     switch (stageNumber) {
       case 11:
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [5, 6, 6, 7, 8][waveNumber - 1],
+            count: [5, 6, 6, 7][waveNumber - 1],
             spawnInterval: 0.92,
           ),
           SpawnGroupDefinition(
             enemy: shield,
-            count: [2, 2, 3, 3, 4][waveNumber - 1],
+            count: [2, 2, 3, 3][waveNumber - 1],
             spawnInterval: 1.06,
           ),
           if (waveNumber >= 3)
             SpawnGroupDefinition(
               enemy: cult,
-              count: waveNumber >= 4 ? 2 : 1,
+              count: waveNumber == 4 ? 2 : 1,
               spawnInterval: 2.1,
             ),
         ]);
@@ -292,12 +353,12 @@ class SampleCampaign {
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [5, 6, 7, 7, 8][waveNumber - 1],
+            count: [5, 6, 7, 7][waveNumber - 1],
             spawnInterval: 0.9,
           ),
           SpawnGroupDefinition(
             enemy: shield,
-            count: [2, 3, 3, 4, 4][waveNumber - 1],
+            count: [2, 3, 3, 4][waveNumber - 1],
             spawnInterval: 1.04,
           ),
           if (waveNumber >= 2)
@@ -312,20 +373,20 @@ class SampleCampaign {
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [6, 6, 7, 8, 8][waveNumber - 1],
+            count: [6, 6, 7, 8][waveNumber - 1],
             spawnInterval: 0.88,
           ),
           SpawnGroupDefinition(
             enemy: cult,
-            count: [1, 1, 2, 2, 2][waveNumber - 1],
+            count: [1, 1, 2, 2][waveNumber - 1],
             spawnInterval: 2.0,
           ),
           SpawnGroupDefinition(
             enemy: shield,
-            count: [2, 3, 3, 3, 4][waveNumber - 1],
+            count: [2, 3, 3, 3][waveNumber - 1],
             spawnInterval: 1.02,
           ),
-          if (waveNumber >= 4)
+          if (waveNumber == 4)
             SpawnGroupDefinition(enemy: knight, count: 1, spawnInterval: 2.2),
         ]);
         break;
@@ -333,17 +394,17 @@ class SampleCampaign {
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [6, 7, 7, 8, 9][waveNumber - 1],
+            count: [6, 7, 7, 8][waveNumber - 1],
             spawnInterval: 0.86,
           ),
           SpawnGroupDefinition(
             enemy: shield,
-            count: [3, 3, 4, 4, 5][waveNumber - 1],
+            count: [3, 3, 4, 4][waveNumber - 1],
             spawnInterval: 1.0,
           ),
           SpawnGroupDefinition(
             enemy: cult,
-            count: [1, 2, 2, 2, 3][waveNumber - 1],
+            count: [1, 2, 2, 2][waveNumber - 1],
             spawnInterval: 1.95,
           ),
           if (waveNumber >= 3)
@@ -354,20 +415,20 @@ class SampleCampaign {
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [6, 7, 8, 8, 9][waveNumber - 1],
+            count: [6, 7, 8, 8][waveNumber - 1],
             spawnInterval: 0.84,
           ),
           SpawnGroupDefinition(
             enemy: cult,
-            count: [1, 2, 2, 3, 3][waveNumber - 1],
+            count: [1, 2, 2, 3][waveNumber - 1],
             spawnInterval: 1.92,
           ),
           SpawnGroupDefinition(
             enemy: shield,
-            count: [3, 3, 4, 4, 5][waveNumber - 1],
+            count: [3, 3, 4, 4][waveNumber - 1],
             spawnInterval: 1.0,
           ),
-          if (waveNumber >= 4)
+          if (waveNumber == 4)
             SpawnGroupDefinition(enemy: knight, count: 2, spawnInterval: 2.05),
         ]);
         break;
@@ -375,12 +436,12 @@ class SampleCampaign {
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [6, 7, 7, 8, 8][waveNumber - 1],
+            count: [6, 7, 7, 8][waveNumber - 1],
             spawnInterval: 0.84,
           ),
           SpawnGroupDefinition(
             enemy: cult,
-            count: [1, 2, 2, 2, 3][waveNumber - 1],
+            count: [1, 2, 2, 2][waveNumber - 1],
             spawnInterval: 1.9,
           ),
           if (waveNumber >= 2)
@@ -395,17 +456,17 @@ class SampleCampaign {
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [6, 7, 8, 8, 9][waveNumber - 1],
+            count: [6, 7, 8, 8][waveNumber - 1],
             spawnInterval: 0.82,
           ),
           SpawnGroupDefinition(
             enemy: cult,
-            count: [1, 2, 2, 3, 3][waveNumber - 1],
+            count: [1, 2, 2, 3][waveNumber - 1],
             spawnInterval: 1.88,
           ),
           SpawnGroupDefinition(
             enemy: knight,
-            count: [1, 1, 2, 2, 3][waveNumber - 1],
+            count: [1, 1, 2, 2][waveNumber - 1],
             spawnInterval: 2.08,
           ),
         ]);
@@ -414,23 +475,23 @@ class SampleCampaign {
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [6, 7, 8, 8, 9][waveNumber - 1],
+            count: [6, 7, 8, 8][waveNumber - 1],
             spawnInterval: 0.8,
           ),
           SpawnGroupDefinition(
             enemy: cult,
-            count: [1, 2, 2, 3, 3][waveNumber - 1],
+            count: [1, 2, 2, 3][waveNumber - 1],
             spawnInterval: 1.86,
           ),
           SpawnGroupDefinition(
             enemy: knight,
-            count: [1, 2, 2, 2, 3][waveNumber - 1],
+            count: [1, 2, 2, 2][waveNumber - 1],
             spawnInterval: 2.04,
           ),
           if (waveNumber >= 3)
             SpawnGroupDefinition(
               enemy: graveGuard,
-              count: waveNumber >= 4 ? 2 : 1,
+              count: waveNumber == 4 ? 2 : 1,
               spawnInterval: 2.35,
             ),
         ]);
@@ -439,17 +500,17 @@ class SampleCampaign {
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [7, 7, 8, 9, 10][waveNumber - 1],
+            count: [7, 7, 8, 9][waveNumber - 1],
             spawnInterval: 0.78,
           ),
           SpawnGroupDefinition(
             enemy: cult,
-            count: [1, 2, 2, 3, 4][waveNumber - 1],
+            count: [1, 2, 2, 3][waveNumber - 1],
             spawnInterval: 1.82,
           ),
           SpawnGroupDefinition(
             enemy: knight,
-            count: [1, 2, 2, 2, 3][waveNumber - 1],
+            count: [1, 2, 2, 2][waveNumber - 1],
             spawnInterval: 2.0,
           ),
           if (waveNumber >= 2)
@@ -464,31 +525,72 @@ class SampleCampaign {
         groups.addAll([
           SpawnGroupDefinition(
             enemy: skeleton,
-            count: [7, 8, 8, 9, 10][waveNumber - 1],
+            count: [7, 8, 8, 9][waveNumber - 1],
             spawnInterval: 0.76,
           ),
           SpawnGroupDefinition(
             enemy: cult,
-            count: [1, 2, 3, 3, 4][waveNumber - 1],
+            count: [1, 2, 3, 3][waveNumber - 1],
             spawnInterval: 1.8,
           ),
           SpawnGroupDefinition(
             enemy: knight,
-            count: [1, 2, 2, 3, 3][waveNumber - 1],
+            count: [1, 2, 2, 3][waveNumber - 1],
             spawnInterval: 1.96,
           ),
           SpawnGroupDefinition(
             enemy: graveGuard,
-            count: [1, 1, 2, 2, 2][waveNumber - 1],
+            count: [1, 1, 2, 2][waveNumber - 1],
             spawnInterval: 2.22,
           ),
         ]);
     }
 
+    if (stageNumber >= 12) {
+      final boneArcherCount = switch (stageNumber) {
+        12 => waveNumber >= 3 ? 1 : 0,
+        13 => waveNumber >= 2 ? 1 : 0,
+        14 => waveNumber >= 2 ? (waveNumber == 4 ? 2 : 1) : 0,
+        15 => waveNumber >= 2 ? (waveNumber >= 3 ? 2 : 1) : 0,
+        16 => waveNumber >= 2 ? (waveNumber >= 3 ? 2 : 1) : 0,
+        17 => waveNumber >= 2 ? (waveNumber >= 3 ? 2 : 1) : 0,
+        18 => waveNumber >= 2 ? (waveNumber >= 3 ? 2 : 1) : 0,
+        19 => waveNumber >= 2 ? (waveNumber >= 3 ? 2 : 1) : 0,
+        _ => waveNumber >= 2 ? 2 : 1,
+      };
+      if (boneArcherCount > 0) {
+        groups.add(
+          SpawnGroupDefinition(
+            enemy: boneArcher,
+            count: boneArcherCount,
+            spawnInterval: 1.18,
+          ),
+        );
+      }
+    }
+
+    if (stageNumber >= 17) {
+      final plagueBearerCount = switch (stageNumber) {
+        17 => waveNumber >= 3 ? 1 : 0,
+        18 => waveNumber >= 2 ? 1 : 0,
+        19 => waveNumber >= 2 ? (waveNumber == 4 ? 2 : 1) : 0,
+        _ => waveNumber >= 2 ? (waveNumber >= 3 ? 2 : 1) : 0,
+      };
+      if (plagueBearerCount > 0) {
+        groups.add(
+          SpawnGroupDefinition(
+            enemy: plagueBearer,
+            count: plagueBearerCount,
+            spawnInterval: 2.42,
+          ),
+        );
+      }
+    }
+
     return WaveDefinition(
       number: waveNumber,
       groups: groups,
-      groupGap: waveNumber >= 4 ? 1.5 : 1.2,
+      groupGap: waveNumber == 4 ? 1.5 : 1.2,
     );
   }
 
@@ -511,6 +613,16 @@ class SampleCampaign {
       EnemyKind.warlock,
       stageNumber: stageNumber,
       intensity: 0.98 + (waveNumber * 0.08),
+    );
+    final hexSniper = enemyForKind(
+      EnemyKind.hexSniper,
+      stageNumber: stageNumber,
+      intensity: 0.96 + (waveNumber * 0.08),
+    );
+    final bastionPriest = enemyForKind(
+      EnemyKind.bastionPriest,
+      stageNumber: stageNumber,
+      intensity: 0.94 + (waveNumber * 0.08),
     );
     final skeleton = enemyForKind(
       EnemyKind.skeleton,
@@ -710,25 +822,64 @@ class SampleCampaign {
           groups.addAll([
             SpawnGroupDefinition(
               enemy: graveGuard,
-              count: [2, 3, 3, 4, 4][waveNumber - 1],
+              count: [2, 3, 3, 4][waveNumber - 1],
               spawnInterval: 1.84,
             ),
             SpawnGroupDefinition(
               enemy: warlock,
-              count: [1, 2, 2, 3, 3][waveNumber - 1],
+              count: [1, 2, 2, 3][waveNumber - 1],
               spawnInterval: 2.55,
             ),
             SpawnGroupDefinition(
               enemy: knight,
-              count: [3, 3, 4, 5, 5][waveNumber - 1],
+              count: [3, 3, 4, 5][waveNumber - 1],
               spawnInterval: 1.64,
             ),
             SpawnGroupDefinition(
               enemy: skeleton,
-              count: [4, 4, 5, 5, 6][waveNumber - 1],
+              count: [4, 4, 5, 5][waveNumber - 1],
               spawnInterval: 0.98,
             ),
           ]);
+      }
+    }
+
+    if (stageNumber <= 25) {
+      final hexSniperCount = switch (stageNumber) {
+        21 => waveNumber >= 4 ? 1 : 0,
+        22 => waveNumber >= 3 ? 1 : 0,
+        23 => waveNumber >= 2 ? 1 : 0,
+        24 => waveNumber >= 2 ? (waveNumber >= 4 ? 2 : 1) : 0,
+        _ => waveNumber >= 2 ? (waveNumber >= 4 ? 2 : 1) : 0,
+      };
+      if (hexSniperCount > 0) {
+        groups.add(
+          SpawnGroupDefinition(
+            enemy: hexSniper,
+            count: hexSniperCount,
+            spawnInterval: 2.9,
+          ),
+        );
+      }
+    }
+
+    if (stageNumber >= 24 && stageNumber <= 29) {
+      final bastionPriestCount = switch (stageNumber) {
+        24 => waveNumber >= 4 ? 1 : 0,
+        25 => waveNumber >= 3 ? 1 : 0,
+        26 => waveNumber >= 3 ? 1 : 0,
+        27 => waveNumber >= 2 ? 1 : 0,
+        28 => waveNumber >= 2 ? (waveNumber >= 4 ? 2 : 1) : 0,
+        _ => waveNumber >= 2 ? (waveNumber >= 4 ? 2 : 1) : 0,
+      };
+      if (bastionPriestCount > 0) {
+        groups.add(
+          SpawnGroupDefinition(
+            enemy: bastionPriest,
+            count: bastionPriestCount,
+            spawnInterval: 3.05,
+          ),
+        );
       }
     }
 
@@ -1194,10 +1345,30 @@ class SampleCampaign {
         };
     }
 
+    if (stageNumber >= 4) {
+      final bannerCaptainCount = switch (stageNumber) {
+        4 => [0, 1, 1][waveNumber - 1],
+        _ => [1, 1, 2][waveNumber - 1],
+      };
+      if (bannerCaptainCount > 0) {
+        groups.add(
+          SpawnGroupDefinition(
+            enemy: enemyForKind(
+              EnemyKind.bannerCaptain,
+              stageNumber: stageNumber,
+              intensity: 0.86 + (waveNumber * 0.08),
+            ),
+            count: bannerCaptainCount,
+            spawnInterval: 2.1,
+          ),
+        );
+      }
+    }
+
     return WaveDefinition(
       number: waveNumber,
       groups: groups,
-      groupGap: waveNumber >= 3 ? 1.4 : 1.1,
+      groupGap: waveNumber == 3 ? 1.4 : 1.1,
     );
   }
 
@@ -1213,8 +1384,8 @@ class SampleCampaign {
       case EnemyKind.raider:
         return EnemyDefinition(
           kind: kind,
-          label: '습격병',
-          specialDescription: '체력이 반 이하로 떨어지면 광분하여 더 빠르게 달립니다.',
+          label: 'Raider',
+          specialDescription: 'Enrages below half health and runs faster.',
           hitPoints: (44 * hpMultiplier * intensity).round(),
           speed: 48 * speedStep,
           rewardCoins: math.max(6, (6 + stageNumber * 0.8).round()),
@@ -1224,19 +1395,43 @@ class SampleCampaign {
       case EnemyKind.scout:
         return EnemyDefinition(
           kind: kind,
-          label: '정찰병',
-          specialDescription: '처음 받는 물리 공격을 회피합니다.',
+          label: 'Scout',
+          specialDescription: 'Dodges the first physical hit that lands on it.',
           hitPoints: (30 * hpMultiplier * math.max(0.9, intensity)).round(),
           speed: 68 * speedStep,
           rewardCoins: math.max(5, (5 + stageNumber * 0.75).round()),
           baseDamage: 1,
           color: const Color(0xFFD89C45),
         );
+      case EnemyKind.bannerCaptain:
+        return EnemyDefinition(
+          kind: kind,
+          label: 'Banner Captain',
+          specialDescription:
+              'Periodically rallies nearby bandits with speed and damage buffs.',
+          hitPoints: (60 * hpMultiplier * intensity).round(),
+          speed: 44 * speedStep,
+          rewardCoins: math.max(9, (9 + stageNumber * 0.9).round()),
+          baseDamage: 2,
+          color: const Color(0xFF9E523C),
+        );
+      case EnemyKind.wolfScout:
+        return EnemyDefinition(
+          kind: kind,
+          label: 'Wolf Scout',
+          specialDescription:
+              'Dodges its first physical hit and sprints harder when wounded.',
+          hitPoints: (38 * hpMultiplier * math.max(0.95, intensity)).round(),
+          speed: 74 * speedStep,
+          rewardCoins: math.max(7, (7 + stageNumber * 0.85).round()),
+          baseDamage: 1,
+          color: const Color(0xFF8B7A57),
+        );
       case EnemyKind.shieldInfantry:
         return EnemyDefinition(
           kind: kind,
-          label: '방패병',
-          specialDescription: '물리 타워의 피해를 감소시킵니다.',
+          label: 'Shield Infantry',
+          specialDescription: 'Reduces damage from physical towers.',
           hitPoints: (86 * hpMultiplier * intensity).round(),
           speed: 34 * speedStep,
           rewardCoins: math.max(10, (10 + stageNumber).round()),
@@ -1246,8 +1441,8 @@ class SampleCampaign {
       case EnemyKind.cultAdept:
         return EnemyDefinition(
           kind: kind,
-          label: '사이비 신봉',
-          specialDescription: '주기적으로 근처 아군을 가속시킵니다.',
+          label: 'Cult Adept',
+          specialDescription: 'Periodically hastes nearby allies.',
           hitPoints: (58 * hpMultiplier * intensity).round(),
           speed: 42 * speedStep,
           rewardCoins: math.max(10, (10 + stageNumber * 0.9).round()),
@@ -1257,56 +1452,104 @@ class SampleCampaign {
       case EnemyKind.skeleton:
         return EnemyDefinition(
           kind: kind,
-          label: '해골',
-          specialDescription: '죽은 후 부분 체력으로 한 번 부활합니다.',
+          label: 'Skeleton',
+          specialDescription: 'Revives once with partial health.',
           hitPoints: (78 * hpMultiplier * intensity).round(),
           speed: 40 * speedStep,
           rewardCoins: math.max(11, (11 + stageNumber).round()),
           baseDamage: 2,
           color: const Color(0xFFBDB9AA),
         );
+      case EnemyKind.boneArcher:
+        return EnemyDefinition(
+          kind: kind,
+          label: 'Bone Archer',
+          specialDescription:
+              'Leaves a fresh skeleton behind when it is destroyed.',
+          hitPoints: (66 * hpMultiplier * intensity).round(),
+          speed: 44 * speedStep,
+          rewardCoins: math.max(13, (13 + stageNumber * 1.05).round()),
+          baseDamage: 2,
+          color: const Color(0xFFC8C1AF),
+        );
       case EnemyKind.graveGuard:
         return EnemyDefinition(
           kind: kind,
-          label: '묘지기',
+          label: 'Grave Guard',
           specialDescription:
-              '감속에 저항하고 제어 효과를 돌파합니다.',
+              'Resists slows and pushes through control effects.',
           hitPoints: (172 * hpMultiplier * (intensity + 0.08)).round(),
           speed: 26 * speedStep,
           rewardCoins: math.max(20, (20 + stageNumber * 1.15).round()),
           baseDamage: 3,
           color: const Color(0xFF63705F),
         );
+      case EnemyKind.plagueBearer:
+        return EnemyDefinition(
+          kind: kind,
+          label: 'Plague Bearer',
+          specialDescription:
+              'Heals nearby undead and shrouds them in brief damage reduction.',
+          hitPoints: (104 * hpMultiplier * intensity).round(),
+          speed: 34 * speedStep,
+          rewardCoins: math.max(21, (21 + stageNumber * 1.15).round()),
+          baseDamage: 2,
+          color: const Color(0xFF5E7152),
+        );
       case EnemyKind.corruptedKnight:
         return EnemyDefinition(
           kind: kind,
-          label: '타락 기사',
+          label: 'Corrupted Knight',
           specialDescription:
-              '부상 시 더 강하게 돌격하며 물리 공격에 저항합니다.',
+              'Charges harder when wounded and resists physical fire.',
           hitPoints: (145 * hpMultiplier * (intensity + 0.15)).round(),
           speed: 30 * speedStep,
           rewardCoins: math.max(18, (18 + stageNumber * 1.2).round()),
           baseDamage: 3,
           color: const Color(0xFF7A5151),
         );
+      case EnemyKind.hexSniper:
+        return EnemyDefinition(
+          kind: kind,
+          label: 'Hex Sniper',
+          specialDescription:
+              'Refreshes a ward for itself and the most important nearby ally.',
+          hitPoints: (92 * hpMultiplier * intensity).round(),
+          speed: 38 * speedStep,
+          rewardCoins: math.max(25, (25 + stageNumber * 1.3).round()),
+          baseDamage: 2,
+          color: const Color(0xFF5C4B73),
+        );
       case EnemyKind.warlock:
         return EnemyDefinition(
           kind: kind,
-          label: '흑마법사',
+          label: 'Warlock',
           specialDescription:
-              '아군에게 보호막을 씨우고 해골 지원군을 소환합니다.',
+              'Wards allies and summons skeleton reinforcements.',
           hitPoints: (98 * hpMultiplier * intensity).round(),
           speed: 33 * speedStep,
           rewardCoins: math.max(22, (22 + stageNumber * 1.25).round()),
           baseDamage: 2,
           color: const Color(0xFF5E3E88),
         );
+      case EnemyKind.bastionPriest:
+        return EnemyDefinition(
+          kind: kind,
+          label: 'Bastion Priest',
+          specialDescription:
+              'Heals elite allies and restores a ward to keep the line standing.',
+          hitPoints: (138 * hpMultiplier * (intensity + 0.06)).round(),
+          speed: 28 * speedStep,
+          rewardCoins: math.max(29, (29 + stageNumber * 1.35).round()),
+          baseDamage: 3,
+          color: const Color(0xFF8A7A5E),
+        );
       case EnemyKind.bastionOverlord:
         return EnemyDefinition(
           kind: kind,
-          label: '성주',
+          label: 'Bastion Overlord',
           specialDescription:
-              '변신, 보호막, 수비대 소환 능력을 가진 최종 보스입니다.',
+              'Final boss that phases, wards itself, and summons defenders.',
           hitPoints: (1100 * math.max(1.0, intensity)).round(),
           speed: 24 * speedStep,
           rewardCoins: 180,
@@ -1338,131 +1581,160 @@ class SampleCampaign {
   static _BiomeProfile _biomeForStage(int stage) {
     if (stage <= 5) {
       return const _BiomeProfile(
-        title: '숲 변경',
-        primary: EnemyKind.raider,
-        secondary: EnemyKind.scout,
-        support: EnemyKind.shieldInfantry,
-        elite: EnemyKind.shieldInfantry,
+        title: 'Forest Edge',
+        commonKinds: [
+          EnemyKind.raider,
+          EnemyKind.scout,
+          EnemyKind.shieldInfantry,
+        ],
+        supportKinds: [EnemyKind.bannerCaptain],
+        eliteKinds: [EnemyKind.shieldInfantry],
+        bossKind: EnemyKind.shieldInfantry,
       );
     }
     if (stage <= 10) {
       return const _BiomeProfile(
-        title: '폐허 길',
-        primary: EnemyKind.shieldInfantry,
-        secondary: EnemyKind.cultAdept,
-        support: EnemyKind.raider,
-        elite: EnemyKind.corruptedKnight,
+        title: 'Ruin Road',
+        commonKinds: [
+          EnemyKind.raider,
+          EnemyKind.scout,
+          EnemyKind.wolfScout,
+          EnemyKind.shieldInfantry,
+        ],
+        supportKinds: [EnemyKind.bannerCaptain, EnemyKind.cultAdept],
+        eliteKinds: [EnemyKind.corruptedKnight],
+        bossKind: EnemyKind.corruptedKnight,
       );
     }
     if (stage <= 20) {
       return const _BiomeProfile(
-        title: '묘지 행군',
-        primary: EnemyKind.skeleton,
-        secondary: EnemyKind.shieldInfantry,
-        support: EnemyKind.cultAdept,
-        elite: EnemyKind.graveGuard,
+        title: 'Grave March',
+        commonKinds: [
+          EnemyKind.skeleton,
+          EnemyKind.boneArcher,
+          EnemyKind.shieldInfantry,
+        ],
+        supportKinds: [EnemyKind.cultAdept, EnemyKind.plagueBearer],
+        eliteKinds: [EnemyKind.corruptedKnight, EnemyKind.graveGuard],
+        bossKind: EnemyKind.graveGuard,
       );
     }
     if (stage <= 25) {
       return const _BiomeProfile(
-        title: '저주받은 성채',
-        primary: EnemyKind.graveGuard,
-        secondary: EnemyKind.corruptedKnight,
-        support: EnemyKind.warlock,
-        elite: EnemyKind.corruptedKnight,
+        title: 'Cursed Bastion',
+        commonKinds: [
+          EnemyKind.skeleton,
+          EnemyKind.graveGuard,
+          EnemyKind.corruptedKnight,
+        ],
+        supportKinds: [
+          EnemyKind.warlock,
+          EnemyKind.hexSniper,
+          EnemyKind.bastionPriest,
+        ],
+        eliteKinds: [EnemyKind.corruptedKnight, EnemyKind.graveGuard],
+        bossKind: EnemyKind.corruptedKnight,
       );
     }
     return const _BiomeProfile(
-      title: '왕좌 행군',
-      primary: EnemyKind.graveGuard,
-      secondary: EnemyKind.corruptedKnight,
-      support: EnemyKind.warlock,
-      elite: EnemyKind.corruptedKnight,
+      title: 'Throne March',
+      commonKinds: [
+        EnemyKind.skeleton,
+        EnemyKind.graveGuard,
+        EnemyKind.corruptedKnight,
+      ],
+      supportKinds: [
+        EnemyKind.warlock,
+        EnemyKind.hexSniper,
+        EnemyKind.bastionPriest,
+      ],
+      eliteKinds: [EnemyKind.corruptedKnight, EnemyKind.graveGuard],
+      bossKind: EnemyKind.bastionOverlord,
     );
   }
 
   static String _stageDescription(int stage, _BiomeProfile biome) {
     switch (stage) {
       case 1:
-        return '기본 공방 방법을 배우세요: 궁수를 배치하고, 웨이브를 시작하고, 첫 경로를 방어하세요.';
+        return 'Learn the core loop: place archers, start the wave, and hold the first road.';
       case 2:
-        return '정찰병이 더 빨라졌습니다. 깨끗한 배치로 안정적인 피해를 내세요.';
+        return 'Scouts come faster now. Mix steady damage with cleaner placement before the wave starts.';
       case 3:
-        return '방패병이 등장합니다. 갑옷을 돌파하려면 마법사를 추가하세요.';
+        return 'Shield Infantry arrive. Add a Mage so armor does not stall your defense.';
       case 4:
-        return '복합 압박이 시작됩니다. 병영이나 빙결로 적을 데미지 존 안에 묶어두세요.';
+        return 'Banner Captains join the lane here. Use Barracks or Frost to keep buffed raiders inside your damage zones.';
       case 5:
-        return '첫 도전 스테이지입니다. 밀집된 최종 공세를 막고 경제를 안정시키세요.';
+        return 'First crest stage. Hold the gate through a denser final push and keep your economy stable.';
     }
     switch (stage) {
       case 6:
-        return '중반 전환점입니다. 지원 적이 등장하기 전에 긴 전투를 버티세요.';
+        return 'Wolf Scouts begin slipping into the push. Survive the longer battle without letting the fast flankers leak through.';
       case 7:
-        return '첫 지원 압박입니다. 사이비 신봉을 조기에 제거하세요.';
+        return 'First support pressure. Spot the Cult Adept early before the frontline snowballs.';
       case 8:
-        return '라인 안정성 테스트입니다. 방패병과 빠른 유닛이 섬이는 동안 향을 깨끗하게 지키세요.';
+        return 'Lane stability test. Hold bends cleanly while shields and fast units mix together.';
       case 9:
-        return '세력 전환 스테이지입니다. 갑옷과 지원 적이 함께 밀려옵니다.';
+        return 'Faction transition stage. Armor and support begin to overlap in the same push.';
       case 10:
-        return '중반 도전 스테이지입니다. 조기에 안정시킨 후 혼합 압박 최종 웨이브를 버티세요.';
+        return 'First mid-game crest. Stabilize early, then survive a readable mixed-pressure final wave.';
       case 11:
-        return '묘지 전선이 시작됩니다. 부활하는 해골과 갑옷 호위대가 약한 정리를 응징합니다.';
+        return 'The grave line begins. Reviving skeletons and armored escorts punish weak cleanup.';
       case 12:
-        return '지원 중첩이 중요해집니다. 해골 압박이 두 배가 되기 전에 사이비 신봉을 처리하세요.';
+        return 'Bone Archers extend every undead fight. Deny support pacing before the lane gets doubled by fresh skeleton bodies.';
       case 13:
-        return '복합 언데드 위협이 제어 타이밍을 시험합니다. 하나의 라인을 진정한 킬 존으로 만드세요.';
+        return 'Mixed undead traffic tests your control timing. Keep one lane as a true kill zone.';
       case 14:
-        return '타락 기사가 공세에 합류합니다. 최종 회전에 대응할 코인을 남겨두세요.';
+        return 'Corrupted knights start joining the push. Save enough coins to answer the final turn.';
       case 15:
-        return '묘지 도전 스테이지입니다. 긴 의식 행군을 버티고 패닉 지출 없이 엘리트 마무리를 연명하세요.';
+        return 'Grave crest stage. Hold a longer ritual march and survive the elite finish without panic spending.';
       case 16:
-        return '예배당 전선이 열립니다. 빠른 지원과 기사 압박이 의도적으로 겹칩니다.';
+        return 'The chapel front opens. Faster support and knight pressure now overlap on purpose.';
       case 17:
-        return '늦은 대응을 응징하는 스테이지입니다. 3웨이브 전에 제어와 대갑 라인을 구축하세요.';
+        return 'Plague Bearers arrive now. Build your control and anti-armor line before the undead sustain engine turns on.';
       case 18:
-        return '묘지기가 등장합니다. 단순한 감속과 약한 공격으로는 전선을 유지할 수 없습니다.';
+        return 'Grave Guards arrive. Pure slows and weak poke no longer hold the frontline alone.';
       case 19:
-        return '복합 저항 압박이 더 깨끗한 타워 시너지와 낭비 없는 업그레이드를 요구합니다.';
+        return 'Mixed resistant pressure asks for cleaner tower synergy and fewer wasted upgrades.';
       case 20:
-        return '예배당 도전 스테이지입니다. 지속적인 엘리트 압박을 버티고 최종 웨이브까지 라인을 안정시키세요.';
+        return 'Chapel crest stage. Endure sustained elite pressure and keep the lane stable through the final wave.';
       case 21:
-        return '성벽이 반격합니다. 흑마법사가 더 강한 전선 뒤에서 등장하므로 후방 대응이 더 중요해집니다.';
+        return 'Hex Snipers start layering wards into the bastion push. Your backline answers have to land before the elites take over.';
       case 22:
-        return '보호막 압박을 배우는 스테이지입니다. 흑마법사가 오래 살아남으면 갑옷 공세를 막기가 훨씬 어려워집니다.';
+        return 'This lane teaches ward pressure. If Warlocks live too long, the armored push becomes much more expensive to stop.';
       case 23:
-        return '성채 중첩이 시작됩니다. 묘지기와 흑마법사가 느린 소모전 대신 더 깨끗한 처치 타이밍을 요구합니다.';
+        return 'Bastion overlap begins here. Grave Guards and Warlocks now force cleaner kill windows instead of slow attrition.';
       case 24:
-        return '루트가 바이터 테스트로 압축됩니다. 마지막 2웨이브에 충분한 코인을 남겨두세요.';
+        return 'Bastion Priests enter the route here. Save enough for the last two waves or the healed frontline will snowball out of reach.';
       case 25:
-        return '성채 도전 스테이지입니다. 지속적인 지원 압박을 버티고 최종 군사 공세에서 주력 타워를 지키세요.';
+        return 'Bastion crest stage. Endure sustained support pressure and hold the final military push without losing your anchor towers.';
       case 26:
-        return '왕좌 행군이 시작됩니다. 내성 탱크와 흑마법사가 약한 시작을 응징합니다.';
+        return 'The throne march opens. Resistant tanks and Warlocks now arrive early enough to punish weak starts.';
       case 27:
-        return '늦은 대응은 실패합니다. 내성 압박이 라인을 고정하기 전에 대지원 라인을 구축하세요.';
+        return 'Late reactions fail here. Build the anti-support line before the lane fills with resistant pressure.';
       case 28:
-        return '회복력을 시험하는 스테이지입니다. 소환수, 탱크, 바이터가 동시에 분산된 피해를 응징합니다.';
+        return 'This stage stresses recovery. Summons, tanks, and bruisers overlap long enough to punish scattered damage.';
       case 29:
-        return '최종 접근입니다. 이제는 매 웨이브 위기 재건 대신 진짜 후반 캠페인 능력이 필요합니다.';
+        return 'Final approach. The game now expects real late-campaign discipline, not emergency rebuilding every wave.';
     }
     if (stage <= 5) {
-      return '초반 습격병과 정찰병으로부터 ${biome.title.toLowerCase()}을(를) 지키세요.';
+      return 'Hold the ${biome.title.toLowerCase()} against early bandit pressure and its first rally support.';
     }
     if (stage <= 10) {
-      return '갑옷 전선과 사이비 지원이 등장합니다. 일찍 건설하고 마법 피해를 확보하세요.';
+      return 'Armored fronts, fast wolf flankers, and support leaders begin to overlap here. Build earlier and leave room for magic damage.';
     }
     if (stage <= 15) {
-      return '언데드 압박이 더 강한 라인 정리력, 대갑 답변, 안정적인 경제 타이밍을 요구합니다.';
+      return 'Undead pressure now asks for stronger lane cleanup, armor answers, and steadier economy timing as Bone Archers lengthen fights.';
     }
     if (stage <= 20) {
-      return '제어 저항 위협과 엘리트 바이터가 더 깨끗한 타워 시너지와 늦은 웨이브 코인 절약을 요구합니다.';
+      return 'Control-resistant threats, elite bruisers, and plague sustain demand cleaner tower synergy and better late-wave coin discipline.';
     }
     if (stage <= 25) {
-      return '흑마법사와 바이터 전선이 함께 등장합니다. 더 깨끗한 대지원 타이밍과 강한 엘리트 대미지가 필요합니다.';
+      return 'Ward-heavy support and bruiser fronts now arrive together. You need cleaner anti-support timing and stronger elite damage.';
     }
     if (stage == 30) {
-      return '최종 공성전입니다. 성주와 소환된 수비대를 이기고 캠페인을 완료하세요.';
+      return 'Final siege. Survive the Bastion Overlord and its summoned defenders to finish the campaign.';
     }
-    return '왕좌 행군 스테이지는 소환수, 내성 탱크, 엘리트 바이터를 한 공세에 모두 넣어 회복 시간을 최소화합니다.';
+    return 'Throne-march stages layer summoners, control-resistant tanks, and elite bruisers into the same push with very little recovery room.';
   }
 
   static List<StageObjectiveDefinition> _objectivesForStage(int stage) {
@@ -1470,16 +1742,16 @@ class SampleCampaign {
       return const [
         StageObjectiveDefinition(
           type: StageObjectiveType.clearStage,
-          label: '성주를 처치하세요',
+          label: 'Defeat the Bastion Overlord',
         ),
         StageObjectiveDefinition(
           type: StageObjectiveType.keepBaseHealth,
-          label: '기지 체력 8 이상으로 완료',
+          label: 'Finish with at least 8 base health',
           threshold: 8,
         ),
         StageObjectiveDefinition(
           type: StageObjectiveType.buildSpecificTower,
-          label: '발리스타 건설',
+          label: 'Build a Ballista',
           towerKindId: 'ballista',
         ),
       ];
@@ -1490,80 +1762,80 @@ class SampleCampaign {
         1 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 18 이상으로 완료',
+            label: 'Finish with at least 18 base health',
             threshold: 18,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '궁수 건설',
+            label: 'Build an Archer',
             towerKindId: 'archer',
           ),
         ],
         2 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 17 이상으로 완료',
+            label: 'Finish with at least 17 base health',
             threshold: 17,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.sellAtMost,
-            label: '타워 판매 금지',
+            label: 'Do not sell any towers',
             threshold: 0,
           ),
         ],
         3 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 16 이상으로 완료',
+            label: 'Finish with at least 16 base health',
             threshold: 16,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '마법사 건설',
+            label: 'Build a Mage tower',
             towerKindId: 'mageObelisk',
           ),
         ],
         4 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 16 이상으로 완료',
+            label: 'Finish with at least 16 base health',
             threshold: 16,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '빙결 건설',
+            label: 'Build a Frost tower',
             towerKindId: 'frostShrine',
           ),
         ],
         _ => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 15 이상으로 완료',
+            label: 'Finish with at least 15 base health',
             threshold: 15,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '금화 제조소 건설',
+            label: 'Build a Coin Mill',
             towerKindId: 'coinMill',
           ),
         ],
@@ -1575,80 +1847,80 @@ class SampleCampaign {
         6 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 15 이상으로 완료',
+            label: 'Finish with at least 15 base health',
             threshold: 15,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '마법사 건설',
+            label: 'Build a Mage tower',
             towerKindId: 'mageObelisk',
           ),
         ],
         7 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 15 이상으로 완료',
+            label: 'Finish with at least 15 base health',
             threshold: 15,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '병영 건설',
+            label: 'Build a Guard Barracks',
             towerKindId: 'guardBarracks',
           ),
         ],
         8 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 14 이상으로 완료',
+            label: 'Finish with at least 14 base health',
             threshold: 14,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '빙결 건설',
+            label: 'Build a Frost tower',
             towerKindId: 'frostShrine',
           ),
         ],
         9 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 14 이상으로 완료',
+            label: 'Finish with at least 14 base health',
             threshold: 14,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '마법사 건설',
+            label: 'Build a Mage tower',
             towerKindId: 'mageObelisk',
           ),
         ],
         _ => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 13 이상으로 완료',
+            label: 'Finish with at least 13 base health',
             threshold: 13,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '금화 제조소 건설',
+            label: 'Build a Coin Mill',
             towerKindId: 'coinMill',
           ),
         ],
@@ -1660,160 +1932,160 @@ class SampleCampaign {
         11 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 11 이상으로 완료',
+            label: 'Finish with at least 11 base health',
             threshold: 11,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '마법사 건설',
+            label: 'Build a Mage tower',
             towerKindId: 'mageObelisk',
           ),
         ],
         12 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 11 이상으로 완료',
+            label: 'Finish with at least 11 base health',
             threshold: 11,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '병영 건설',
+            label: 'Build a Guard Barracks',
             towerKindId: 'guardBarracks',
           ),
         ],
         13 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 10 이상으로 완료',
+            label: 'Finish with at least 10 base health',
             threshold: 10,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '빙결 건설',
+            label: 'Build a Frost tower',
             towerKindId: 'frostShrine',
           ),
         ],
         14 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 10 이상으로 완료',
+            label: 'Finish with at least 10 base health',
             threshold: 10,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.sellAtMost,
-            label: '타워 판매 금지',
+            label: 'Do not sell any towers',
             threshold: 0,
           ),
         ],
         15 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 10 이상으로 완료',
+            label: 'Finish with at least 10 base health',
             threshold: 10,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '금화 제조소 건설',
+            label: 'Build a Coin Mill',
             towerKindId: 'coinMill',
           ),
         ],
         16 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 9 이상으로 완료',
+            label: 'Finish with at least 9 base health',
             threshold: 9,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '마법사 건설',
+            label: 'Build a Mage tower',
             towerKindId: 'mageObelisk',
           ),
         ],
         17 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 9 이상으로 완료',
+            label: 'Finish with at least 9 base health',
             threshold: 9,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildAtMost,
-            label: '타워 최대 6개 건설',
+            label: 'Build at most 6 towers',
             threshold: 6,
           ),
         ],
         18 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 8 이상으로 완료',
+            label: 'Finish with at least 8 base health',
             threshold: 8,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '빙결 건설',
+            label: 'Build a Frost tower',
             towerKindId: 'frostShrine',
           ),
         ],
         19 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 8 이상으로 완료',
+            label: 'Finish with at least 8 base health',
             threshold: 8,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '병영 건설',
+            label: 'Build a Guard Barracks',
             towerKindId: 'guardBarracks',
           ),
         ],
         _ => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 8 이상으로 완료',
+            label: 'Finish with at least 8 base health',
             threshold: 8,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '마법사 건설',
+            label: 'Build a Mage tower',
             towerKindId: 'mageObelisk',
           ),
         ],
@@ -1825,144 +2097,144 @@ class SampleCampaign {
         21 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 7 이상으로 완료',
+            label: 'Finish with at least 7 base health',
             threshold: 7,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '발리스타 건설',
+            label: 'Build a Ballista',
             towerKindId: 'ballista',
           ),
         ],
         22 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 7 이상으로 완료',
+            label: 'Finish with at least 7 base health',
             threshold: 7,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '빙결 건설',
+            label: 'Build a Frost tower',
             towerKindId: 'frostShrine',
           ),
         ],
         23 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 6 이상으로 완료',
+            label: 'Finish with at least 6 base health',
             threshold: 6,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '병영 건설',
+            label: 'Build a Guard Barracks',
             towerKindId: 'guardBarracks',
           ),
         ],
         24 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 6 이상으로 완료',
+            label: 'Finish with at least 6 base health',
             threshold: 6,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.sellAtMost,
-            label: '타워 판매 금지',
+            label: 'Do not sell any towers',
             threshold: 0,
           ),
         ],
         25 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 6 이상으로 완료',
+            label: 'Finish with at least 6 base health',
             threshold: 6,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '발리스타 건설',
+            label: 'Build a Ballista',
             towerKindId: 'ballista',
           ),
         ],
         26 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 5 이상으로 완료',
+            label: 'Finish with at least 5 base health',
             threshold: 5,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '마법사 건설',
+            label: 'Build a Mage tower',
             towerKindId: 'mageObelisk',
           ),
         ],
         27 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 5 이상으로 완료',
+            label: 'Finish with at least 5 base health',
             threshold: 5,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildAtMost,
-            label: '타워 최대 6개 건설',
+            label: 'Build at most 6 towers',
             threshold: 6,
           ),
         ],
         28 => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 4 이상으로 완료',
+            label: 'Finish with at least 4 base health',
             threshold: 4,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '빙결 건설',
+            label: 'Build a Frost tower',
             towerKindId: 'frostShrine',
           ),
         ],
         _ => const [
           StageObjectiveDefinition(
             type: StageObjectiveType.clearStage,
-            label: '스테이지 클리어',
+            label: 'Clear the stage',
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.keepBaseHealth,
-            label: '기지 체력 4 이상으로 완료',
+            label: 'Finish with at least 4 base health',
             threshold: 4,
           ),
           StageObjectiveDefinition(
             type: StageObjectiveType.buildSpecificTower,
-            label: '발리스타 건설',
+            label: 'Build a Ballista',
             towerKindId: 'ballista',
           ),
         ],
@@ -1979,11 +2251,11 @@ class SampleCampaign {
     final objectives = <StageObjectiveDefinition>[
       const StageObjectiveDefinition(
         type: StageObjectiveType.clearStage,
-        label: '스테이지 클리어',
+        label: 'Clear the stage',
       ),
       StageObjectiveDefinition(
         type: StageObjectiveType.keepBaseHealth,
-        label: '기지 체력 $healthThreshold 이상으로 완료',
+        label: 'Finish with at least $healthThreshold base health',
         threshold: healthThreshold,
       ),
     ];
@@ -1992,7 +2264,7 @@ class SampleCampaign {
       objectives.add(
         const StageObjectiveDefinition(
           type: StageObjectiveType.buildSpecificTower,
-          label: '마법사 건설',
+          label: 'Build a Mage tower',
           towerKindId: 'mageObelisk',
         ),
       );
@@ -2000,7 +2272,7 @@ class SampleCampaign {
       objectives.add(
         StageObjectiveDefinition(
           type: StageObjectiveType.buildAtMost,
-          label: '타워 최대 5개 건설',
+          label: 'Build at most 5 towers',
           threshold: 5,
         ),
       );
@@ -2008,7 +2280,7 @@ class SampleCampaign {
       objectives.add(
         const StageObjectiveDefinition(
           type: StageObjectiveType.buildSpecificTower,
-          label: '금화 제조소 건설',
+          label: 'Build a Coin Mill',
           towerKindId: 'coinMill',
         ),
       );
@@ -2016,7 +2288,7 @@ class SampleCampaign {
       objectives.add(
         const StageObjectiveDefinition(
           type: StageObjectiveType.sellAtMost,
-          label: '타워 판매 금지',
+          label: 'Do not sell any towers',
           threshold: 0,
         ),
       );
@@ -2033,7 +2305,7 @@ class SampleCampaign {
     final requirements = <StageUnlockRequirement>[
       StageUnlockRequirement(
         type: StageUnlockRequirementType.previousStageStars,
-        label: '스테이지 ${stage - 1}에서 별 1개 이상 획득',
+        label: 'Earn at least 1 star on Stage ${stage - 1}',
         stageNumber: stage - 1,
         threshold: 1,
       ),
@@ -2043,7 +2315,7 @@ class SampleCampaign {
       requirements.add(
         const StageUnlockRequirement(
           type: StageUnlockRequirementType.totalStars,
-          label: '총 별 10개 이상 획득',
+          label: 'Collect at least 10 total stars',
           threshold: 10,
         ),
       );
@@ -2052,7 +2324,7 @@ class SampleCampaign {
       requirements.add(
         const StageUnlockRequirement(
           type: StageUnlockRequirementType.metaUpgradeLevel,
-          label: '성벽 강화 1레벨 달성',
+          label: 'Upgrade Stronghold Masonry to level 1',
           upgradeId: 'stronghold',
           threshold: 1,
         ),
@@ -2062,7 +2334,7 @@ class SampleCampaign {
       requirements.add(
         const StageUnlockRequirement(
           type: StageUnlockRequirementType.totalStars,
-          label: '총 별 24개 이상 획득',
+          label: 'Collect at least 24 total stars',
           threshold: 24,
         ),
       );
@@ -2071,7 +2343,7 @@ class SampleCampaign {
       requirements.add(
         const StageUnlockRequirement(
           type: StageUnlockRequirementType.metaUpgradeLevel,
-          label: '궁술 숙련 2레벨 달성',
+          label: 'Upgrade Bow Mastery to level 2',
           upgradeId: 'bow_mastery',
           threshold: 2,
         ),
@@ -2081,7 +2353,7 @@ class SampleCampaign {
       requirements.add(
         const StageUnlockRequirement(
           type: StageUnlockRequirementType.totalStars,
-          label: '총 별 45개 이상 획득',
+          label: 'Collect at least 45 total stars',
           threshold: 45,
         ),
       );
@@ -2634,52 +2906,226 @@ class SampleCampaign {
     ],
   ];
 
-  static const List<List<StageBuildZoneDefinition>> _buildZoneTemplates = [
+  static const List<List<Offset>> _slotTemplates = [
     [
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.08, 0.10, 0.26, 0.74)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.40, 0.10, 0.20, 0.22)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.40, 0.54, 0.20, 0.28)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.70, 0.18, 0.18, 0.58)),
+      Offset(0.14, 0.47),
+      Offset(0.16, 0.83),
+      Offset(0.33, 0.50),
+      Offset(0.38, 0.18),
+      Offset(0.58, 0.52),
+      Offset(0.67, 0.86),
+      Offset(0.84, 0.60),
     ],
     [
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.08, 0.08, 0.22, 0.68)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.36, 0.10, 0.18, 0.26)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.36, 0.58, 0.24, 0.26)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.68, 0.10, 0.22, 0.72)),
+      Offset(0.12, 0.31),
+      Offset(0.24, 0.66),
+      Offset(0.35, 0.38),
+      Offset(0.40, 0.90),
+      Offset(0.62, 0.53),
+      Offset(0.79, 0.36),
+      Offset(0.86, 0.76),
     ],
     [
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.10, 0.08, 0.20, 0.22)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.10, 0.44, 0.22, 0.38)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.40, 0.18, 0.20, 0.64)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.70, 0.08, 0.18, 0.72)),
+      Offset(0.15, 0.10),
+      Offset(0.18, 0.54),
+      Offset(0.39, 0.56),
+      Offset(0.46, 0.88),
+      Offset(0.63, 0.48),
+      Offset(0.72, 0.16),
+      Offset(0.89, 0.49),
     ],
     [
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.08, 0.10, 0.24, 0.70)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.38, 0.14, 0.18, 0.24)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.38, 0.56, 0.18, 0.24)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.66, 0.12, 0.22, 0.68)),
+      Offset(0.11, 0.73),
+      Offset(0.26, 0.44),
+      Offset(0.34, 0.92),
+      Offset(0.57, 0.57),
+      Offset(0.63, 0.08),
+      Offset(0.83, 0.32),
+      Offset(0.88, 0.78),
     ],
     [
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.10, 0.08, 0.22, 0.74)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.38, 0.08, 0.18, 0.22)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.38, 0.56, 0.22, 0.26)),
-      StageBuildZoneDefinition(region: Rect.fromLTWH(0.68, 0.14, 0.20, 0.66)),
+      Offset(0.11, 0.19),
+      Offset(0.22, 0.56),
+      Offset(0.33, 0.85),
+      Offset(0.48, 0.48),
+      Offset(0.58, 0.11),
+      Offset(0.75, 0.58),
+      Offset(0.89, 0.84),
     ],
   ];
+
+  static List<List<int>> _buildPathSequence(List<Offset> template) {
+    final anchors = template.map(_pathAnchorFromOffset).toList();
+    final sequence = <List<int>>[];
+    for (var i = 0; i < anchors.length; i += 1) {
+      final current = anchors[i];
+      if (sequence.isEmpty) {
+        sequence.add([current.$1, current.$2]);
+      }
+      if (i == anchors.length - 1) {
+        break;
+      }
+
+      final next = anchors[i + 1];
+      final stepCol = (next.$1 - current.$1).sign;
+      final stepRow = (next.$2 - current.$2).sign;
+      if (stepCol != 0 && stepRow != 0) {
+        throw StateError('Path template contains a diagonal segment.');
+      }
+
+      var col = current.$1;
+      var row = current.$2;
+      while (col != next.$1 || row != next.$2) {
+        col += stepCol;
+        row += stepRow;
+        sequence.add([col, row]);
+      }
+    }
+    return sequence;
+  }
+
+  static (int, int) _pathAnchorFromOffset(Offset node) {
+    final col = (node.dx * (_tileColumns - 1)).round().clamp(
+      0,
+      _tileColumns - 1,
+    );
+    final row = (node.dy * (_tileRows - 1)).round().clamp(
+      _buildableTopRow,
+      _buildableBottomRow,
+    );
+    return (col, row);
+  }
+
+  static List<List<TileType>> _buildTileGrid(
+    List<List<int>> pathSequence,
+    List<Offset> slotTemplate,
+  ) {
+    final grid = List.generate(
+      _tileRows,
+      (_) => List.generate(_tileColumns, (_) => TileType.blocked),
+    );
+    final pathCells = {
+      for (final cell in pathSequence) _cellKey(cell[0], cell[1]),
+    };
+    final slotCells = {
+      for (final slot in slotTemplate) _slotCellFromOffset(slot),
+    };
+
+    for (var row = 0; row < _tileRows; row += 1) {
+      for (var col = 0; col < _tileColumns; col += 1) {
+        final key = _cellKey(col, row);
+        if (pathCells.contains(key)) {
+          grid[row][col] = TileType.path;
+          continue;
+        }
+        if (_isBuildableCell(col, row, pathCells, slotCells)) {
+          grid[row][col] = TileType.buildable;
+        }
+      }
+    }
+    return grid;
+  }
+
+  static bool _isBuildableCell(
+    int col,
+    int row,
+    Set<String> pathCells,
+    Set<String> slotCells,
+  ) {
+    if (row < _buildableTopRow || row > _buildableBottomRow) {
+      return false;
+    }
+    final key = _cellKey(col, row);
+    if (slotCells.contains(key)) {
+      return true;
+    }
+    const neighbors = <(int, int)>[(0, -1), (1, 0), (0, 1), (-1, 0)];
+    for (final neighbor in neighbors) {
+      final neighborCol = col + neighbor.$1;
+      final neighborRow = row + neighbor.$2;
+      if (neighborCol < 0 ||
+          neighborCol >= _tileColumns ||
+          neighborRow < 0 ||
+          neighborRow >= _tileRows) {
+        continue;
+      }
+      if (pathCells.contains(_cellKey(neighborCol, neighborRow))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static String _slotCellFromOffset(Offset slot) {
+    final col = (slot.dx * (_tileColumns - 1)).round().clamp(
+      0,
+      _tileColumns - 1,
+    );
+    final row = (slot.dy * (_tileRows - 1)).round().clamp(
+      _buildableTopRow,
+      _buildableBottomRow,
+    );
+    return _cellKey(col, row);
+  }
+
+  static List<Offset> _normalizedPathNodes(List<List<int>> pathSequence) {
+    return [
+      for (final cell in pathSequence)
+        Offset(cell[0] / (_tileColumns - 1), cell[1] / (_tileRows - 1)),
+    ];
+  }
+
+  static List<Offset> _normalizedBuildSlots(List<List<TileType>> tileGrid) {
+    final slots = <Offset>[];
+    for (var row = 0; row < tileGrid.length; row += 1) {
+      for (var col = 0; col < tileGrid[row].length; col += 1) {
+        if (tileGrid[row][col] != TileType.buildable) {
+          continue;
+        }
+        slots.add(Offset(col / (_tileColumns - 1), row / (_tileRows - 1)));
+      }
+    }
+    return slots;
+  }
+
+  static String _cellKey(int col, int row) => '$col:$row';
+}
+
+@Deprecated(
+  'Use CampaignData from lib/data/campaign/campaign_data.dart instead.',
+)
+class SampleCampaign {
+  static const int totalStages = CampaignData.totalStages;
+
+  static StageDefinition stage(int number) => CampaignData.stage(number);
+
+  static List<StageDefinition> allStages() => CampaignData.allStages();
+
+  static EnemyDefinition enemyForKind(
+    EnemyKind kind, {
+    required int stageNumber,
+    double intensity = 1.0,
+  }) {
+    return CampaignData.enemyForKind(
+      kind,
+      stageNumber: stageNumber,
+      intensity: intensity,
+    );
+  }
 }
 
 class _BiomeProfile {
   const _BiomeProfile({
     required this.title,
-    required this.primary,
-    required this.secondary,
-    required this.support,
-    required this.elite,
+    required this.commonKinds,
+    required this.supportKinds,
+    required this.eliteKinds,
+    required this.bossKind,
   });
 
   final String title;
-  final EnemyKind primary;
-  final EnemyKind secondary;
-  final EnemyKind support;
-  final EnemyKind elite;
+  final List<EnemyKind> commonKinds;
+  final List<EnemyKind> supportKinds;
+  final List<EnemyKind> eliteKinds;
+  final EnemyKind bossKind;
 }
