@@ -93,7 +93,7 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  Future<void> _confirmExit(BuildContext context) async {
+  Future<void> _showExitDialog(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -180,9 +180,6 @@ class _GameScreenState extends State<GameScreen> {
                 !session.stageCleared &&
                 !session.stageFailed &&
                 session.currentWave < session.totalWaves;
-            final waveButtonBottom = session.selectedTower != null
-                ? 112.0
-                : 16.0;
 
             return Stack(
               fit: StackFit.expand,
@@ -191,7 +188,7 @@ class _GameScreenState extends State<GameScreen> {
                   children: [
                     _TopHud(
                       sessionController: session,
-                      onBack: () => _confirmExit(context),
+                      onBack: () => _showExitDialog(context),
                       onTogglePause: game.togglePaused,
                     ),
                     Expanded(
@@ -206,18 +203,31 @@ class _GameScreenState extends State<GameScreen> {
                           Positioned(
                             top: 12,
                             left: 16,
-                            right: 16,
-                            child: _StatusBanner(text: session.statusText),
-                          ),
-                          if (showWaveButton)
-                            Positioned(
-                              right: 16,
-                              bottom: waveButtonBottom,
-                              child: _WaveButton(
-                                waveNumber: session.currentWave + 1,
-                                onPressed: game.startNextWave,
+                            right: 172,
+                            child: Align(
+                              alignment: Alignment.topLeft,
+                              child: _StatusBanner(
+                                text: session.statusText,
+                                maxWidth: 360,
                               ),
                             ),
+                          ),
+                          Positioned(
+                            top: 12,
+                            right: 16,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (showWaveButton)
+                                  _BattleWaveButton(
+                                    waveNumber: session.currentWave + 1,
+                                    onPressed: game.startNextWave,
+                                  ),
+                                const SizedBox(height: 8),
+                                const _DirectionChip(text: '적은 오른쪽에서 진입'),
+                              ],
+                            ),
+                          ),
                           if (session.selectedTower != null)
                             Positioned(
                               left: 16,
@@ -287,27 +297,27 @@ class _TopHud extends StatelessWidget {
       child: Row(
         children: [
           _HudIconButton(icon: Icons.arrow_back_rounded, onPressed: onBack),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: _HealthHud(
               currentHealth: sessionController.baseHealth,
               maxHealth: sessionController.maxBaseHealth,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           _HudChip(
             icon: Icons.monetization_on_rounded,
             color: const Color(0xFFE4C67A),
             label: '${sessionController.coins}',
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           _HudChip(
             icon: Icons.waves_rounded,
             color: Colors.white70,
             label:
                 'Wave ${sessionController.currentWave}/${sessionController.totalWaves}',
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           _HudIconButton(
             icon: sessionController.isPaused
                 ? Icons.play_arrow_rounded
@@ -329,11 +339,11 @@ class _HudIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 40,
-      height: 40,
+      width: 36,
+      height: 36,
       child: IconButton(
         padding: EdgeInsets.zero,
-        constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+        constraints: const BoxConstraints.tightFor(width: 36, height: 36),
         style: IconButton.styleFrom(
           backgroundColor: Colors.black.withValues(alpha: 0.18),
           shape: RoundedRectangleBorder(
@@ -342,7 +352,7 @@ class _HudIconButton extends StatelessWidget {
           ),
         ),
         onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white70, size: 20),
+        icon: Icon(icon, color: Colors.white70, size: 18),
       ),
     );
   }
@@ -362,7 +372,7 @@ class _HudChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
@@ -377,7 +387,7 @@ class _HudChip extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -409,15 +419,15 @@ class _HealthHud extends StatelessWidget {
         children: [
           const Icon(
             Icons.favorite_rounded,
-            size: 18,
+            size: 17,
             color: Color(0xFF98D67C),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: SizedBox(
-                height: 10,
+                height: 8,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -443,7 +453,7 @@ class _HealthHud extends StatelessWidget {
             '$currentHealth/$maxHealth',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -454,15 +464,16 @@ class _HealthHud extends StatelessWidget {
 }
 
 class _StatusBanner extends StatelessWidget {
-  const _StatusBanner({required this.text});
+  const _StatusBanner({required this.text, this.maxWidth = 460});
 
   final String text;
+  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 460),
+        constraints: BoxConstraints(maxWidth: maxWidth),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
@@ -498,8 +509,45 @@ class _StatusBanner extends StatelessWidget {
   }
 }
 
-class _WaveButton extends StatelessWidget {
-  const _WaveButton({required this.waveNumber, required this.onPressed});
+class _DirectionChip extends StatelessWidget {
+  const _DirectionChip({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xD9132330),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.keyboard_double_arrow_left_rounded,
+            size: 16,
+            color: Color(0xFF98D67C),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BattleWaveButton extends StatelessWidget {
+  const _BattleWaveButton({required this.waveNumber, required this.onPressed});
 
   final int waveNumber;
   final VoidCallback onPressed;
@@ -512,7 +560,7 @@ class _WaveButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onPressed,
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           decoration: BoxDecoration(
             color: const Color(0xFF1B2519).withValues(alpha: 0.94),
             borderRadius: BorderRadius.circular(18),
@@ -538,7 +586,7 @@ class _WaveButton extends StatelessWidget {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
-                  fontSize: 18,
+                  fontSize: 16,
                 ),
               ),
             ],
@@ -607,16 +655,9 @@ class _BuildBarState extends State<_BuildBar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            height: specDef != null ? 84 : 0,
-            child: specDef != null
-                ? _TowerSpecPanel(definition: specDef)
-                : const SizedBox.shrink(),
-          ),
+          SizedBox(height: 76, child: _BuildSummaryStrip(definition: specDef)),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 18),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -642,8 +683,50 @@ class _BuildBarState extends State<_BuildBar> {
   }
 }
 
-class _TowerSpecPanel extends StatelessWidget {
-  const _TowerSpecPanel({required this.definition});
+class _BuildSummaryStrip extends StatelessWidget {
+  const _BuildSummaryStrip({required this.definition});
+
+  final TowerDefinition? definition;
+
+  @override
+  Widget build(BuildContext context) {
+    if (definition == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: const BoxDecoration(
+          color: Color(0xFF0A1018),
+          border: Border(bottom: BorderSide(color: Colors.white10)),
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '??? ??? ? ? ??? ?? ?????.',
+              style: TextStyle(
+                color: Color(0xFFE4C67A),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              '?? ??? ?? ???? ??? ?? ???? ??????.',
+              style: TextStyle(color: Colors.white60, fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      );
+    }
+    return _TowerCardSummary(definition: definition!);
+  }
+}
+
+class _TowerCardSummary extends StatelessWidget {
+  const _TowerCardSummary({required this.definition});
 
   final TowerDefinition definition;
 
@@ -691,11 +774,11 @@ class _TowerSpecPanel extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Row(
                     children: [
-                      _SpecMetric(label: '사거리', value: rangeRating),
+                      _SpecMetric(label: '???', value: rangeRating),
                       const _SpecDot(),
-                      _SpecMetric(label: '공격', value: damageRating),
+                      _SpecMetric(label: '??', value: damageRating),
                       const _SpecDot(),
-                      _SpecMetric(label: '속도', value: speedRating),
+                      _SpecMetric(label: '??', value: speedRating),
                     ],
                   ),
                 ),
@@ -741,7 +824,7 @@ class _SpecDot extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 6),
-      child: Text('·', style: TextStyle(color: Colors.white30, fontSize: 12)),
+      child: Text('?', style: TextStyle(color: Colors.white30, fontSize: 12)),
     );
   }
 }
@@ -843,8 +926,8 @@ class _TowerActionBar extends StatelessWidget {
     }
 
     final subtitle = tower.branchLabel != null
-        ? '레벨 ${tower.level} · ${tower.branchLabel}'
-        : '레벨 ${tower.level} · ${tower.shortDescription}';
+        ? '?? ${tower.level} ? ${tower.branchLabel}'
+        : '?? ${tower.level} ? ${tower.shortDescription}';
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -897,7 +980,7 @@ class _TowerActionBar extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               IconButton(
-                tooltip: '판매',
+                tooltip: '??',
                 onPressed: onSell,
                 style: IconButton.styleFrom(
                   backgroundColor: const Color(0x22EF4E4E),

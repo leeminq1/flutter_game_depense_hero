@@ -3,7 +3,7 @@ import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('all sample stages expose centered tile-grid path data', () {
+  test('all campaign stages expose right-entry tile-grid path invariants', () {
     for (
       var stageNumber = 1;
       stageNumber <= CampaignData.totalStages;
@@ -45,13 +45,13 @@ void main() {
       );
       expect(
         pathSequence.first.first,
-        0,
-        reason: 'Stage $stageNumber path should enter from the left edge.',
+        7,
+        reason: 'Stage $stageNumber path should enter from the right edge.',
       );
       expect(
         pathSequence.last.first,
-        7,
-        reason: 'Stage $stageNumber path should exit at the right edge.',
+        0,
+        reason: 'Stage $stageNumber path should exit at the left edge.',
       );
 
       final buildableCount = tileGrid
@@ -63,6 +63,74 @@ void main() {
         greaterThan(0),
         reason: 'Stage $stageNumber should retain playable build cells.',
       );
+
+      final pathCells = {
+        for (final cell in pathSequence) '${cell[0]},${cell[1]}',
+      };
+
+      for (var index = 1; index < pathSequence.length; index += 1) {
+        final previous = pathSequence[index - 1];
+        final current = pathSequence[index];
+        final dx = current[0] - previous[0];
+        final dy = current[1] - previous[1];
+        expect(
+          dx <= 0,
+          isTrue,
+          reason: 'Stage $stageNumber path should not move back to the right.',
+        );
+        expect(
+          dx.abs() + dy.abs(),
+          1,
+          reason:
+              'Stage $stageNumber path should advance one orthogonal cell at a time.',
+        );
+      }
+
+      for (var row = 0; row < tileGrid.length - 1; row += 1) {
+        for (var col = 0; col < tileGrid[row].length - 1; col += 1) {
+          final square = [
+            tileGrid[row][col],
+            tileGrid[row][col + 1],
+            tileGrid[row + 1][col],
+            tileGrid[row + 1][col + 1],
+          ];
+          expect(
+            square.every((tile) => tile == TileType.path),
+            isFalse,
+            reason: 'Stage $stageNumber should not contain 2x2 path blocks.',
+          );
+        }
+      }
+
+      for (var index = 0; index < pathSequence.length; index += 1) {
+        final cell = pathSequence[index];
+        final neighbors = [
+          (cell[0] + 1, cell[1]),
+          (cell[0] - 1, cell[1]),
+          (cell[0], cell[1] + 1),
+          (cell[0], cell[1] - 1),
+        ];
+        for (final neighbor in neighbors) {
+          final neighborKey = '${neighbor.$1},${neighbor.$2}';
+          if (!pathCells.contains(neighborKey)) {
+            continue;
+          }
+          final isPrevious =
+              index > 0 &&
+              pathSequence[index - 1][0] == neighbor.$1 &&
+              pathSequence[index - 1][1] == neighbor.$2;
+          final isNext =
+              index < pathSequence.length - 1 &&
+              pathSequence[index + 1][0] == neighbor.$1 &&
+              pathSequence[index + 1][1] == neighbor.$2;
+          expect(
+            isPrevious || isNext,
+            isTrue,
+            reason:
+                'Stage $stageNumber path should not side-touch non-consecutive cells.',
+          );
+        }
+      }
     }
   });
 }

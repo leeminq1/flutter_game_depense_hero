@@ -9,8 +9,8 @@ class CampaignData {
   static const int totalStages = 30;
   static const int _tileColumns = 8;
   static const int _tileRows = 14;
-  static const int _buildableTopRow = 2;
-  static const int _buildableBottomRow = 11;
+  static const int _buildableTopRow = 1;
+  static const int _buildableBottomRow = 12;
 
   static StageDefinition stage(int number) {
     final safeStage = number.clamp(1, totalStages);
@@ -20,6 +20,7 @@ class CampaignData {
     final pathTemplate = _pathTemplates[templateIndex];
     final slotTemplate = _slotTemplates[templateIndex];
     final pathSequence = _buildPathSequence(pathTemplate);
+    _validatePathSequence(pathSequence);
     final tileGrid = _buildTileGrid(pathSequence, slotTemplate);
     final waveCount = safeStage >= 21 ? 5 : (safeStage >= 6 ? 4 : 3);
     final title = safeStage == 30
@@ -2853,129 +2854,116 @@ class CampaignData {
     );
   }
 
-  static const List<List<Offset>> _pathTemplates = [
+  static const List<List<List<int>>> _pathTemplates = [
     [
-      Offset(0.03, 0.68),
-      Offset(0.23, 0.68),
-      Offset(0.23, 0.32),
-      Offset(0.49, 0.32),
-      Offset(0.49, 0.72),
-      Offset(0.75, 0.72),
-      Offset(0.75, 0.44),
-      Offset(0.95, 0.44),
+      [7, 9],
+      [5, 9],
+      [5, 4],
+      [2, 4],
+      [2, 8],
+      [0, 8],
     ],
     [
-      Offset(0.02, 0.48),
-      Offset(0.18, 0.48),
-      Offset(0.18, 0.18),
-      Offset(0.45, 0.18),
-      Offset(0.45, 0.82),
-      Offset(0.72, 0.82),
-      Offset(0.72, 0.28),
-      Offset(0.97, 0.28),
+      [7, 4],
+      [6, 4],
+      [6, 10],
+      [3, 10],
+      [3, 3],
+      [0, 3],
     ],
     [
-      Offset(0.05, 0.22),
-      Offset(0.28, 0.22),
-      Offset(0.28, 0.75),
-      Offset(0.55, 0.75),
-      Offset(0.55, 0.35),
-      Offset(0.82, 0.35),
-      Offset(0.82, 0.65),
-      Offset(0.95, 0.65),
+      [7, 10],
+      [4, 10],
+      [4, 6],
+      [1, 6],
+      [1, 2],
+      [0, 2],
     ],
     [
-      Offset(0.04, 0.58),
-      Offset(0.20, 0.58),
-      Offset(0.20, 0.86),
-      Offset(0.52, 0.86),
-      Offset(0.52, 0.18),
-      Offset(0.78, 0.18),
-      Offset(0.78, 0.55),
-      Offset(0.96, 0.55),
+      [7, 3],
+      [5, 3],
+      [5, 8],
+      [2, 8],
+      [2, 5],
+      [0, 5],
     ],
     [
-      Offset(0.03, 0.38),
-      Offset(0.18, 0.38),
-      Offset(0.18, 0.74),
-      Offset(0.40, 0.74),
-      Offset(0.40, 0.24),
-      Offset(0.67, 0.24),
-      Offset(0.67, 0.70),
-      Offset(0.95, 0.70),
+      [7, 7],
+      [6, 7],
+      [6, 2],
+      [4, 2],
+      [4, 9],
+      [1, 9],
+      [1, 4],
+      [0, 4],
     ],
   ];
 
-  static const List<List<Offset>> _slotTemplates = [
+  static const List<List<List<int>>> _slotTemplates = [
     [
-      Offset(0.14, 0.47),
-      Offset(0.16, 0.83),
-      Offset(0.33, 0.50),
-      Offset(0.38, 0.18),
-      Offset(0.58, 0.52),
-      Offset(0.67, 0.86),
-      Offset(0.84, 0.60),
+      [6, 2],
+      [4, 2],
+      [3, 7],
+      [4, 11],
+      [1, 10],
+      [0, 2],
     ],
     [
-      Offset(0.12, 0.31),
-      Offset(0.24, 0.66),
-      Offset(0.35, 0.38),
-      Offset(0.40, 0.90),
-      Offset(0.62, 0.53),
-      Offset(0.79, 0.36),
-      Offset(0.86, 0.76),
+      [7, 2],
+      [5, 6],
+      [5, 11],
+      [2, 9],
+      [1, 1],
+      [0, 11],
     ],
     [
-      Offset(0.15, 0.10),
-      Offset(0.18, 0.54),
-      Offset(0.39, 0.56),
-      Offset(0.46, 0.88),
-      Offset(0.63, 0.48),
-      Offset(0.72, 0.16),
-      Offset(0.89, 0.49),
+      [6, 11],
+      [5, 8],
+      [3, 7],
+      [2, 1],
+      [0, 9],
+      [6, 4],
     ],
     [
-      Offset(0.11, 0.73),
-      Offset(0.26, 0.44),
-      Offset(0.34, 0.92),
-      Offset(0.57, 0.57),
-      Offset(0.63, 0.08),
-      Offset(0.83, 0.32),
-      Offset(0.88, 0.78),
+      [7, 10],
+      [6, 5],
+      [4, 10],
+      [3, 4],
+      [1, 7],
+      [0, 1],
     ],
     [
-      Offset(0.11, 0.19),
-      Offset(0.22, 0.56),
-      Offset(0.33, 0.85),
-      Offset(0.48, 0.48),
-      Offset(0.58, 0.11),
-      Offset(0.75, 0.58),
-      Offset(0.89, 0.84),
+      [7, 10],
+      [5, 5],
+      [3, 1],
+      [3, 11],
+      [2, 7],
+      [0, 10],
     ],
   ];
 
-  static List<List<int>> _buildPathSequence(List<Offset> template) {
-    final anchors = template.map(_pathAnchorFromOffset).toList();
+  static List<List<int>> _buildPathSequence(List<List<int>> template) {
+    final anchors = template;
     final sequence = <List<int>>[];
     for (var i = 0; i < anchors.length; i += 1) {
       final current = anchors[i];
       if (sequence.isEmpty) {
-        sequence.add([current.$1, current.$2]);
+        sequence.add([current[0], current[1]]);
       }
       if (i == anchors.length - 1) {
         break;
       }
 
       final next = anchors[i + 1];
-      final stepCol = (next.$1 - current.$1).sign;
-      final stepRow = (next.$2 - current.$2).sign;
+      final stepCol = (next[0] - current[0]).sign;
+      final stepRow = (next[1] - current[1]).sign;
       if (stepCol != 0 && stepRow != 0) {
         throw StateError('Path template contains a diagonal segment.');
       }
 
-      var col = current.$1;
-      var row = current.$2;
-      while (col != next.$1 || row != next.$2) {
+      var col = current[0];
+      var row = current[1];
+      while (col != next[0] || row != next[1]) {
         col += stepCol;
         row += stepRow;
         sequence.add([col, row]);
@@ -2984,21 +2972,9 @@ class CampaignData {
     return sequence;
   }
 
-  static (int, int) _pathAnchorFromOffset(Offset node) {
-    final col = (node.dx * (_tileColumns - 1)).round().clamp(
-      0,
-      _tileColumns - 1,
-    );
-    final row = (node.dy * (_tileRows - 1)).round().clamp(
-      _buildableTopRow,
-      _buildableBottomRow,
-    );
-    return (col, row);
-  }
-
   static List<List<TileType>> _buildTileGrid(
     List<List<int>> pathSequence,
-    List<Offset> slotTemplate,
+    List<List<int>> slotTemplate,
   ) {
     final grid = List.generate(
       _tileRows,
@@ -3008,7 +2984,7 @@ class CampaignData {
       for (final cell in pathSequence) _cellKey(cell[0], cell[1]),
     };
     final slotCells = {
-      for (final slot in slotTemplate) _slotCellFromOffset(slot),
+      for (final slot in slotTemplate) _cellKey(slot[0], slot[1]),
     };
 
     for (var row = 0; row < _tileRows; row += 1) {
@@ -3056,23 +3032,94 @@ class CampaignData {
     return false;
   }
 
-  static String _slotCellFromOffset(Offset slot) {
-    final col = (slot.dx * (_tileColumns - 1)).round().clamp(
-      0,
-      _tileColumns - 1,
-    );
-    final row = (slot.dy * (_tileRows - 1)).round().clamp(
-      _buildableTopRow,
-      _buildableBottomRow,
-    );
-    return _cellKey(col, row);
-  }
-
   static List<Offset> _normalizedPathNodes(List<List<int>> pathSequence) {
     return [
       for (final cell in pathSequence)
         Offset(cell[0] / (_tileColumns - 1), cell[1] / (_tileRows - 1)),
     ];
+  }
+
+  static void _validatePathSequence(List<List<int>> pathSequence) {
+    if (pathSequence.isEmpty) {
+      throw StateError('Path sequence cannot be empty.');
+    }
+    if (pathSequence.first[0] != _tileColumns - 1) {
+      throw StateError('Path must start at the right edge.');
+    }
+    if (pathSequence.last[0] != 0) {
+      throw StateError('Path must end at the left edge.');
+    }
+
+    final indexByCell = <String, int>{};
+    for (var i = 0; i < pathSequence.length; i += 1) {
+      final cell = pathSequence[i];
+      final key = _cellKey(cell[0], cell[1]);
+      if (indexByCell.containsKey(key)) {
+        throw StateError('Path cannot revisit cell $key.');
+      }
+      indexByCell[key] = i;
+
+      if (cell[0] < 0 ||
+          cell[0] >= _tileColumns ||
+          cell[1] < 0 ||
+          cell[1] >= _tileRows) {
+        throw StateError('Path cell $key is out of bounds.');
+      }
+      if (i == 0) {
+        continue;
+      }
+
+      final previous = pathSequence[i - 1];
+      final dx = cell[0] - previous[0];
+      final dy = cell[1] - previous[1];
+      if ((dx.abs() + dy.abs()) != 1) {
+        throw StateError('Path must move one orthogonal cell at a time.');
+      }
+      if (dx > 0) {
+        throw StateError('Path cannot move back toward the right edge.');
+      }
+    }
+
+    for (final entry in indexByCell.entries) {
+      final parts = entry.key.split(':');
+      final col = int.parse(parts[0]);
+      final row = int.parse(parts[1]);
+      const neighbors = <List<int>>[
+        [0, -1],
+        [1, 0],
+        [0, 1],
+        [-1, 0],
+      ];
+      for (final neighbor in neighbors) {
+        final neighborCol = col + neighbor[0];
+        final neighborRow = row + neighbor[1];
+        final neighborKey = _cellKey(neighborCol, neighborRow);
+        final neighborIndex = indexByCell[neighborKey];
+        if (neighborIndex == null) {
+          continue;
+        }
+        if ((neighborIndex - entry.value).abs() != 1) {
+          throw StateError(
+            'Path cannot touch non-consecutive side neighbor $neighborKey.',
+          );
+        }
+      }
+    }
+
+    for (var row = 0; row < _tileRows - 1; row += 1) {
+      for (var col = 0; col < _tileColumns - 1; col += 1) {
+        final keys = [
+          _cellKey(col, row),
+          _cellKey(col + 1, row),
+          _cellKey(col, row + 1),
+          _cellKey(col + 1, row + 1),
+        ];
+        final filled = keys.where(indexByCell.containsKey).length;
+        if (filled == 4) {
+          throw StateError('Path cannot form a 2x2 block at $col:$row.');
+        }
+      }
+    }
   }
 
   static List<Offset> _normalizedBuildSlots(List<List<TileType>> tileGrid) {
