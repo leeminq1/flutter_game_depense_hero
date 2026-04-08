@@ -14,27 +14,31 @@ class GameVisualRegistry {
 
   ui.Image? _grassTile;
   ui.Image? _grassTile2;
-  ui.Image? _pathTile;
-  ui.Image? _pathEdgeN;
-  ui.Image? _pathEdgeS;
-  ui.Image? _pathEdgeE;
-  ui.Image? _pathEdgeW;
-  ui.Image? _pathCornerNE;
-  ui.Image? _pathCornerNW;
-  ui.Image? _pathCornerSE;
-  ui.Image? _pathCornerSW;
+  ui.Image? _pathFill;
+  ui.Image? _pathStraightHorizontal;
+  ui.Image? _pathStraightVertical;
+  ui.Image? _pathCapToNorth;
+  ui.Image? _pathCapToSouth;
+  ui.Image? _pathCapToEast;
+  ui.Image? _pathCapToWest;
+  ui.Image? _pathTurnNE;
+  ui.Image? _pathTurnNW;
+  ui.Image? _pathTurnSE;
+  ui.Image? _pathTurnSW;
 
   ui.Image? get grassTile => _grassTile;
   ui.Image? get grassTile2 => _grassTile2;
-  ui.Image? get pathTile => _pathTile;
-  ui.Image? get pathEdgeN => _pathEdgeN;
-  ui.Image? get pathEdgeS => _pathEdgeS;
-  ui.Image? get pathEdgeE => _pathEdgeE;
-  ui.Image? get pathEdgeW => _pathEdgeW;
-  ui.Image? get pathCornerNE => _pathCornerNE;
-  ui.Image? get pathCornerNW => _pathCornerNW;
-  ui.Image? get pathCornerSE => _pathCornerSE;
-  ui.Image? get pathCornerSW => _pathCornerSW;
+  ui.Image? get pathFill => _pathFill;
+  ui.Image? get pathStraightHorizontal => _pathStraightHorizontal;
+  ui.Image? get pathStraightVertical => _pathStraightVertical;
+  ui.Image? get pathCapToNorth => _pathCapToNorth;
+  ui.Image? get pathCapToSouth => _pathCapToSouth;
+  ui.Image? get pathCapToEast => _pathCapToEast;
+  ui.Image? get pathCapToWest => _pathCapToWest;
+  ui.Image? get pathTurnNE => _pathTurnNE;
+  ui.Image? get pathTurnNW => _pathTurnNW;
+  ui.Image? get pathTurnSE => _pathTurnSE;
+  ui.Image? get pathTurnSW => _pathTurnSW;
 
   bool _warmed = false;
 
@@ -118,15 +122,19 @@ class GameVisualRegistry {
 
     const grassPath = 'assets/sprites/tiles/grass.png';
     const grass2Path = 'assets/sprites/tiles/grass2.png';
-    const pathTilePath = 'assets/sprites/tiles/path.png';
-    const pathEdgeNPath = 'assets/sprites/tiles/path_edge_n.png';
-    const pathEdgeSPath = 'assets/sprites/tiles/path_edge_s.png';
-    const pathEdgeEPath = 'assets/sprites/tiles/path_edge_e.png';
-    const pathEdgeWPath = 'assets/sprites/tiles/path_edge_w.png';
-    const pathCornerNEPath = 'assets/sprites/tiles/path_corner_ne.png';
-    const pathCornerNWPath = 'assets/sprites/tiles/path_corner_nw.png';
-    const pathCornerSEPath = 'assets/sprites/tiles/path_corner_se.png';
-    const pathCornerSWPath = 'assets/sprites/tiles/path_corner_sw.png';
+    const pathFillPath = 'assets/sprites/tiles/path_fill.png';
+    const pathStraightHorizontalPath =
+        'assets/sprites/tiles/path_straight_horizontal.png';
+    const pathStraightVerticalPath =
+        'assets/sprites/tiles/path_straight_vertical.png';
+    const pathCapToNorthPath = 'assets/sprites/tiles/path_cap_to_north.png';
+    const pathCapToSouthPath = 'assets/sprites/tiles/path_cap_to_south.png';
+    const pathCapToEastPath = 'assets/sprites/tiles/path_cap_to_east.png';
+    const pathCapToWestPath = 'assets/sprites/tiles/path_cap_to_west.png';
+    const pathTurnNEPath = 'assets/sprites/tiles/path_turn_ne.png';
+    const pathTurnNWPath = 'assets/sprites/tiles/path_turn_nw.png';
+    const pathTurnSEPath = 'assets/sprites/tiles/path_turn_se.png';
+    const pathTurnSWPath = 'assets/sprites/tiles/path_turn_sw.png';
 
     if (assetKeys.contains(grassPath)) {
       _grassTile = await _loadImage(grassPath);
@@ -134,32 +142,38 @@ class GameVisualRegistry {
     if (assetKeys.contains(grass2Path)) {
       _grassTile2 = await _loadImage(grass2Path);
     }
-    if (assetKeys.contains(pathTilePath)) {
-      _pathTile = await _loadImage(pathTilePath);
+    if (assetKeys.contains(pathFillPath)) {
+      _pathFill = await _loadImage(pathFillPath);
     }
-    if (assetKeys.contains(pathEdgeNPath)) {
-      _pathEdgeN = await _loadImage(pathEdgeNPath);
+    if (assetKeys.contains(pathStraightHorizontalPath)) {
+      _pathStraightHorizontal = await _loadImage(pathStraightHorizontalPath);
     }
-    if (assetKeys.contains(pathEdgeSPath)) {
-      _pathEdgeS = await _loadImage(pathEdgeSPath);
+    if (assetKeys.contains(pathStraightVerticalPath)) {
+      _pathStraightVertical = await _loadImage(pathStraightVerticalPath);
     }
-    if (assetKeys.contains(pathEdgeEPath)) {
-      _pathEdgeE = await _loadImage(pathEdgeEPath);
+    if (assetKeys.contains(pathCapToNorthPath)) {
+      _pathCapToNorth = await _loadImage(pathCapToNorthPath);
     }
-    if (assetKeys.contains(pathEdgeWPath)) {
-      _pathEdgeW = await _loadImage(pathEdgeWPath);
+    if (assetKeys.contains(pathCapToSouthPath)) {
+      _pathCapToSouth = await _loadImage(pathCapToSouthPath);
     }
-    if (assetKeys.contains(pathCornerNEPath)) {
-      _pathCornerNE = await _loadImage(pathCornerNEPath);
+    if (assetKeys.contains(pathCapToEastPath)) {
+      _pathCapToEast = await _loadImage(pathCapToEastPath);
     }
-    if (assetKeys.contains(pathCornerNWPath)) {
-      _pathCornerNW = await _loadImage(pathCornerNWPath);
+    if (assetKeys.contains(pathCapToWestPath)) {
+      _pathCapToWest = await _loadImage(pathCapToWestPath);
     }
-    if (assetKeys.contains(pathCornerSEPath)) {
-      _pathCornerSE = await _loadImage(pathCornerSEPath);
+    if (assetKeys.contains(pathTurnNEPath)) {
+      _pathTurnNE = await _loadImage(pathTurnNEPath);
     }
-    if (assetKeys.contains(pathCornerSWPath)) {
-      _pathCornerSW = await _loadImage(pathCornerSWPath);
+    if (assetKeys.contains(pathTurnNWPath)) {
+      _pathTurnNW = await _loadImage(pathTurnNWPath);
+    }
+    if (assetKeys.contains(pathTurnSEPath)) {
+      _pathTurnSE = await _loadImage(pathTurnSEPath);
+    }
+    if (assetKeys.contains(pathTurnSWPath)) {
+      _pathTurnSW = await _loadImage(pathTurnSWPath);
     }
 
     _warmed = true;

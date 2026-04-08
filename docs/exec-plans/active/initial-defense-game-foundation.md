@@ -94,6 +94,9 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-08: Campaign roster profiles now use array-backed pools for common, support, elite, and boss kinds so wave sourcing can grow without adding more fixed biome slots.
 - 2026-04-08: Campaign stages now support explicit `tileGrid` and `pathSequence` data, and the default 30-stage sample campaign uses a centered `8 x 14` tile board instead of distance-only path clearance for build legality.
 - 2026-04-08: Runtime map rendering can now draw Kenney grass/path tiles from grid data, including neighbor-based path trim overlays and direct tile-center enemy waypoint conversion.
+- 2026-04-08: The battle screen layout now separates the top HUD, gameplay viewport, and bottom build bar so Flame content no longer renders underneath combat UI chrome.
+- 2026-04-08: Path tiles now resolve as semantic straight, turn, and cap variants from renamed Kenney road assets instead of compositing multiple opaque road overlays at render time.
+- 2026-04-08: Spawned enemies are now placed on the first path point immediately, reducing the risk that early spawns are hidden under UI or start at a stale zero position.
 
 ## Risks
 
@@ -104,6 +107,7 @@ Create the first playable vertical slice and the documentation discipline needed
 - Large-scale wave combat may produce too many overlapping SFX unless event categories are throttled and pooled.
 - Sustain and ward-support enemies could create late-wave stall states if heal cadence, ward uptime, or elite overlap drift too high during future balance passes.
 - The new tile-grid placement model may expose more buildable cells than the old slot template flow, so economy pacing and tower-count pressure should be watched during the next balance pass.
+- The compact battle HUD and status banner now rely on tighter horizontal packing, so any future HUD additions should be checked on narrow Android portrait widths before shipping.
 
 ## Exit Criteria
 
@@ -158,3 +162,5 @@ Create the first playable vertical slice and the documentation discipline needed
 - Enemy bases, `walk_02`, and `walk_03` now all come from the same LPC ZIP export mapping, reducing animation mismatch and bad-source drift across rerenders.
 - The late campaign now exposes heal, ward, summon, and buff support roles through a broader 15-unit roster instead of reusing the same few enemy patterns.
 - The sample campaign battlefield is now authored as tile data first, which fixes path-adjacent placement false negatives and makes path centering consistent across the full 30-stage arc.
+- Battle UI guidance now lives in Flutter overlays above a dedicated gameplay viewport, reducing overlap between status text, tower controls, and the `Wave` CTA during live combat.
+- Enemy visibility at wave start is now tied to immediate on-path placement rather than waiting for the first movement update, which makes early spawns easier to validate during gameplay smoke tests.

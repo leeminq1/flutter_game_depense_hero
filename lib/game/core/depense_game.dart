@@ -176,7 +176,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
     if (_currentWaveIndex >= stage.waves.length - 1) {
-      _statusText = '모든 웨이브가 이미 완료되었습니다.';
+      _statusText = '모든 Wave가 이미 완료되었습니다.';
       _syncSession();
       return;
     }
@@ -186,7 +186,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _spawnedInGroup = 0;
     _spawnTimer = 0;
     _waveActive = true;
-    _statusText = '웨이브 ${_currentWaveIndex + 1} 시작!';
+    _statusText = 'Wave ${_currentWaveIndex + 1} 시작!';
     for (final tower in _towers.where(
       (tower) => tower.definition.kind == TowerKind.coinMill,
     )) {
@@ -325,7 +325,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawEnemies(canvas);
     _drawImpacts(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.foreground);
-    _drawHints(canvas);
   }
 
   @override
@@ -430,7 +429,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     final group = wave.groups[_currentSpawnGroupIndex];
-    _enemies.add(_Enemy.fromDefinition(group.enemy));
+    final enemy = _Enemy.fromDefinition(group.enemy);
+    _placeEnemyOnPath(enemy);
+    _enemies.add(enemy);
     _spawnedInGroup += 1;
     _spawnTimer = group.spawnInterval;
 
@@ -1565,7 +1566,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
 
-    _statusText = '웨이브 ${_currentWaveIndex + 1} 클리어! 다음 웨이브 전에 타워를 보강하세요.';
+    _statusText = 'Wave ${_currentWaveIndex + 1} 클리어! 다음 Wave 전에 타워를 보강하세요.';
     audioService.play(AudioEvent.waveClear);
   }
 
@@ -1586,9 +1587,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
 
-    // When tile-based rendering is active, path tiles are drawn in _drawGroundTexture
-    // so we skip the stroke path here. Only draw decorative marks on top.
-    if (_visualRegistry.grassTile != null) {
+    // When tile-based rendering is active, path tiles are drawn in
+    // _drawGroundTexture, so we only draw decorative accents here.
+    if (_visualRegistry.pathFill != null) {
       for (final mark in _mapTexturePlan.pathMarks) {
         _drawTextureMark(canvas, mark);
       }
@@ -1845,7 +1846,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void _drawGroundTexture(Canvas canvas) {
     final grassTile = _visualRegistry.grassTile;
     final grassTile2 = _visualRegistry.grassTile2;
-    final pathTile = _visualRegistry.pathTile;
 
     if (grassTile != null && stage.tileGrid != null) {
       final tileGrid = stage.tileGrid!;
@@ -1856,8 +1856,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           final x = _gridOrigin.x + (col * _tileSize);
           final y = _gridOrigin.y + (row * _tileSize);
           final tileType = tileGrid[row][col];
-          final tile = tileType == TileType.path && pathTile != null
-              ? pathTile
+          final tile = tileType == TileType.path
+              ? _pathTileForCell(row: row, col: col) ??
+                    _grassTileForCell(
+                      row: row,
+                      col: col,
+                      primary: grassTile,
+                      secondary: grassTile2,
+                    )
               : _grassTileForCell(
                   row: row,
                   col: col,
@@ -1872,9 +1878,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           );
           final dst = Rect.fromLTWH(x, y, _tileSize, _tileSize);
           canvas.drawImageRect(tile, src, dst, tilePaint);
-          if (tileType == TileType.path) {
-            _drawPathTileTrim(canvas, row: row, col: col);
-          }
         }
       }
     } else if (grassTile != null) {
@@ -1888,8 +1891,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           final y = row * _tileSize;
           final center = Vector2(x + _tileSize / 2, y + _tileSize / 2);
           final onPath = _isOnPathForTile(center, 30.0);
-          final tile = (onPath && pathTile != null)
-              ? pathTile
+          final tile = (onPath && _visualRegistry.pathFill != null)
+              ? _visualRegistry.pathFill!
               : _grassTileForCell(
                   row: row,
                   col: col,
@@ -1926,53 +1929,48 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return (row + col).isEven ? primary : secondary;
   }
 
-  void _drawPathTileTrim(Canvas canvas, {required int row, required int col}) {
-    final overlays = <ui.Image>[
-      if (!_isPathTile(row - 1, col) && _visualRegistry.pathEdgeN != null)
-        _visualRegistry.pathEdgeN!,
-      if (!_isPathTile(row + 1, col) && _visualRegistry.pathEdgeS != null)
-        _visualRegistry.pathEdgeS!,
-      if (!_isPathTile(row, col + 1) && _visualRegistry.pathEdgeE != null)
-        _visualRegistry.pathEdgeE!,
-      if (!_isPathTile(row, col - 1) && _visualRegistry.pathEdgeW != null)
-        _visualRegistry.pathEdgeW!,
-      if (!_isPathTile(row - 1, col) &&
-          !_isPathTile(row, col + 1) &&
-          _visualRegistry.pathCornerNE != null)
-        _visualRegistry.pathCornerNE!,
-      if (!_isPathTile(row - 1, col) &&
-          !_isPathTile(row, col - 1) &&
-          _visualRegistry.pathCornerNW != null)
-        _visualRegistry.pathCornerNW!,
-      if (!_isPathTile(row + 1, col) &&
-          !_isPathTile(row, col + 1) &&
-          _visualRegistry.pathCornerSE != null)
-        _visualRegistry.pathCornerSE!,
-      if (!_isPathTile(row + 1, col) &&
-          !_isPathTile(row, col - 1) &&
-          _visualRegistry.pathCornerSW != null)
-        _visualRegistry.pathCornerSW!,
-    ];
-    if (overlays.isEmpty) {
-      return;
-    }
+  ui.Image? _pathTileForCell({required int row, required int col}) {
+    final north = _isPathTile(row - 1, col);
+    final south = _isPathTile(row + 1, col);
+    final east = _isPathTile(row, col + 1);
+    final west = _isPathTile(row, col - 1);
+    final connections =
+        (north ? 1 : 0) + (south ? 1 : 0) + (east ? 1 : 0) + (west ? 1 : 0);
 
-    final dst = Rect.fromLTWH(
-      _gridOrigin.x + (col * _tileSize),
-      _gridOrigin.y + (row * _tileSize),
-      _tileSize,
-      _tileSize,
-    );
-    final paint = Paint();
-    for (final overlay in overlays) {
-      final src = Rect.fromLTWH(
-        0,
-        0,
-        overlay.width.toDouble(),
-        overlay.height.toDouble(),
-      );
-      canvas.drawImageRect(overlay, src, dst, paint);
+    if (connections <= 1) {
+      if (north) {
+        return _visualRegistry.pathCapToNorth ?? _visualRegistry.pathFill;
+      }
+      if (south) {
+        return _visualRegistry.pathCapToSouth ?? _visualRegistry.pathFill;
+      }
+      if (east) {
+        return _visualRegistry.pathCapToEast ?? _visualRegistry.pathFill;
+      }
+      if (west) {
+        return _visualRegistry.pathCapToWest ?? _visualRegistry.pathFill;
+      }
+      return _visualRegistry.pathFill;
     }
+    if (north && south && !east && !west) {
+      return _visualRegistry.pathStraightVertical ?? _visualRegistry.pathFill;
+    }
+    if (east && west && !north && !south) {
+      return _visualRegistry.pathStraightHorizontal ?? _visualRegistry.pathFill;
+    }
+    if (north && east && !south && !west) {
+      return _visualRegistry.pathTurnNE ?? _visualRegistry.pathFill;
+    }
+    if (north && west && !south && !east) {
+      return _visualRegistry.pathTurnNW ?? _visualRegistry.pathFill;
+    }
+    if (south && east && !north && !west) {
+      return _visualRegistry.pathTurnSE ?? _visualRegistry.pathFill;
+    }
+    if (south && west && !north && !east) {
+      return _visualRegistry.pathTurnSW ?? _visualRegistry.pathFill;
+    }
+    return _visualRegistry.pathFill;
   }
 
   bool _isPathTile(int row, int col) {
@@ -2359,14 +2357,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  void _drawHints(Canvas canvas) {
-    _labelPaint.render(
-      canvas,
-      '타워를 탭하여 업그레이드 또는 판매. 잠긴 타워는 메타 업그레이드로 해금.',
-      Vector2(18, size.y - 170),
-    );
-  }
-
   void _spawnProjectile({
     required Vector2 from,
     required Vector2 to,
@@ -2628,6 +2618,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           : _towers.map((tower) => tower.level).reduce(math.max),
       builtTowerKinds: _builtTowerKinds,
       statusText: _statusText,
+      remainingEnemies: _enemies.length,
     );
   }
 
@@ -2912,10 +2903,6 @@ class _Enemy {
         currentStart + (currentEnd - currentStart) * segmentProgress,
       );
       progress = (segmentIndex + segmentProgress) / (path.length - 1);
-    }
-
-    if (position == Vector2.zero()) {
-      position.setFrom(path.first);
     }
   }
 }

@@ -1,7 +1,7 @@
 import 'package:depense_game/app/bootstrap/app_bootstrap.dart';
+import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
-import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/core/depense_game.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
@@ -58,12 +58,13 @@ class _GameScreenState extends State<GameScreen> {
     final overview = await widget.bootstrap.progressStore.loadCampaignOverview(
       totalStages: CampaignData.totalStages,
     );
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() => _overview = overview);
   }
 
   Future<void> _loadStage(int stageNumber) async {
-    // Ensure we have current overview
     final overview =
         _overview ??
         await widget.bootstrap.progressStore.loadCampaignOverview(
@@ -73,7 +74,10 @@ class _GameScreenState extends State<GameScreen> {
     final resolvedMeta = MetaUpgradeCatalog.resolve(overview.metaUpgrades);
     final stage = CampaignData.stage(stageNumber);
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
       _activeMetaUpgrades = resolvedMeta;
       _stageNumber = stageNumber;
@@ -94,9 +98,9 @@ class _GameScreenState extends State<GameScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF161D26),
-        title: const Text('게임 종료', style: TextStyle(color: Colors.white)),
+        title: const Text('전투 종료', style: TextStyle(color: Colors.white)),
         content: const Text(
-          '캠프로 돌아가시겠습니까?\n진행 중인 웨이브는 저장되지 않습니다.',
+          '캠프로 돌아가시겠습니까?\n진행 중인 전투는 저장되지 않습니다.',
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -114,6 +118,7 @@ class _GameScreenState extends State<GameScreen> {
         ],
       ),
     );
+
     if (confirmed == true && mounted) {
       widget.onExitToCamp();
     }
@@ -121,9 +126,10 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _handleSessionChanged() async {
     final game = _game;
-    if (game == null) return;
+    if (game == null) {
+      return;
+    }
 
-    // Only proceed if stage ended and we aren't already evaluating
     if ((_sessionController.stageCleared || _sessionController.stageFailed) &&
         !_isEvaluating &&
         _completionResult == null) {
@@ -138,7 +144,10 @@ class _GameScreenState extends State<GameScreen> {
 
       await _refreshOverview();
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
         _completionResult = result;
       });
@@ -162,93 +171,91 @@ class _GameScreenState extends State<GameScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF071B2F),
       body: SafeArea(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // ── Game World ──
-            GameWidget(key: ValueKey(_gameEpoch), game: game),
+        child: AnimatedBuilder(
+          animation: _sessionController,
+          builder: (context, _) {
+            final session = _sessionController;
+            final showWaveButton =
+                !session.waveInProgress &&
+                !session.stageCleared &&
+                !session.stageFailed &&
+                session.currentWave < session.totalWaves;
+            final waveButtonBottom = session.selectedTower != null
+                ? 112.0
+                : 16.0;
 
-            // ── UI Overlay ──
-            AnimatedBuilder(
-              animation: _sessionController,
-              builder: (context, _) {
-                return Stack(
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Column(
                   children: [
-                    // TOP BAR HUD
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: _TopHud(
-                        sessionController: _sessionController,
-                        onBack: () => _confirmExit(context),
-                        onTogglePause: game.togglePaused,
-                      ),
+                    _TopHud(
+                      sessionController: session,
+                      onBack: () => _confirmExit(context),
+                      onTogglePause: game.togglePaused,
                     ),
-
-                    // FLOATING WAVE BUTTON
-                    if (!_sessionController.waveInProgress &&
-                        !_sessionController.stageCleared &&
-                        !_sessionController.stageFailed)
-                      Positioned(
-                        bottom: 140,
-                        right: 16,
-                        child: _WaveButton(
-                          waveNumber: _sessionController.currentWave + 1,
-                          onPressed: game.startNextWave,
-                        ),
-                      ),
-
-                    // BUILD BAR (BOTTOM)
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                    Expanded(
+                      child: Stack(
                         children: [
-                          _BuildHint(statusText: _sessionController.statusText),
-                          _BuildBar(
-                            sessionController: _sessionController,
-                            metaUpgrades: activeMetaUpgrades,
-                            onSelect: game.selectBuildable,
+                          Positioned.fill(
+                            child: GameWidget(
+                              key: ValueKey(_gameEpoch),
+                              game: game,
+                            ),
                           ),
+                          Positioned(
+                            top: 12,
+                            left: 16,
+                            right: 16,
+                            child: _StatusBanner(text: session.statusText),
+                          ),
+                          if (showWaveButton)
+                            Positioned(
+                              right: 16,
+                              bottom: waveButtonBottom,
+                              child: _WaveButton(
+                                waveNumber: session.currentWave + 1,
+                                onPressed: game.startNextWave,
+                              ),
+                            ),
+                          if (session.selectedTower != null)
+                            Positioned(
+                              left: 16,
+                              right: 16,
+                              bottom: 16,
+                              child: _TowerActionBar(
+                                sessionController: session,
+                                onUpgrade: game.upgradeSelectedTower,
+                                onSell: game.sellSelectedTower,
+                              ),
+                            ),
                         ],
                       ),
                     ),
-
-                    // SELECTED TOWER ACTION BAR
-                    if (_sessionController.selectedTower != null)
-                      Positioned(
-                        bottom: 130,
-                        left: 16,
-                        right: 16,
-                        child: _TowerActionBar(
-                          sessionController: _sessionController,
-                          onUpgrade: game.upgradeSelectedTower,
-                          onSell: game.sellSelectedTower,
-                        ),
-                      ),
+                    _BuildBar(
+                      sessionController: session,
+                      metaUpgrades: activeMetaUpgrades,
+                      onSelect: game.selectBuildable,
+                    ),
                   ],
-                );
-              },
-            ),
-
-            // RESULT OVERLAY
-            if (_sessionController.stageCleared ||
-                _sessionController.stageFailed)
-              _ResultOverlay(
-                sessionController: _sessionController,
-                completionResult: _completionResult,
-                stage: currentStage,
-                hasNextStage: _stageNumber < CampaignData.totalStages,
-                onRetry: () => _loadStage(_stageNumber),
-                onNextStage: () => _loadStage(
-                  (_stageNumber + 1).clamp(1, CampaignData.totalStages),
                 ),
-                onReturnToCamp: widget.onExitToCamp,
-              ),
-          ],
+                if (session.stageCleared || session.stageFailed)
+                  Positioned.fill(
+                    child: _ResultOverlay(
+                      sessionController: session,
+                      completionResult: _completionResult,
+                      stage: currentStage,
+                      hasNextStage: _stageNumber < CampaignData.totalStages,
+                      onRetry: () => _loadStage(_stageNumber),
+                      onNextStage: () => _loadStage(
+                        (_stageNumber + 1).clamp(1, CampaignData.totalStages),
+                      ),
+                      onReturnToCamp: widget.onExitToCamp,
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -269,72 +276,43 @@ class _TopHud extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
+          colors: [Colors.black.withValues(alpha: 0.64), Colors.transparent],
         ),
       ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white70),
+          _HudIconButton(icon: Icons.arrow_back_rounded, onPressed: onBack),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _HealthHud(
+              currentHealth: sessionController.baseHealth,
+              maxHealth: sessionController.maxBaseHealth,
+            ),
           ),
-          const SizedBox(width: 4),
-          // HP
-          _StatIconItem(
-            icon: Icons.favorite_rounded,
-            color: const Color(0xFF98D67C),
-            value:
-                '${sessionController.baseHealth}/${sessionController.maxBaseHealth}',
-            isBar: true,
-            progress:
-                sessionController.baseHealth / sessionController.maxBaseHealth,
-          ),
-          const Spacer(),
-          // Coins
-          _StatIconItem(
+          const SizedBox(width: 8),
+          _HudChip(
             icon: Icons.monetization_on_rounded,
             color: const Color(0xFFE4C67A),
-            value: '${sessionController.coins}',
+            label: '${sessionController.coins}',
           ),
-          const SizedBox(width: 12),
-          // Wave
-          _StatIconItem(
+          const SizedBox(width: 8),
+          _HudChip(
             icon: Icons.waves_rounded,
             color: Colors.white70,
-            value:
-                '${sessionController.currentWave}/${sessionController.totalWaves}',
+            label:
+                'Wave ${sessionController.currentWave}/${sessionController.totalWaves}',
           ),
-          const SizedBox(width: 12),
-          // Speed/Bug icon as per original
-          const Icon(
-            Icons.bug_report_rounded,
-            size: 18,
-            color: Color(0xFFEF4E4E),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '0',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 12),
-          _SmallButton(label: '1x', onPressed: () {}),
           const SizedBox(width: 8),
-          IconButton(
+          _HudIconButton(
+            icon: sessionController.isPaused
+                ? Icons.play_arrow_rounded
+                : Icons.pause_rounded,
             onPressed: onTogglePause,
-            icon: Icon(
-              sessionController.isPaused
-                  ? Icons.play_arrow_rounded
-                  : Icons.pause_rounded,
-              color: Colors.white70,
-            ),
           ),
         ],
       ),
@@ -342,100 +320,178 @@ class _TopHud extends StatelessWidget {
   }
 }
 
-class _StatIconItem extends StatelessWidget {
-  const _StatIconItem({
-    required this.icon,
-    required this.color,
-    required this.value,
-    this.isBar = false,
-    this.progress = 1.0,
-  });
+class _HudIconButton extends StatelessWidget {
+  const _HudIconButton({required this.icon, required this.onPressed});
 
   final IconData icon;
-  final Color color;
-  final String value;
-  final bool isBar;
-  final double progress;
-
-  @override
-  Widget build(BuildContext context) {
-    if (isBar) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 6),
-          Stack(
-            children: [
-              Container(
-                width: 100,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: 100 * progress.clamp(0.0, 1.0),
-                height: 8,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      );
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 6),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SmallButton extends StatelessWidget {
-  const _SmallButton({required this.label, required this.onPressed});
-  final String label;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.white24),
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.black.withValues(alpha: 0.18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Colors.white12),
+          ),
+        ),
+        onPressed: onPressed,
+        icon: Icon(icon, color: Colors.white70, size: 20),
       ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+    );
+  }
+}
+
+class _HudChip extends StatelessWidget {
+  const _HudChip({
+    required this.icon,
+    required this.color,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HealthHud extends StatelessWidget {
+  const _HealthHud({required this.currentHealth, required this.maxHealth});
+
+  final int currentHealth;
+  final int maxHealth;
+
+  @override
+  Widget build(BuildContext context) {
+    final safeMax = maxHealth <= 0 ? 1 : maxHealth;
+    final progress = (currentHealth / safeMax).clamp(0.0, 1.0);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.favorite_rounded,
+            size: 18,
+            color: Color(0xFF98D67C),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: SizedBox(
+                height: 10,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(color: Colors.white10),
+                    FractionallySizedBox(
+                      widthFactor: progress,
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF8AD66E), Color(0xFFC1F08D)],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$currentHealth/$maxHealth',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 460),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xCC0A1018),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.campaign_rounded,
+                size: 18,
+                color: Color(0xFFE4C67A),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -444,67 +500,50 @@ class _SmallButton extends StatelessWidget {
 
 class _WaveButton extends StatelessWidget {
   const _WaveButton({required this.waveNumber, required this.onPressed});
+
   final int waveNumber;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1B2519).withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFF98D67C).withValues(alpha: 0.4),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF98D67C).withValues(alpha: 0.15),
-              blurRadius: 12,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onPressed,
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1B2519).withValues(alpha: 0.94),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFF98D67C).withValues(alpha: 0.45),
+              width: 1.4,
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.play_arrow_rounded, color: Color(0xFF98D67C)),
-            const SizedBox(width: 8),
-            Text(
-              '웨이브 $waveNumber 출격!',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF98D67C).withValues(alpha: 0.16),
+                blurRadius: 14,
+                offset: const Offset(0, 8),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BuildHint extends StatelessWidget {
-  const _BuildHint({required this.statusText});
-  final String statusText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.touch_app_rounded, size: 16, color: Colors.white54),
-          const SizedBox(width: 8),
-          Text(
-            statusText,
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
+            ],
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.play_arrow_rounded, color: Color(0xFF98D67C)),
+              const SizedBox(width: 8),
+              Text(
+                'Wave $waveNumber 출격!',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -557,7 +596,7 @@ class _BuildBarState extends State<_BuildBar> {
   Widget build(BuildContext context) {
     final entries = TowerCatalog.buildMenu;
     final specDef = _specKind != null
-        ? entries.firstWhere((t) => t.kind == _specKind)
+        ? entries.firstWhere((tower) => tower.kind == _specKind)
         : null;
 
     return Container(
@@ -569,15 +608,15 @@ class _BuildBarState extends State<_BuildBar> {
         mainAxisSize: MainAxisSize.min,
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 180),
             curve: Curves.easeOut,
-            height: specDef != null ? 72 : 0,
+            height: specDef != null ? 84 : 0,
             child: specDef != null
                 ? _TowerSpecPanel(definition: specDef)
                 : const SizedBox.shrink(),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 18),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -608,104 +647,101 @@ class _TowerSpecPanel extends StatelessWidget {
 
   final TowerDefinition definition;
 
-  String _koreanName(TowerKind kind) {
-    return switch (kind) {
-      TowerKind.archer => '궁수',
-      TowerKind.guardBarracks => '병영',
-      TowerKind.mageObelisk => '마법사',
-      TowerKind.frostShrine => '빙결',
-      TowerKind.coinMill => '금화 방앗간',
-      TowerKind.ballista => '발리스타',
-      TowerKind.emberkeep => '화염 요새',
-    };
-  }
-
   String _rating(double value, double max) {
     final score = ((value / max) * 5).clamp(0.0, 5.0);
     final rounded = (score * 2).round() / 2;
-    if (rounded == rounded.truncateToDouble()) {
-      return '${rounded.toInt()}/5';
-    }
-    return '${rounded.toStringAsFixed(1)}/5';
+    return rounded == rounded.truncateToDouble()
+        ? '${rounded.toInt()}/5'
+        : '${rounded.toStringAsFixed(1)}/5';
   }
 
   @override
   Widget build(BuildContext context) {
     final rangeRating = _rating(definition.range, 175);
-    final dmgRating = _rating(definition.damage, 58);
-    final spdRating = definition.cooldown > 0
+    final damageRating = _rating(definition.damage, 58);
+    final speedRating = definition.cooldown > 0
         ? _rating(1 / definition.cooldown, 1 / 0.85)
         : '5/5';
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: const BoxDecoration(
         color: Color(0xFF0A1018),
         border: Border(bottom: BorderSide(color: Colors.white10)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
             children: [
               Text(
-                '[${_koreanName(definition.kind)}]',
+                definition.label,
                 style: const TextStyle(
                   color: Color(0xFFE4C67A),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Text(
-                      '사거리 $rangeRating',
-                      style: const TextStyle(
-                        color: Color(0xFFE4C67A),
-                        fontSize: 11,
-                      ),
-                    ),
-                    const Text(
-                      '·',
-                      style: TextStyle(color: Colors.white30, fontSize: 11),
-                    ),
-                    Text(
-                      '공격 $dmgRating',
-                      style: const TextStyle(
-                        color: Color(0xFFE4C67A),
-                        fontSize: 11,
-                      ),
-                    ),
-                    const Text(
-                      '·',
-                      style: TextStyle(color: Colors.white30, fontSize: 11),
-                    ),
-                    Text(
-                      '속도 $spdRating',
-                      style: const TextStyle(
-                        color: Color(0xFFE4C67A),
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      _SpecMetric(label: '사거리', value: rangeRating),
+                      const _SpecDot(),
+                      _SpecMetric(label: '공격', value: damageRating),
+                      const _SpecDot(),
+                      _SpecMetric(label: '속도', value: speedRating),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 6),
           Text(
             definition.shortDescription,
-            style: const TextStyle(color: Colors.white60, fontSize: 11),
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SpecMetric extends StatelessWidget {
+  const _SpecMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '$label $value',
+      style: const TextStyle(
+        color: Color(0xFFE4C67A),
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+class _SpecDot extends StatelessWidget {
+  const _SpecDot();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 6),
+      child: Text('·', style: TextStyle(color: Colors.white30, fontSize: 12)),
     );
   }
 }
@@ -725,17 +761,15 @@ class _BuildCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = _koreanName(tower.kind);
-    final icon = _towerIcon(tower.kind);
-
     return InkWell(
       onTap: isUnlocked ? onPressed : null,
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        width: 80,
-        height: 100,
+        width: 88,
+        height: 104,
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF1D2E1C) : const Color(0xFF161D26),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
                 ? const Color(0xFF98D67C).withValues(alpha: 0.6)
@@ -747,7 +781,7 @@ class _BuildCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              icon,
+              _towerIcon(tower.kind),
               color: isUnlocked
                   ? (isSelected ? const Color(0xFF98D67C) : tower.color)
                   : Colors.white24,
@@ -755,11 +789,11 @@ class _BuildCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              name,
+              tower.label,
               style: TextStyle(
                 color: isUnlocked ? Colors.white : Colors.white38,
                 fontSize: 13,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 4),
@@ -768,25 +802,13 @@ class _BuildCard extends StatelessWidget {
               style: TextStyle(
                 color: isUnlocked ? const Color(0xFFE4C67A) : Colors.white24,
                 fontSize: 12,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  String _koreanName(TowerKind kind) {
-    return switch (kind) {
-      TowerKind.archer => '궁수',
-      TowerKind.guardBarracks => '병영',
-      TowerKind.mageObelisk => '마법사',
-      TowerKind.frostShrine => '빙결',
-      TowerKind.coinMill => '금화',
-      TowerKind.ballista => '발리스타',
-      TowerKind.emberkeep => '화염',
-    };
   }
 
   IconData _towerIcon(TowerKind kind) {
@@ -816,48 +838,83 @@ class _TowerActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tower = sessionController.selectedTower;
-    if (tower == null) return const SizedBox.shrink();
+    if (tower == null) {
+      return const SizedBox.shrink();
+    }
+
+    final subtitle = tower.branchLabel != null
+        ? '레벨 ${tower.level} · ${tower.branchLabel}'
+        : '레벨 ${tower.level} · ${tower.shortDescription}';
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF161D26).withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xF2161D26),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: 12,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tower.label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tower.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  '레벨 ${tower.level} · ${tower.shortDescription}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: tower.canUpgrade ? onUpgrade : null,
+                icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+                label: Text('${tower.upgradeCost}'),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: '판매',
+                onPressed: onSell,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0x22EF4E4E),
                 ),
-              ],
-            ),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFFEF4E4E),
+                ),
+              ),
+            ],
           ),
-          TextButton.icon(
-            onPressed: tower.canUpgrade ? onUpgrade : null,
-            icon: const Icon(Icons.arrow_upward_rounded, size: 16),
-            label: Text('${tower.upgradeCost}'),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: onSell,
-            icon: const Icon(
-              Icons.delete_outline_rounded,
-              color: Color(0xFFEF4E4E),
-            ),
+          const SizedBox(height: 8),
+          Text(
+            tower.abilityDescription,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -911,19 +968,24 @@ class _ResultOverlay extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              cleared ? '스테이지 클리어!' : '스테이지 실패',
+              cleared ? '스테이지 클리어' : '스테이지 실패',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
               ),
             ),
+            const SizedBox(height: 6),
+            Text(
+              'Stage ${stage.stageNumber}',
+              style: const TextStyle(color: Colors.white38, fontSize: 13),
+            ),
             const SizedBox(height: 8),
             if (cleared) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  for (var i = 0; i < 3; i++)
+                  for (var i = 0; i < 3; i += 1)
                     Icon(
                       Icons.star_rounded,
                       color: (completionResult?.starsAwarded ?? 0) > i
@@ -945,7 +1007,7 @@ class _ResultOverlay extends StatelessWidget {
               const SizedBox(height: 16),
               const Divider(color: Colors.white10),
               const SizedBox(height: 12),
-              for (final objective in completionResult?.objectives ?? [])
+              for (final objective in completionResult?.objectives ?? const [])
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
@@ -960,13 +1022,15 @@ class _ResultOverlay extends StatelessWidget {
                             : Colors.white24,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        _localizeObjective(objective.label),
-                        style: TextStyle(
-                          color: objective.completed
-                              ? Colors.white
-                              : Colors.white38,
-                          fontSize: 13,
+                      Expanded(
+                        child: Text(
+                          _localizeObjective(objective.label),
+                          style: TextStyle(
+                            color: objective.completed
+                                ? Colors.white
+                                : Colors.white38,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -976,13 +1040,13 @@ class _ResultOverlay extends StatelessWidget {
             const SizedBox(height: 24),
             if (cleared && hasNextStage)
               _LargeButton(
-                label: '다음 스테이지',
+                label: '다음 Stage',
                 color: const Color(0xFF98D67C),
                 onPressed: onNextStage,
               ),
-            const SizedBox(height: 12),
+            if (cleared && hasNextStage) const SizedBox(height: 12),
             _LargeButton(
-              label: '다시 시도',
+              label: '다시 도전',
               color: const Color(0xFF486581),
               onPressed: onRetry,
             ),
@@ -1000,28 +1064,49 @@ class _ResultOverlay extends StatelessWidget {
   }
 
   String _localizeObjective(String label) {
-    if (label.contains('Clear the stage')) return '스테이지 클리어';
-    if (label.contains('Defeat the Bastion Overlord')) return '기지 영주 처치';
-    if (label.contains('Do not sell any towers')) return '타워 판매 금지';
-    // "Finish with at least X base health" → dynamic threshold
+    if (label.contains('Clear the stage')) {
+      return '스테이지 클리어';
+    }
+    if (label.contains('Defeat the Bastion Overlord')) {
+      return '기갑 군주 처치';
+    }
+    if (label.contains('Do not sell any towers')) {
+      return '타워 판매 금지';
+    }
     final healthMatch = RegExp(
       r'Finish with at least (\d+) base health',
     ).firstMatch(label);
-    if (healthMatch != null) return '기지 체력 ${healthMatch.group(1)} 이상으로 완료';
-    // Build specific tower
-    if (label.contains('Build an Archer')) return '궁수 건설';
-    if (label.contains('Build a Guard Barracks')) return '병영 건설';
-    if (label.contains('Build a Mage tower')) return '마법사 건설';
-    if (label.contains('Build a Frost tower')) return '빙결탑 건설';
-    if (label.contains('Build a Coin Mill')) return '금화탑 건설';
-    if (label.contains('Build a Ballista')) return '발리스타 건설';
-    if (label.contains('Build an Emberkeep')) return '화염탑 건설';
+    if (healthMatch != null) {
+      return '기지 체력 ${healthMatch.group(1)} 이상으로 완료';
+    }
+    if (label.contains('Build an Archer')) {
+      return '궁수 건설';
+    }
+    if (label.contains('Build a Guard Barracks')) {
+      return '병영 건설';
+    }
+    if (label.contains('Build a Mage tower')) {
+      return '마법사 건설';
+    }
+    if (label.contains('Build a Frost tower')) {
+      return '빙결 건설';
+    }
+    if (label.contains('Build a Coin Mill')) {
+      return '금화 방앗간 건설';
+    }
+    if (label.contains('Build a Ballista')) {
+      return '발리스타 건설';
+    }
+    if (label.contains('Build an Emberkeep')) {
+      return '엠버킵 건설';
+    }
     return label;
   }
 }
 
 class _RewardRow extends StatelessWidget {
   const _RewardRow({required this.label, required this.value});
+
   final String label;
   final String value;
 
@@ -1063,6 +1148,7 @@ class _LargeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),

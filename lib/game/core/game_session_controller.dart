@@ -46,7 +46,7 @@ class SelectedTowerDetails {
 class GameSessionController extends ChangeNotifier {
   int stageNumber = 1;
   int totalStages = 30;
-  String stageTitle = 'Stage 1 - Forest Edge';
+  String stageTitle = 'Stage 1';
   int currentWave = 0;
   int totalWaves = 0;
   int coins = 0;
