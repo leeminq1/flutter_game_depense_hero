@@ -381,4 +381,26 @@ class EnemyVisualCatalog {
     // frame 0 → base file, frame 1 → _walk_02, frame 2 → _walk_03
     return '${prefix}_walk_0${frame + 1}$suffix';
   }
+
+  static String enemyId(EnemyKind kind) {
+    final assetPath = byKind(kind).assetPath;
+    final slashIndex = assetPath.lastIndexOf('/');
+    final dotIndex = assetPath.lastIndexOf('.');
+    return assetPath.substring(slashIndex + 1, dotIndex);
+  }
+
+  static String directionalBaseAssetPath(EnemyKind kind, String direction) {
+    return 'assets/sprites/enemies/${enemyId(kind)}/$direction/base.png';
+  }
+
+  static String directionalFrameAssetPath(
+    EnemyKind kind,
+    String direction,
+    int frame,
+  ) {
+    if (frame <= 0) {
+      return directionalBaseAssetPath(kind, direction);
+    }
+    return 'assets/sprites/enemies/${enemyId(kind)}/$direction/walk_0${frame + 1}.png';
+  }
 }

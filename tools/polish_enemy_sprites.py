@@ -32,12 +32,24 @@ TEAL = rgba("#73A8A0")
 
 
 def open_enemy(name: str):
-    return Image.open(ENEMY_DIR / f"{name}.png").convert("RGBA")
+    base_path = ENEMY_DIR / f"{name}.png"
+    if base_path.exists():
+        return Image.open(base_path).convert("RGBA")
+
+    nested_path = ENEMY_DIR / name / "west" / "base.png"
+    return Image.open(nested_path).convert("RGBA")
 
 
 def save_enemy(name: str, image: Image.Image):
-    image.save(ENEMY_DIR / f"{name}.png")
-    print(f"polished {name}.png")
+    base_path = ENEMY_DIR / f"{name}.png"
+    if base_path.exists():
+        image.save(base_path)
+        print(f"polished {name}.png")
+
+    nested_path = ENEMY_DIR / name / "west" / "base.png"
+    if nested_path.exists():
+        image.save(nested_path)
+        print(f"polished {name}/west/base.png")
 
 
 def polish_raider():

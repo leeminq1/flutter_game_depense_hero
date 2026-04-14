@@ -1,13 +1,15 @@
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/game_collection_models.dart';
+import 'package:depense_game/data/persistence/progress_store.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
+import 'package:depense_game/data/persistence/store_models.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
-class LocalProgressStore {
+class LocalProgressStore implements ProgressStore {
   LocalProgressStore._(this.isar);
 
   final Isar isar;
@@ -67,10 +69,17 @@ class LocalProgressStore {
     });
   }
 
-  Future<GameSettingsRecord> loadOrCreateSettings() async {
+  @override
+  Future<AudioSettingsSnapshot> loadAudioSettings() async {
     final settings = await isar.gameSettingsRecords.get(1);
     if (settings != null) {
-      return settings;
+      return AudioSettingsSnapshot(
+        masterVolume: settings.masterVolume,
+        musicVolume: settings.musicVolume,
+        sfxVolume: settings.sfxVolume,
+        muted: settings.muted,
+        tutorialDismissed: settings.tutorialDismissed,
+      );
     }
 
     final fallback = GameSettingsRecord()
@@ -84,11 +93,18 @@ class LocalProgressStore {
       await isar.gameSettingsRecords.put(fallback);
     });
 
-    return fallback;
+    return AudioSettingsSnapshot(
+      masterVolume: fallback.masterVolume,
+      musicVolume: fallback.musicVolume,
+      sfxVolume: fallback.sfxVolume,
+      muted: fallback.muted,
+      tutorialDismissed: fallback.tutorialDismissed,
+    );
   }
 
+  @override
   Future<void> saveAudioSettings(AudioSettingsController controller) async {
-    final existing = await loadOrCreateSettings();
+    final existing = await loadAudioSettings();
     await isar.writeTxn(() async {
       await isar.gameSettingsRecords.put(
         GameSettingsRecord()
@@ -102,19 +118,28 @@ class LocalProgressStore {
     });
   }
 
+  @override
   Future<bool> isTutorialDismissed() async {
-    final settings = await loadOrCreateSettings();
+    final settings = await loadAudioSettings();
     return settings.tutorialDismissed;
   }
 
+  @override
   Future<void> setTutorialDismissed(bool dismissed) async {
-    final settings = await loadOrCreateSettings();
-    settings.tutorialDismissed = dismissed;
     await isar.writeTxn(() async {
-      await isar.gameSettingsRecords.put(settings);
+      final existing = await isar.gameSettingsRecords.get(1);
+      final updated = GameSettingsRecord()
+        ..id = 1
+        ..masterVolume = existing?.masterVolume ?? 0.85
+        ..musicVolume = existing?.musicVolume ?? 0.55
+        ..sfxVolume = existing?.sfxVolume ?? 0.90
+        ..muted = existing?.muted ?? false
+        ..tutorialDismissed = dismissed;
+      await isar.gameSettingsRecords.put(updated);
     });
   }
 
+  @override
   Future<void> resetCampaignProgress() async {
     await isar.writeTxn(() async {
       await isar.playerProfiles.clear();
@@ -125,6 +150,7 @@ class LocalProgressStore {
     await _seedIfNeeded();
   }
 
+  @override
   Future<CampaignOverview> loadCampaignOverview({
     required int totalStages,
   }) async {
@@ -195,6 +221,7 @@ class LocalProgressStore {
     );
   }
 
+  @override
   Future<StageCompletionResult> recordStageCompletion({
     required int stageNumber,
     required StageEvaluationResult evaluation,
@@ -300,6 +327,7 @@ class LocalProgressStore {
     );
   }
 
+  @override
   Future<RewardClaimResult> claimStageClearBonus({
     required int stageNumber,
     required int amount,
@@ -342,6 +370,7 @@ class LocalProgressStore {
     );
   }
 
+  @override
   Future<bool> hasClaimedStageClearBonus(int stageNumber) {
     return isar.rewardClaimRecords
         .filter()
@@ -360,11 +389,13 @@ class LocalProgressStore {
     ];
   }
 
+  @override
   Future<ResolvedMetaUpgrades> loadResolvedMetaUpgrades() async {
     final snapshots = await _loadMetaUpgrades();
     return MetaUpgradeCatalog.resolve(snapshots);
   }
 
+  @override
   Future<MetaUpgradePurchaseResult> purchaseMetaUpgrade(String nodeId) async {
     final definition = MetaUpgradeCatalog.byId(nodeId);
     final existing = await isar.upgradeNodeRecords

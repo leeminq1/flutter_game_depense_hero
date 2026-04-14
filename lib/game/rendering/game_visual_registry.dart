@@ -89,6 +89,26 @@ class GameVisualRegistry {
           _enemySprites[framePath] = await _loadImage(framePath);
         }
       }
+
+      for (final direction in const ['west', 'east', 'north', 'south']) {
+        final basePath = EnemyVisualCatalog.directionalBaseAssetPath(
+          kind,
+          direction,
+        );
+        if (assetKeys.contains(basePath)) {
+          _enemySprites[basePath] = await _loadImage(basePath);
+        }
+        for (var frame = 1; frame < visual.frames; frame++) {
+          final framePath = EnemyVisualCatalog.directionalFrameAssetPath(
+            kind,
+            direction,
+            frame,
+          );
+          if (assetKeys.contains(framePath)) {
+            _enemySprites[framePath] = await _loadImage(framePath);
+          }
+        }
+      }
     }
 
     final barracksDefenderAssetPaths = <String>{
@@ -204,6 +224,21 @@ class GameVisualRegistry {
       if (frameSprite != null) return frameSprite;
     }
     return _enemySprites[visual.assetPath];
+  }
+
+  ui.Image? directionalEnemySprite(
+    EnemyKind kind, {
+    required String direction,
+    int frame = 0,
+  }) {
+    final directionalPath = frame <= 0
+        ? EnemyVisualCatalog.directionalBaseAssetPath(kind, direction)
+        : EnemyVisualCatalog.directionalFrameAssetPath(kind, direction, frame);
+    final directionalSprite = _enemySprites[directionalPath];
+    if (directionalSprite != null) {
+      return directionalSprite;
+    }
+    return enemySprite(kind, frame: frame);
   }
 
   ui.Image? barracksDefenderSprite({required int level, String? branchId}) {

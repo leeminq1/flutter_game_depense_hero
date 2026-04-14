@@ -97,6 +97,14 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-08: The battle screen layout now separates the top HUD, gameplay viewport, and bottom build bar so Flame content no longer renders underneath combat UI chrome.
 - 2026-04-08: Path tiles now resolve as semantic straight, turn, and cap variants from renamed Kenney road assets instead of compositing multiple opaque road overlays at render time.
 - 2026-04-08: Spawned enemies are now placed on the first path point immediately, reducing the risk that early spawns are hidden under UI or start at a stale zero position.
+- 2026-04-14: A concept-exploration folder now exists at `docs/game-concept-gpt/` to evaluate a pivot from fixed-path stage defense toward multi-front fortress defense with all-direction enemy approaches, without rewriting the official product specs yet.
+- 2026-04-14: `docs/product-specs/` has now been fully rewritten around the `Citadel Siege` direction, including multi-front siege rules, runtime data contracts, LPC enemy pipeline requirements, and Flutter Web plus Playwright validation workflow.
+- 2026-04-14: Product specs were corrected to unify `Siege` terminology, restore scaling formulas, lock citadel damage values, clarify `Meta Gold` versus `Siege Tokens`, and move Web QA after gameplay readiness in the milestone order.
+- 2026-04-14: A generated asset-production brief now exists at `docs/generated/ai-generated-assets-plan.md`, defining blocker art, LPC folder structure, prompt text, batch priority, and validation rules for the first playable.
+- 2026-04-14: Progress-store bootstrapping now routes web builds to an in-memory store through a shared abstraction, removing the Isar-specific web compile blockers for both JS and Wasm builds.
+- 2026-04-14: Enemy asset tooling and runtime lookup now support the new per-enemy folder structure under `assets/sprites/enemies/{enemy_id}/...`, while preserving flat-file fallback during migration.
+- 2026-04-14: Web verification is now executable instead of speculative: local `flutter build web`, `flutter build web --wasm`, and Playwright portrait screenshot captures all succeeded after the persistence abstraction change.
+- 2026-04-14: The first `Citadel Siege` code bridge is now in runtime data itself: Act 1 sieges ship authored `14x14` siege grids, `pathsByDirection`, `supplyNodeCells`, `assaultCycles`, `direction`-aware spawn groups, and spec-aligned `citadelDamage` plus scaling formulas while still preserving the legacy wave bridge for the existing combat loop.
 
 ## Risks
 
@@ -108,6 +116,8 @@ Create the first playable vertical slice and the documentation discipline needed
 - Sustain and ward-support enemies could create late-wave stall states if heal cadence, ward uptime, or elite overlap drift too high during future balance passes.
 - The new tile-grid placement model may expose more buildable cells than the old slot template flow, so economy pacing and tower-count pressure should be watched during the next balance pass.
 - The compact battle HUD and status banner now rely on tighter horizontal packing, so any future HUD additions should be checked on narrow Android portrait widths before shipping.
+- A full all-direction pivot would multiply enemy art and route-authoring complexity, so it should favor authored multi-front corridors before any attempt at unrestricted roaming enemies.
+- Web validation is now part of the product-spec contract, so future UI and gameplay work should expose enough observable state for Playwright-driven QA on top of Flame rendering.
 
 ## Exit Criteria
 

@@ -136,3 +136,5 @@ class MetaUpgradePurchaseResult {
   final int remainingCurrency;
   final String message;
 }
+
+typedef SiegeCompletionResult = StageCompletionResult;

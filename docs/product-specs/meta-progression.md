@@ -1,63 +1,114 @@
 # Meta Progression
 
-## Goal
+## Progression Philosophy
 
-Create long-term motivation without making early defeats feel paywalled or opaque.
+The redesign stays `campaign-first` and `permanent-growth-first`.
 
-The game should favor permanent growth over roguelike reset structure.
+It is not switching to a hard roguelite reset structure.
 
-## Early Meta Systems
+The player should feel:
 
-- Unlock new towers
-- Improve tower branches
-- Open new maps or biomes
-- Add passive account-level upgrades cautiously
-- Track stage stars or mastery for replay incentives
-- Offer optional rewarded boosts that accelerate, not replace, progression
-- Unlock additional buildable units and support structures across the campaign
+- stronger over multiple sessions
+- better informed about the next objective
+- rewarded for both clears and repeated mastery
 
-## Current Prototype Upgrade Tree
+## Persistent Reward Channels
 
-- Stronghold Masonry: more base health every stage
-- Supply Cache: more starting build gold
-- Bow Mastery: stronger archer damage spikes and unlocks Ballista at level 2
-- Guard Drill: stronger barracks damage and stagger
-- Arcane Mastery: stronger mage burst and chains, and unlocks Emberkeep at level 2
-- Frost Focus: stronger frost slow and range
-- Commerce Guild: more coin mill income and better stage rewards
+Recommended persistent channels:
 
-## Current Curve Notes
+- `Meta Gold` for broad upgrades
+- `Siege Tokens` for milestone-grade upgrades and gates
+- `XP` for account-level continuity
+- stage history and best clear records
 
-- Upgrade costs now use per-tree curves instead of one shared slope.
-- Early levels are intentionally cheaper so the first meaningful purchase still lands within the first few clears.
-- Unlock-oriented trees keep their level 2 breakpoint readable and reachable.
-- Commerce Guild is no longer the most punishing early economy investment.
+## Siege Token Uses
 
-## Reward Beats
+Siege Tokens should gate impactful progression, not tiny stat crumbs.
 
-- Every clear still grants XP and Meta Gold.
-- First clears now grant an explicit bonus.
-- Improving a stage to a higher star result now grants an extra catch-up payout.
-- Crest stages `5/10/15/20/25/30` grant an extra first-clear milestone bonus.
-- Result UX should always show the reward breakdown so players understand why replaying a stage can still matter.
+Recommended uses:
 
-## UX Requirements
+- act unlocks
+- major citadel upgrades
+- starting-gold upgrades
+- economy-track upgrades
+- command-charge capacity
+- unlocking late roster options if needed
 
-- The home screen should surface the next campaign gate and the most likely next upgrade target.
-- Upgrade UI should show `current effect`, `next effect`, and upcoming milestone text when relevant.
-- Account progress should feel tied to real goals, not only bigger numbers.
+## Recommended Upgrade Tracks
 
-## Current Unlock Interaction
+| Track | Cost Direction | Effect |
+| --- | --- | --- |
+| Stronghold Masonry | 1 token per early tier, then 2 | Citadel HP increases |
+| Supply Cache | 1 token per early tier, then 2 | Starting gold increases |
+| Commerce Guild | 2 tokens per tier | Coin Mill income improves |
+| Arsenal Drills | 2 tokens per tier | Global tower baseline damage improves modestly |
+| Command Mastery | 3 tokens per tier | More command capacity or recharge access |
+| Veteran Unlocks | milestone cost | Unlock Ballista, Emberkeep, or later roster gates |
 
-- Some campaign stages now require total stars.
-- Some campaign stages now require specific meta upgrade levels.
-- Some buildable structures now unlock from specific meta upgrade levels.
-- Meta upgrades are therefore part of campaign pacing, not only combat efficiency.
+## Sample Upgrade Effects
 
-## Rules
+Recommended early shape:
 
-- Core skill expression should remain relevant.
-- Permanent progression should widen options before it increases raw power too much.
-- Reward cadence should reinforce short-session replayability.
-- Returning the next day should feel valuable even without a live server.
-- Offline progress storage must survive app restarts and upgrades safely.
+- Stronghold Masonry: `+5 Citadel HP` per tier
+- Supply Cache: `+25 starting gold` per tier
+- Commerce Guild: `+1 Coin Mill income per tick` at milestone tiers
+- Arsenal Drills: `+5% baseline tower damage` per tier, capped conservatively
+
+## Act Gate Rule
+
+Acts should be gated by total Siege Tokens, not by pure stage index alone.
+
+| Act Unlock | Token Requirement |
+| --- | --- |
+| Act 2 | 5 |
+| Act 3 | 12 |
+| Act 4 | 22 |
+| Act 5 | 35 |
+| Act 6 | 50 |
+
+## Failure Reward Rule
+
+Failure should never feel like total waste.
+
+Recommended rule:
+
+- no Siege Tokens on failure
+- yes to baseline `Meta Gold + XP`
+- yes to visible progress toward the next permanent goal
+
+## Home-Screen Surfacing Rule
+
+The home or camp flow must clearly surface:
+
+- the next locked act and its token requirement
+- the recommended next upgrade
+- the most recent clear result
+- the next playable siege
+
+## Save Model Requirements
+
+The persistence layer must store at least:
+
+- total Siege Tokens earned
+- total tokens spent
+- unlocked act
+- unlocked towers or branches
+- per-siege best result
+- per-siege mastery objective completion
+
+## Balance Rule
+
+Permanent growth should widen options before it over-amplifies raw stats.
+
+Avoid:
+
+- one track becoming mandatory
+- tower-only stat growth making placement irrelevant
+- late acts being balanced around maxed meta
+
+Prefer:
+
+- clearer starts
+- better recovery options
+- roster expression
+- smoother economy choices

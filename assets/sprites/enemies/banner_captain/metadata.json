@@ -1,0 +1,46 @@
+{
+  "id": "banner_captain",
+  "description": "early support leader, captain hat, red tattered cape, spear",
+  "lpc_items": [
+    [
+      "torso_armour_leather",
+      "brown"
+    ],
+    [
+      "shoulders_leather",
+      ""
+    ],
+    [
+      "belt_double",
+      ""
+    ],
+    [
+      "hat_bicorne_athwart_captain",
+      ""
+    ],
+    [
+      "hat_accessory_plumage_centurion",
+      ""
+    ],
+    [
+      "weapon_polearm_spear",
+      ""
+    ],
+    [
+      "cape_tattered",
+      "red"
+    ]
+  ],
+  "direction_rows": {
+    "south": 0,
+    "west": 1,
+    "north": 3
+  },
+  "frame_cols": {
+    "base": 4,
+    "walk_02": 2,
+    "walk_03": 6
+  },
+  "east_direction": "runtime_mirrored_from_west",
+  "attribution": "Universal LPC Spritesheet Character Generator - https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
+}

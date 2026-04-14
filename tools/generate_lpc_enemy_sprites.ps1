@@ -14,8 +14,8 @@ $exportToolDir = Join-Path $projectRoot 'tools\lpc-export'
 $exportScriptPath = Join-Path $exportToolDir 'lpc_batch_export.mjs'
 $nodeModulesPath = Join-Path $exportToolDir 'node_modules'
 $polishScriptPath = Join-Path $projectRoot 'tools\polish_enemy_sprites.py'
-$defaultBaseArchivePath = 'standard/walk/down/5.png'
-$walkZipExports = @(
+$legacyBaseArchivePath = 'standard/walk/down/5.png'
+$legacyZipExports = @(
   @{
     archivePath = 'standard/walk/down/3.png'
     suffix = 'walk_02'
@@ -23,6 +23,32 @@ $walkZipExports = @(
   @{
     archivePath = 'standard/walk/down/7.png'
     suffix = 'walk_03'
+  }
+)
+$directionalExports = @(
+  @{
+    direction = 'west'
+    baseArchivePath = 'standard/walk/left/5.png'
+    zipExports = @(
+      @{ archivePath = 'standard/walk/left/3.png'; suffix = 'walk_02' },
+      @{ archivePath = 'standard/walk/left/7.png'; suffix = 'walk_03' }
+    )
+  },
+  @{
+    direction = 'north'
+    baseArchivePath = 'standard/walk/up/5.png'
+    zipExports = @(
+      @{ archivePath = 'standard/walk/up/3.png'; suffix = 'walk_02' },
+      @{ archivePath = 'standard/walk/up/7.png'; suffix = 'walk_03' }
+    )
+  },
+  @{
+    direction = 'south'
+    baseArchivePath = 'standard/walk/down/5.png'
+    zipExports = @(
+      @{ archivePath = 'standard/walk/down/3.png'; suffix = 'walk_02' },
+      @{ archivePath = 'standard/walk/down/7.png'; suffix = 'walk_03' }
+    )
   }
 )
 
@@ -33,8 +59,8 @@ $enemySpecs = @(
   @{
     id = 'raider'
     bodyType = 'male'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_armour_leather', 'brown'),
       @('shoulders_leather', 'brown'),
@@ -48,8 +74,8 @@ $enemySpecs = @(
   @{
     id = 'scout'
     bodyType = 'teen'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_armour_leather', 'forest'),
       @('shoulders_leather', 'forest'),
@@ -63,8 +89,8 @@ $enemySpecs = @(
   @{
     id = 'banner_captain'
     bodyType = 'male'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_armour_leather', 'brown'),
       @('shoulders_leather', 'brown'),
@@ -80,8 +106,8 @@ $enemySpecs = @(
     id = 'wolf_scout'
     bodyType = 'teen'
     removeItemIds = @('face_neutral')
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('heads_wolf_male', ''),
       @('head_ears_wolf', 'fur_grey'),
@@ -97,8 +123,8 @@ $enemySpecs = @(
   @{
     id = 'shield_infantry'
     bodyType = 'male'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_armour_plate', 'steel'),
       @('shoulders_legion', ''),
@@ -110,8 +136,8 @@ $enemySpecs = @(
   @{
     id = 'cult_adept'
     bodyType = 'female'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_clothes_robe', 'red'),
       @('shoulders_mantal', 'maroon'),
@@ -125,8 +151,8 @@ $enemySpecs = @(
     id = 'skeleton'
     bodyType = 'male'
     removeItemIds = @('face_neutral')
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('body_skeleton', 'skeleton'),
       @('heads_skeleton', 'skeleton'),
@@ -138,8 +164,8 @@ $enemySpecs = @(
     id = 'bone_archer'
     bodyType = 'male'
     removeItemIds = @('face_neutral')
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('body_skeleton', 'skeleton'),
       @('heads_skeleton', 'skeleton'),
@@ -152,8 +178,8 @@ $enemySpecs = @(
     id = 'grave_guard'
     bodyType = 'male'
     removeItemIds = @('face_neutral')
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('body_skeleton', 'skeleton'),
       @('heads_skeleton', 'skeleton'),
@@ -170,8 +196,8 @@ $enemySpecs = @(
   @{
     id = 'plague_bearer'
     bodyType = 'male'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_clothes_robe', 'forest green'),
       @('shoulders_mantal', 'charcoal'),
@@ -184,8 +210,8 @@ $enemySpecs = @(
   @{
     id = 'corrupted_knight'
     bodyType = 'male'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_armour_plate', 'iron'),
       @('shoulders_plate', 'iron'),
@@ -199,8 +225,8 @@ $enemySpecs = @(
   @{
     id = 'hex_sniper'
     bodyType = 'female'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_clothes_robe', 'dark gray'),
       @('shoulders_mantal', 'purple'),
@@ -213,8 +239,8 @@ $enemySpecs = @(
   @{
     id = 'warlock'
     bodyType = 'female'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_clothes_robe', 'dark gray'),
       @('shoulders_mantal', 'purple'),
@@ -229,8 +255,8 @@ $enemySpecs = @(
   @{
     id = 'bastion_priest'
     bodyType = 'male'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_armour_legion', ''),
       @('shoulders_legion', ''),
@@ -243,8 +269,8 @@ $enemySpecs = @(
   @{
     id = 'bastion_overlord'
     bodyType = 'muscular'
-    baseArchivePath = $defaultBaseArchivePath
-    zipExports = $walkZipExports
+    baseArchivePath = $legacyBaseArchivePath
+    zipExports = $legacyZipExports
     selections = @(
       @('torso_armour_plate', 'gold'),
       @('shoulders_plate', 'gold'),
@@ -320,11 +346,9 @@ if ($LASTEXITCODE -ne 0) {
 
 $parsed = $nodeOutput -join "`n" | ConvertFrom-Json
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$baseArchivePathById = @{}
-$zipExportsById = @{}
+$specById = @{}
 foreach ($spec in $enemySpecs) {
-  $baseArchivePathById[[string]$spec.id] = [string]$spec.baseArchivePath
-  $zipExportsById[[string]$spec.id] = @($spec.zipExports)
+  $specById[[string]$spec.id] = $spec
 }
 
 foreach ($result in $parsed.results) {
@@ -335,15 +359,43 @@ foreach ($result in $parsed.results) {
 
   $zipArchive = [System.IO.Compression.ZipFile]::OpenRead($animationZipPath)
   try {
-    $baseArchivePath = $baseArchivePathById[[string]$result.id]
-    $baseEntry = $zipArchive.GetEntry($baseArchivePath)
-    if ($null -eq $baseEntry) {
-      throw "Missing base zip entry '$baseArchivePath' for $($result.id)"
+    $spec = $specById[[string]$result.id]
+    $enemyDir = Join-Path $enemyOutputDir ([string]$result.id)
+    New-Item -ItemType Directory -Force -Path $enemyDir | Out-Null
+
+    foreach ($directional in $directionalExports) {
+      $direction = [string]$directional.direction
+      $directionDir = Join-Path $enemyDir $direction
+      New-Item -ItemType Directory -Force -Path $directionDir | Out-Null
+
+      $directionBaseArchivePath = [string]$directional.baseArchivePath
+      $directionBaseEntry = $zipArchive.GetEntry($directionBaseArchivePath)
+      if ($null -eq $directionBaseEntry) {
+        throw "Missing base zip entry '$directionBaseArchivePath' for $($result.id) [$direction]"
+      }
+      $directionBaseTargetPath = Join-Path $directionDir 'base.png'
+      [System.IO.Compression.ZipFileExtensions]::ExtractToFile($directionBaseEntry, $directionBaseTargetPath, $true)
+
+      foreach ($zipExport in @($directional.zipExports)) {
+        $archivePath = [string]$zipExport.archivePath
+        $suffix = [string]$zipExport.suffix
+        $entry = $zipArchive.GetEntry($archivePath)
+        if ($null -eq $entry) {
+          throw "Missing zip entry '$archivePath' for $($result.id) [$direction]"
+        }
+        $targetPath = Join-Path $directionDir "$suffix.png"
+        [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
+      }
+    }
+
+    $legacyBaseEntry = $zipArchive.GetEntry($legacyBaseArchivePath)
+    if ($null -eq $legacyBaseEntry) {
+      throw "Missing legacy base zip entry '$legacyBaseArchivePath' for $($result.id)"
     }
     $baseTargetPath = Join-Path $enemyOutputDir "$($result.id).png"
-    [System.IO.Compression.ZipFileExtensions]::ExtractToFile($baseEntry, $baseTargetPath, $true)
+    [System.IO.Compression.ZipFileExtensions]::ExtractToFile($legacyBaseEntry, $baseTargetPath, $true)
 
-    foreach ($zipExport in $zipExportsById[[string]$result.id]) {
+    foreach ($zipExport in $legacyZipExports) {
       $archivePath = [string]$zipExport.archivePath
       $suffix = [string]$zipExport.suffix
       $entry = $zipArchive.GetEntry($archivePath)
@@ -353,6 +405,83 @@ foreach ($result in $parsed.results) {
       $targetPath = Join-Path $enemyOutputDir "$($result.id)_$suffix.png"
       [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $targetPath, $true)
     }
+
+    $metadataPath = Join-Path $enemyDir 'metadata.json'
+    $metadata = [ordered]@{
+      enemyId = [string]$result.id
+      bodyType = [string]$spec.bodyType
+      generatedAt = (Get-Date).ToString('o')
+      size = '64x64'
+      legacyFallback = [ordered]@{
+        base = "assets/sprites/enemies/$($result.id).png"
+        walk_02 = "assets/sprites/enemies/$($result.id)_walk_02.png"
+        walk_03 = "assets/sprites/enemies/$($result.id)_walk_03.png"
+      }
+      exports = [ordered]@{
+        west = [ordered]@{
+          base = 'west/base.png'
+          walk_02 = 'west/walk_02.png'
+          walk_03 = 'west/walk_03.png'
+          source = [ordered]@{
+            base = 'standard/walk/left/5.png'
+            walk_02 = 'standard/walk/left/3.png'
+            walk_03 = 'standard/walk/left/7.png'
+          }
+        }
+        north = [ordered]@{
+          base = 'north/base.png'
+          walk_02 = 'north/walk_02.png'
+          walk_03 = 'north/walk_03.png'
+          source = [ordered]@{
+            base = 'standard/walk/up/5.png'
+            walk_02 = 'standard/walk/up/3.png'
+            walk_03 = 'standard/walk/up/7.png'
+          }
+        }
+        south = [ordered]@{
+          base = 'south/base.png'
+          walk_02 = 'south/walk_02.png'
+          walk_03 = 'south/walk_03.png'
+          source = [ordered]@{
+            base = 'standard/walk/down/5.png'
+            walk_02 = 'standard/walk/down/3.png'
+            walk_03 = 'standard/walk/down/7.png'
+          }
+        }
+        east = [ordered]@{
+          status = 'runtime_mirror_mvp'
+        }
+      }
+      selections = @(
+        foreach ($selection in @($spec.selections)) {
+          [ordered]@{
+            id = [string]$selection[0]
+            variant = [string]$selection[1]
+          }
+        }
+      )
+      removeItemIds = @($spec.removeItemIds)
+      attribution = 'LPC-derived assets require credits export before shipping.'
+    }
+    [IO.File]::WriteAllText(
+      $metadataPath,
+      (ConvertTo-Json -InputObject $metadata -Depth 8),
+      [Text.UTF8Encoding]::new($false)
+    )
+
+    $creditsPath = Join-Path $enemyDir 'credits.txt'
+    $creditsText = @"
+Enemy: $($result.id)
+Source: Universal LPC Spritesheet Character Generator
+Generator URL: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+Export: ZIP split by animation and frame
+Note: Preserve the generator credits export before shipping LPC-derived assets.
+"@
+    [IO.File]::WriteAllText(
+      $creditsPath,
+      $creditsText.Trim(),
+      [Text.UTF8Encoding]::new($false)
+    )
   } finally {
     $zipArchive.Dispose()
   }

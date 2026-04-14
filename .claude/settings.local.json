@@ -16,7 +16,16 @@
       "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile023.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_edge_e.png)",
       "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile025.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_edge_w.png)",
       "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile026.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_corner_se.png)",
-      "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile027.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_corner_sw.png)"
+      "Bash(cp 'C:/Users/min21/Desktop/flutter_grame/게임에셋모음/게임asset/2d/kenney_tower-defense-top-down/PNG/Default size/towerDefense_tile027.png' c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/tiles/path_corner_sw.png)",
+      "Bash(file \"c:\\\\Users\\\\min21\\\\Desktop\\\\flutter_grame\\\\depense_game/assets/sprites/enemies/\"*.png)",
+      "Bash(ls -1 /c/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/enemies/*.png)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(file \"c:\\\\Users\\\\min21\\\\Desktop\\\\flutter_grame\\\\depense_game/assets/sprites/defenders/\"*.png)",
+      "Bash(file \"c:\\\\Users\\\\min21\\\\Desktop\\\\flutter_grame\\\\depense_game/assets/sprites/towers/\"*.png)",
+      "Bash(file \"c:\\\\Users\\\\min21\\\\Desktop\\\\flutter_grame\\\\depense_game/assets/sprites/tiles/\"*.png)",
+      "Bash(gh repo:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

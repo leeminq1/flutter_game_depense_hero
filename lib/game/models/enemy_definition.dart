@@ -26,7 +26,7 @@ class EnemyDefinition {
     required this.hitPoints,
     required this.speed,
     required this.rewardCoins,
-    required this.baseDamage,
+    required this.citadelDamage,
     required this.color,
   });
 
@@ -36,6 +36,8 @@ class EnemyDefinition {
   final int hitPoints;
   final double speed;
   final int rewardCoins;
-  final int baseDamage;
+  final int citadelDamage;
   final Color color;
+
+  int get baseDamage => citadelDamage;
 }

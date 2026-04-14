@@ -1,4 +1,4 @@
-import 'package:depense_game/data/persistence/game_collection_models.dart';
+import 'package:depense_game/data/persistence/store_models.dart';
 import 'package:flutter/foundation.dart';
 
 class AudioSettingsController extends ChangeNotifier {
@@ -12,12 +12,12 @@ class AudioSettingsController extends ChangeNotifier {
         _sfxVolume = sfxVolume,
         _muted = muted;
 
-  factory AudioSettingsController.fromRecord(GameSettingsRecord record) {
+  factory AudioSettingsController.fromSnapshot(AudioSettingsSnapshot snapshot) {
     return AudioSettingsController(
-      masterVolume: record.masterVolume,
-      musicVolume: record.musicVolume,
-      sfxVolume: record.sfxVolume,
-      muted: record.muted,
+      masterVolume: snapshot.masterVolume,
+      musicVolume: snapshot.musicVolume,
+      sfxVolume: snapshot.sfxVolume,
+      muted: snapshot.muted,
     );
   }
 

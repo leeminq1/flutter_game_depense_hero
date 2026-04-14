@@ -1,250 +1,171 @@
 # Map Production Plan
 
-## Purpose
+## Canonical Battlefield Spec
 
-Turn the current abstract combat field into real stage maps that visually match the 30-stage campaign arc.
+The first production battlefield for `Citadel Siege` uses this exact spec.
 
-This document connects:
+| Item | Value |
+| --- | --- |
+| Grid size | `14 x 14` |
+| Tile size | `52 px` |
+| Board size | `728 x 728 px` |
+| Citadel footprint | central `3 x 3` block |
+| Citadel cells | `col 5-7`, `row 5-7` |
+| Minimum zoom target | `0.55x` |
+| Default overview zoom target | `0.75x` |
 
-- stage data
-- environment assets
-- runtime rendering
-- future set-dressing work
+## Zone Model
 
-## Current State
+Every siege map should read as five zones:
 
-Map-related foundations already exist:
+1. `Core Zone`
+   - citadel cells
+   - never buildable
+2. `Inner Ring`
+   - premium cross-coverage build space
+   - best for high-value towers
+3. `Outer Ring`
+   - riskier economy and front-control space
+   - best for early stalling and supply-node tension
+4. `Breach Fronts`
+   - north, south, east, west ingress spaces
+   - telegraphed and color-coded
+5. `Fallback Pockets`
+   - late-run rebuild anchors near the inner ring
 
-- each stage has `pathNodes`
-- each stage has `buildSlots`
-- each stage can now also provide an explicit `tileGrid` and ordered `pathSequence`
-- stage brackets already map to biome themes through campaign data
-- reusable props and landmark sprites already exist under `assets/sprites/environment`
-- the runtime already draws lane pathing and tower placement points
-- stages can now carry `environmentTheme` and decorative environment placements
-- the runtime can now render current prop and landmark sprites behind the battlefield
+## Tile Types
 
-What is still missing is the richer authored map layer that makes each stage feel fully bespoke rather than only bracket-themed.
+The map authoring model should support these tile semantics:
 
-## Map Production Goal
+```dart
+enum TileType {
+  path,
+  buildable,
+  blocked,
+  supplyNode,
+  citadel,
+}
+```
 
-Each stage should eventually read as:
+## Citadel Rules
 
-- a clear lane to defend
-- a recognizable biome bracket
-- one authored landmark story
-- enough decorative clutter to feel alive
-- enough empty space to stay readable during combat
+The citadel is both a gameplay object and a visual landmark.
 
-## Production Layers
+Requirements:
 
-Maps should be built in five layers.
+- one center HP pool
+- one visible landmark sprite
+- clear damage feedback
+- strong visual presence at any zoom
 
-### 1. Background Ground Layer
+Required art slot:
+
+- `assets/sprites/environment/landmarks/central_citadel.png`
+
+## Route Authoring Rule
+
+The first production version must use `authored routes`.
+
+Do not ship the first multi-front mode with fully free pathfinding.
+
+Required stage field:
+
+- `pathsByDirection`
+
+## Canonical Siege 1 Example
+
+This is the baseline `14 x 14` authored example used for implementation.
+
+Legend:
+
+- `X` = `blocked`
+- `B` = `buildable`
+- `$` = `supplyNode`
+- `C` = `citadel`
+- `N`,`S`,`E`,`W` = path cells belonging to the north, south, east, and west fronts
+
+```text
+row00: X X X X X X N X X X X X X X
+row01: X X X B B B N B B B B X X X
+row02: X X B B B B N B B B B B X X
+row03: X X B $ B B N B B B $ B X X
+row04: X X B B B B N B B B B B X X
+row05: X X B B B C C C B B B B X X
+row06: W W W W W C C C E E E E E E
+row07: X X B B B C C C B B B B X X
+row08: X X B B B B S B B B B B X X
+row09: X X B B B B S B B B B B X X
+row10: X X B $ B B S B B B $ B X X
+row11: X X B B B B S B B B B B X X
+row12: X X X B B B S B B B B X X X
+row13: X X X X X X S X X X X X X X
+```
+
+Exact authored fields:
+
+```dart
+final supplyNodeCells = const [
+  [3, 3],
+  [10, 3],
+  [3, 10],
+  [10, 10],
+];
+
+final pathsByDirection = const {
+  SpawnDirection.north: [[6, 0], [6, 1], [6, 2], [6, 3], [6, 4]],
+  SpawnDirection.south: [[6, 8], [6, 9], [6, 10], [6, 11], [6, 12], [6, 13]],
+  SpawnDirection.east: [[8, 6], [9, 6], [10, 6], [11, 6], [12, 6], [13, 6]],
+  SpawnDirection.west: [[0, 6], [1, 6], [2, 6], [3, 6], [4, 6]],
+};
+```
+
+Fallback pockets:
+
+- west fallback pocket: cells around `[2, 5]` and `[2, 7]`
+- east fallback pocket: cells around `[11, 5]` and `[11, 7]`
+
+## Supply Node Rule
+
+Every siege should place `4-6` supply nodes, mostly in the outer ring.
 
 Purpose:
 
-- establish biome palette
-- separate one stage bracket from another
+- gives the map an economy puzzle
+- prevents Coin Mills from becoming a generic backline filler
 
-Examples:
+## Telegraph Rules
 
-- frontier dirt and grass
-- grave soil and dead grass
-- chapel stone and ritual stains
-- bastion road and military ash
-- throne-march blackstone and ember glow
+Before a cycle begins, active fronts must be visible.
 
-### 2. Path Layer
+Telegraph methods:
 
-Purpose:
+- front-edge glow
+- path tint pulse
+- HUD front icons
+- recovery-window next-cycle panel
 
-- make enemy movement feel embedded in the world, not painted on top of it
+## Camera Rules
 
-Examples:
+The mode must remain legible on mobile portrait layouts.
 
-- wagon road
-- broken stone path
-- grave lane
-- siege road
-- infernal marchway
+Requirements:
 
-### 3. Structural Layer
+- allow full-board view at minimum zoom
+- allow precise tile selection at higher zoom
+- keep HUD chrome out of the battlefield center
 
-Purpose:
+## Production Variance Rules
 
-- define the map's authored identity
+Sieges should vary by:
 
-Examples:
+- route bends
+- supply node placement
+- fallback pocket placement
+- front activation order
+- decoration theme
 
-- village gate
-- bandit stockade
-- mausoleum gate
-- cursed chapel front
-- bastion wall chunk
-- infernal gate
+Sieges should not vary by:
 
-### 4. Set-Dressing Layer
-
-Purpose:
-
-- make the stage feel inhabited and intentional without hurting readability
-
-Examples:
-
-- fences
-- grave markers
-- crates
-- rubble
-- braziers
-- altars
-- chain posts
-
-### 5. Foreground Accent Layer
-
-Purpose:
-
-- add depth and premium look with a small number of overlaps
-
-Examples:
-
-- banner edge
-- dead branch tip
-- brazier glow
-- chain silhouette
-
-## Runtime Implementation Order
-
-### Phase 1: Environment Placements
-
-Extend stage data so each stage can declare:
-
-- `backgroundThemeId`
-- `landmarkPlacements`
-- `propPlacements`
-- optional `foregroundPlacements`
-
-This should stay decorative only.
-
-### Phase 2: Environment Rendering
-
-Draw environment art in `depense_game.dart` with this order:
-
-1. background
-2. path
-3. landmarks and props
-4. path overlays if needed
-5. towers and enemies
-6. foreground accents
-
-Current implementation note:
-
-- stage themes now also tint path and build-slot presentation so each biome bracket has a slightly different battlefield feel
-- stage themes now also generate lightweight ground accents and lane-detail motifs so the battlefield reads as dirt road, grave lane, chapel stone, bastion road, or throne march instead of only a recolored line
-- runtime ground, lane, and anchor marks are now precomputed into a cached texture plan on resize instead of being recomputed ad hoc inside every draw step
-- stage resize now builds a cached `MapTexturePlanner` result so ground marks, path detail marks, and anchor emphasis are sampled once and then reused by runtime rendering
-- the default 30-stage campaign now prefers a centered `8 x 14` tile battlefield with `52px` cells, so build placement and enemy movement can snap to authored cells instead of path-distance heuristics
-- tile visuals now use Kenney grass/path sprites, while path tiles can add trim overlays from neighbor lookups for cleaner bends and map edges
-
-### Phase 3: Stage Bracket Presets
-
-Build reusable placement presets for:
-
-- stages 1-5 frontier road
-- stages 6-10 bandit crossroads
-- stages 11-15 grave fields
-- stages 16-20 cursed chapel belt
-- stages 21-25 bastion approach
-- stages 26-30 throne march
-
-### Phase 4: Crest Stage Authorship
-
-Hand-author stronger visual compositions for:
-
-- stage 5
-- stage 10
-- stage 15
-- stage 20
-- stage 25
-- stage 30
-
-These are the first stages that should feel custom rather than template-driven.
-
-Current implementation status:
-
-- stages `5, 10, 15, 20, 25, 30` now have dedicated manual decoration layouts
-- these layouts use stronger landmark placement than normal stages in the same bracket
-- future passes should refine density and composition, not revert to generic template placement
-- a generated crest-scene overview now exists at `output/crest_stage_scene_preview.png` for quick visual review
-- the current environment manifest batch is now fully generated, so the next map work is about composition quality rather than missing core slots
-- crest stages now also receive an extra cached ground-overlay layer so they can carry bespoke stains, ritual traces, or military wear without forcing those motifs into every stage in the bracket
-
-## Priority Backlog
-
-### Immediate
-
-- keep current tower/building asset work moving
-- tune and expand stage environment placements now that decorative rendering exists
-- make crest stages feel more custom than the baseline bracket templates
-
-### Next
-
-- add more small clutter props
-- add foreground depth accents
-- refine ground motifs around major bends, spawn zones, and base approach areas
-
-### Later
-
-- stage-specific hero props
-- animated environmental accents
-- biome-specific particle ambience
-
-## Readability Rules
-
-- environment must never obscure enemy path readability
-- build slots must remain obvious on mobile
-- any non-path build cell that is intentionally playable should be marked directly in `tileGrid`; do not rely on path-clearance math for adjacent placement legality
-- landmark count should stay low enough that towers remain the main gameplay focal point
-- foreground accents should be rare and never cover core interactions
-- keep roughly `70%` clean gameplay space, `20%` light texture variation, and `10%` focal decoration
-- treat the path as the largest continuous value shape on screen and keep the center of that lane cleaner than the edges
-- reserve a clean exclusion zone around build slots so cracks, seams, ruts, or glow marks do not compete with placement readability
-- reserve quiet buffers around large props and landmarks so terrain texture does not blur together with set dressing
-- let spawn, core approach, and major bends be the only lane areas that receive stronger texture emphasis
-
-## Ground And Path Motif Rules
-
-The current ground/path texture pass should stay cheap, stable, and readable.
-
-- Frontier road: broad dirt ribbon, sparse rut ovals, pebble dots, and restrained grass-edge noise
-- Bandit crossroads: trampled road, darker scuff marks, short plank patches, and rougher edge damage
-- Grave fields: cold soil mottling, sunken patches, stone chips, and dead-grass specks without strong bone clutter
-- Cursed chapel: cracked slab seams, ash smears, tiny stain pools, and very sparse ritual glow fragments near edges only
-- Bastion approach: worn block seams, rubble hints, patch-plate marks, and militarized straight-line scuffs
-- Throne march: blackened plates, ember dust, narrow corruption veins, and scorch-smudge borders with restrained glow
-
-Implementation rule:
-
-- prefer a small repeated vocabulary of dots, short lines, small quads, and soft circles rather than heavy texture noise
-- keep regular stages sparser than crest stages
-- strengthen spawn and core approach with local motif clusters, but keep them weaker than active enemy or tower contrast
-- bias extra bend detail toward the outside of turns and keep the apex cleaner for enemy readability
-- allow crest stages to add one bespoke terrain-story layer on top of the shared planner, such as militia road wear, bandit choke grime, grave seep, ritual residue, siege abrasion, or infernal march scars
-
-Runtime rule:
-
-- use a stage-level `MapTexturePlanner` style pass to cache ground marks, path marks, and anchor marks once per battlefield layout change
-- keep `depense_game.dart` focused on drawing cached marks rather than owning all terrain-generation logic directly
-
-## Relationship To Tower / Building Art
-
-Tower and building art still matters first because those are the objects the player interacts with directly.
-
-But map work is now the next major visual layer after the current tower/building passes.
-
-That means the practical production order is:
-
-1. finish current tower/building art direction passes
-2. attach environment placements to stages
-3. render maps with existing landmark and prop assets
-4. add stage-specific set dressing
+- arbitrary path ambiguity
+- unreadable decorative obstruction
+- random route generation in the first playable

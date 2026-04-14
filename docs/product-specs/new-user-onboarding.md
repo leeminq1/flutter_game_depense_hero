@@ -1,40 +1,83 @@
 # New User Onboarding
 
-## Goal
+## Onboarding Goal
 
-Teach the first-session player placement, wave pressure, and upgrades with minimal interruption.
+Teach the player the new siege format without overwhelming them with four-front chaos immediately.
 
-## First-Run Flow
+The player should understand:
 
-1. Show a short start screen with one clear call to action.
-2. Start on a beginner-friendly map with pre-highlighted placement nodes.
-3. Teach placement with a single tower.
-4. Teach wave start and enemy path readability.
-5. Introduce one upgrade choice before complexity spikes.
-6. End with a summary that explains why the player won or lost.
+- what the citadel is
+- where fronts come from
+- why recovery windows matter
+- why support enemies must be prioritized
+- why economy structures are risky but valuable
 
-## Current First Playable Implementation
+## Siege 1 Teaching Script
 
-The current first-playable onboarding pass uses stage-aware tutorial cards instead of heavy modal interruptions.
+Siege 1 should teach:
 
-- Stage 1: teach build-card selection, slot placement, wave start, and tower tapping
-- Stage 2: teach early spending, second-tower timing, and first upgrade timing
-- Stage 3: teach armor counterplay with Mage against Shield Infantry
-- Stage 4: teach control timing and lane stabilization with Frost support
-- Stage 5: teach crest-stage pacing plus the first safe Coin Mill timing
+- the citadel is the defended target
+- north front activates first
+- towers can be placed before combat
+- gold is gained from kills automatically
+- recovery window follows the first cycle
 
-Implementation notes:
+Recommended constraints:
 
-- tutorial guidance appears only for stages `1-5`
-- guidance stays lightweight and lives in the battle HUD layer
-- tutorial cards now behave like short checklist guidance instead of plain hint text
-- tutorial can be dismissed and that dismissal is persisted locally
-- tutorial text should reinforce the actual stage objective, not compete with it
-- settings now include a local tutorial reset path so first-run guidance can be restored without wiping save data
+- one active front in cycle 1
+- one or two fronts maximum by the end
+- no support enemies
+- generous starting gold
 
-## Success Criteria
+## Siege 2 Teaching Script
 
-- The player can place a tower without reading a long tutorial.
-- The player understands the base/core they must defend.
-- The player sees one example of why upgrade timing matters.
-- The player reaches Stage 5 understanding that different enemy roles require different tower answers.
+Siege 2 should teach:
+
+- second-front pressure
+- that outer-ring greed has consequences
+- how recovery telegraphs help planning
+
+Recommended additions:
+
+- first optional Coin Mill node temptation
+- first split-front prioritization
+
+## Siege 3 Teaching Script
+
+Siege 3 should teach:
+
+- first real armored target
+- why anti-armor towers matter
+- that one tower type cannot solve every front
+
+Recommended additions:
+
+- Shield Infantry
+- stronger use of inner-ring placement
+
+## UI Teaching Rules
+
+The first playable should surface short tutorial prompts for:
+
+- citadel HP
+- next active fronts
+- recovery timer
+- supply node explanation
+- live-build surcharge
+
+## Failure Messaging Rule
+
+When the player loses, the game should explain:
+
+- which front failed
+- whether the issue was speed, armor, support, or lack of coverage
+- one suggested correction
+
+## First-Session Success Condition
+
+The player should finish the first session understanding:
+
+- the map has multiple fronts
+- the citadel is the shared defense target
+- prep and recovery are both meaningful
+- tower composition matters more than one strong lane

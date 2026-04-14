@@ -1,72 +1,110 @@
 # First Playable Roadmap
 
-## Purpose
+## Objective
 
-Define the large execution phases that move the project from an internal playable prototype to a public first playable.
+Ship the first end-to-end `Citadel Siege` playable without overcommitting to late-stage complexity before the core loop is proven.
 
-## Phase 1: Gameplay Complete
+## Milestone 0: Spec Lock
 
-Focus:
+Required outcome:
 
-- first 5 stage onboarding quality
-- early, mid, and late campaign balance
-- reward and meta-growth pacing
-- clear failure and retry motivation
+- product specs in this folder are the accepted source of truth
+- the team agrees to `campaign-first`, `authored multi-front`, `no baseline A* mazing`
 
-Exit bar:
+## Milestone 1: Runtime Data Bridge
 
-- new players can reach Stage 5 without confusion
-- Stage 1-10 feel fair and teach the tower roster on purpose
-- no obvious economy or unlock dead-ends exist
+Required work:
 
-## Phase 2: Content Complete
+- add `SpawnDirection`
+- add `AssaultCycleDefinition`
+- add `pathsByDirection`
+- add citadel-aware targeting
+- preserve existing tower and enemy definition reuse
 
-Focus:
+Exit criteria:
 
-- remaining art coverage
-- BGM and missing combat audio
-- stronger result, unlock, and reward presentation
-- final tower and enemy readability pass
+- one siege can resolve with north and west fronts
 
-Exit bar:
+## Milestone 2: Battlefield Conversion
 
-- every current tower, enemy, and major stage bracket feels visually intentional
-- the campaign no longer depends on placeholder-feeling presentation
+Required work:
 
-## Phase 3: Stability And Performance
+- convert the battlefield to `14 x 14`
+- add central `3 x 3` citadel
+- add supply node tiles
+- add front telegraphs
 
-Focus:
+Exit criteria:
 
-- save and reload safety
-- Android device performance checks
-- draw-cost review during late waves
-- audio concurrency and memory safety
-- more test coverage around campaign progression
+- Siege 1-3 run on the new battlefield
 
-Exit bar:
+## Milestone 3: Art And Rendering Bridge
 
-- normal late-wave play stays stable on target devices
-- no common progress-loss or reward-duplication failures remain
+Required work:
 
-## Phase 4: Public First Playable
+- runtime supports direction-aware enemy sprite lookup
+- east mirroring works
+- north and south pilot exports are integrated
+- citadel landmark renders correctly
 
-Focus:
+Exit criteria:
 
-- title and settings flow
-- user-facing help and terminology cleanup
-- build and store configuration
-- final QA and bug fixing
+- at least one enemy family renders correctly in all directions
 
-Exit bar:
+## Milestone 4: Act 1 Playable
 
-- the build is understandable without developer context
-- the game can be installed, played, retried, and exited safely
+Required work:
 
-## Current Recommendation
+- Siege 1-5 authored
+- onboarding prompts implemented
+- recovery windows and rewards functioning
+- persistence updated for new result flow
+- Command Charges explicitly out of scope for this milestone
 
-The active next work should remain:
+Exit criteria:
 
-1. Stability and performance review
-2. Remaining content-complete presentation passes
-3. Public-playable navigation and QA tightening
-4. Final late-campaign and boss feel playtest notes
+- a full Act 1 can be played and cleared
+- a failed run still returns valid persistent progress
+- the run is playable without Command Charges
+
+## Milestone 5: Web QA Harness
+
+Required work:
+
+- make Flutter Web run cleanly through `web-server`
+- add a web-safe persistence path or debug-only in-memory store for browser QA
+- add a QA overlay path for automation
+- expose readable state text for cycle, fronts, gold, citadel HP, and selected buildable
+- capture the required portrait-phone and portrait-tablet screenshots
+
+Exit criteria:
+
+- Playwright can load the app and drive the portrait smoke flow
+- required viewport checks pass at `360 x 800`, `412 x 915`, `768 x 1024`, and `834 x 1194`
+- landscape mode is blocked by the portrait-only guard
+
+## Milestone 6: Tactical Layer And Campaign Expansion
+
+Required work:
+
+- Command Charges implemented and tuned
+- Acts 2-6 authored
+- support, revive, ward, and boss pressure tuned
+- late acts stress-tested for readability
+
+Exit criteria:
+
+- Siege 30 final breach completes
+
+## Required Verification
+
+Before calling the first playable ready, verify:
+
+- `flutter analyze` passes
+- Flutter Web launches on `web-server`
+- Playwright can drive the app for smoke flows
+- at least one automated or semi-automated screenshot review exists for key states
+- required portrait viewport checks pass at `360 x 800` and `412 x 915`
+- required tablet portrait viewport checks pass at `768 x 1024` and `834 x 1194`
+- portrait HUD, battle viewport, and build controls remain readable and tappable
+- landscape mode is blocked by the portrait-only guard

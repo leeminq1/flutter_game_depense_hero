@@ -1,20 +1,20 @@
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
-import 'package:depense_game/data/persistence/game_collection_models.dart';
+import 'package:depense_game/data/persistence/progress_store.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
+import 'package:depense_game/data/persistence/store_models.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 
 /// In-memory implementation of the progress store for web platform.
-/// Mirrors the public API of [LocalProgressStore] without Isar dependency.
-class InMemoryProgressStore {
+class InMemoryProgressStore implements ProgressStore {
   InMemoryProgressStore._();
 
-  late PlayerProfile _profile;
-  final Map<int, StageProgressRecord> _stageRecords = {};
-  late GameSettingsRecord _settings;
-  final Map<String, RewardClaimRecord> _rewardClaims = {};
-  final Map<String, UpgradeNodeRecord> _upgradeNodes = {};
+  late _ProfileSnapshot _profile;
+  final Map<int, _StageRecordSnapshot> _stageRecords = {};
+  late AudioSettingsSnapshot _settings;
+  final Map<String, _RewardClaimSnapshot> _rewardClaims = {};
+  final Map<String, _UpgradeNodeSnapshot> _upgradeNodes = {};
 
   static Future<InMemoryProgressStore> open() async {
     final store = InMemoryProgressStore._();
@@ -24,50 +24,63 @@ class InMemoryProgressStore {
 
   void _seed() {
     final now = DateTime.now();
-    _profile = PlayerProfile()
-      ..id = 1
-      ..createdAt = now
-      ..lastPlayedAt = now
-      ..accountLevel = 1
-      ..totalXp = 0
-      ..softCurrency = 0
-      ..premiumCurrency = 0;
+    _profile = _ProfileSnapshot(
+      createdAt: now,
+      lastPlayedAt: now,
+      accountLevel: 1,
+      totalXp: 0,
+      softCurrency: 0,
+      premiumCurrency: 0,
+    );
 
-    _settings = GameSettingsRecord()
-      ..id = 1
-      ..masterVolume = 0.85
-      ..musicVolume = 0.55
-      ..sfxVolume = 0.90
-      ..muted = false
-      ..tutorialDismissed = false;
+    _settings = const AudioSettingsSnapshot(
+      masterVolume: 0.85,
+      musicVolume: 0.55,
+      sfxVolume: 0.90,
+      muted: false,
+      tutorialDismissed: false,
+    );
 
-    _stageRecords[1] = StageProgressRecord()
-      ..id = 1
-      ..stageNumber = 1
-      ..unlocked = true
-      ..stars = 0;
+    _stageRecords[1] = const _StageRecordSnapshot(
+      stageNumber: 1,
+      unlocked: true,
+      stars: 0,
+    );
   }
 
-  Future<GameSettingsRecord> loadOrCreateSettings() async {
+  @override
+  Future<AudioSettingsSnapshot> loadAudioSettings() async {
     return _settings;
   }
 
+  @override
   Future<void> saveAudioSettings(AudioSettingsController controller) async {
-    _settings
-      ..masterVolume = controller.masterVolume
-      ..musicVolume = controller.musicVolume
-      ..sfxVolume = controller.sfxVolume
-      ..muted = controller.muted;
+    _settings = AudioSettingsSnapshot(
+      masterVolume: controller.masterVolume,
+      musicVolume: controller.musicVolume,
+      sfxVolume: controller.sfxVolume,
+      muted: controller.muted,
+      tutorialDismissed: _settings.tutorialDismissed,
+    );
   }
 
+  @override
   Future<bool> isTutorialDismissed() async {
     return _settings.tutorialDismissed;
   }
 
+  @override
   Future<void> setTutorialDismissed(bool dismissed) async {
-    _settings.tutorialDismissed = dismissed;
+    _settings = AudioSettingsSnapshot(
+      masterVolume: _settings.masterVolume,
+      musicVolume: _settings.musicVolume,
+      sfxVolume: _settings.sfxVolume,
+      muted: _settings.muted,
+      tutorialDismissed: dismissed,
+    );
   }
 
+  @override
   Future<void> resetCampaignProgress() async {
     final masterVolume = _settings.masterVolume;
     final musicVolume = _settings.musicVolume;
@@ -78,14 +91,16 @@ class InMemoryProgressStore {
     _rewardClaims.clear();
     _upgradeNodes.clear();
     _seed();
-    _settings
-      ..masterVolume = masterVolume
-      ..musicVolume = musicVolume
-      ..sfxVolume = sfxVolume
-      ..muted = muted
-      ..tutorialDismissed = false;
+    _settings = AudioSettingsSnapshot(
+      masterVolume: masterVolume,
+      musicVolume: musicVolume,
+      sfxVolume: sfxVolume,
+      muted: muted,
+      tutorialDismissed: false,
+    );
   }
 
+  @override
   Future<CampaignOverview> loadCampaignOverview({
     required int totalStages,
   }) async {
@@ -156,6 +171,7 @@ class InMemoryProgressStore {
     );
   }
 
+  @override
   Future<StageCompletionResult> recordStageCompletion({
     required int stageNumber,
     required StageEvaluationResult evaluation,
@@ -199,13 +215,19 @@ class InMemoryProgressStore {
     _profile.softCurrency += softCurrencyAwarded;
     _profile.accountLevel = 1 + (_profile.totalXp ~/ 150);
 
-    final record =
-        existingRecord ?? (StageProgressRecord()..stageNumber = stageNumber);
-    record.unlocked = true;
-    record.stars = starsAwarded > record.stars ? starsAwarded : record.stars;
-    record.firstClearedAt ??= DateTime.now();
-    record.lastClearedAt = DateTime.now();
-    _stageRecords[stageNumber] = record;
+    final record = existingRecord ??
+        _StageRecordSnapshot(
+          stageNumber: stageNumber,
+          unlocked: true,
+          stars: 0,
+        );
+    final updatedRecord = record.copyWith(
+      unlocked: true,
+      stars: starsAwarded > record.stars ? starsAwarded : record.stars,
+      firstClearedAt: record.firstClearedAt ?? DateTime.now(),
+      lastClearedAt: DateTime.now(),
+    );
+    _stageRecords[stageNumber] = updatedRecord;
 
     int? unlockedNextStage;
     if (stageNumber < totalStages) {
@@ -229,7 +251,7 @@ class InMemoryProgressStore {
     return StageCompletionResult(
       stageNumber: stageNumber,
       starsAwarded: starsAwarded,
-      totalStars: record.stars,
+      totalStars: updatedRecord.stars,
       xpAwarded: xpAwarded,
       baseSoftCurrencyAwarded: baseSoftCurrencyAwarded,
       firstClearBonusAwarded: firstClearBonusAwarded,
@@ -247,6 +269,7 @@ class InMemoryProgressStore {
     );
   }
 
+  @override
   Future<RewardClaimResult> claimStageClearBonus({
     required int stageNumber,
     required int amount,
@@ -261,12 +284,13 @@ class InMemoryProgressStore {
     }
 
     _profile.softCurrency += amount;
-    _rewardClaims[claimKey] = RewardClaimRecord()
-      ..claimKey = claimKey
-      ..sourceType = 'rewarded_stage_bonus'
-      ..stageNumber = stageNumber
-      ..amount = amount
-      ..grantedAt = DateTime.now();
+    _rewardClaims[claimKey] = _RewardClaimSnapshot(
+      claimKey: claimKey,
+      sourceType: 'rewarded_stage_bonus',
+      stageNumber: stageNumber,
+      amount: amount,
+      grantedAt: DateTime.now(),
+    );
 
     return RewardClaimResult(
       claimedNow: true,
@@ -275,6 +299,7 @@ class InMemoryProgressStore {
     );
   }
 
+  @override
   Future<bool> hasClaimedStageClearBonus(int stageNumber) async {
     return _rewardClaims.containsKey('stage_bonus_$stageNumber');
   }
@@ -289,10 +314,12 @@ class InMemoryProgressStore {
     ];
   }
 
+  @override
   Future<ResolvedMetaUpgrades> loadResolvedMetaUpgrades() async {
     return MetaUpgradeCatalog.resolve(_loadMetaUpgrades());
   }
 
+  @override
   Future<MetaUpgradePurchaseResult> purchaseMetaUpgrade(String nodeId) async {
     final definition = MetaUpgradeCatalog.byId(nodeId);
     final existing = _upgradeNodes[nodeId];
@@ -318,8 +345,8 @@ class InMemoryProgressStore {
     }
 
     _profile.softCurrency -= cost;
-    final record = existing ?? (UpgradeNodeRecord()..nodeId = nodeId);
-    record.level = currentLevel + 1;
+    final record = (existing ?? _UpgradeNodeSnapshot(nodeId: nodeId, level: 0))
+        .copyWith(level: currentLevel + 1);
     _upgradeNodes[nodeId] = record;
 
     return MetaUpgradePurchaseResult(
@@ -332,7 +359,7 @@ class InMemoryProgressStore {
 
   _UnlockCheck _checkStageUnlocked({
     required StageDefinition stage,
-    required Map<int, StageProgressRecord> byStage,
+    required Map<int, _StageRecordSnapshot> byStage,
     required int totalStars,
     required List<MetaUpgradeSnapshot> metaUpgrades,
   }) {
@@ -359,4 +386,80 @@ class _UnlockCheck {
 
   final bool unlocked;
   final String? lockReason;
+}
+
+class _ProfileSnapshot {
+  _ProfileSnapshot({
+    required this.createdAt,
+    required this.lastPlayedAt,
+    required this.accountLevel,
+    required this.totalXp,
+    required this.softCurrency,
+    required this.premiumCurrency,
+  });
+
+  final DateTime createdAt;
+  DateTime lastPlayedAt;
+  int accountLevel;
+  int totalXp;
+  int softCurrency;
+  int premiumCurrency;
+}
+
+class _StageRecordSnapshot {
+  const _StageRecordSnapshot({
+    required this.stageNumber,
+    required this.unlocked,
+    required this.stars,
+    this.firstClearedAt,
+    this.lastClearedAt,
+  });
+
+  final int stageNumber;
+  final bool unlocked;
+  final int stars;
+  final DateTime? firstClearedAt;
+  final DateTime? lastClearedAt;
+
+  _StageRecordSnapshot copyWith({
+    bool? unlocked,
+    int? stars,
+    DateTime? firstClearedAt,
+    DateTime? lastClearedAt,
+  }) {
+    return _StageRecordSnapshot(
+      stageNumber: stageNumber,
+      unlocked: unlocked ?? this.unlocked,
+      stars: stars ?? this.stars,
+      firstClearedAt: firstClearedAt ?? this.firstClearedAt,
+      lastClearedAt: lastClearedAt ?? this.lastClearedAt,
+    );
+  }
+}
+
+class _RewardClaimSnapshot {
+  const _RewardClaimSnapshot({
+    required this.claimKey,
+    required this.sourceType,
+    required this.stageNumber,
+    required this.amount,
+    required this.grantedAt,
+  });
+
+  final String claimKey;
+  final String sourceType;
+  final int stageNumber;
+  final int amount;
+  final DateTime grantedAt;
+}
+
+class _UpgradeNodeSnapshot {
+  const _UpgradeNodeSnapshot({required this.nodeId, required this.level});
+
+  final String nodeId;
+  final int level;
+
+  _UpgradeNodeSnapshot copyWith({int? level}) {
+    return _UpgradeNodeSnapshot(nodeId: nodeId, level: level ?? this.level);
+  }
 }

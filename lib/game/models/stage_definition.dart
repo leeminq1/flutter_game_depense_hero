@@ -6,7 +6,9 @@ import 'package:depense_game/game/models/enemy_definition.dart';
 /// - [path]: monster walking route (not buildable)
 /// - [buildable]: player can place towers here
 /// - [blocked]: neither path nor buildable (decorative/empty)
-enum TileType { path, buildable, blocked }
+enum TileType { path, buildable, blocked, supplyNode, citadel }
+
+enum SpawnDirection { north, south, east, west }
 
 enum StageEnvironmentTheme {
   frontierRoad,
@@ -127,6 +129,38 @@ class StageBuildZoneDefinition {
   final String label;
 }
 
+class AssaultCycleDefinition {
+  const AssaultCycleDefinition({
+    required this.number,
+    required this.activeFronts,
+    required this.groups,
+    this.recoverySeconds = 30,
+    this.recoveryGoldBonus = 0,
+    this.isFinalBreach = false,
+  });
+
+  final int number;
+  final List<SpawnDirection> activeFronts;
+  final List<FrontSpawnGroupDefinition> groups;
+  final double recoverySeconds;
+  final int recoveryGoldBonus;
+  final bool isFinalBreach;
+}
+
+class FrontSpawnGroupDefinition {
+  const FrontSpawnGroupDefinition({
+    required this.front,
+    required this.enemy,
+    required this.count,
+    required this.spawnInterval,
+  });
+
+  final SpawnDirection front;
+  final EnemyDefinition enemy;
+  final int count;
+  final double spawnInterval;
+}
+
 class StageDefinition {
   const StageDefinition({
     required this.number,
@@ -147,13 +181,20 @@ class StageDefinition {
     this.slotTapRadius = 28,
     this.tileGrid,
     this.pathSequence,
+    this.actNumber,
+    this.citadelHp,
+    this.pathsByDirection,
+    this.supplyNodeCells = const [],
+    this.assaultCycles = const [],
   });
 
   final int number;
+  final int? actNumber;
   final String title;
   final String description;
   final int startingCoins;
   final int baseHealth;
+  final int? citadelHp;
   final StageEnvironmentTheme environmentTheme;
   final List<Offset> pathNodes;
   final List<Offset> buildSlots;
@@ -173,6 +214,19 @@ class StageDefinition {
   /// Ordered list of [col, row] grid coordinates defining the monster path.
   /// Used when [tileGrid] is non-null to set enemy waypoints from tile centers.
   final List<List<int>>? pathSequence;
+
+  /// Future-facing authored routes for `Citadel Siege`.
+  final Map<SpawnDirection, List<List<int>>>? pathsByDirection;
+
+  /// Future-facing authored supply-node tiles for `Citadel Siege`.
+  final List<List<int>> supplyNodeCells;
+
+  /// Future-facing assault cycle definitions for `Citadel Siege`.
+  final List<AssaultCycleDefinition> assaultCycles;
+
+  int get startingGold => startingCoins;
+  int get citadelHitPoints => citadelHp ?? baseHealth;
+  int get cycleCount => assaultCycles.isNotEmpty ? assaultCycles.length : waves.length;
 
   StageEvaluationResult evaluateRun(StageRunSummary summary) {
     final results = [
@@ -219,6 +273,12 @@ class StageDefinition {
   }
 }
 
+typedef SiegeDefinition = StageDefinition;
+typedef SiegeObjectiveDefinition = StageObjectiveDefinition;
+typedef SiegeRunSummary = StageRunSummary;
+typedef SiegeObjectiveResult = StageObjectiveResult;
+typedef SiegeEvaluationResult = StageEvaluationResult;
+
 class WaveDefinition {
   const WaveDefinition({
     required this.number,
@@ -236,9 +296,11 @@ class SpawnGroupDefinition {
     required this.enemy,
     required this.count,
     required this.spawnInterval,
+    this.direction,
   });
 
   final EnemyDefinition enemy;
   final int count;
   final double spawnInterval;
+  final SpawnDirection? direction;
 }

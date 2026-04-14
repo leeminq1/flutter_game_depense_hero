@@ -1,208 +1,126 @@
 # Roster And Buildables
 
-## Player Buildables: Initial Set
+## Purpose
 
-### 1. Archer Tower
+This document maps the current roster into the new multi-front siege format so implementation can proceed without inventing a new enemy set.
 
-- Role: cheap reliable single-target DPS
-- Strength: early raiders and scouts
-- Weakness: armored units
-- Current unique ability: every third shot becomes a stronger piercing volley
-- Upgrade branches:
-  - Ranger: longer range and heavier crit volleys
-  - Multishot: stronger split volleys into clusters
+## Defense Roster
 
-### 2. Guard Barracks
+The existing seven buildables remain the starting roster:
 
-- Role: summons blocking melee defenders on the lane edge
-- Strength: stall and lane control
-- Weakness: vulnerable to ranged or support-heavy waves
-- Current unique ability: strikes stagger targets and cleave nearby enemies
-- Current visual implementation: attached defender sprites now render beside the Barracks and change with level
-- Upgrade branches:
-  - Vanguard: longer stagger and tougher front-line pressure
-  - Sentinel: wider cleave coverage and lane reach
+- Archer Tower
+- Guard Barracks
+- Mage Obelisk
+- Frost Shrine
+- Coin Mill
+- Ballista
+- Emberkeep
 
-### 3. Mage Obelisk
+## Buildable Jobs In Citadel Siege
 
-- Role: magic burst and anti-armor
-- Strength: shield infantry, cursed knights
-- Weakness: high cost and slower cadence
-- Current unique ability: chained arcane damage that jumps across clustered enemies
-- Upgrade branches:
-  - Storm: more chain targets and faster cadence
-  - Rune: stronger armor-breaking burst
+| Tower | Primary Job | Best Use In Multi-Front Play |
+| --- | --- | --- |
+| Archer Tower | cheap general DPS | west and east outer-ring coverage, support pickoff |
+| Guard Barracks | stall and contact control | fallback pockets, inner-ring emergency lane hold |
+| Mage Obelisk | anti-armor and chain burst | inner-ring cross-coverage, east and south elite response |
+| Frost Shrine | group control | front stabilization, revive and speed-wave suppression |
+| Coin Mill | economy engine | supply node investment, safest outer-ring node first |
+| Ballista | anti-elite and backline pickoff | inner-ring boss lane and support-sniping anchor |
+| Emberkeep | area denial and attrition | undead cleanup, dense four-front overlap zones |
 
-### 4. Frost Shrine
+## Front Identity
 
-- Role: slow and control
-- Strength: density management and support for other towers
-- Weakness: low direct damage
-- Current unique ability: area pulse that slows every enemy in range
-- Upgrade branches:
-  - Glacier: stronger slow and larger aura
-  - Shatter: bonus damage to already slowed enemies
+Each front should feel like it has its own tactical personality.
 
-### 5. Coin Mill
+| Front | Identity | Typical Threat |
+| --- | --- | --- |
+| West | fast flank pressure | Raiders, Scouts, Wolf Scouts |
+| East | armored front pressure | Shield Infantry, leaders, cult escorts |
+| North | undead attrition | Skeletons, Bone Archers, Grave Guards |
+| South | support-heavy siege pressure | Plague Bearers, Warlocks, Bastion support |
 
-- Role: economy support structure
-- Strength: long-run stage scaling and greedy play
-- Weakness: weak immediate combat contribution
-- Current unique ability: passive coin generation plus wave-start bonus payout
-- Upgrade branches:
-  - Mint: stronger passive income
-  - Tribute: better wave-start payouts and sell value
+## Front Color Language
 
-### 6. Ballista
+Use these telegraph colors consistently:
 
-- Role: long-range anti-elite siege tower
-- Unlock: Bow Mastery level 2
-- Strength: corrupted knights, shield infantry, late-wave priority targets
-- Weakness: expensive, slower cadence, weaker against wide swarms
-- Current unique ability: heavy bolts pin targets and punish armored enemies
-- Upgrade branches:
-  - Siege: harder anti-elite damage and armor cracking
-  - Harpoon: longer pin duration and stronger control
+| Front | Color |
+| --- | --- |
+| North | `#4488FF` |
+| South | `#FF4444` |
+| East | `#44FF88` |
+| West | `#FFCC44` |
 
-### 7. Emberkeep
+## Enemy Usage By Front
 
-- Role: area denial and burn attrition tower
-- Unlock: Arcane Mastery level 2
-- Strength: clustered pushes, attrition waves, support-heavy formations
-- Weakness: weaker front-loaded burst than mage or ballista
-- Current unique ability: detonates an ember burst that applies burn over time
-- Upgrade branches:
-  - Inferno: larger blast radius and hotter burn damage
-  - Cinder: longer burn duration and better crowd attrition
+### West Front
 
-## Future Buildables
+- Role: fast greed punishment and leak pressure
+- Primary enemies: Raider, Scout, Wolf Scout, Banner Captain
+- Best answers: Archer Tower, Frost Shrine, Guard Barracks
 
-- Healing shrine or repair post
-- Trap pad or rune tile
+### East Front
 
-## Early Enemy Roster
+- Role: armor and leadership pressure
+- Primary enemies: Shield Infantry, Banner Captain, Cult Adept
+- Best answers: Mage Obelisk, Ballista, focused support pickoff
 
-### Raider
+### North Front
 
-- Fast basic humanoid
-- Low HP, low armor
-- Teaches core targeting
-- Current special ability: enrages below half health
+- Role: revive and attrition tax
+- Primary enemies: Skeleton, Bone Archer, Grave Guard, Corrupted Knight later
+- Best answers: Frost Shrine, Emberkeep, Barracks stall plus sustained damage
 
-### Scout
+### South Front
 
-- Very fast path runner
-- Low HP
-- Punishes slow setup
-- Current special ability: dodges the first physical hit
+- Role: support stacking and late siege pressure
+- Primary enemies: Plague Bearer, Hex Sniper, Warlock, Bastion Priest, Bastion Overlord
+- Best answers: Ballista pickoff, Mage Obelisk chain pressure, Emberkeep in clustered lanes
 
-### Banner Captain
+## Counter Mapping
 
-- Early bandit support leader
-- Buff-centric pressure amplifier
-- Encourages support-target priority before the frontline snowballs
-- Current special ability: periodically grants nearby bandit-family allies bonus speed and base damage
+| Enemy | Citadel Damage | Best Answers | Common Failure |
+| --- | --- | --- | --- |
+| Raider | 1 | Archer, Barracks | greed-open Coin Mill |
+| Scout | 1 | Frost, Archer overlap | single slow tower line |
+| Banner Captain | 2 | Archer focus, Ballista | letting aura sit behind the front |
+| Wolf Scout | 1 | Frost, layered cheap DPS | one-lane-only solution |
+| Shield Infantry | 2 | Mage, Ballista | archer-only defense |
+| Cult Adept | 2 | Archer focus, Ballista | ignoring support priority |
+| Skeleton | 1 | sustained DPS, Frost | one-shot-only logic |
+| Bone Archer | 1 | Emberkeep, Frost | assuming one kill equals one body |
+| Grave Guard | 3 | Mage, Ballista | pure control without damage |
+| Plague Bearer | 2 | Ballista, focused burst | attrition races |
+| Corrupted Knight | 4 | Ballista, Barracks stall | weak anti-elite windows |
+| Hex Sniper | 2 | Ballista, fast focus | leaving ward support alive |
+| Warlock | 3 | Ballista, support denial | letting summon loops repeat |
+| Bastion Priest | 3 | burst focus, Ballista | splitting damage too wide |
+| Bastion Overlord | 10 | full mixed roster | one-note build plans |
 
-### Wolf Scout
+Rule:
 
-- Beastfolk speed variant
-- Faster than the base scout and harder to clean up late
-- Sharpens the lane-coverage check in early-mid stages
-- Current special ability: dodges the first physical hit and gains a permanent speed boost below `60%` health
+- when an enemy reaches the citadel, it deals its fixed `Citadel Damage` value directly
+- MVP does not multiply citadel damage by siege scaling formulas
 
-### Shield Infantry
+## Cross-Front Mixing Rule
 
-- Moderate speed
-- Armor resistance
-- Encourages magic or armor-breaking answers
-- Current special ability: reduces physical damage taken
+Acts 1-4 should teach mostly readable front identity.
 
-### Cult Adept
+Acts 5-6 may deliberately mix enemies across fronts to prevent formulaic answers.
 
-- Support enemy
-- Buffs nearby units or debuffs towers
-- Should appear in protected wave compositions
-- Current special ability: periodically hastes nearby allies
+Examples:
 
-### Skeleton Infantry
+- South front gains more knights and priests
+- East front receives support overlap
+- West front may gain disruptive ranged units
 
-- Durable attrition unit
-- Moderate speed, persistent pressure
-- Current special ability: revives once with partial health
+## Boss Rule
 
-### Bone Archer
+The final boss must validate the whole roster, not just one answer.
 
-- Undead skirmisher
-- Extends wave length without needing a giant HP pool
-- Makes cleanup and corpse control matter earlier
-- Current special ability: spawns one normal skeleton on death
+The player should need:
 
-### Plague Bearer
-
-- Undead sustain support
-- Turns fair undead fights into longer attrition checks
-- Should appear behind mixed undead and elite pressure
-- Current special ability: periodically heals nearby undead and grants short damage reduction
-
-### Grave Guard
-
-- Tankier undead elite
-- High HP, strong lane pressure
-- Current special ability: resists slows and shrugs off heavy control effects
-
-### Corrupted Knight
-
-- Elite armored humanoid
-- High threat, lower count
-- Current special ability: charges harder after being wounded
-
-### Hex Sniper
-
-- Late support disruptor
-- Protects elite escorts instead of front-lining itself
-- Raises the cost of ignoring backline ranged support
-- Current special ability: periodically grants a ward to itself and the highest-priority nearby ally
-
-### Warlock
-
-- Late-game support / elite caster
-- Mix of buff, summon, or ranged spell pressure
-- Current special ability: periodically wards allies and summons reinforcements
-- Current art note: second-pass mantle and glow polish makes the support read more distinct from Cult Adept
-
-### Bastion Priest
-
-- Late elite support
-- More durable than other support casters and built to keep elite waves alive
-- Should appear in smaller counts but high-protection compositions
-- Current special ability: periodically heals the highest-priority elite ally and refreshes a ward; self-heals if no elite ally is nearby
-
-### Bastion Overlord
-
-- Final campaign boss
-- Huge HP pool, slow but relentless advance
-- Current special ability: shifts phases, pulses self-warding shields, and summons escorts mid-fight
-- Current art note: second-pass obsidian shoulder frame strengthens the fortress-boss silhouette
-
-## Faction Pacing
-
-- Stages 1-5: bandit emphasis with Banner Captain support entering at stage 4
-- Stages 6-10: bandit speed pressure widens through Wolf Scout and the first cult support
-- Stages 11-15: undead attrition broadens through Bone Archer spillover and armored crossover
-- Stages 16-20: undead pressure takes over and Plague Bearer sustain joins Grave Guard front-lining
-- Stages 21-25: cursed bastion waves add Hex Sniper ward support behind elite escorts
-- Stages 24-29: Bastion Priest joins the late elite-support stack without changing stage 30 boss ownership
-- Stage 30 finale: Bastion Overlord arrives in the last wave with escort summons and phase changes
-
-## Real-Time Placement Rule
-
-- Players can build during waves, so buildables must have clear placement cost and instant feedback.
-- Guard Barracks and Frost Shrine help active wave correction.
-- Economy structures should remain risky to place mid-wave.
-- Ballista and Emberkeep should appear in the build bar as locked cards before they are unlocked so the player understands the meta goal.
-
-## Combat Readability
-
-- Projectile, beam, pulse, and impact visuals should stay lightweight so Flame rendering stays responsive on larger waves.
-- Tower abilities and enemy traits must be readable without depending on heavy sprite FX or shader work.
-- Guard Barracks now uses lightweight defender-side sprites instead of introducing separate defender entities too early.
+- backline pickoff
+- elite damage
+- crowd control
+- recovery discipline
+- a stable economy base from earlier cycles

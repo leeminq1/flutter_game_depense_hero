@@ -7,6 +7,7 @@ import 'package:depense_game/game/models/stage_definition.dart';
 /// Canonical authored campaign data for the playable game.
 class CampaignData {
   static const int totalStages = 30;
+  static const int totalSieges = totalStages;
   static const int _tileColumns = 8;
   static const int _tileRows = 14;
   static const int _buildableTopRow = 1;
@@ -14,6 +15,10 @@ class CampaignData {
 
   static StageDefinition stage(int number) {
     final safeStage = number.clamp(1, totalStages);
+    final actOneSiege = _buildActOneCitadelSiege(safeStage);
+    if (actOneSiege != null) {
+      return actOneSiege;
+    }
     final biome = _biomeForStage(safeStage);
     final environmentTheme = _environmentThemeForStage(safeStage);
     final templateIndex = (safeStage - 1) % _pathTemplates.length;
@@ -24,8 +29,8 @@ class CampaignData {
     final tileGrid = _buildTileGrid(pathSequence, slotTemplate);
     final waveCount = safeStage >= 21 ? 5 : (safeStage >= 6 ? 4 : 3);
     final title = safeStage == 30
-        ? 'Stage 30 - Bastion Throne'
-        : 'Stage $safeStage - ${biome.title}';
+        ? 'Siege 30 - Bastion Throne'
+        : 'Siege $safeStage - ${biome.title}';
 
     return StageDefinition(
       number: safeStage,
@@ -63,6 +68,10 @@ class CampaignData {
   static List<StageDefinition> allStages() {
     return List.generate(totalStages, (index) => stage(index + 1));
   }
+
+  static SiegeDefinition siege(int number) => stage(number);
+
+  static List<SiegeDefinition> allSieges() => allStages();
 
   static WaveDefinition _buildWave({
     required int stageNumber,
@@ -1379,7 +1388,9 @@ class CampaignData {
     required double intensity,
   }) {
     final hpMultiplier = 1 + ((stageNumber - 1) * 0.11);
-    final speedStep = 1 + (((stageNumber - 1) ~/ 5) * 0.05);
+    final actNumber = ((stageNumber - 1) ~/ 5) + 1;
+    final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.04);
+    final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.05);
 
     switch (kind) {
       case EnemyKind.raider:
@@ -1388,9 +1399,12 @@ class CampaignData {
           label: 'Raider',
           specialDescription: 'Enrages below half health and runs faster.',
           hitPoints: (44 * hpMultiplier * intensity).round(),
-          speed: 48 * speedStep,
-          rewardCoins: math.max(6, (6 + stageNumber * 0.8).round()),
-          baseDamage: 1,
+          speed: 48 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            6,
+            (6 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 1,
           color: const Color(0xFFB85C38),
         );
       case EnemyKind.scout:
@@ -1399,9 +1413,12 @@ class CampaignData {
           label: 'Scout',
           specialDescription: 'Dodges the first physical hit that lands on it.',
           hitPoints: (30 * hpMultiplier * math.max(0.9, intensity)).round(),
-          speed: 68 * speedStep,
-          rewardCoins: math.max(5, (5 + stageNumber * 0.75).round()),
-          baseDamage: 1,
+          speed: 68 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            5,
+            (5 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 1,
           color: const Color(0xFFD89C45),
         );
       case EnemyKind.bannerCaptain:
@@ -1411,9 +1428,12 @@ class CampaignData {
           specialDescription:
               'Periodically rallies nearby bandits with speed and damage buffs.',
           hitPoints: (60 * hpMultiplier * intensity).round(),
-          speed: 44 * speedStep,
-          rewardCoins: math.max(9, (9 + stageNumber * 0.9).round()),
-          baseDamage: 2,
+          speed: 44 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            9,
+            (9 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 2,
           color: const Color(0xFF9E523C),
         );
       case EnemyKind.wolfScout:
@@ -1423,9 +1443,12 @@ class CampaignData {
           specialDescription:
               'Dodges its first physical hit and sprints harder when wounded.',
           hitPoints: (38 * hpMultiplier * math.max(0.95, intensity)).round(),
-          speed: 74 * speedStep,
-          rewardCoins: math.max(7, (7 + stageNumber * 0.85).round()),
-          baseDamage: 1,
+          speed: 74 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            7,
+            (7 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 1,
           color: const Color(0xFF8B7A57),
         );
       case EnemyKind.shieldInfantry:
@@ -1434,9 +1457,12 @@ class CampaignData {
           label: 'Shield Infantry',
           specialDescription: 'Reduces damage from physical towers.',
           hitPoints: (86 * hpMultiplier * intensity).round(),
-          speed: 34 * speedStep,
-          rewardCoins: math.max(10, (10 + stageNumber).round()),
-          baseDamage: 2,
+          speed: 34 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            10,
+            (10 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 2,
           color: const Color(0xFF7D8EA3),
         );
       case EnemyKind.cultAdept:
@@ -1445,9 +1471,12 @@ class CampaignData {
           label: 'Cult Adept',
           specialDescription: 'Periodically hastes nearby allies.',
           hitPoints: (58 * hpMultiplier * intensity).round(),
-          speed: 42 * speedStep,
-          rewardCoins: math.max(10, (10 + stageNumber * 0.9).round()),
-          baseDamage: 1,
+          speed: 42 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            10,
+            (10 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 2,
           color: const Color(0xFF6E4EAA),
         );
       case EnemyKind.skeleton:
@@ -1456,9 +1485,12 @@ class CampaignData {
           label: 'Skeleton',
           specialDescription: 'Revives once with partial health.',
           hitPoints: (78 * hpMultiplier * intensity).round(),
-          speed: 40 * speedStep,
-          rewardCoins: math.max(11, (11 + stageNumber).round()),
-          baseDamage: 2,
+          speed: 40 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            11,
+            (11 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 1,
           color: const Color(0xFFBDB9AA),
         );
       case EnemyKind.boneArcher:
@@ -1468,9 +1500,12 @@ class CampaignData {
           specialDescription:
               'Leaves a fresh skeleton behind when it is destroyed.',
           hitPoints: (66 * hpMultiplier * intensity).round(),
-          speed: 44 * speedStep,
-          rewardCoins: math.max(13, (13 + stageNumber * 1.05).round()),
-          baseDamage: 2,
+          speed: 44 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            13,
+            (13 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 1,
           color: const Color(0xFFC8C1AF),
         );
       case EnemyKind.graveGuard:
@@ -1480,9 +1515,12 @@ class CampaignData {
           specialDescription:
               'Resists slows and pushes through control effects.',
           hitPoints: (172 * hpMultiplier * (intensity + 0.08)).round(),
-          speed: 26 * speedStep,
-          rewardCoins: math.max(20, (20 + stageNumber * 1.15).round()),
-          baseDamage: 3,
+          speed: 26 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            20,
+            (20 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 3,
           color: const Color(0xFF63705F),
         );
       case EnemyKind.plagueBearer:
@@ -1492,9 +1530,12 @@ class CampaignData {
           specialDescription:
               'Heals nearby undead and shrouds them in brief damage reduction.',
           hitPoints: (104 * hpMultiplier * intensity).round(),
-          speed: 34 * speedStep,
-          rewardCoins: math.max(21, (21 + stageNumber * 1.15).round()),
-          baseDamage: 2,
+          speed: 34 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            21,
+            (21 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 2,
           color: const Color(0xFF5E7152),
         );
       case EnemyKind.corruptedKnight:
@@ -1504,9 +1545,12 @@ class CampaignData {
           specialDescription:
               'Charges harder when wounded and resists physical fire.',
           hitPoints: (145 * hpMultiplier * (intensity + 0.15)).round(),
-          speed: 30 * speedStep,
-          rewardCoins: math.max(18, (18 + stageNumber * 1.2).round()),
-          baseDamage: 3,
+          speed: 30 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            18,
+            (18 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 4,
           color: const Color(0xFF7A5151),
         );
       case EnemyKind.hexSniper:
@@ -1516,9 +1560,12 @@ class CampaignData {
           specialDescription:
               'Refreshes a ward for itself and the most important nearby ally.',
           hitPoints: (92 * hpMultiplier * intensity).round(),
-          speed: 38 * speedStep,
-          rewardCoins: math.max(25, (25 + stageNumber * 1.3).round()),
-          baseDamage: 2,
+          speed: 38 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            25,
+            (25 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 2,
           color: const Color(0xFF5C4B73),
         );
       case EnemyKind.warlock:
@@ -1528,9 +1575,12 @@ class CampaignData {
           specialDescription:
               'Wards allies and summons skeleton reinforcements.',
           hitPoints: (98 * hpMultiplier * intensity).round(),
-          speed: 33 * speedStep,
-          rewardCoins: math.max(22, (22 + stageNumber * 1.25).round()),
-          baseDamage: 2,
+          speed: 33 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            22,
+            (22 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 3,
           color: const Color(0xFF5E3E88),
         );
       case EnemyKind.bastionPriest:
@@ -1540,9 +1590,12 @@ class CampaignData {
           specialDescription:
               'Heals elite allies and restores a ward to keep the line standing.',
           hitPoints: (138 * hpMultiplier * (intensity + 0.06)).round(),
-          speed: 28 * speedStep,
-          rewardCoins: math.max(29, (29 + stageNumber * 1.35).round()),
-          baseDamage: 3,
+          speed: 28 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            29,
+            (29 * killRewardMultiplier * math.max(0.95, intensity)).round(),
+          ),
+          citadelDamage: 3,
           color: const Color(0xFF8A7A5E),
         );
       case EnemyKind.bastionOverlord:
@@ -1551,10 +1604,13 @@ class CampaignData {
           label: 'Bastion Overlord',
           specialDescription:
               'Final boss that phases, wards itself, and summons defenders.',
-          hitPoints: (1100 * math.max(1.0, intensity)).round(),
-          speed: 24 * speedStep,
-          rewardCoins: 180,
-          baseDamage: 6,
+          hitPoints: (1100 * hpMultiplier * math.max(1.0, intensity)).round(),
+          speed: 24 * moveSpeedMultiplier,
+          rewardCoins: math.max(
+            180,
+            (180 * killRewardMultiplier * math.max(1.0, intensity)).round(),
+          ),
+          citadelDamage: 10,
           color: const Color(0xFF8C3F34),
         );
     }
@@ -3032,10 +3088,29 @@ class CampaignData {
     return false;
   }
 
-  static List<Offset> _normalizedPathNodes(List<List<int>> pathSequence) {
+  static List<Offset> _normalizedPathNodes(
+    List<List<int>> pathSequence, {
+    int? columns,
+    int? rows,
+  }) {
+    final resolvedColumns =
+        columns ??
+        pathSequence
+            .map((cell) => cell[0])
+            .fold<int>(0, (maxCol, col) => math.max(maxCol, col)) +
+            1;
+    final resolvedRows =
+        rows ??
+        pathSequence
+            .map((cell) => cell[1])
+            .fold<int>(0, (maxRow, row) => math.max(maxRow, row)) +
+            1;
     return [
       for (final cell in pathSequence)
-        Offset(cell[0] / (_tileColumns - 1), cell[1] / (_tileRows - 1)),
+        Offset(
+          resolvedColumns <= 1 ? 0 : cell[0] / (resolvedColumns - 1),
+          resolvedRows <= 1 ? 0 : cell[1] / (resolvedRows - 1),
+        ),
     ];
   }
 
@@ -3123,17 +3198,859 @@ class CampaignData {
   }
 
   static List<Offset> _normalizedBuildSlots(List<List<TileType>> tileGrid) {
+    final rowCount = tileGrid.length;
+    final columnCount = tileGrid.isEmpty ? 0 : tileGrid.first.length;
     final slots = <Offset>[];
     for (var row = 0; row < tileGrid.length; row += 1) {
       for (var col = 0; col < tileGrid[row].length; col += 1) {
         if (tileGrid[row][col] != TileType.buildable) {
           continue;
         }
-        slots.add(Offset(col / (_tileColumns - 1), row / (_tileRows - 1)));
+        slots.add(
+          Offset(
+            columnCount <= 1 ? 0 : col / (columnCount - 1),
+            rowCount <= 1 ? 0 : row / (rowCount - 1),
+          ),
+        );
       }
     }
     return slots;
   }
+
+  static StageDefinition? _buildActOneCitadelSiege(int stageNumber) {
+    if (stageNumber < 1 || stageNumber > 5) {
+      return null;
+    }
+
+    final layout = _actOneLayouts[stageNumber - 1];
+    final pathsByDirection = layout.pathsByDirection;
+    for (final entry in pathsByDirection.entries) {
+      _validateSiegeRoute(
+        route: entry.value,
+        direction: entry.key,
+        columns: 14,
+        rows: 14,
+      );
+    }
+
+    final primaryRoute = pathsByDirection[layout.primaryFront]!;
+    final legacyPathSequence = _legacyPathSequenceForSiege(primaryRoute);
+    final tileGrid = _buildCitadelTileGrid(
+      columns: 14,
+      rows: 14,
+      pathsByDirection: pathsByDirection,
+      supplyNodeCells: layout.supplyNodeCells,
+    );
+    final assaultCycles = _buildActOneAssaultCycles(stageNumber);
+
+    return StageDefinition(
+      number: stageNumber,
+      actNumber: 1,
+      title: _actOneTitles[stageNumber - 1],
+      description: _actOneDescriptions[stageNumber - 1],
+      startingCoins: 380,
+      baseHealth: 40,
+      citadelHp: 40,
+      environmentTheme: StageEnvironmentTheme.frontierRoad,
+      pathNodes: _normalizedPathNodes(
+        legacyPathSequence,
+        columns: 14,
+        rows: 14,
+      ),
+      buildSlots: _normalizedBuildSlots(tileGrid),
+      buildZones: const [
+        StageBuildZoneDefinition(region: Rect.fromLTWH(0, 0, 1080, 1920)),
+      ],
+      pathClearance: 45.0,
+      buildGridSpacing: 12.0,
+      decorations: _decorationsForStage(
+        stageNumber,
+        StageEnvironmentTheme.frontierRoad,
+      ),
+      objectives: _actOneObjectives(stageNumber),
+      unlockRequirements: _unlockRequirementsForStage(stageNumber),
+      tileGrid: tileGrid,
+      pathSequence: legacyPathSequence,
+      pathsByDirection: pathsByDirection,
+      supplyNodeCells: layout.supplyNodeCells,
+      assaultCycles: assaultCycles,
+      waves: [
+        for (final cycle in assaultCycles)
+          WaveDefinition(
+            number: cycle.number,
+            groupGap: cycle.number == assaultCycles.length ? 1.35 : 1.1,
+            groups: [
+              for (final group in cycle.groups)
+                SpawnGroupDefinition(
+                  enemy: group.enemy,
+                  count: group.count,
+                  spawnInterval: group.spawnInterval,
+                  direction: group.front,
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  static List<StageObjectiveDefinition> _actOneObjectives(int stageNumber) {
+    final keepThreshold = switch (stageNumber) {
+      1 => 34,
+      2 => 32,
+      3 => 30,
+      4 => 28,
+      _ => 26,
+    };
+
+    return [
+      const StageObjectiveDefinition(
+        type: StageObjectiveType.clearStage,
+        label: 'Clear the siege',
+      ),
+      StageObjectiveDefinition(
+        type: StageObjectiveType.keepBaseHealth,
+        label: 'Keep the Citadel at $keepThreshold HP or higher',
+        threshold: keepThreshold,
+      ),
+      StageObjectiveDefinition(
+        type: StageObjectiveType.buildSpecificTower,
+        label: 'Build at least one Archer Tower',
+        towerKindId: 'arrowTower',
+      ),
+    ];
+  }
+
+  static List<AssaultCycleDefinition> _buildActOneAssaultCycles(int stageNumber) {
+    FrontSpawnGroupDefinition spawn(
+      SpawnDirection front,
+      EnemyKind kind,
+      int count, {
+      required double interval,
+      double intensity = 1.0,
+    }) {
+      return FrontSpawnGroupDefinition(
+        front: front,
+        enemy: enemyForKind(
+          kind,
+          stageNumber: stageNumber,
+          intensity: intensity,
+        ),
+        count: count,
+        spawnInterval: interval,
+      );
+    }
+
+    switch (stageNumber) {
+      case 1:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: const [SpawnDirection.north],
+            recoveryGoldBonus: 40,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.95),
+              spawn(SpawnDirection.north, EnemyKind.scout, 2, interval: 0.88),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: const [SpawnDirection.north],
+            recoveryGoldBonus: 45,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.raider,
+                5,
+                interval: 0.92,
+                intensity: 1.05,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.18,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: const [SpawnDirection.north],
+            recoveryGoldBonus: 50,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.raider,
+                6,
+                interval: 0.9,
+                intensity: 1.08,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.14,
+                intensity: 1.04,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.bannerCaptain,
+                1,
+                interval: 2.2,
+              ),
+            ],
+          ),
+        ];
+      case 2:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: const [SpawnDirection.north],
+            recoveryGoldBonus: 40,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.92),
+              spawn(SpawnDirection.north, EnemyKind.scout, 2, interval: 0.86),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+            recoveryGoldBonus: 45,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.9),
+              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.82),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                1,
+                interval: 1.2,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+            recoveryGoldBonus: 50,
+            isFinalBreach: true,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 5, interval: 0.88),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.8),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.15,
+              ),
+            ],
+          ),
+        ];
+      case 3:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+            recoveryGoldBonus: 45,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.9),
+              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.82),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+            ],
+            recoveryGoldBonus: 50,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.88),
+              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.8),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.16,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+            ],
+            recoveryGoldBonus: 55,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.86),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.8),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                3,
+                interval: 1.12,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+            ],
+            recoveryGoldBonus: 60,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.raider,
+                5,
+                interval: 0.84,
+                intensity: 1.08,
+              ),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.78),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                3,
+                interval: 1.08,
+                intensity: 1.06,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.bannerCaptain,
+                1,
+                interval: 2.15,
+              ),
+            ],
+          ),
+        ];
+      case 4:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+            recoveryGoldBonus: 45,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.9),
+              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.82),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+            ],
+            recoveryGoldBonus: 50,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.88),
+              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.8),
+              spawn(SpawnDirection.east, EnemyKind.raider, 4, interval: 0.88),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+              SpawnDirection.south,
+            ],
+            recoveryGoldBonus: 55,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.86),
+              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.8),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.14,
+              ),
+              spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.9),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+              SpawnDirection.south,
+            ],
+            recoveryGoldBonus: 60,
+            isFinalBreach: true,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.84),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.78),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.1,
+              ),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.86),
+            ],
+          ),
+        ];
+      default:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+            ],
+            recoveryGoldBonus: 50,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.88),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.8),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.12,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+              SpawnDirection.south,
+            ],
+            recoveryGoldBonus: 55,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.86),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.78),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.08,
+              ),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.86),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+              SpawnDirection.south,
+            ],
+            recoveryGoldBonus: 60,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 5, interval: 0.84),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.78),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                3,
+                interval: 1.06,
+              ),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.84),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.east,
+              SpawnDirection.south,
+            ],
+            recoveryGoldBonus: 65,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.raider,
+                5,
+                interval: 0.82,
+                intensity: 1.08,
+              ),
+              spawn(SpawnDirection.west, EnemyKind.scout, 5, interval: 0.76),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                3,
+                interval: 1.02,
+                intensity: 1.08,
+              ),
+              spawn(
+                SpawnDirection.south,
+                EnemyKind.bannerCaptain,
+                1,
+                interval: 2.15,
+              ),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.84),
+            ],
+          ),
+        ];
+    }
+  }
+
+  static List<List<int>> _legacyPathSequenceForSiege(List<List<int>> route) {
+    if (route.isEmpty) {
+      return const [];
+    }
+
+    final sequence = [
+      for (final cell in route) [cell[0], cell[1]],
+    ];
+    final tail = route.last;
+    var col = tail[0];
+    var row = tail[1];
+    while (col != 6 || row != 6) {
+      if (col < 6) {
+        col += 1;
+      } else if (col > 6) {
+        col -= 1;
+      } else if (row < 6) {
+        row += 1;
+      } else if (row > 6) {
+        row -= 1;
+      }
+      sequence.add([col, row]);
+    }
+    return sequence;
+  }
+
+  static List<List<TileType>> _buildCitadelTileGrid({
+    required int columns,
+    required int rows,
+    required Map<SpawnDirection, List<List<int>>> pathsByDirection,
+    required List<List<int>> supplyNodeCells,
+  }) {
+    final grid = List.generate(
+      rows,
+      (_) => List.generate(columns, (_) => TileType.blocked),
+    );
+
+    for (var row = 1; row <= 12; row += 1) {
+      final startCol = row == 1 || row == 12 ? 3 : 2;
+      final endCol = row == 1 || row == 12 ? 10 : 11;
+      for (var col = startCol; col <= endCol; col += 1) {
+        grid[row][col] = TileType.buildable;
+      }
+    }
+
+    for (var row = 5; row <= 7; row += 1) {
+      for (var col = 5; col <= 7; col += 1) {
+        grid[row][col] = TileType.citadel;
+      }
+    }
+
+    for (final cell in supplyNodeCells) {
+      grid[cell[1]][cell[0]] = TileType.supplyNode;
+    }
+
+    for (final route in pathsByDirection.values) {
+      for (final cell in route) {
+        grid[cell[1]][cell[0]] = TileType.path;
+      }
+    }
+
+    return grid;
+  }
+
+  static void _validateSiegeRoute({
+    required List<List<int>> route,
+    required SpawnDirection direction,
+    required int columns,
+    required int rows,
+  }) {
+    if (route.isEmpty) {
+      throw StateError('Siege route for $direction cannot be empty.');
+    }
+
+    final seen = <String>{};
+    for (var index = 0; index < route.length; index += 1) {
+      final cell = route[index];
+      final col = cell[0];
+      final row = cell[1];
+      final key = _cellKey(col, row);
+
+      if (col < 0 || col >= columns || row < 0 || row >= rows) {
+        throw StateError('Siege route cell $key is out of bounds for $direction.');
+      }
+      if (!seen.add(key)) {
+        throw StateError('Siege route for $direction revisits $key.');
+      }
+
+      if (index > 0) {
+        final previous = route[index - 1];
+        final dx = (col - previous[0]).abs();
+        final dy = (row - previous[1]).abs();
+        if ((dx + dy) != 1) {
+          throw StateError(
+            'Siege route for $direction must move one orthogonal cell at a time.',
+          );
+        }
+      }
+    }
+
+    final first = route.first;
+    final startsOnExpectedEdge = switch (direction) {
+      SpawnDirection.north => first[1] == 0,
+      SpawnDirection.south => first[1] == rows - 1,
+      SpawnDirection.east => first[0] == columns - 1,
+      SpawnDirection.west => first[0] == 0,
+    };
+    if (!startsOnExpectedEdge) {
+      throw StateError('Siege route for $direction must start on the matching edge.');
+    }
+
+    final tail = route.last;
+    final touchesCitadel = switch (direction) {
+      SpawnDirection.north => tail[1] == 4 && tail[0] >= 5 && tail[0] <= 7,
+      SpawnDirection.south => tail[1] == 8 && tail[0] >= 5 && tail[0] <= 7,
+      SpawnDirection.east => tail[0] == 8 && tail[1] >= 5 && tail[1] <= 7,
+      SpawnDirection.west => tail[0] == 4 && tail[1] >= 5 && tail[1] <= 7,
+    };
+    if (!touchesCitadel) {
+      throw StateError(
+        'Siege route for $direction must end adjacent to the citadel ring.',
+      );
+    }
+  }
+
+  static const List<String> _actOneTitles = [
+    'Siege 1 - North Watch',
+    'Siege 2 - Split Trail',
+    'Siege 3 - Crosswind Gate',
+    'Siege 4 - Encirclement Drill',
+    'Siege 5 - Forest Approaches',
+  ];
+
+  static const List<String> _actOneDescriptions = [
+    'Bandits probe the north road first. Hold the citadel and learn the new battlefield rhythm.',
+    'The enemy begins to split pressure between the north and west roads.',
+    'A third front opens and the first armored check arrives from the east.',
+    'All four edges stir, but the breach timing is still forgiving enough to teach full-board reads.',
+    'Forest Approaches ends with a coordinated four-front breach led by a Banner Captain.',
+  ];
+
+  static const List<_CitadelSiegeLayout> _actOneLayouts = [
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.north,
+      supplyNodeCells: [
+        [3, 3],
+        [10, 3],
+        [3, 10],
+        [10, 10],
+      ],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [6, 0],
+          [6, 1],
+          [6, 2],
+          [6, 3],
+          [6, 4],
+        ],
+        SpawnDirection.south: [
+          [6, 13],
+          [6, 12],
+          [6, 11],
+          [6, 10],
+          [6, 9],
+          [6, 8],
+        ],
+        SpawnDirection.east: [
+          [13, 6],
+          [12, 6],
+          [11, 6],
+          [10, 6],
+          [9, 6],
+          [8, 6],
+        ],
+        SpawnDirection.west: [
+          [0, 6],
+          [1, 6],
+          [2, 6],
+          [3, 6],
+          [4, 6],
+        ],
+      },
+    ),
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.west,
+      supplyNodeCells: [
+        [3, 3],
+        [10, 3],
+        [3, 10],
+        [10, 10],
+      ],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [5, 0],
+          [5, 1],
+          [5, 2],
+          [5, 3],
+          [5, 4],
+          [6, 4],
+        ],
+        SpawnDirection.south: [
+          [7, 13],
+          [7, 12],
+          [7, 11],
+          [7, 10],
+          [7, 9],
+          [7, 8],
+        ],
+        SpawnDirection.east: [
+          [13, 5],
+          [12, 5],
+          [11, 5],
+          [10, 5],
+          [9, 5],
+          [8, 5],
+          [8, 6],
+        ],
+        SpawnDirection.west: [
+          [0, 7],
+          [1, 7],
+          [2, 7],
+          [3, 7],
+          [4, 7],
+          [4, 6],
+        ],
+      },
+    ),
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.east,
+      supplyNodeCells: [
+        [3, 3],
+        [10, 3],
+        [3, 10],
+        [10, 10],
+      ],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [7, 0],
+          [7, 1],
+          [7, 2],
+          [7, 3],
+          [7, 4],
+        ],
+        SpawnDirection.south: [
+          [5, 13],
+          [5, 12],
+          [5, 11],
+          [5, 10],
+          [5, 9],
+          [5, 8],
+        ],
+        SpawnDirection.east: [
+          [13, 7],
+          [12, 7],
+          [11, 7],
+          [10, 7],
+          [9, 7],
+          [8, 7],
+          [8, 6],
+        ],
+        SpawnDirection.west: [
+          [0, 5],
+          [1, 5],
+          [2, 5],
+          [3, 5],
+          [4, 5],
+          [4, 6],
+        ],
+      },
+    ),
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.south,
+      supplyNodeCells: [
+        [3, 3],
+        [10, 3],
+        [3, 10],
+        [10, 10],
+      ],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [6, 0],
+          [6, 1],
+          [6, 2],
+          [6, 3],
+          [6, 4],
+        ],
+        SpawnDirection.south: [
+          [6, 13],
+          [6, 12],
+          [6, 11],
+          [6, 10],
+          [6, 9],
+          [6, 8],
+        ],
+        SpawnDirection.east: [
+          [13, 6],
+          [12, 6],
+          [11, 6],
+          [10, 6],
+          [9, 6],
+          [8, 6],
+        ],
+        SpawnDirection.west: [
+          [0, 6],
+          [1, 6],
+          [2, 6],
+          [3, 6],
+          [4, 6],
+        ],
+      },
+    ),
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.north,
+      supplyNodeCells: [
+        [3, 3],
+        [10, 3],
+        [3, 10],
+        [10, 10],
+      ],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [6, 0],
+          [6, 1],
+          [6, 2],
+          [6, 3],
+          [6, 4],
+        ],
+        SpawnDirection.south: [
+          [6, 13],
+          [6, 12],
+          [6, 11],
+          [6, 10],
+          [6, 9],
+          [6, 8],
+        ],
+        SpawnDirection.east: [
+          [13, 6],
+          [12, 6],
+          [11, 6],
+          [10, 6],
+          [9, 6],
+          [8, 6],
+        ],
+        SpawnDirection.west: [
+          [0, 6],
+          [1, 6],
+          [2, 6],
+          [3, 6],
+          [4, 6],
+        ],
+      },
+    ),
+  ];
 
   static String _cellKey(int col, int row) => '$col:$row';
 }
@@ -3175,4 +4092,16 @@ class _BiomeProfile {
   final List<EnemyKind> supportKinds;
   final List<EnemyKind> eliteKinds;
   final EnemyKind bossKind;
+}
+
+class _CitadelSiegeLayout {
+  const _CitadelSiegeLayout({
+    required this.primaryFront,
+    required this.pathsByDirection,
+    required this.supplyNodeCells,
+  });
+
+  final SpawnDirection primaryFront;
+  final Map<SpawnDirection, List<List<int>>> pathsByDirection;
+  final List<List<int>> supplyNodeCells;
 }
