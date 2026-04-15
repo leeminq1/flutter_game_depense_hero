@@ -1,0 +1,42 @@
+{
+  "id": "plague_bearer",
+  "description": "undead sustain support, green robe, charcoal hood, gnarled staff",
+  "lpc_items": [
+    [
+      "torso_clothes_robe",
+      "forest"
+    ],
+    [
+      "hat_hood_cloth",
+      "charcoal"
+    ],
+    [
+      "shoulders_mantal",
+      ""
+    ],
+    [
+      "weapon_magic_gnarled",
+      ""
+    ],
+    [
+      "belt_robe",
+      ""
+    ],
+    [
+      "cape_solid",
+      "forest"
+    ]
+  ],
+  "direction_rows": {
+    "south": 0,
+    "west": 1,
+    "north": 3
+  },
+  "frame_cols": {
+    "base": 4,
+    "walk_02": 2,
+    "walk_03": 6
+  },
+  "east_direction": "runtime_mirrored_from_west",
+  "attribution": "Universal LPC Spritesheet Character Generator - https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
+}

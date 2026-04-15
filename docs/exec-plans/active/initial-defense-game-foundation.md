@@ -105,6 +105,11 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-14: Enemy asset tooling and runtime lookup now support the new per-enemy folder structure under `assets/sprites/enemies/{enemy_id}/...`, while preserving flat-file fallback during migration.
 - 2026-04-14: Web verification is now executable instead of speculative: local `flutter build web`, `flutter build web --wasm`, and Playwright portrait screenshot captures all succeeded after the persistence abstraction change.
 - 2026-04-14: The first `Citadel Siege` code bridge is now in runtime data itself: Act 1 sieges ship authored `14x14` siege grids, `pathsByDirection`, `supplyNodeCells`, `assaultCycles`, `direction`-aware spawn groups, and spec-aligned `citadelDamage` plus scaling formulas while still preserving the legacy wave bridge for the existing combat loop.
+- 2026-04-15: Battlefield conversion is now underway in runtime logic: enemies can spawn with per-front route assignment, movement and targeting can resolve against citadel distance instead of one global lane progress, supply-node-only Coin Mill placement is enforced, and the renderer can now draw citadel, supply-node, and front-telegraph assets while preserving web build compatibility.
+- 2026-04-15: Portrait battle HUD cleanup continued: the top HUD now compacts on narrow phone widths, the battle screen exposes front status plus recovery state more clearly, and the legacy right-side wave CTA no longer competes with the left-side cycle CTA on compact layouts.
+- 2026-04-15: Spawn cues now reflect active or next fronts instead of always implying a single lane, which makes authored `Citadel Siege` fronts read correctly during prep, assault, and recovery.
+- 2026-04-15: Flutter Web portrait QA was rerun through Playwright on the rebuilt static web bundle. Verified flows now include splash, menu, camp, siege entry, cycle start, assault-state HUD, recovery-state HUD, tablet portrait scaling, and the portrait-only landscape guard.
+- 2026-04-15: The splash/title screen now has a dedicated portrait-safe variant so `360x800` no longer crops the `DEPENSE` title, and the battlefield build summary plus default battle guidance no longer ship with garbled placeholder text.
 
 ## Risks
 

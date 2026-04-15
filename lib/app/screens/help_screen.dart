@@ -13,7 +13,7 @@ class HelpScreen extends StatelessWidget {
           _HelpCard(
             title: '게임 개요',
             body:
-                'DEPENSE는 세로형 타워 디펜스 게임입니다. 경로를 따라 오는 적을 막기 위해 타워를 배치하고, 업그레이드와 브랜치 선택으로 방어선을 확장합니다.',
+                'PIXEL GUARD:WAVE는 오픈필드 서바이벌 타워 디펜스 게임입니다. 사방에서 몰려오는 적을 막기 위해 타워를 배치하고 방어선을 구축하세요.',
           ),
           _HelpCard(
             title: '기본 플레이',

@@ -25,7 +25,17 @@
       "Bash(file \"c:\\\\Users\\\\min21\\\\Desktop\\\\flutter_grame\\\\depense_game/assets/sprites/tiles/\"*.png)",
       "Bash(gh repo:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(grep -n \"SiegeToken\\\\|siegeToken\\\\|metaGold\\\\|MetaGold\\\\|failureReward\\\\|cycleProgress\\\\|softCurrency\\\\|clearMetaGold\" c:/Users/min21/Desktop/flutter_grame/depense_game/lib/data/persistence/*.dart)",
+      "Bash(python tools/validate_enemy_assets.py)",
+      "Bash(python3 tools/validate_enemy_assets.py)",
+      "Bash(where python:*)",
+      "Bash(where python3:*)",
+      "Bash(py --version)",
+      "Bash(/c/Users/min21/AppData/Local/Microsoft/WindowsApps/python3.exe tools/validate_enemy_assets.py)",
+      "Read(//c/Users/min21/AppData/Local/Programs/**)",
+      "Read(//c/Users/min21/AppData/Local//**)",
+      "Bash(/c/Users/min21/anaconda3/.venv/Scripts/python.exe tools/validate_enemy_assets.py)"
     ]
   }
 }

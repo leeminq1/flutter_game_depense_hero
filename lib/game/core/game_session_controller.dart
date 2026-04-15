@@ -46,9 +46,11 @@ class SelectedTowerDetails {
 class GameSessionController extends ChangeNotifier {
   int stageNumber = 1;
   int totalStages = 30;
+  int actNumber = 1;
   String stageTitle = 'Stage 1';
   int currentWave = 0;
   int totalWaves = 0;
+  String loopLabel = 'Wave';
   int coins = 0;
   int baseHealth = 0;
   int maxBaseHealth = 0;
@@ -61,7 +63,12 @@ class GameSessionController extends ChangeNotifier {
   TowerKind? selectedBuildable;
   SelectedTowerDetails? selectedTower;
   Set<String> builtTowerKinds = const {};
-  String statusText = '전장에 타워를 배치하거나, 배치된 타워를 선택하세요.';
+  String statusText = '전장을 준비하거나 배치할 타워를 선택하세요.';
+  List<String> activeFronts = const [];
+  List<String> nextFronts = const [];
+  double recoverySecondsRemaining = 0;
+  bool recoveryActive = false;
+  String battleState = 'prep';
 
   int _remainingEnemies = 0;
   double _speedMultiplier = 1.0;
@@ -77,11 +84,15 @@ class GameSessionController extends ChangeNotifier {
     required int totalWaves,
     required int coins,
     required int baseHealth,
+    int actNumber = 1,
+    String loopLabel = 'Wave',
   }) {
     this.stageNumber = stageNumber;
     this.totalStages = totalStages;
+    this.actNumber = actNumber;
     this.stageTitle = stageTitle;
     this.totalWaves = totalWaves;
+    this.loopLabel = loopLabel;
     this.coins = coins;
     this.baseHealth = baseHealth;
     maxBaseHealth = baseHealth;
@@ -90,6 +101,11 @@ class GameSessionController extends ChangeNotifier {
     builtTowerKinds = const {};
     selectedTower = null;
     selectedBuildable = null;
+    activeFronts = const [];
+    nextFronts = const [];
+    recoverySecondsRemaining = 0;
+    recoveryActive = false;
+    battleState = 'prep';
     _speedMultiplier = 1.0;
     _remainingEnemies = 0;
     notifyListeners();
@@ -128,9 +144,18 @@ class GameSessionController extends ChangeNotifier {
     required int maxTowerLevel,
     required Set<String> builtTowerKinds,
     required String statusText,
+    int actNumber = 1,
+    String loopLabel = 'Wave',
+    List<String> activeFronts = const [],
+    List<String> nextFronts = const [],
+    double recoverySecondsRemaining = 0,
+    bool recoveryActive = false,
+    String battleState = 'prep',
     int remainingEnemies = 0,
   }) {
+    this.actNumber = actNumber;
     this.currentWave = currentWave;
+    this.loopLabel = loopLabel;
     this.coins = coins;
     this.baseHealth = baseHealth;
     this.waveInProgress = waveInProgress;
@@ -141,6 +166,11 @@ class GameSessionController extends ChangeNotifier {
     this.maxTowerLevel = maxTowerLevel;
     this.builtTowerKinds = Set<String>.from(builtTowerKinds);
     this.statusText = statusText;
+    this.activeFronts = List<String>.from(activeFronts);
+    this.nextFronts = List<String>.from(nextFronts);
+    this.recoverySecondsRemaining = recoverySecondsRemaining;
+    this.recoveryActive = recoveryActive;
+    this.battleState = battleState;
     _remainingEnemies = remainingEnemies;
     notifyListeners();
   }

@@ -11,7 +11,7 @@ class DepenseApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Depense Game',
+      title: 'PIXEL GUARD:WAVE',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       builder: (context, child) {

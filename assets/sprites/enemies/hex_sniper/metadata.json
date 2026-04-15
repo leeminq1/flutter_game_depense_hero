@@ -1,0 +1,42 @@
+{
+  "id": "hex_sniper",
+  "description": "cursed ranged disruptor, charcoal robe, crossbow, purple solid cape",
+  "lpc_items": [
+    [
+      "torso_clothes_robe",
+      "charcoal"
+    ],
+    [
+      "hat_hood_cloth",
+      "charcoal"
+    ],
+    [
+      "shoulders_mantal",
+      ""
+    ],
+    [
+      "weapon_ranged_crossbow",
+      ""
+    ],
+    [
+      "belt_mage",
+      ""
+    ],
+    [
+      "cape_solid",
+      "purple"
+    ]
+  ],
+  "direction_rows": {
+    "south": 0,
+    "west": 1,
+    "north": 3
+  },
+  "frame_cols": {
+    "base": 4,
+    "walk_02": 2,
+    "walk_03": 6
+  },
+  "east_direction": "runtime_mirrored_from_west",
+  "attribution": "Universal LPC Spritesheet Character Generator - https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
+}

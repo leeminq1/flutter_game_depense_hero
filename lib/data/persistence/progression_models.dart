@@ -16,15 +16,21 @@ class PlayerProgressSnapshot {
     this.currentCampaignStage = 1,
     this.clearedStageCount = 0,
     this.hasResumableRun = false,
+    // Meta Gold is the runtime alias for softCurrency (economy spec).
+    // Siege Tokens are the durable milestone reward currency.
+    this.siegeTokens = 0,
   });
 
   final int accountLevel;
   final int totalXp;
+  /// In-game Meta Gold balance (maps to [softCurrency] internally).
   final int softCurrency;
   final int premiumCurrency;
   final int currentCampaignStage;
   final int clearedStageCount;
   final bool hasResumableRun;
+  /// Total unspent Siege Tokens held by the player.
+  final int siegeTokens;
 }
 
 class StageProgressSnapshot {
@@ -86,6 +92,9 @@ class StageCompletionResult {
     required this.softCurrencyAwarded,
     required this.unlockedNextStage,
     required this.objectives,
+    this.siegeTokensEarned = 0,
+    this.siegeTokensTotal = 0,
+    this.isFailureReward = false,
   });
 
   final int stageNumber;
@@ -99,6 +108,18 @@ class StageCompletionResult {
   final int softCurrencyAwarded;
   final int? unlockedNextStage;
   final List<ObjectiveCompletionSnapshot> objectives;
+
+  /// Siege Tokens earned from this siege result (0 on failure, 1–3 on clear).
+  final int siegeTokensEarned;
+
+  /// Player's total Siege Token balance after this result.
+  final int siegeTokensTotal;
+
+  /// True when this result was recorded for a failed siege (partial reward).
+  final bool isFailureReward;
+
+  /// Convenience: starsAwarded > 0 means a successful clear.
+  bool get isCleared => starsAwarded > 0;
 }
 
 class ObjectiveCompletionSnapshot {

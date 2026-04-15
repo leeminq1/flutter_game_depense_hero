@@ -42,8 +42,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   final GameVisualRegistry _visualRegistry = GameVisualRegistry();
 
   late List<Vector2> _pathPoints;
+  Map<SpawnDirection, List<Vector2>> _pathsByDirection = {};
   Vector2 _gridOrigin = Vector2.zero();
+  Vector2 _citadelCenter = Vector2.zero();
   Path _pathRenderPath = Path();
+  Map<SpawnDirection, Path> _pathRenderPaths = {};
   MapTexturePlan _mapTexturePlan = MapTexturePlan.empty;
 
   final List<_Enemy> _enemies = [];
@@ -58,19 +61,28 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   int _currentSpawnGroupIndex = 0;
   double _spawnTimer = 0;
   bool _waveActive = false;
+  bool _recoveryActive = false;
+  double _recoveryTimer = 0;
+  double _recoveryElapsed = 0;
   bool _stageCleared = false;
   bool _stageFailed = false;
   bool _pausedManually = false;
   int _coins = 0;
   int _baseHealth = 0;
-  String _statusText = '??? ???? ? ??? ?????.';
+  String _statusText = 'Choose a tower card or tap an existing tower.';
   int? _selectedTowerIndex;
   int _towersBuilt = 0;
   int _towersSold = 0;
   final Set<String> _builtTowerKinds = {};
+  List<SpawnDirection> _activeFronts = const [];
+  List<SpawnDirection> _nextFronts = const [];
 
   double _zoom = 1.0;
   double _scaleStart = 1.0;
+
+  bool get _isSiegeMode =>
+      stage.assaultCycles.isNotEmpty &&
+      (stage.pathsByDirection?.isNotEmpty ?? false);
 
   @override
   void onScaleStart(ScaleStartInfo info) {
@@ -88,17 +100,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     await super.onLoad();
     await _visualRegistry.warmUp();
     _coins = stage.startingCoins + metaUpgrades.bonusStartingCoins;
-    _baseHealth = stage.baseHealth + metaUpgrades.bonusBaseHealth;
+    _baseHealth = stage.citadelHitPoints + metaUpgrades.bonusBaseHealth;
     _pathPoints = [Vector2.zero(), Vector2.all(1)];
     _pathRenderPath = Path();
+    _pathRenderPaths = {};
     _mapTexturePlan = MapTexturePlan.empty;
     sessionController.hydrate(
       stageNumber: stage.number,
       totalStages: CampaignData.totalStages,
       stageTitle: stage.title,
-      totalWaves: stage.waves.length,
+      totalWaves: stage.cycleCount,
       coins: _coins,
       baseHealth: _baseHealth,
+      actNumber: stage.actNumber ?? (((stage.number - 1) ~/ 5) + 1),
+      loopLabel: _isSiegeMode ? 'Cycle' : 'Wave',
     );
     _syncSession();
   }
@@ -107,6 +122,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
     _gridOrigin = _resolvedGridOrigin();
+    _pathsByDirection = _resolvedPathsByDirection();
     final pathSequence = stage.pathSequence;
     if (pathSequence != null && pathSequence.isNotEmpty) {
       _pathPoints = pathSequence
@@ -122,7 +138,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           .map((node) => Vector2(node.dx * size.x, node.dy * size.y))
           .toList();
     }
+    if (_pathsByDirection.isNotEmpty) {
+      _pathPoints = _pathsByDirection.values.first;
+    }
     _pathRenderPath = _buildPathRenderPath();
+    _pathRenderPaths = {
+      for (final entry in _pathsByDirection.entries)
+        entry.key: _buildPathRenderPathFrom(entry.value),
+    };
+    _citadelCenter = _resolvedCitadelCenter();
     _mapTexturePlan = MapTexturePlanner.build(
       stageNumber: stage.number,
       theme: stage.environmentTheme,
@@ -138,7 +162,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         !TowerCatalog.isUnlocked(towerKind, metaUpgrades)) {
       final definition = TowerCatalog.byKind(towerKind);
       _statusText =
-          definition.unlockHint ?? '${definition.label}?(?) ?? ???? ?????.';
+          definition.unlockHint ??
+          '${definition.label} is not unlocked in this build yet.';
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
@@ -146,10 +171,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     sessionController.setSelectedBuildable(towerKind);
     _selectedTowerIndex = null;
     if (towerKind != null) {
-      _statusText = '${TowerCatalog.byKind(towerKind).label} ???. ? ??? ????.';
+      _statusText =
+          '${TowerCatalog.byKind(towerKind).label} selected. Tap a valid tile to place it.';
       audioService.play(AudioEvent.uiSelect);
     } else {
-      _statusText = '?? ??? ??????.';
+      _statusText = 'Build selection cleared.';
     }
     _syncSession();
   }
@@ -175,8 +201,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (_waveActive || _stageCleared || _stageFailed) {
       return;
     }
+    if (_recoveryActive) {
+      if (_recoveryElapsed < 5) {
+        _statusText = '정비 시간 5초 이후에 다음 공세를 시작할 수 있습니다.';
+        _syncSession();
+        return;
+      }
+      _recoveryActive = false;
+      _recoveryTimer = 0;
+      _recoveryElapsed = 0;
+    }
     if (_currentWaveIndex >= stage.waves.length - 1) {
-      _statusText = '?? Wave? ?? ???????.';
+      _statusText = _isSiegeMode
+          ? '모든 공세가 이미 종료되었습니다.'
+          : '모든 Wave가 이미 종료되었습니다.';
       _syncSession();
       return;
     }
@@ -187,13 +225,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _spawnTimer = 0;
     _waveActive = true;
     final waveNumber = _currentWaveIndex + 1;
-    _statusText = waveNumber <= 2
-        ? 'Wave $waveNumber ??! ? ????? ? ??'
-        : 'Wave $waveNumber ??!';
+    final cycle = _assaultCycleForIndex(_currentWaveIndex);
+    _activeFronts =
+        cycle?.activeFronts ?? _frontsForWave(stage.waves[_currentWaveIndex]);
+    _nextFronts = _nextFrontsForIndex(_currentWaveIndex);
+    _statusText = _isSiegeMode
+        ? 'Cycle $waveNumber 시작! ${_frontLabel(_activeFronts)} 전선이 활성화됩니다.'
+        : waveNumber <= 2
+        ? 'Wave $waveNumber 시작! 적 경로를 확인하세요.'
+        : 'Wave $waveNumber 시작!';
     for (final tower in _towers.where(
       (tower) => tower.definition.kind == TowerKind.coinMill,
     )) {
-      final waveBonus = 4 + metaUpgrades.coinMillIncomeBonus;
+      final waveBonus =
+          (cycle?.recoveryGoldBonus ?? 4) + metaUpgrades.coinMillIncomeBonus;
       _coins += waveBonus;
       tower.lastWaveBonus = waveBonus;
       audioService.play(AudioEvent.coinGain);
@@ -301,6 +346,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
 
+    _updateRecovery(dt);
     _updateWaveSpawning(dt);
     _updateEnemies(dt);
     _updateTowers(dt);
@@ -322,7 +368,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawGroundTexture(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.background);
     _drawPath(canvas);
+    _drawFrontTelegraphs(canvas);
     _drawSpawnCue(canvas);
+    _drawSupplyNodes(canvas);
+    _drawCitadel(canvas);
     _drawSlots(canvas);
     _drawPulses(canvas);
     _drawTowers(canvas);
@@ -364,7 +413,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     // Snap to nearest valid grid cell within 42px
     Vector2? snapTarget;
     var bestDist = 42.0;
-    for (final cell in _buildGridPositions()) {
+    for (final cell in _buildGridPositions(selection: selection)) {
       final d = cell.distanceTo(position);
       if (d < bestDist) {
         bestDist = d;
@@ -396,8 +445,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     _coins -= definition.cost;
+    final snappedIsSupplyNode = _supplyNodePositions().any(
+      (cell) => cell.distanceTo(snapTarget!) <= 4,
+    );
     _towers.add(
-      _TowerPlacement(definition: definition, position: snapTarget.clone()),
+      _TowerPlacement(
+        definition: definition,
+        position: snapTarget.clone(),
+        occupiesSupplyNode: snappedIsSupplyNode,
+      ),
     );
     _towersBuilt += 1;
     _builtTowerKinds.add(definition.kind.name);
@@ -418,6 +474,17 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return null;
   }
 
+  void _updateRecovery(double dt) {
+    if (!_recoveryActive || _waveActive || _stageCleared || _stageFailed) {
+      return;
+    }
+    _recoveryElapsed += dt;
+    _recoveryTimer = math.max(0, _recoveryTimer - dt);
+    if (_recoveryTimer <= 0) {
+      startNextWave();
+    }
+  }
+
   void _updateWaveSpawning(double dt) {
     if (!_waveActive || _currentWaveIndex < 0) {
       return;
@@ -434,7 +501,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     final group = wave.groups[_currentSpawnGroupIndex];
-    final enemy = _Enemy.fromDefinition(group.enemy);
+    final enemy = _Enemy.fromDefinition(
+      group.enemy,
+      spawnDirection: group.direction ?? _defaultSpawnDirectionForWave(),
+    );
     _placeEnemyOnPath(enemy);
     _enemies.add(enemy);
     _spawnedInGroup += 1;
@@ -467,7 +537,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         }
       }
       _applyEnemyAbility(enemy, dt);
-      enemy.advance(_pathPoints, dt);
+      enemy.advance(_pathForEnemy(enemy), dt, _citadelCenter);
 
       if (enemy.reachedGoal) {
         _baseHealth -= enemy.currentBaseDamage;
@@ -1200,14 +1270,18 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   _Enemy? _pickTarget(Vector2 origin, double range) {
     _Enemy? target;
+    var bestDistanceToCitadel = double.infinity;
     var bestProgress = -1.0;
 
     for (final enemy in _enemies) {
       if (origin.distanceTo(enemy.position) > range) {
         continue;
       }
-      if (enemy.progress > bestProgress) {
+      if (enemy.distanceToCitadel < bestDistanceToCitadel ||
+          (enemy.distanceToCitadel == bestDistanceToCitadel &&
+              enemy.progress > bestProgress)) {
         target = enemy;
+        bestDistanceToCitadel = enemy.distanceToCitadel;
         bestProgress = enemy.progress;
       }
     }
@@ -1218,6 +1292,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   _Enemy? _pickBallistaTarget(Vector2 origin, double range) {
     _Enemy? target;
     var bestPriority = -1;
+    var bestDistanceToCitadel = double.infinity;
     var bestProgress = -1.0;
 
     for (final enemy in _enemies) {
@@ -1226,9 +1301,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
       final priority = _ballistaPriorityForKind(enemy.definition.kind);
       if (priority > bestPriority ||
-          (priority == bestPriority && enemy.progress > bestProgress)) {
+          (priority == bestPriority &&
+              (enemy.distanceToCitadel < bestDistanceToCitadel ||
+                  (enemy.distanceToCitadel == bestDistanceToCitadel &&
+                      enemy.progress > bestProgress)))) {
         target = enemy;
         bestPriority = priority;
+        bestDistanceToCitadel = enemy.distanceToCitadel;
         bestProgress = enemy.progress;
       }
     }
@@ -1247,7 +1326,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       final nearbyCount = _enemies
           .where((other) => other.position.distanceTo(enemy.position) <= 52)
           .length;
-      final score = (nearbyCount * 10) + enemy.progress;
+      final score =
+          (nearbyCount * 10) + enemy.progress + (300 - enemy.distanceToCitadel);
       if (score > bestScore) {
         bestScore = score;
         target = enemy;
@@ -1469,14 +1549,18 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       stageNumber: stage.number,
       intensity: 0.85,
     );
-    final enemy = _Enemy.fromDefinition(definition);
+    final enemy = _Enemy.fromDefinition(
+      definition,
+      spawnDirection: summoner.spawnDirection,
+    );
+    final summonPath = _pathForEnemy(summoner);
     final summonSegmentProgress = (summoner.segmentProgress - 0.08).clamp(
       0.0,
       1.0,
     );
     enemy.segmentIndex = summoner.segmentIndex.clamp(
       0,
-      math.max(0, _pathPoints.length - 2),
+      math.max(0, summonPath.length - 2),
     );
     enemy.segmentProgress = summonSegmentProgress;
     _placeEnemyOnPath(enemy);
@@ -1508,16 +1592,18 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _placeEnemyOnPath(_Enemy enemy) {
-    if (_pathPoints.length < 2) {
+    final path = _pathForEnemy(enemy);
+    if (path.length < 2) {
       enemy.position.setFrom(Vector2.zero());
       return;
     }
-    final segmentIndex = enemy.segmentIndex.clamp(0, _pathPoints.length - 2);
-    final currentStart = _pathPoints[segmentIndex];
-    final currentEnd = _pathPoints[segmentIndex + 1];
+    final segmentIndex = enemy.segmentIndex.clamp(0, path.length - 2);
+    final currentStart = path[segmentIndex];
+    final currentEnd = path[segmentIndex + 1];
     enemy.position.setFrom(
       currentStart + ((currentEnd - currentStart) * enemy.segmentProgress),
     );
+    enemy.distanceToCitadel = enemy.position.distanceTo(_citadelCenter);
   }
 
   void _updateVisuals(double dt) {
@@ -1552,7 +1638,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _checkWaveResolution() {
-    if (!_waveActive) {
+    if (!_waveActive || _currentWaveIndex < 0) {
       return;
     }
 
@@ -1565,13 +1651,145 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _waveActive = false;
     if (_currentWaveIndex == stage.waves.length - 1) {
       _stageCleared = true;
-      _statusText = '???? ???! ?? ??? ?????.';
+      _activeFronts = const [];
+      _nextFronts = const [];
+      _statusText = _isSiegeMode
+          ? 'Siege clear! 모든 공세를 막아냈습니다.'
+          : '스테이지 클리어! 다음 전장으로 진격하세요.';
       audioService.play(AudioEvent.stageClear);
       return;
     }
 
-    _statusText = 'Wave ${_currentWaveIndex + 1} ???! ?? Wave ?? ??? ?????.';
+    if (_isSiegeMode) {
+      final finishedCycle = _assaultCycleForIndex(_currentWaveIndex);
+      _recoveryActive = true;
+      _recoveryElapsed = 0;
+      _recoveryTimer = finishedCycle?.recoverySeconds ?? 30;
+      _activeFronts = const [];
+      _nextFronts = _nextFrontsForIndex(_currentWaveIndex);
+      _statusText = 'Cycle ${_currentWaveIndex + 1} 방어 성공! 정비 후 다음 공세를 준비하세요.';
+    } else {
+      _statusText = 'Wave ${_currentWaveIndex + 1} 방어 성공! 다음 Wave를 준비하세요.';
+    }
     audioService.play(AudioEvent.waveClear);
+  }
+
+  Map<SpawnDirection, List<Vector2>> _resolvedPathsByDirection() {
+    final authored = stage.pathsByDirection;
+    if (authored == null || authored.isEmpty) {
+      return {};
+    }
+    return {
+      for (final entry in authored.entries)
+        entry.key: [
+          for (final cell in entry.value)
+            Vector2(
+              _gridOrigin.x + (cell[0] * _tileSize) + (_tileSize / 2),
+              _gridOrigin.y + (cell[1] * _tileSize) + (_tileSize / 2),
+            ),
+        ],
+    };
+  }
+
+  Vector2 _resolvedCitadelCenter() {
+    final tileGrid = stage.tileGrid;
+    if (tileGrid == null || tileGrid.isEmpty) {
+      return Vector2(size.x / 2, size.y / 2);
+    }
+
+    var totalX = 0.0;
+    var totalY = 0.0;
+    var count = 0;
+    for (var row = 0; row < tileGrid.length; row += 1) {
+      for (var col = 0; col < tileGrid[row].length; col += 1) {
+        if (tileGrid[row][col] != TileType.citadel) {
+          continue;
+        }
+        totalX += _gridOrigin.x + (col * _tileSize) + (_tileSize / 2);
+        totalY += _gridOrigin.y + (row * _tileSize) + (_tileSize / 2);
+        count += 1;
+      }
+    }
+    if (count == 0) {
+      return Vector2(size.x / 2, size.y / 2);
+    }
+    return Vector2(totalX / count, totalY / count);
+  }
+
+  Path _buildPathRenderPathFrom(List<Vector2> points) {
+    final previousPath = _pathPoints;
+    _pathPoints = points;
+    final path = _buildPathRenderPath();
+    _pathPoints = previousPath;
+    return path;
+  }
+
+  AssaultCycleDefinition? _assaultCycleForIndex(int index) {
+    if (index < 0 || index >= stage.assaultCycles.length) {
+      return null;
+    }
+    return stage.assaultCycles[index];
+  }
+
+  List<SpawnDirection> _nextFrontsForIndex(int currentIndex) {
+    final nextIndex = currentIndex + 1;
+    final nextCycle = _assaultCycleForIndex(nextIndex);
+    if (nextCycle != null) {
+      return nextCycle.activeFronts;
+    }
+    if (nextIndex >= 0 && nextIndex < stage.waves.length) {
+      return _frontsForWave(stage.waves[nextIndex]);
+    }
+    return const [];
+  }
+
+  List<SpawnDirection> _frontsForWave(WaveDefinition wave) {
+    final fronts = <SpawnDirection>{};
+    for (final group in wave.groups) {
+      if (group.direction != null) {
+        fronts.add(group.direction!);
+      }
+    }
+    if (fronts.isEmpty) {
+      fronts.add(_defaultSpawnDirectionForWave());
+    }
+    return fronts.toList();
+  }
+
+  SpawnDirection _defaultSpawnDirectionForWave() {
+    if (_pathsByDirection.containsKey(SpawnDirection.east)) {
+      return SpawnDirection.east;
+    }
+    return SpawnDirection.west;
+  }
+
+  List<Vector2> _pathForEnemy(_Enemy enemy) {
+    return _pathsByDirection[enemy.spawnDirection] ?? _pathPoints;
+  }
+
+  Color _frontColor(SpawnDirection direction) {
+    return switch (direction) {
+      SpawnDirection.north => const Color(0xFF4488FF),
+      SpawnDirection.south => const Color(0xFFFF4444),
+      SpawnDirection.east => const Color(0xFF44FF88),
+      SpawnDirection.west => const Color(0xFFFFCC44),
+    };
+  }
+
+  String _frontLabel(List<SpawnDirection> fronts) {
+    if (fronts.isEmpty) {
+      return '대기';
+    }
+    return fronts
+        .map((front) {
+          return switch (front) {
+            SpawnDirection.north => '북쪽',
+            SpawnDirection.south => '남쪽',
+            SpawnDirection.east => '동쪽',
+            SpawnDirection.west => '서쪽',
+          };
+        })
+        .join(' · ');
   }
 
   Path _buildPathRenderPath() {
@@ -1614,31 +1832,63 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawPath(Canvas canvas) {
-    if (_pathPoints.isEmpty) {
+    if (_pathPoints.isEmpty && _pathRenderPaths.isEmpty) {
       return;
     }
-    final pathShoulderPaint = Paint()
-      ..color = _pathGlowColor()
-      ..strokeWidth = 44
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final pathPaint = Paint()
-      ..color = _pathBaseColor()
-      ..strokeWidth = 34
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final pathCenterPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
-      ..strokeWidth = 18
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
 
-    canvas.drawPath(_pathRenderPath, pathShoulderPaint);
-    canvas.drawPath(_pathRenderPath, pathPaint);
-    canvas.drawPath(_pathRenderPath, pathCenterPaint);
+    if (_pathRenderPaths.isNotEmpty) {
+      for (final entry in _pathRenderPaths.entries) {
+        final frontColor = _frontColor(entry.key);
+        final isActive = _activeFronts.contains(entry.key);
+        final isNext = !_waveActive && _nextFronts.contains(entry.key);
+        final pathShoulderPaint = Paint()
+          ..color = frontColor.withValues(
+            alpha: isActive ? 0.28 : (isNext ? 0.18 : 0.1),
+          )
+          ..strokeWidth = 42
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
+        final pathPaint = Paint()
+          ..color = _pathBaseColor().withValues(alpha: isActive ? 0.96 : 0.86)
+          ..strokeWidth = 32
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
+        final pathCenterPaint = Paint()
+          ..color = frontColor.withValues(alpha: isActive ? 0.18 : 0.08)
+          ..strokeWidth = 14
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
+        canvas.drawPath(entry.value, pathShoulderPaint);
+        canvas.drawPath(entry.value, pathPaint);
+        canvas.drawPath(entry.value, pathCenterPaint);
+      }
+    } else {
+      final pathShoulderPaint = Paint()
+        ..color = _pathGlowColor()
+        ..strokeWidth = 44
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      final pathPaint = Paint()
+        ..color = _pathBaseColor()
+        ..strokeWidth = 34
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      final pathCenterPaint = Paint()
+        ..color = Colors.white.withValues(alpha: 0.08)
+        ..strokeWidth = 18
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+
+      canvas.drawPath(_pathRenderPath, pathShoulderPaint);
+      canvas.drawPath(_pathRenderPath, pathPaint);
+      canvas.drawPath(_pathRenderPath, pathCenterPaint);
+    }
     for (final mark in _mapTexturePlan.pathMarks) {
       _drawTextureMark(canvas, mark);
     }
@@ -1651,7 +1901,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawSlots(Canvas canvas) {
-    if (sessionController.selectedBuildable == null) return;
+    final selection = sessionController.selectedBuildable;
+    if (selection == null) return;
     final fillPaint = Paint()
       ..color = _slotFillColor()
       ..style = PaintingStyle.fill;
@@ -1659,7 +1910,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       ..color = _slotRingColor()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    for (final cell in _buildGridPositions()) {
+    for (final cell in _buildGridPositions(selection: selection)) {
       final rect = Rect.fromCenter(
         center: cell.toOffset(),
         width: 48,
@@ -1671,13 +1922,120 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  List<Vector2> _buildGridPositions() {
+  void _drawSupplyNodes(Canvas canvas) {
+    for (final cell in _supplyNodePositions()) {
+      final occupied = _towers.any(
+        (tower) =>
+            tower.occupiesSupplyNode && tower.position.distanceTo(cell) <= 4,
+      );
+      final spritePath = occupied
+          ? 'assets/sprites/environment/props/supply_node_occupied.png'
+          : 'assets/sprites/environment/props/supply_node_idle.png';
+      final sprite = _visualRegistry.environmentSprite(spritePath);
+      if (sprite != null) {
+        _drawSprite(
+          canvas,
+          sprite,
+          center: cell.toOffset(),
+          size: 56,
+          fallbackTint: occupied
+              ? const Color(0xFFBB8F3D)
+              : const Color(0xFF6BA9D8),
+          opacity: occupied ? 0.96 : 0.92,
+        );
+      } else {
+        canvas.drawCircle(
+          cell.toOffset(),
+          18,
+          Paint()
+            ..color =
+                (occupied ? const Color(0xAAE2B14C) : const Color(0xAA74A7E0))
+                    .withValues(alpha: 0.72),
+        );
+      }
+    }
+  }
+
+  void _drawCitadel(Canvas canvas) {
+    if (_citadelCenter == Vector2.zero()) {
+      return;
+    }
+    final sprite = _visualRegistry.environmentSprite(
+      'assets/sprites/environment/landmarks/central_citadel.png',
+    );
+    if (sprite != null) {
+      _drawSprite(
+        canvas,
+        sprite,
+        center: _citadelCenter.toOffset(),
+        size: _tileSize * 3.4,
+        fallbackTint: const Color(0xFF6C7E8C),
+      );
+    }
+
+    canvas.drawCircle(
+      _citadelCenter.toOffset(),
+      46,
+      Paint()
+        ..color = const Color(0x334FC9FF)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+  }
+
+  void _drawFrontTelegraphs(Canvas canvas) {
+    if (_pathsByDirection.isEmpty) {
+      return;
+    }
+    final markerSprite = _visualRegistry.environmentSprite(
+      'assets/sprites/environment/props/breach_front_marker.png',
+    );
+    for (final entry in _pathsByDirection.entries) {
+      if (entry.value.isEmpty) {
+        continue;
+      }
+      final front = entry.key;
+      final center = entry.value.first.toOffset();
+      final isActive = _activeFronts.contains(front);
+      final isNext = !_waveActive && _nextFronts.contains(front);
+      final tint = _frontColor(
+        front,
+      ).withValues(alpha: isActive ? 1.0 : (isNext ? 0.82 : 0.45));
+      if (markerSprite != null) {
+        _drawSprite(
+          canvas,
+          markerSprite,
+          center: center,
+          size: 50,
+          fallbackTint: tint,
+          tintColor: tint,
+          opacity: isActive ? 0.95 : 0.75,
+        );
+      }
+      canvas.drawCircle(
+        center,
+        isActive ? 20 : 16,
+        Paint()
+          ..color = tint.withValues(alpha: isActive ? 0.18 : 0.10)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = isActive ? 3 : 2,
+      );
+    }
+  }
+
+  List<Vector2> _buildGridPositions({TowerKind? selection}) {
     final cells = <Vector2>[];
     final tileGrid = stage.tileGrid;
     if (tileGrid != null && tileGrid.isNotEmpty) {
+      final wantsSupplyNode = selection == TowerKind.coinMill;
       for (var row = 0; row < tileGrid.length; row += 1) {
         for (var col = 0; col < tileGrid[row].length; col += 1) {
-          if (tileGrid[row][col] != TileType.buildable) {
+          final tileType = tileGrid[row][col];
+          if (wantsSupplyNode) {
+            if (tileType != TileType.supplyNode) {
+              continue;
+            }
+          } else if (tileType != TileType.buildable) {
             continue;
           }
           final pos = Vector2(
@@ -1700,6 +2058,28 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         if (!_isTooCloseToPath(pos) && !_isTooCloseToTower(pos)) {
           cells.add(pos);
         }
+      }
+    }
+    return cells;
+  }
+
+  List<Vector2> _supplyNodePositions() {
+    final cells = <Vector2>[];
+    final tileGrid = stage.tileGrid;
+    if (tileGrid == null || tileGrid.isEmpty) {
+      return cells;
+    }
+    for (var row = 0; row < tileGrid.length; row += 1) {
+      for (var col = 0; col < tileGrid[row].length; col += 1) {
+        if (tileGrid[row][col] != TileType.supplyNode) {
+          continue;
+        }
+        cells.add(
+          Vector2(
+            _gridOrigin.x + (col * _tileSize) + (_tileSize / 2),
+            _gridOrigin.y + (row * _tileSize) + (_tileSize / 2),
+          ),
+        );
       }
     }
     return cells;
@@ -1954,29 +2334,58 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawSpawnCue(Canvas canvas) {
+    if (_pathsByDirection.isNotEmpty) {
+      final cueFronts = _waveActive
+          ? _activeFronts
+          : (_nextFronts.isNotEmpty ? _nextFronts : _activeFronts);
+      for (final front in cueFronts) {
+        final path = _pathsByDirection[front];
+        if (path == null || path.isEmpty) {
+          continue;
+        }
+        _drawSpawnCueAt(
+          canvas,
+          anchor: path.first.toOffset(),
+          color: _frontColor(front),
+        );
+      }
+      return;
+    }
+
     if (_pathPoints.isEmpty) {
       return;
     }
-    final anchor = _pathPoints.first.toOffset();
+    _drawSpawnCueAt(
+      canvas,
+      anchor: _pathPoints.first.toOffset(),
+      color: const Color(0xFF98D67C),
+    );
+  }
+
+  void _drawSpawnCueAt(
+    Canvas canvas, {
+    required Offset anchor,
+    required Color color,
+  }) {
     final ringCenter = Offset(anchor.dx + 8, anchor.dy - 22);
     canvas.drawCircle(
       ringCenter,
       14,
       Paint()
-        ..color = const Color(0x2298D67C)
+        ..color = color.withValues(alpha: 0.14)
         ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(
       ringCenter,
       14,
       Paint()
-        ..color = const Color(0xAA98D67C)
+        ..color = color.withValues(alpha: 0.68)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2,
     );
 
     final chevronPaint = Paint()
-      ..color = const Color(0xCC98D67C)
+      ..color = color.withValues(alpha: 0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round
@@ -2134,8 +2543,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void _drawEnemies(Canvas canvas) {
     for (final enemy in _enemies) {
       final visual = EnemyVisualCatalog.byKind(enemy.definition.kind);
-      final sprite = _visualRegistry.enemySprite(
+      final direction = enemy.currentDirection;
+      final directionKey = switch (direction) {
+        SpawnDirection.north => 'north',
+        SpawnDirection.south => 'south',
+        SpawnDirection.east => 'west',
+        SpawnDirection.west => 'west',
+      };
+      final sprite = _visualRegistry.directionalEnemySprite(
         enemy.definition.kind,
+        direction: directionKey,
         frame: enemy.animFrame,
       );
       final rect = Rect.fromCenter(
@@ -2150,6 +2567,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           center: enemy.position.toOffset(),
           size: visual.baseSize * visual.renderScale,
           fallbackTint: visual.primaryColor,
+          flipX: direction == SpawnDirection.east,
         );
       } else {
         _drawTokenShape(
@@ -2417,15 +2835,36 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     required double size,
     required Color fallbackTint,
     double opacity = 1.0,
+    bool flipX = false,
+    Color? tintColor,
   }) {
     final dst = Rect.fromCenter(center: center, width: size, height: size);
     canvas.drawRect(dst, Paint()..color = fallbackTint.withValues(alpha: 0.12));
-    canvas.drawImageRect(
-      image,
-      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-      dst,
-      Paint()..color = Colors.white.withValues(alpha: opacity.clamp(0.0, 1.0)),
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: opacity.clamp(0.0, 1.0));
+    if (tintColor != null) {
+      paint.colorFilter = ColorFilter.mode(tintColor, BlendMode.modulate);
+    }
+    final src = Rect.fromLTWH(
+      0,
+      0,
+      image.width.toDouble(),
+      image.height.toDouble(),
     );
+    if (!flipX) {
+      canvas.drawImageRect(image, src, dst, paint);
+      return;
+    }
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.scale(-1, 1);
+    final mirroredDst = Rect.fromCenter(
+      center: Offset.zero,
+      width: size,
+      height: size,
+    );
+    canvas.drawImageRect(image, src, mirroredDst, paint);
+    canvas.restore();
   }
 
   void _drawTokenShape(
@@ -2601,6 +3040,21 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           : _towers.map((tower) => tower.level).reduce(math.max),
       builtTowerKinds: _builtTowerKinds,
       statusText: _statusText,
+      actNumber: stage.actNumber ?? (((stage.number - 1) ~/ 5) + 1),
+      loopLabel: _isSiegeMode ? 'Cycle' : 'Wave',
+      activeFronts: _activeFronts.map((front) => _frontLabel([front])).toList(),
+      nextFronts: _nextFronts.map((front) => _frontLabel([front])).toList(),
+      recoverySecondsRemaining: _recoveryTimer,
+      recoveryActive: _recoveryActive,
+      battleState: _stageCleared
+          ? 'clear'
+          : _stageFailed
+          ? 'fail'
+          : _waveActive
+          ? 'assault'
+          : _recoveryActive
+          ? 'recovery'
+          : (_currentWaveIndex < 0 ? 'prep' : 'idle'),
       remainingEnemies: _enemies.length,
     );
   }
@@ -2615,11 +3069,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 }
 
 class _TowerPlacement {
-  _TowerPlacement({required this.definition, required this.position})
-    : totalSpent = definition.cost;
+  _TowerPlacement({
+    required this.definition,
+    required this.position,
+    this.occupiesSupplyNode = false,
+  }) : totalSpent = definition.cost;
 
   final TowerDefinition definition;
   final Vector2 position;
+  final bool occupiesSupplyNode;
   int level = 1;
   int totalSpent;
   double cooldownRemaining = 0;
@@ -2687,9 +3145,10 @@ class _TowerPlacement {
 }
 
 class _Enemy {
-  _Enemy.fromDefinition(this.definition)
+  _Enemy.fromDefinition(this.definition, {required this.spawnDirection})
     : hitPoints = definition.hitPoints.toDouble(),
-      position = Vector2.zero() {
+      position = Vector2.zero(),
+      currentDirection = spawnDirection {
     supportAbilityTimer = switch (definition.kind) {
       EnemyKind.bannerCaptain => 1.8,
       EnemyKind.plagueBearer => 2.2,
@@ -2700,11 +3159,14 @@ class _Enemy {
   }
 
   final EnemyDefinition definition;
+  final SpawnDirection spawnDirection;
+  SpawnDirection currentDirection;
   final Vector2 position;
   double hitPoints;
   int segmentIndex = 0;
   double segmentProgress = 0;
   double progress = 0;
+  double distanceToCitadel = double.infinity;
   bool reachedGoal = false;
   double slowMultiplier = 1;
   double slowTimer = 0;
@@ -2839,7 +3301,7 @@ class _Enemy {
     return damage;
   }
 
-  void advance(List<Vector2> path, double dt) {
+  void advance(List<Vector2> path, double dt, Vector2 citadelCenter) {
     if (reachedGoal || path.length < 2) {
       return;
     }
@@ -2882,10 +3344,21 @@ class _Enemy {
 
       final currentStart = path[segmentIndex];
       final currentEnd = path[segmentIndex + 1];
+      final heading = currentEnd - currentStart;
+      if (heading.x.abs() > heading.y.abs()) {
+        currentDirection = heading.x >= 0
+            ? SpawnDirection.east
+            : SpawnDirection.west;
+      } else {
+        currentDirection = heading.y >= 0
+            ? SpawnDirection.south
+            : SpawnDirection.north;
+      }
       position.setFrom(
         currentStart + (currentEnd - currentStart) * segmentProgress,
       );
       progress = (segmentIndex + segmentProgress) / (path.length - 1);
+      distanceToCitadel = position.distanceTo(citadelCenter);
     }
   }
 }

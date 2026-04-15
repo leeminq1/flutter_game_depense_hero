@@ -1,0 +1,4 @@
+Enemy: plague_bearer
+Source: Universal LPC Spritesheet Character Generator
+URL: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+License: CC-BY-SA 3.0 / GPL 3.0

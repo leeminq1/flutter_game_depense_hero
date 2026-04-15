@@ -69,6 +69,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
+    - assets/splash.png
     - assets/audio/
     - assets/audio/sfx/ui/
     - assets/audio/sfx/build/

@@ -1,0 +1,30 @@
+{
+  "id": "skeleton",
+  "description": "basic undead runner, bare skeleton, dagger",
+  "lpc_items": [
+    [
+      "body_skeleton",
+      ""
+    ],
+    [
+      "heads_skeleton",
+      ""
+    ],
+    [
+      "weapon_sword_dagger",
+      ""
+    ]
+  ],
+  "direction_rows": {
+    "south": 0,
+    "west": 1,
+    "north": 3
+  },
+  "frame_cols": {
+    "base": 4,
+    "walk_02": 2,
+    "walk_03": 6
+  },
+  "east_direction": "runtime_mirrored_from_west",
+  "attribution": "Universal LPC Spritesheet Character Generator - https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
+}

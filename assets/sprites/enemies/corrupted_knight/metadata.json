@@ -1,0 +1,46 @@
+{
+  "id": "corrupted_knight",
+  "description": "fallen elite, horned iron plate, kite shield, maroon tattered cape",
+  "lpc_items": [
+    [
+      "torso_armour_plate",
+      "iron"
+    ],
+    [
+      "hat_helmet_horned",
+      "iron"
+    ],
+    [
+      "hat_visor_horned",
+      "iron"
+    ],
+    [
+      "weapon_sword_arming",
+      ""
+    ],
+    [
+      "shield_kite",
+      ""
+    ],
+    [
+      "cape_tattered",
+      "maroon"
+    ],
+    [
+      "shoulders_plate",
+      "iron"
+    ]
+  ],
+  "direction_rows": {
+    "south": 0,
+    "west": 1,
+    "north": 3
+  },
+  "frame_cols": {
+    "base": 4,
+    "walk_02": 2,
+    "walk_03": 6
+  },
+  "east_direction": "runtime_mirrored_from_west",
+  "attribution": "Universal LPC Spritesheet Character Generator - https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
+}

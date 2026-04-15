@@ -1,0 +1,46 @@
+{
+  "id": "bastion_overlord",
+  "description": "Boss overlord, gold horned plate, visor, upward horns, solid red cape",
+  "lpc_items": [
+    [
+      "torso_armour_plate",
+      "gold"
+    ],
+    [
+      "hat_helmet_horned",
+      "gold"
+    ],
+    [
+      "hat_visor_horned",
+      "gold"
+    ],
+    [
+      "hat_accessory_horns_upward",
+      ""
+    ],
+    [
+      "shoulders_plate",
+      "gold"
+    ],
+    [
+      "weapon_sword_arming",
+      ""
+    ],
+    [
+      "cape_solid",
+      "red"
+    ]
+  ],
+  "direction_rows": {
+    "south": 0,
+    "west": 1,
+    "north": 3
+  },
+  "frame_cols": {
+    "base": 4,
+    "walk_02": 2,
+    "walk_03": 6
+  },
+  "east_direction": "runtime_mirrored_from_west",
+  "attribution": "Universal LPC Spritesheet Character Generator"
+}

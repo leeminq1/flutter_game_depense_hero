@@ -158,6 +158,8 @@ class _GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     final game = _game;
     final overview = _overview;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompactBattlefield = screenWidth <= 420;
 
     if (game == null || overview == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -180,6 +182,7 @@ class _GameScreenState extends State<GameScreen> {
                 !session.stageCleared &&
                 !session.stageFailed &&
                 session.currentWave < session.totalWaves;
+            final nextLoopNumber = session.currentWave + 1;
 
             return Stack(
               fit: StackFit.expand,
@@ -203,31 +206,84 @@ class _GameScreenState extends State<GameScreen> {
                           Positioned(
                             top: 12,
                             left: 16,
-                            right: 172,
+                            right: isCompactBattlefield ? 16 : 172,
                             child: Align(
                               alignment: Alignment.topLeft,
                               child: _StatusBanner(
                                 text: session.statusText,
-                                maxWidth: 360,
+                                maxWidth: isCompactBattlefield ? 320 : 360,
                               ),
                             ),
                           ),
                           Positioned(
-                            top: 12,
-                            right: 16,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                if (showWaveButton)
-                                  _BattleWaveButton(
-                                    waveNumber: session.currentWave + 1,
-                                    onPressed: game.startNextWave,
-                                  ),
-                                const SizedBox(height: 8),
-                                const _DirectionChip(text: '적은 오른쪽에서 진입'),
-                              ],
+                            top: isCompactBattlefield ? 74 : 70,
+                            left: 16,
+                            right: isCompactBattlefield ? 16 : 120,
+                            child: Align(
+                              alignment: Alignment.topLeft,
+                              child: _SiegeFrontStatusPanel(
+                                sessionController: session,
+                                compact: isCompactBattlefield,
+                              ),
                             ),
                           ),
+                          if (showWaveButton)
+                            Positioned(
+                              top: isCompactBattlefield ? 184 : 198,
+                              left: 16,
+                              child: FilledButton.icon(
+                                onPressed: game.startNextWave,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1C7E62),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.play_arrow_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  session.recoveryActive
+                                      ? '다음 ${session.loopLabel}'
+                                      : '${session.loopLabel} $nextLoopNumber 시작',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (!isCompactBattlefield)
+                            Positioned(
+                              top: 12,
+                              right: 16,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  if (showWaveButton)
+                                    _BattleWaveButton(
+                                      label: session.recoveryActive
+                                          ? '다음 ${session.loopLabel}'
+                                          : '${session.loopLabel} $nextLoopNumber 시작',
+                                      onPressed: game.startNextWave,
+                                    ),
+                                  const SizedBox(height: 8),
+                                  _DirectionChip(
+                                    text: session.activeFronts.isNotEmpty
+                                        ? '활성 전선 ${session.activeFronts.join(" · ")}'
+                                        : session.nextFronts.isNotEmpty
+                                        ? '다음 전선 ${session.nextFronts.join(" · ")}'
+                                        : '전선 대기 중',
+                                  ),
+                                ],
+                              ),
+                            ),
                           if (session.selectedTower != null)
                             Positioned(
                               left: 16,
@@ -285,6 +341,32 @@ class _TopHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width <= 420;
+    final statsRow = Wrap(
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        _HudChip(
+          icon: Icons.monetization_on_rounded,
+          color: const Color(0xFFE4C67A),
+          label: '${sessionController.coins}',
+        ),
+        _HudChip(
+          icon: Icons.waves_rounded,
+          color: Colors.white70,
+          label:
+              '${sessionController.loopLabel} ${sessionController.currentWave}/${sessionController.totalWaves}',
+        ),
+        _HudChip(
+          icon: Icons.account_balance_rounded,
+          color: const Color(0xFF7BC6FF),
+          label: 'Act ${sessionController.actNumber}',
+        ),
+      ],
+    );
+
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
       decoration: BoxDecoration(
@@ -294,38 +376,60 @@ class _TopHud extends StatelessWidget {
           colors: [Colors.black.withValues(alpha: 0.64), Colors.transparent],
         ),
       ),
-      child: Row(
-        children: [
-          _HudIconButton(icon: Icons.arrow_back_rounded, onPressed: onBack),
-          const SizedBox(width: 6),
-          Expanded(
-            child: _HealthHud(
-              currentHealth: sessionController.baseHealth,
-              maxHealth: sessionController.maxBaseHealth,
+      child: isCompact
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    _HudIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      onPressed: onBack,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _HealthHud(
+                        currentHealth: sessionController.baseHealth,
+                        maxHealth: sessionController.maxBaseHealth,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _HudIconButton(
+                      icon: sessionController.isPaused
+                          ? Icons.play_arrow_rounded
+                          : Icons.pause_rounded,
+                      onPressed: onTogglePause,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Align(alignment: Alignment.centerRight, child: statsRow),
+              ],
+            )
+          : Row(
+              children: [
+                _HudIconButton(
+                  icon: Icons.arrow_back_rounded,
+                  onPressed: onBack,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _HealthHud(
+                    currentHealth: sessionController.baseHealth,
+                    maxHealth: sessionController.maxBaseHealth,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                statsRow,
+                const SizedBox(width: 6),
+                _HudIconButton(
+                  icon: sessionController.isPaused
+                      ? Icons.play_arrow_rounded
+                      : Icons.pause_rounded,
+                  onPressed: onTogglePause,
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 6),
-          _HudChip(
-            icon: Icons.monetization_on_rounded,
-            color: const Color(0xFFE4C67A),
-            label: '${sessionController.coins}',
-          ),
-          const SizedBox(width: 6),
-          _HudChip(
-            icon: Icons.waves_rounded,
-            color: Colors.white70,
-            label:
-                'Wave ${sessionController.currentWave}/${sessionController.totalWaves}',
-          ),
-          const SizedBox(width: 6),
-          _HudIconButton(
-            icon: sessionController.isPaused
-                ? Icons.play_arrow_rounded
-                : Icons.pause_rounded,
-            onPressed: onTogglePause,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -509,6 +613,63 @@ class _StatusBanner extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
+class _FrontStatusPanel extends StatelessWidget {
+  const _FrontStatusPanel({required this.sessionController});
+
+  final GameSessionController sessionController;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeText = sessionController.activeFronts.isEmpty
+        ? '대기 중'
+        : sessionController.activeFronts.join(' · ');
+    final nextText = sessionController.nextFronts.isEmpty
+        ? '없음'
+        : sessionController.nextFronts.join(' · ');
+    final recoveryText = sessionController.recoveryActive
+        ? '${sessionController.recoverySecondsRemaining.ceil()}s'
+        : '-';
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 340),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xD90B121A),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: DefaultTextStyle(
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '상태 ${sessionController.battleState} · ${sessionController.loopLabel} ${sessionController.currentWave}/${sessionController.totalWaves}',
+              style: const TextStyle(
+                color: Color(0xFFE4C67A),
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text('활성 전선: $activeText'),
+            const SizedBox(height: 4),
+            Text('다음 전선: $nextText'),
+            const SizedBox(height: 4),
+            Text('정비 타이머: $recoveryText'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DirectionChip extends StatelessWidget {
   const _DirectionChip({required this.text});
 
@@ -546,12 +707,71 @@ class _DirectionChip extends StatelessWidget {
   }
 }
 
+class _SiegeFrontStatusPanel extends StatelessWidget {
+  const _SiegeFrontStatusPanel({
+    required this.sessionController,
+    this.compact = false,
+  });
+
+  final GameSessionController sessionController;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeText = sessionController.activeFronts.isEmpty
+        ? '대기 중'
+        : sessionController.activeFronts.join(' · ');
+    final nextText = sessionController.nextFronts.isEmpty
+        ? '없음'
+        : sessionController.nextFronts.join(' · ');
+    final recoveryText = sessionController.recoveryActive
+        ? '${sessionController.recoverySecondsRemaining.ceil()}s'
+        : '-';
+
+    return Container(
+      constraints: BoxConstraints(maxWidth: compact ? 320 : 340),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xD90B121A),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: DefaultTextStyle(
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '상태 ${sessionController.battleState} · ${sessionController.loopLabel} ${sessionController.currentWave}/${sessionController.totalWaves}',
+              style: const TextStyle(
+                color: Color(0xFFE4C67A),
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text('활성 전선: $activeText'),
+            const SizedBox(height: 4),
+            Text('다음 전선: $nextText'),
+            const SizedBox(height: 4),
+            Text('정비 타이머: $recoveryText'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _BattleWaveButton extends StatelessWidget {
-  const _BattleWaveButton({required this.waveNumber, required this.onPressed});
+  const _BattleWaveButton({required this.label, required this.onPressed});
 
-  final int waveNumber;
+  final String label;
   final VoidCallback onPressed;
-
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -582,7 +802,7 @@ class _BattleWaveButton extends StatelessWidget {
               const Icon(Icons.play_arrow_rounded, color: Color(0xFF98D67C)),
               const SizedBox(width: 8),
               Text(
-                'Wave $waveNumber 출격!',
+                label,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -703,7 +923,7 @@ class _BuildSummaryStrip extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              '??? ??? ? ? ??? ?? ?????.',
+              'Select a tower card to preview its battlefield role.',
               style: TextStyle(
                 color: Color(0xFFE4C67A),
                 fontSize: 13,
@@ -712,7 +932,7 @@ class _BuildSummaryStrip extends StatelessWidget {
             ),
             SizedBox(height: 6),
             Text(
-              '?? ??? ?? ???? ??? ?? ???? ??????.',
+              'Tap a card below to review cost, range, damage, and speed before placing.',
               style: TextStyle(color: Colors.white60, fontSize: 12),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -774,11 +994,11 @@ class _TowerCardSummary extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Row(
                     children: [
-                      _SpecMetric(label: '???', value: rangeRating),
+                      _SpecMetric(label: 'Range', value: rangeRating),
                       const _SpecDot(),
-                      _SpecMetric(label: '??', value: damageRating),
+                      _SpecMetric(label: 'Damage', value: damageRating),
                       const _SpecDot(),
-                      _SpecMetric(label: '??', value: speedRating),
+                      _SpecMetric(label: 'Speed', value: speedRating),
                     ],
                   ),
                 ),

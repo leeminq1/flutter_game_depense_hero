@@ -1,6 +1,7 @@
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/progress_store.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
+import 'package:depense_game/data/persistence/siege_reward_formulas.dart';
 import 'package:depense_game/data/persistence/store_models.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
@@ -31,6 +32,7 @@ class InMemoryProgressStore implements ProgressStore {
       totalXp: 0,
       softCurrency: 0,
       premiumCurrency: 0,
+      siegeTokens: 0,
     );
 
     _settings = const AudioSettingsSnapshot(
@@ -165,6 +167,7 @@ class InMemoryProgressStore implements ProgressStore {
         currentCampaignStage: currentCampaignStage,
         clearedStageCount: clearedStageCount,
         hasResumableRun: hasMeaningfulProgress,
+        siegeTokens: _profile.siegeTokens,
       ),
       stages: stages,
       metaUpgrades: metaUpgrades,
@@ -210,9 +213,23 @@ class InMemoryProgressStore implements ProgressStore {
         starUpgradeBonusAwarded +
         crestBonusAwarded;
 
+    final isCleared = starsAwarded > 0;
+
+    // Siege Tokens: only on clear, never on failure.
+    // hp/mastery objective detection uses starsAwarded level as proxy until
+    // StageEvaluationResult carries explicit objective flags.
+    final hpObjectiveMet = isCleared && starsAwarded >= 2;
+    final masteryObjectiveMet = isCleared && starsAwarded >= 3;
+    final tokensEarned = SiegeRewardFormulas.computeSiegeTokensEarned(
+      cleared: isCleared,
+      hpObjectiveMet: hpObjectiveMet,
+      masteryObjectiveMet: masteryObjectiveMet,
+    );
+
     _profile.lastPlayedAt = DateTime.now();
     _profile.totalXp += xpAwarded;
     _profile.softCurrency += softCurrencyAwarded;
+    _profile.siegeTokens += tokensEarned;
     _profile.accountLevel = 1 + (_profile.totalXp ~/ 150);
 
     final record = existingRecord ??
@@ -259,6 +276,9 @@ class InMemoryProgressStore implements ProgressStore {
       crestBonusAwarded: crestBonusAwarded,
       softCurrencyAwarded: softCurrencyAwarded,
       unlockedNextStage: unlockedNextStage,
+      siegeTokensEarned: tokensEarned,
+      siegeTokensTotal: _profile.siegeTokens,
+      isFailureReward: !isCleared,
       objectives: [
         for (final result in evaluation.objectiveResults)
           ObjectiveCompletionSnapshot(
@@ -396,6 +416,7 @@ class _ProfileSnapshot {
     required this.totalXp,
     required this.softCurrency,
     required this.premiumCurrency,
+    this.siegeTokens = 0,
   });
 
   final DateTime createdAt;
@@ -404,6 +425,7 @@ class _ProfileSnapshot {
   int totalXp;
   int softCurrency;
   int premiumCurrency;
+  int siegeTokens;
 }
 
 class _StageRecordSnapshot {

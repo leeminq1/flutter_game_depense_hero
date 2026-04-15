@@ -142,7 +142,7 @@ class _TitleScreenState extends State<TitleScreen> {
           switchInCurve: Curves.easeOut,
           switchOutCurve: Curves.easeIn,
           child: switch (_flow) {
-            AppFlowState.splash => _TitleSplash(
+            AppFlowState.splash => _ResponsiveTitleSplash(
               key: const ValueKey('splash'),
               onTap: () => setState(() => _flow = AppFlowState.menu),
             ),
@@ -182,6 +182,7 @@ class _TitleScreenState extends State<TitleScreen> {
 }
 
 class _TitleSplash extends StatefulWidget {
+  // ignore: unused_element_parameter
   const _TitleSplash({super.key, required this.onTap});
 
   final VoidCallback onTap;
@@ -245,26 +246,9 @@ class _TitleSplashState extends State<_TitleSplash>
                   },
                   child: Column(
                     children: [
-                      Text(
-                        'DEPENSE',
-                        style: Theme.of(context).textTheme.displayLarge
-                            ?.copyWith(
-                              letterSpacing: 6,
-                              shadows: [
-                                Shadow(
-                                  color: AppTheme.moss.withValues(alpha: 0.6),
-                                  blurRadius: 24,
-                                ),
-                              ],
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '세로형 타워 디펜스',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.inkMuted,
-                          letterSpacing: 2,
-                        ),
+                      Image.asset(
+                        'assets/splash.png',
+                        fit: BoxFit.contain,
                       ),
                     ],
                   ),
@@ -305,6 +289,136 @@ class _TitleSplashState extends State<_TitleSplash>
   }
 }
 
+class _ResponsiveTitleSplash extends StatefulWidget {
+  const _ResponsiveTitleSplash({super.key, required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_ResponsiveTitleSplash> createState() => _ResponsiveTitleSplashState();
+}
+
+class _ResponsiveTitleSplashState extends State<_ResponsiveTitleSplash>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompact = screenWidth <= 420;
+    final titleStyle = Theme.of(context).textTheme.displayLarge?.copyWith(
+      fontSize: isCompact ? 36 : 48,
+      letterSpacing: isCompact ? 3 : 6,
+      shadows: [
+        Shadow(color: AppTheme.moss.withValues(alpha: 0.6), blurRadius: 24),
+      ],
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onTap,
+        splashColor: AppTheme.moss.withValues(alpha: 0.12),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: isCompact ? 20 : 28),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Spacer(flex: 3),
+                  AnimatedBuilder(
+                    animation: _ctrl,
+                    builder: (context, child) {
+                      final glow = 0.15 + (_ctrl.value * 0.35);
+                      return Container(
+                        width: double.infinity,
+                        constraints: BoxConstraints(
+                          maxWidth: isCompact ? 320 : 420,
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 20 : 36,
+                          vertical: isCompact ? 20 : 24,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.moss.withValues(alpha: glow),
+                              blurRadius: 40,
+                            ),
+                          ],
+                        ),
+                        child: child,
+                      );
+                    },
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          'assets/splash.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(flex: 4),
+                  AnimatedBuilder(
+                    animation: _ctrl,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: 0.4 + (_ctrl.value * 0.6),
+                        child: child,
+                      );
+                    },
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        Icon(
+                          Icons.touch_app_rounded,
+                          size: 20,
+                          color: AppTheme.inkMuted,
+                        ),
+                        Text(
+                          '화면을 터치하세요',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: AppTheme.inkMuted,
+                                fontSize: isCompact ? 16 : 20,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _MainMenu extends StatelessWidget {
   const _MainMenu({
     super.key,
@@ -332,7 +446,7 @@ class _MainMenu extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
             Text(
-              'DEPENSE',
+              'PIXEL GUARD:WAVE',
               style: Theme.of(
                 context,
               ).textTheme.headlineLarge?.copyWith(letterSpacing: 4),
