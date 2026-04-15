@@ -3861,11 +3861,11 @@ class CampaignData {
   ];
 
   static const List<String> _actOneDescriptions = [
-    'Bandits probe the north road first. Hold the citadel and learn the new battlefield rhythm.',
-    'The enemy begins to split pressure between the north and west roads.',
-    'A third front opens and the first armored check arrives from the east.',
-    'All four edges stir, but the breach timing is still forgiving enough to teach full-board reads.',
-    'Forest Approaches ends with a coordinated four-front breach led by a Banner Captain.',
+    '북쪽 도로로 적들이 접근하고 있습니다. 성채를 방어하며 전장의 흐름을 익히십시오.',
+    '적들이 북쪽과 서쪽 도로를 향해 압박을 가하기 시작합니다.',
+    '세 번째 전선이 열리고 동쪽에서 중무장한 적이 처음으로 등장합니다.',
+    '사방에서 적들이 몰려옵니다. 전장 전체를 주시하며 병력을 분배하십시오.',
+    '작전 구역의 마지막 웨이브입니다. 깃발 군장이 이끄는 대규모 공격이 사방에서 쏟아집니다.',
   ];
 
   static const List<_CitadelSiegeLayout> _actOneLayouts = [

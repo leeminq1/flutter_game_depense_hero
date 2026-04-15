@@ -469,20 +469,11 @@ class _MainMenu extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            Text(
-              'PIXEL GUARD:WAVE',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineLarge?.copyWith(letterSpacing: 4),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              width: 48,
-              height: 3,
-              decoration: BoxDecoration(
-                color: AppTheme.moss,
-                borderRadius: BorderRadius.circular(2),
-              ),
+            Image.asset(
+              'assets/icon.png',
+              width: 120,
+              height: 120,
+              fit: BoxFit.contain,
             ),
             const Spacer(flex: 2),
             _MenuButton(
