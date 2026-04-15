@@ -244,14 +244,16 @@ class _TitleSplashState extends State<_TitleSplash>
                       child: child,
                     );
                   },
-                  child: Column(
-                    children: [
-                      Image.asset(
-                        'assets/splash.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ],
-                  ),
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          'assets/icon.png',
+                          width: 180,
+                          height: 180,
+                          fit: BoxFit.contain,
+                        ),
+                      ],
+                    ),
                 ),
                 const Spacer(flex: 4),
                 AnimatedBuilder(
@@ -279,7 +281,7 @@ class _TitleSplashState extends State<_TitleSplash>
                     ],
                   ),
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 120),
               ],
             ),
           ),
@@ -321,13 +323,6 @@ class _ResponsiveTitleSplashState extends State<_ResponsiveTitleSplash>
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth <= 420;
-    final titleStyle = Theme.of(context).textTheme.displayLarge?.copyWith(
-      fontSize: isCompact ? 36 : 48,
-      letterSpacing: isCompact ? 3 : 6,
-      shadows: [
-        Shadow(color: AppTheme.moss.withValues(alpha: 0.6), blurRadius: 24),
-      ],
-    );
 
     return Material(
       color: Colors.transparent,
@@ -341,7 +336,34 @@ class _ResponsiveTitleSplashState extends State<_ResponsiveTitleSplash>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Spacer(flex: 3),
+                  const Spacer(flex: 2),
+                  AnimatedBuilder(
+                    animation: _ctrl,
+                    builder: (context, child) {
+                      final glow = 0.3 + (_ctrl.value * 0.5);
+                      return Text(
+                        'PIXEL GUARD : WAVE',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: isCompact ? 22 : 28,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: isCompact ? 2 : 4,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              color: AppTheme.moss.withValues(alpha: glow),
+                              blurRadius: 20,
+                            ),
+                            Shadow(
+                              color: AppTheme.moss.withValues(alpha: glow * 0.5),
+                              blurRadius: 40,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
                   AnimatedBuilder(
                     animation: _ctrl,
                     builder: (context, child) {
@@ -370,7 +392,9 @@ class _ResponsiveTitleSplashState extends State<_ResponsiveTitleSplash>
                     child: Column(
                       children: [
                         Image.asset(
-                          'assets/splash.png',
+                          'assets/icon.png',
+                          width: 180,
+                          height: 180,
                           fit: BoxFit.contain,
                         ),
                       ],
@@ -408,7 +432,7 @@ class _ResponsiveTitleSplashState extends State<_ResponsiveTitleSplash>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),

@@ -35,7 +35,9 @@
       "Bash(/c/Users/min21/AppData/Local/Microsoft/WindowsApps/python3.exe tools/validate_enemy_assets.py)",
       "Read(//c/Users/min21/AppData/Local/Programs/**)",
       "Read(//c/Users/min21/AppData/Local//**)",
-      "Bash(/c/Users/min21/anaconda3/.venv/Scripts/python.exe tools/validate_enemy_assets.py)"
+      "Bash(/c/Users/min21/anaconda3/.venv/Scripts/python.exe tools/validate_enemy_assets.py)",
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -20 \"{}\"')",
+      "Bash(find /c/Users/min21/Desktop/flutter_grame/depense_game/lib -name \"*.dart\" -exec grep -l \"TileType\" {} \\\\;)"
     ]
   }
 }

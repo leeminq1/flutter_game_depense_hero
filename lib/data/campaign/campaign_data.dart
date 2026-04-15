@@ -3240,6 +3240,7 @@ class CampaignData {
       rows: 14,
       pathsByDirection: pathsByDirection,
       supplyNodeCells: layout.supplyNodeCells,
+      stageNumber: stageNumber,
     );
     final assaultCycles = _buildActOneAssaultCycles(stageNumber);
 
@@ -3345,59 +3346,47 @@ class CampaignData {
         return [
           AssaultCycleDefinition(
             number: 1,
-            activeFronts: const [SpawnDirection.north],
+            activeFronts: const [SpawnDirection.north, SpawnDirection.west],
             recoveryGoldBonus: 40,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.95),
+              spawn(SpawnDirection.north, EnemyKind.raider, 3, interval: 0.95),
               spawn(SpawnDirection.north, EnemyKind.scout, 2, interval: 0.88),
+              spawn(SpawnDirection.west, EnemyKind.raider, 3, interval: 0.95),
+              spawn(SpawnDirection.west, EnemyKind.scout, 1, interval: 0.88),
             ],
           ),
           AssaultCycleDefinition(
             number: 2,
-            activeFronts: const [SpawnDirection.north],
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
             recoveryGoldBonus: 45,
             groups: [
-              spawn(
-                SpawnDirection.north,
-                EnemyKind.raider,
-                5,
-                interval: 0.92,
-                intensity: 1.05,
-              ),
-              spawn(
-                SpawnDirection.north,
-                EnemyKind.shieldInfantry,
-                2,
-                interval: 1.18,
-              ),
+              spawn(SpawnDirection.north, EnemyKind.raider, 3, interval: 0.92, intensity: 1.05),
+              spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.92, intensity: 1.05),
+              spawn(SpawnDirection.east, EnemyKind.scout, 2, interval: 0.88),
+              spawn(SpawnDirection.west, EnemyKind.shieldInfantry, 2, interval: 1.18),
             ],
           ),
           AssaultCycleDefinition(
             number: 3,
-            activeFronts: const [SpawnDirection.north],
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
             recoveryGoldBonus: 50,
             isFinalBreach: true,
             groups: [
-              spawn(
-                SpawnDirection.north,
-                EnemyKind.raider,
-                6,
-                interval: 0.9,
-                intensity: 1.08,
-              ),
-              spawn(
-                SpawnDirection.north,
-                EnemyKind.shieldInfantry,
-                2,
-                interval: 1.14,
-                intensity: 1.04,
-              ),
-              spawn(
-                SpawnDirection.north,
-                EnemyKind.bannerCaptain,
-                1,
-                interval: 2.2,
-              ),
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.9, intensity: 1.08),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.9, intensity: 1.08),
+              spawn(SpawnDirection.east, EnemyKind.shieldInfantry, 2, interval: 1.14, intensity: 1.04),
+              spawn(SpawnDirection.west, EnemyKind.shieldInfantry, 2, interval: 1.14, intensity: 1.04),
+              spawn(SpawnDirection.north, EnemyKind.bannerCaptain, 1, interval: 2.2),
             ],
           ),
         ];
@@ -3729,6 +3718,7 @@ class CampaignData {
     required int rows,
     required Map<SpawnDirection, List<List<int>>> pathsByDirection,
     required List<List<int>> supplyNodeCells,
+    int stageNumber = 1,
   }) {
     final grid = List.generate(
       rows,
@@ -3759,7 +3749,46 @@ class CampaignData {
       }
     }
 
+    // Stage-based obstacle placement (stage 1 = no obstacles, tutorial)
+    if (stageNumber >= 2) {
+      final obstacles = _obstaclePatternForStage(stageNumber);
+      for (final cell in obstacles) {
+        final col = cell[0];
+        final row = cell[1];
+        if (row < 0 || row >= rows || col < 0 || col >= columns) continue;
+        if (grid[row][col] == TileType.buildable) {
+          grid[row][col] = TileType.blocked;
+        }
+      }
+    }
+
     return grid;
+  }
+
+  // Returns [col, row] obstacle positions that vary per stage.
+  // Restricted to outer quadrants; never overlaps citadel (rows 5-7, cols 5-7).
+  static List<List<int>> _obstaclePatternForStage(int stageNumber) {
+    // Candidate positions in each quadrant (top-left, top-right, bot-left, bot-right)
+    const candidates = [
+      // top-left quadrant
+      [2, 2], [3, 2], [2, 3], [4, 3],
+      // top-right quadrant
+      [9, 2], [10, 2], [9, 3], [11, 3],
+      // bottom-left quadrant
+      [2, 10], [3, 10], [2, 11], [4, 11],
+      // bottom-right quadrant
+      [9, 10], [10, 10], [9, 11], [11, 11],
+    ];
+
+    // Pick 2–4 obstacles using stage as seed; different offsets per stage
+    final count = 2 + ((stageNumber - 2) % 3);
+    final result = <List<int>>[];
+    final step = candidates.length ~/ count;
+    final offset = (stageNumber * 3) % candidates.length;
+    for (var i = 0; i < count; i++) {
+      result.add(candidates[(offset + i * step) % candidates.length]);
+    }
+    return result;
   }
 
   static void _validateSiegeRoute({

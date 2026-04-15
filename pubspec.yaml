@@ -79,8 +79,70 @@ flutter:
     - assets/sprites/
     - assets/sprites/towers/
     - assets/sprites/enemies/
+    - assets/sprites/enemies/banner_captain/
+    - assets/sprites/enemies/banner_captain/north/
+    - assets/sprites/enemies/banner_captain/south/
+    - assets/sprites/enemies/banner_captain/west/
+    - assets/sprites/enemies/bastion_overlord/
+    - assets/sprites/enemies/bastion_overlord/north/
+    - assets/sprites/enemies/bastion_overlord/south/
+    - assets/sprites/enemies/bastion_overlord/west/
+    - assets/sprites/enemies/bastion_priest/
+    - assets/sprites/enemies/bastion_priest/north/
+    - assets/sprites/enemies/bastion_priest/south/
+    - assets/sprites/enemies/bastion_priest/west/
+    - assets/sprites/enemies/bone_archer/
+    - assets/sprites/enemies/bone_archer/north/
+    - assets/sprites/enemies/bone_archer/south/
+    - assets/sprites/enemies/bone_archer/west/
+    - assets/sprites/enemies/corrupted_knight/
+    - assets/sprites/enemies/corrupted_knight/north/
+    - assets/sprites/enemies/corrupted_knight/south/
+    - assets/sprites/enemies/corrupted_knight/west/
+    - assets/sprites/enemies/cult_adept/
+    - assets/sprites/enemies/cult_adept/north/
+    - assets/sprites/enemies/cult_adept/south/
+    - assets/sprites/enemies/cult_adept/west/
+    - assets/sprites/enemies/grave_guard/
+    - assets/sprites/enemies/grave_guard/north/
+    - assets/sprites/enemies/grave_guard/south/
+    - assets/sprites/enemies/grave_guard/west/
+    - assets/sprites/enemies/hex_sniper/
+    - assets/sprites/enemies/hex_sniper/north/
+    - assets/sprites/enemies/hex_sniper/south/
+    - assets/sprites/enemies/hex_sniper/west/
+    - assets/sprites/enemies/plague_bearer/
+    - assets/sprites/enemies/plague_bearer/north/
+    - assets/sprites/enemies/plague_bearer/south/
+    - assets/sprites/enemies/plague_bearer/west/
+    - assets/sprites/enemies/raider/
+    - assets/sprites/enemies/raider/north/
+    - assets/sprites/enemies/raider/south/
+    - assets/sprites/enemies/raider/west/
+    - assets/sprites/enemies/scout/
+    - assets/sprites/enemies/scout/north/
+    - assets/sprites/enemies/scout/south/
+    - assets/sprites/enemies/scout/west/
+    - assets/sprites/enemies/shield_infantry/
+    - assets/sprites/enemies/shield_infantry/north/
+    - assets/sprites/enemies/shield_infantry/south/
+    - assets/sprites/enemies/shield_infantry/west/
+    - assets/sprites/enemies/skeleton/
+    - assets/sprites/enemies/skeleton/north/
+    - assets/sprites/enemies/skeleton/south/
+    - assets/sprites/enemies/skeleton/west/
+    - assets/sprites/enemies/warlock/
+    - assets/sprites/enemies/warlock/north/
+    - assets/sprites/enemies/warlock/south/
+    - assets/sprites/enemies/warlock/west/
+    - assets/sprites/enemies/wolf_scout/
+    - assets/sprites/enemies/wolf_scout/north/
+    - assets/sprites/enemies/wolf_scout/south/
+    - assets/sprites/enemies/wolf_scout/west/
     - assets/sprites/defenders/
     - assets/sprites/environment/
+    - assets/sprites/environment/landmarks/
+    - assets/sprites/environment/props/
     - assets/sprites/manifest/
     - assets/sprites/tiles/
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:depense_game/app/bootstrap/app_bootstrap.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
@@ -34,6 +36,9 @@ class _GameScreenState extends State<GameScreen> {
   bool _isEvaluating = false;
   ResolvedMetaUpgrades? _activeMetaUpgrades;
 
+  bool _hintBannerVisible = true;
+  Timer? _hintTimer;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +50,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    _hintTimer?.cancel();
     _sessionController.removeListener(_handleSessionChanged);
     super.dispose();
   }
@@ -78,18 +84,23 @@ class _GameScreenState extends State<GameScreen> {
       return;
     }
 
+    _hintTimer?.cancel();
     setState(() {
       _activeMetaUpgrades = resolvedMeta;
       _stageNumber = stageNumber;
       _completionResult = null;
       _isEvaluating = false;
       _gameEpoch += 1;
+      _hintBannerVisible = true;
       _game = DefensePrototypeGame(
         stage: stage,
         sessionController: _sessionController,
         audioService: widget.bootstrap.audioService,
         metaUpgrades: resolvedMeta,
       );
+    });
+    _hintTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _hintBannerVisible = false);
     });
   }
 
@@ -203,30 +214,19 @@ class _GameScreenState extends State<GameScreen> {
                               game: game,
                             ),
                           ),
-                          Positioned(
-                            top: 12,
-                            left: 16,
-                            right: isCompactBattlefield ? 16 : 172,
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: _StatusBanner(
-                                text: session.statusText,
-                                maxWidth: isCompactBattlefield ? 320 : 360,
+                          if (_hintBannerVisible && session.statusText.isNotEmpty)
+                            Positioned(
+                              top: 12,
+                              left: 16,
+                              right: isCompactBattlefield ? 16 : 172,
+                              child: Align(
+                                alignment: Alignment.topLeft,
+                                child: _StatusBanner(
+                                  text: session.statusText,
+                                  maxWidth: isCompactBattlefield ? 320 : 360,
+                                ),
                               ),
                             ),
-                          ),
-                          Positioned(
-                            top: isCompactBattlefield ? 74 : 70,
-                            left: 16,
-                            right: isCompactBattlefield ? 16 : 120,
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: _SiegeFrontStatusPanel(
-                                sessionController: session,
-                                compact: isCompactBattlefield,
-                              ),
-                            ),
-                          ),
                           if (showWaveButton)
                             Positioned(
                               top: isCompactBattlefield ? 184 : 198,
@@ -273,14 +273,6 @@ class _GameScreenState extends State<GameScreen> {
                                           : '${session.loopLabel} $nextLoopNumber 시작',
                                       onPressed: game.startNextWave,
                                     ),
-                                  const SizedBox(height: 8),
-                                  _DirectionChip(
-                                    text: session.activeFronts.isNotEmpty
-                                        ? '활성 전선 ${session.activeFronts.join(" · ")}'
-                                        : session.nextFronts.isNotEmpty
-                                        ? '다음 전선 ${session.nextFronts.join(" · ")}'
-                                        : '전선 대기 중',
-                                  ),
                                 ],
                               ),
                             ),
@@ -670,102 +662,6 @@ class _FrontStatusPanel extends StatelessWidget {
   }
 }
 
-class _DirectionChip extends StatelessWidget {
-  const _DirectionChip({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: const Color(0xD9132330),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.keyboard_double_arrow_left_rounded,
-            size: 16,
-            color: Color(0xFF98D67C),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SiegeFrontStatusPanel extends StatelessWidget {
-  const _SiegeFrontStatusPanel({
-    required this.sessionController,
-    this.compact = false,
-  });
-
-  final GameSessionController sessionController;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final activeText = sessionController.activeFronts.isEmpty
-        ? '대기 중'
-        : sessionController.activeFronts.join(' · ');
-    final nextText = sessionController.nextFronts.isEmpty
-        ? '없음'
-        : sessionController.nextFronts.join(' · ');
-    final recoveryText = sessionController.recoveryActive
-        ? '${sessionController.recoverySecondsRemaining.ceil()}s'
-        : '-';
-
-    return Container(
-      constraints: BoxConstraints(maxWidth: compact ? 320 : 340),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xD90B121A),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: DefaultTextStyle(
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '상태 ${sessionController.battleState} · ${sessionController.loopLabel} ${sessionController.currentWave}/${sessionController.totalWaves}',
-              style: const TextStyle(
-                color: Color(0xFFE4C67A),
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text('활성 전선: $activeText'),
-            const SizedBox(height: 4),
-            Text('다음 전선: $nextText'),
-            const SizedBox(height: 4),
-            Text('정비 타이머: $recoveryText'),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _BattleWaveButton extends StatelessWidget {
   const _BattleWaveButton({required this.label, required this.onPressed});
@@ -923,7 +819,7 @@ class _BuildSummaryStrip extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Select a tower card to preview its battlefield role.',
+              '배치할 타워 카드를 선택해 역할을 미리 확인하세요.',
               style: TextStyle(
                 color: Color(0xFFE4C67A),
                 fontSize: 13,
@@ -932,7 +828,7 @@ class _BuildSummaryStrip extends StatelessWidget {
             ),
             SizedBox(height: 6),
             Text(
-              'Tap a card below to review cost, range, damage, and speed before placing.',
+              '아래 카드를 탭하여 비용, 사거리, 피해량, 속도를 확인하세요.',
               style: TextStyle(color: Colors.white60, fontSize: 12),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -994,11 +890,11 @@ class _TowerCardSummary extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Row(
                     children: [
-                      _SpecMetric(label: 'Range', value: rangeRating),
+                      _SpecMetric(label: '사거리', value: rangeRating),
                       const _SpecDot(),
-                      _SpecMetric(label: 'Damage', value: damageRating),
+                      _SpecMetric(label: '피해량', value: damageRating),
                       const _SpecDot(),
-                      _SpecMetric(label: 'Speed', value: speedRating),
+                      _SpecMetric(label: '속도', value: speedRating),
                     ],
                   ),
                 ),
