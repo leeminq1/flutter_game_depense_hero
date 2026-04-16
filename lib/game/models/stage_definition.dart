@@ -119,6 +119,20 @@ class StageDecorationDefinition {
   final StageDecorationLayer layer;
 }
 
+class StageObstacleDefinition {
+  const StageObstacleDefinition({
+    required this.assetPath,
+    required this.occupiedCells,
+    this.scale = 1.0,
+    this.opacity = 1.0,
+  });
+
+  final String assetPath;
+  final List<List<int>> occupiedCells;
+  final double scale;
+  final double opacity;
+}
+
 class StageBuildZoneDefinition {
   const StageBuildZoneDefinition({
     required this.region,
@@ -184,6 +198,7 @@ class StageDefinition {
     this.actNumber,
     this.citadelHp,
     this.pathsByDirection,
+    this.obstacles = const [],
     this.supplyNodeCells = const [],
     this.assaultCycles = const [],
   });
@@ -218,6 +233,9 @@ class StageDefinition {
   /// Future-facing authored routes for `Citadel Siege`.
   final Map<SpawnDirection, List<List<int>>>? pathsByDirection;
 
+  /// Visible environment obstacles that also block building and enemy routing.
+  final List<StageObstacleDefinition> obstacles;
+
   /// Future-facing authored supply-node tiles for `Citadel Siege`.
   final List<List<int>> supplyNodeCells;
 
@@ -226,7 +244,8 @@ class StageDefinition {
 
   int get startingGold => startingCoins;
   int get citadelHitPoints => citadelHp ?? baseHealth;
-  int get cycleCount => assaultCycles.isNotEmpty ? assaultCycles.length : waves.length;
+  int get cycleCount =>
+      assaultCycles.isNotEmpty ? assaultCycles.length : waves.length;
 
   StageEvaluationResult evaluateRun(StageRunSummary summary) {
     final results = [

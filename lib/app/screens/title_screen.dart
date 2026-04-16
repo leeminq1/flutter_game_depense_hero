@@ -222,7 +222,7 @@ class _TitleSplashState extends State<_TitleSplash>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Spacer(flex: 3),
+                const Spacer(flex: 5),
                 AnimatedBuilder(
                   animation: _ctrl,
                   builder: (context, child) {
@@ -244,18 +244,18 @@ class _TitleSplashState extends State<_TitleSplash>
                       child: child,
                     );
                   },
-                    child: Column(
-                      children: [
-                        Image.asset(
-                          'assets/icon.png',
-                          width: 180,
-                          height: 180,
-                          fit: BoxFit.contain,
-                        ),
-                      ],
-                    ),
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        'assets/splash.png',
+                        width: 240,
+                        height: 240,
+                        fit: BoxFit.contain,
+                      ),
+                    ],
+                  ),
                 ),
-                const Spacer(flex: 4),
+                const Spacer(flex: 2),
                 AnimatedBuilder(
                   animation: _ctrl,
                   builder: (context, child) {
@@ -336,34 +336,7 @@ class _ResponsiveTitleSplashState extends State<_ResponsiveTitleSplash>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Spacer(flex: 2),
-                  AnimatedBuilder(
-                    animation: _ctrl,
-                    builder: (context, child) {
-                      final glow = 0.3 + (_ctrl.value * 0.5);
-                      return Text(
-                        'PIXEL GUARD : WAVE',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: isCompact ? 22 : 28,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: isCompact ? 2 : 4,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: AppTheme.moss.withValues(alpha: glow),
-                              blurRadius: 20,
-                            ),
-                            Shadow(
-                              color: AppTheme.moss.withValues(alpha: glow * 0.5),
-                              blurRadius: 40,
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
+                  const Spacer(flex: 5),
                   AnimatedBuilder(
                     animation: _ctrl,
                     builder: (context, child) {
@@ -391,16 +364,41 @@ class _ResponsiveTitleSplashState extends State<_ResponsiveTitleSplash>
                     },
                     child: Column(
                       children: [
+                        AnimatedBuilder(
+                          animation: _ctrl,
+                          builder: (context, _) {
+                            final glow = 0.4 + (_ctrl.value * 0.6);
+                            return Text(
+                              'PIXEL GUARD : WAVE',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: isCompact ? 22 : 26,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 2,
+                                color: AppTheme.ink,
+                                shadows: [
+                                  Shadow(
+                                    color: AppTheme.moss.withValues(
+                                      alpha: glow,
+                                    ),
+                                    blurRadius: 16,
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
                         Image.asset(
-                          'assets/icon.png',
-                          width: 180,
-                          height: 180,
+                          'assets/splash.png',
+                          width: isCompact ? 300 : 340,
+                          height: isCompact ? 300 : 340,
                           fit: BoxFit.contain,
                         ),
                       ],
                     ),
                   ),
-                  const Spacer(flex: 4),
+                  const Spacer(flex: 1),
                   AnimatedBuilder(
                     animation: _ctrl,
                     builder: (context, child) {
@@ -468,14 +466,17 @@ class _MainMenu extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            Image.asset(
-              'assets/icon.png',
-              width: 120,
-              height: 120,
-              fit: BoxFit.contain,
+            const Spacer(flex: 4),
+            Text(
+              'PIXEL GUARD : WAVE',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+                color: AppTheme.ink,
+              ),
             ),
-            const Spacer(flex: 2),
+            const SizedBox(height: 12),
             _MenuButton(
               icon: Icons.play_arrow_rounded,
               iconColor: AppTheme.moss,
@@ -503,7 +504,7 @@ class _MainMenu extends StatelessWidget {
               subtitle: '환경 설정과 도움말',
               onTap: busy ? null : onSettings,
             ),
-            const Spacer(flex: 3),
+            const Spacer(flex: 2),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

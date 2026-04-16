@@ -110,6 +110,8 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-15: Spawn cues now reflect active or next fronts instead of always implying a single lane, which makes authored `Citadel Siege` fronts read correctly during prep, assault, and recovery.
 - 2026-04-15: Flutter Web portrait QA was rerun through Playwright on the rebuilt static web bundle. Verified flows now include splash, menu, camp, siege entry, cycle start, assault-state HUD, recovery-state HUD, tablet portrait scaling, and the portrait-only landscape guard.
 - 2026-04-15: The splash/title screen now has a dedicated portrait-safe variant so `360x800` no longer crops the `DEPENSE` title, and the battlefield build summary plus default battle guidance no longer ship with garbled placeholder text.
+- 2026-04-16: Citadel-siege follow-up fixes now restore authored front routes and on-board telegraphs, re-lock tower placement to valid buildable tiles only, allow immediate manual cycle starts during recovery, and normalize the outlier landmark and supply-node sprite sizes back to the environment asset set.
+- 2026-04-16: Act 1 siege runtime now follows the rebuilt `full-map 1x1 placement + explicit obstacle` model: Coin Mill no longer depends on supply-node-only placement in the playable, the citadel is rendered as a `1x1` center anchor, visible environment obstacles now own build blocking and enemy detours, and obstacle density drops from stage 1 through stage 5 instead of relying on generic blocked-tile overlays.
 
 ## Risks
 

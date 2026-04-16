@@ -64,22 +64,31 @@ Siege fail:
 
 - the citadel sits at the center of the battlefield
 - enemies always route toward the citadel
-- the map is divided into `core zone`, `inner ring`, `outer ring`, and `breach fronts`
+- the playable battlefield is the full green combat field between the HUD and the build bar
+- real environment obstacles define blocked cells; empty grass cells remain buildable
 
 ### Route Rule
 
-The first production version uses `authored routes`, not unrestricted roaming.
+The first production version uses `front-authored entry points` plus `obstacle-aware grid routing`, not a painted fixed road.
 
 Allowed in the first playable:
 
-- 2-front, 3-front, and 4-front authored ingress lanes
-- route bends and forks that are easy to read
+- 2-front, 3-front, and 4-front edge spawns
+- obstacle-driven detours around visible map props
+- stage-to-stage obstacle reduction that shortens routes over time
 - special enemies that temporarily break the normal rule only in controlled cases
 
 Not allowed in the first playable:
 
-- fully open-field A* mazing as the baseline mode
+- invisible blocked overlays or fake road tiles that do not match visible scenery
+- player-built mazing as the baseline mode
 - enemies choosing arbitrary tiles as attack vectors without telegraph
+
+### Build Rule
+
+- all towers, including `Coin Mill`, occupy `1x1`
+- any non-citadel, non-obstacle, non-occupied battlefield cell may accept a tower
+- visible environment obstacles must block both tower placement and enemy routing
 
 ## Real-Time Build Rule
 
@@ -131,8 +140,7 @@ Default recovery window length:
 
 Player-facing early-start rule:
 
-- the player may manually start the next cycle after `5 seconds`
-- this is only allowed when all enemies from the current cycle are resolved
+- the player may manually start the next cycle immediately once all enemies from the current cycle are resolved
 - debug and QA tools may still `skip recovery` immediately
 
 Recovery window responsibilities:

@@ -214,7 +214,8 @@ class _GameScreenState extends State<GameScreen> {
                               game: game,
                             ),
                           ),
-                          if (_hintBannerVisible && session.statusText.isNotEmpty)
+                          if (_hintBannerVisible &&
+                              session.statusText.isNotEmpty)
                             Positioned(
                               top: 12,
                               left: 16,
@@ -227,10 +228,21 @@ class _GameScreenState extends State<GameScreen> {
                                 ),
                               ),
                             ),
+                          if (session.selectedTower != null)
+                            Positioned(
+                              left: 16,
+                              right: 16,
+                              bottom: showWaveButton ? 84 : 16,
+                              child: _TowerActionBar(
+                                sessionController: session,
+                                onUpgrade: game.upgradeSelectedTower,
+                                onSell: game.sellSelectedTower,
+                              ),
+                            ),
                           if (showWaveButton)
                             Positioned(
-                              top: isCompactBattlefield ? 184 : 198,
-                              left: 16,
+                              bottom: 16,
+                              right: 16,
                               child: FilledButton.icon(
                                 onPressed: game.startNextWave,
                                 style: FilledButton.styleFrom(
@@ -257,34 +269,6 @@ class _GameScreenState extends State<GameScreen> {
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                              ),
-                            ),
-                          if (!isCompactBattlefield)
-                            Positioned(
-                              top: 12,
-                              right: 16,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  if (showWaveButton)
-                                    _BattleWaveButton(
-                                      label: session.recoveryActive
-                                          ? '다음 ${session.loopLabel}'
-                                          : '${session.loopLabel} $nextLoopNumber 시작',
-                                      onPressed: game.startNextWave,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          if (session.selectedTower != null)
-                            Positioned(
-                              left: 16,
-                              right: 16,
-                              bottom: 16,
-                              child: _TowerActionBar(
-                                sessionController: session,
-                                onUpgrade: game.upgradeSelectedTower,
-                                onSell: game.sellSelectedTower,
                               ),
                             ),
                         ],
@@ -361,13 +345,7 @@ class _TopHud extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.black.withValues(alpha: 0.64), Colors.transparent],
-        ),
-      ),
+      decoration: const BoxDecoration(),
       child: isCompact
           ? Column(
               mainAxisSize: MainAxisSize.min,
@@ -656,57 +634,6 @@ class _FrontStatusPanel extends StatelessWidget {
             const SizedBox(height: 4),
             Text('정비 타이머: $recoveryText'),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-
-class _BattleWaveButton extends StatelessWidget {
-  const _BattleWaveButton({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback onPressed;
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onPressed,
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1B2519).withValues(alpha: 0.94),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: const Color(0xFF98D67C).withValues(alpha: 0.45),
-              width: 1.4,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF98D67C).withValues(alpha: 0.16),
-                blurRadius: 14,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.play_arrow_rounded, color: Color(0xFF98D67C)),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

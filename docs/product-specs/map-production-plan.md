@@ -124,14 +124,20 @@ Fallback pockets:
 - west fallback pocket: cells around `[2, 5]` and `[2, 7]`
 - east fallback pocket: cells around `[11, 5]` and `[11, 7]`
 
-## Supply Node Rule
+## Obstacle Rule
 
-Every siege should place `4-6` supply nodes, mostly in the outer ring.
+Act 1 playable sieges should rely on visible environment obstacles first.
 
-Purpose:
+Rules:
 
-- gives the map an economy puzzle
-- prevents Coin Mills from becoming a generic backline filler
+- only cells occupied by visible obstacle sprites are blocked
+- obstacle density should be highest in early stages and decrease across the act
+- enemies must detour around those obstacles
+- players must never be able to build on those obstacle cells
+
+Future-facing option:
+
+- supply nodes may return later as a separate economy-layer rule once the obstacle-driven battlefield is stable
 
 ## Telegraph Rules
 
@@ -159,7 +165,7 @@ Requirements:
 Sieges should vary by:
 
 - route bends
-- supply node placement
+- obstacle layout and density
 - fallback pocket placement
 - front activation order
 - decoration theme

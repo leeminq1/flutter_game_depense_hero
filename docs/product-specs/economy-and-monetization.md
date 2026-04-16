@@ -141,7 +141,12 @@ Recommended baseline bonus set:
 
 `Coin Mill` remains in the roster, but its battlefield role changes.
 
-New rule:
+Act 1 playable rule:
+
+- Coin Mills follow the same `1x1` placement rule as every other tower
+- they are not restricted to special node tiles in the current playable
+
+Future-facing variant:
 
 - Coin Mills can only be built on `Supply Node` tiles
 

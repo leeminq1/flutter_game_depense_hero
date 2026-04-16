@@ -37,7 +37,25 @@
       "Read(//c/Users/min21/AppData/Local//**)",
       "Bash(/c/Users/min21/anaconda3/.venv/Scripts/python.exe tools/validate_enemy_assets.py)",
       "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -20 \"{}\"')",
-      "Bash(find /c/Users/min21/Desktop/flutter_grame/depense_game/lib -name \"*.dart\" -exec grep -l \"TileType\" {} \\\\;)"
+      "Bash(find /c/Users/min21/Desktop/flutter_grame/depense_game/lib -name \"*.dart\" -exec grep -l \"TileType\" {} \\\\;)",
+      "Bash(python --version)",
+      "Bash(python3 --version)",
+      "Bash(python \"c:/Users/min21/Desktop/flutter_grame/depense_game/assets/sprites/environment/landmarks/central_citadel.png\")",
+      "Bash(python -c \"import PIL; print\\('PIL OK'\\)\")",
+      "Bash(python -c \"from PIL import Image; print\\('Pillow OK'\\)\")",
+      "Bash(cmd /c \"python -c \\\\\"from PIL import Image; print\\('Pillow OK'\\)\\\\\" 2>&1\")",
+      "Bash(cmd /c \"python -c \\\\\"print\\('hello'\\)\\\\\"\")",
+      "Bash(cmd /c \"C:\\\\\\\\Users\\\\\\\\min21\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Microsoft\\\\\\\\WindowsApps\\\\\\\\python.exe -c \\\\\"print\\('hello'\\)\\\\\"\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(cmd /c \"C:\\\\\\\\Users\\\\\\\\min21\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Microsoft\\\\\\\\WindowsApps\\\\\\\\python.exe -c \\\\\"from PIL import Image; print\\('PIL OK'\\)\\\\\"\")",
+      "Bash(cmd /c \"C:\\\\\\\\Users\\\\\\\\min21\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Microsoft\\\\\\\\WindowsApps\\\\\\\\python.exe -V\")",
+      "Bash(cmd /c \"C:\\\\\\\\Users\\\\\\\\min21\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Microsoft\\\\\\\\WindowsApps\\\\\\\\python.exe -c \\\\\"import sys; print\\(sys.version\\)\\\\\"\")",
+      "Bash(ls /c/Python*)",
+      "Read(//c/Users/min21/**)",
+      "Bash(/c/Users/min21/anaconda3/envs/cplex_env/python.exe -c \"from PIL import Image; print\\('Pillow OK'\\)\")",
+      "Bash(/c/Users/min21/anaconda3/.venv/Scripts/python.exe -c \"from PIL import Image; print\\('Pillow OK'\\)\")",
+      "Bash(/c/Users/min21/anaconda3/envs/cplex_env/python.exe fix_sprites.py)",
+      "Bash(/c/Users/min21/anaconda3/envs/cplex_env/python.exe fix_sprites_targeted.py)"
     ]
   }
 }
