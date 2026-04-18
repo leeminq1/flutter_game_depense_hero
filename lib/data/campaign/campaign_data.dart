@@ -1713,7 +1713,7 @@ class CampaignData {
   static String _stageDescription(int stage, _BiomeProfile biome) {
     switch (stage) {
       case 1:
-        return '기본 흐름을 익히십시오. 궁수를 배치하고 웨이브를 시작해 첫 번째 적의 공격을 막아내십시오.';
+        return '기본 흐름을 익히세요. 궁수를 배치하고 웨이브를 시작해 첫 번째 적의 공격을 막아내십시오.';
       case 2:
         return '척후병이 더 빠르게 몰려옵니다. 안정적인 공격력과 깔끔한 배치를 조합하십시오.';
       case 3:
@@ -3806,14 +3806,14 @@ class CampaignData {
         occupiedCells: [
           [1, 3],
         ],
-        scale: 0.86,
+        scale: 1.0,
       ),
       StageObstacleDefinition(
         assetPath: 'assets/sprites/environment/props/well.png',
         occupiedCells: [
           [12, 3],
         ],
-        scale: 0.92,
+        scale: 1.0,
       ),
       StageObstacleDefinition(
         assetPath: 'assets/sprites/environment/props/wooden_fence_segment.png',
@@ -3827,7 +3827,7 @@ class CampaignData {
         occupiedCells: [
           [12, 12],
         ],
-        scale: 1.08,
+        scale: 1.0,
       ),
     ];
     final nodeObstacles = const [
@@ -3867,7 +3867,7 @@ class CampaignData {
         occupiedCells: [
           [6, 3],
         ],
-        scale: 0.56,
+        scale: 0.51,
       ),
       StageObstacleDefinition(
         assetPath:
@@ -3875,7 +3875,7 @@ class CampaignData {
         occupiedCells: [
           [3, 6],
         ],
-        scale: 0.56,
+        scale: 0.51,
       ),
       StageObstacleDefinition(
         assetPath:
@@ -3883,7 +3883,7 @@ class CampaignData {
         occupiedCells: [
           [9, 6],
         ],
-        scale: 0.56,
+        scale: 0.51,
       ),
       StageObstacleDefinition(
         assetPath:
@@ -3891,7 +3891,7 @@ class CampaignData {
         occupiedCells: [
           [6, 9],
         ],
-        scale: 0.56,
+        scale: 0.51,
       ),
     ];
 
@@ -3983,7 +3983,7 @@ class CampaignData {
   ];
 
   static const List<String> _actOneDescriptions = [
-    '북쪽 도로로 적들이 접근하고 있습니다. 성채를 방어하며 전장의 흐름을 익히십시오.',
+    '북쪽 도로로 적들이 접근하고 있습니다. 성채를 방어하며 전장의 흐름을 익히세요.',
     '적들이 북쪽과 서쪽 도로를 향해 압박을 가하기 시작합니다.',
     '세 번째 전선이 열리고 동쪽에서 중무장한 적이 처음으로 등장합니다.',
     '사방에서 적들이 몰려옵니다. 전장 전체를 주시하며 병력을 분배하십시오.',

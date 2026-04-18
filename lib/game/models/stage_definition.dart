@@ -248,48 +248,33 @@ class StageDefinition {
       assaultCycles.isNotEmpty ? assaultCycles.length : waves.length;
 
   StageEvaluationResult evaluateRun(StageRunSummary summary) {
-    final results = [
-      for (final objective in objectives)
-        StageObjectiveResult(
-          definition: objective,
-          completed: _evaluateObjective(objective, summary),
-        ),
-    ];
+    if (!summary.cleared) {
+      return const StageEvaluationResult(
+        starsAwarded: 0,
+        objectiveResults: [],
+      );
+    }
 
-    final stars = results
-        .where((result) => result.completed)
-        .length
-        .clamp(0, 3);
+    // 별 기준: 클리어 시 남은 기지 체력 비율로 결정
+    final hpRatio = summary.maxBaseHealth > 0
+        ? summary.baseHealthRemaining / summary.maxBaseHealth
+        : 0.0;
+
+    final int stars;
+    if (hpRatio >= 0.7) {
+      stars = 3; // 체력 70% 이상 유지
+    } else if (hpRatio >= 0.3) {
+      stars = 2; // 체력 30% 이상 유지
+    } else {
+      stars = 1; // 클리어만
+    }
+
     return StageEvaluationResult(
       starsAwarded: stars,
-      objectiveResults: results,
+      objectiveResults: const [],
     );
   }
 
-  bool _evaluateObjective(
-    StageObjectiveDefinition objective,
-    StageRunSummary summary,
-  ) {
-    switch (objective.type) {
-      case StageObjectiveType.clearStage:
-        return summary.cleared;
-      case StageObjectiveType.keepBaseHealth:
-        final threshold = objective.threshold ?? 1;
-        return summary.baseHealthRemaining >= threshold;
-      case StageObjectiveType.buildAtMost:
-        final threshold = objective.threshold ?? 999;
-        return summary.towersBuilt <= threshold;
-      case StageObjectiveType.sellAtMost:
-        final threshold = objective.threshold ?? 999;
-        return summary.towersSold <= threshold;
-      case StageObjectiveType.buildSpecificTower:
-        final towerKindId = objective.towerKindId;
-        if (towerKindId == null) {
-          return false;
-        }
-        return summary.builtTowerKinds.contains(towerKindId);
-    }
-  }
 }
 
 typedef SiegeDefinition = StageDefinition;

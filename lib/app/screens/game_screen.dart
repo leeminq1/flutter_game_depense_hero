@@ -26,7 +26,7 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   late final GameSessionController _sessionController;
   DefensePrototypeGame? _game;
   CampaignOverview? _overview;
@@ -38,10 +38,12 @@ class _GameScreenState extends State<GameScreen> {
 
   bool _hintBannerVisible = true;
   Timer? _hintTimer;
+  bool _isBackgroundPaused = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _stageNumber = widget.initialStageNumber;
     _sessionController = GameSessionController();
     _sessionController.addListener(_handleSessionChanged);
@@ -50,9 +52,31 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _hintTimer?.cancel();
     _sessionController.removeListener(_handleSessionChanged);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final game = _game;
+    if (game == null) return;
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        game.pauseEngine();
+        widget.bootstrap.audioService.stopMusic();
+        if (!_isBackgroundPaused) {
+          setState(() => _isBackgroundPaused = true);
+        }
+      case AppLifecycleState.resumed:
+        game.resumeEngine();
+        // 오버레이는 사용자가 직접 닫을 때까지 유지
+      case AppLifecycleState.detached:
+        break;
+    }
   }
 
   Future<void> _initialize() async {
@@ -181,10 +205,17 @@ class _GameScreenState extends State<GameScreen> {
         _activeMetaUpgrades ??
         MetaUpgradeCatalog.resolve(overview.metaUpgrades);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF071B2F),
-      body: SafeArea(
-        child: AnimatedBuilder(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _showExitDialog(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF071B2F),
+        body: SafeArea(
+          child: AnimatedBuilder(
           animation: _sessionController,
           builder: (context, _) {
             final session = _sessionController;
@@ -232,43 +263,11 @@ class _GameScreenState extends State<GameScreen> {
                             Positioned(
                               left: 16,
                               right: 16,
-                              bottom: showWaveButton ? 84 : 16,
+                              bottom: 16,
                               child: _TowerActionBar(
                                 sessionController: session,
                                 onUpgrade: game.upgradeSelectedTower,
                                 onSell: game.sellSelectedTower,
-                              ),
-                            ),
-                          if (showWaveButton)
-                            Positioned(
-                              bottom: 16,
-                              right: 16,
-                              child: FilledButton.icon(
-                                onPressed: game.startNextWave,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1C7E62),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                icon: const Icon(
-                                  Icons.play_arrow_rounded,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  session.recoveryActive
-                                      ? '다음 ${session.loopLabel}'
-                                      : '${session.loopLabel} $nextLoopNumber 시작',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
                               ),
                             ),
                         ],
@@ -278,9 +277,33 @@ class _GameScreenState extends State<GameScreen> {
                       sessionController: session,
                       metaUpgrades: activeMetaUpgrades,
                       onSelect: game.selectBuildable,
+                      showWaveButton: showWaveButton,
+                      nextWaveLabel: session.recoveryActive
+                          ? '다음 ${session.loopLabel}'
+                          : '${session.loopLabel} $nextLoopNumber 시작',
+                      onStartWave: game.startNextWave,
+                      waveInProgress: session.waveInProgress,
+                      isPaused: session.isPaused,
+                      onTogglePause: game.togglePaused,
                     ),
                   ],
                 ),
+                if ((_isBackgroundPaused || session.isPaused) &&
+                    !session.stageCleared &&
+                    !session.stageFailed)
+                  Positioned.fill(
+                    child: _PauseOverlay(
+                      isBackground: _isBackgroundPaused,
+                      onResume: () {
+                        if (_isBackgroundPaused) {
+                          setState(() => _isBackgroundPaused = false);
+                        }
+                        if (session.isPaused) {
+                          game.togglePaused();
+                        }
+                      },
+                    ),
+                  ),
                 if (session.stageCleared || session.stageFailed)
                   Positioned.fill(
                     child: _ResultOverlay(
@@ -300,6 +323,7 @@ class _GameScreenState extends State<GameScreen> {
           },
         ),
       ),
+    ),
     );
   }
 }
@@ -338,7 +362,7 @@ class _TopHud extends StatelessWidget {
         _HudChip(
           icon: Icons.account_balance_rounded,
           color: const Color(0xFF7BC6FF),
-          label: 'Act ${sessionController.actNumber}',
+          label: 'Stage ${sessionController.stageNumber}',
         ),
       ],
     );
@@ -645,11 +669,23 @@ class _BuildBar extends StatefulWidget {
     required this.sessionController,
     required this.metaUpgrades,
     required this.onSelect,
+    this.showWaveButton = false,
+    this.nextWaveLabel = '',
+    this.onStartWave,
+    this.waveInProgress = false,
+    this.isPaused = false,
+    this.onTogglePause,
   });
 
   final GameSessionController sessionController;
   final ResolvedMetaUpgrades metaUpgrades;
   final ValueChanged<TowerKind?> onSelect;
+  final bool showWaveButton;
+  final String nextWaveLabel;
+  final VoidCallback? onStartWave;
+  final bool waveInProgress;
+  final bool isPaused;
+  final VoidCallback? onTogglePause;
 
   @override
   State<_BuildBar> createState() => _BuildBarState();
@@ -683,6 +719,55 @@ class _BuildBarState extends State<_BuildBar> {
     widget.onSelect(alreadySelected ? null : kind);
   }
 
+  Widget _buildActionButton() {
+    const buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(14)),
+    );
+    const buttonPadding = EdgeInsets.symmetric(horizontal: 14, vertical: 12);
+    const labelStyle = TextStyle(fontSize: 13, fontWeight: FontWeight.w800);
+
+    if (widget.waveInProgress) {
+      // 웨이브 진행 중: 일시정지 ↔ 재개 토글
+      final isPaused = widget.isPaused;
+      return FilledButton.icon(
+        onPressed: widget.onTogglePause,
+        style: FilledButton.styleFrom(
+          backgroundColor:
+              isPaused ? const Color(0xFF1C7E62) : const Color(0xFFB8760B),
+          foregroundColor: Colors.white,
+          padding: buttonPadding,
+          shape: buttonShape,
+        ),
+        icon: Icon(
+          isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+          size: 18,
+        ),
+        label: Text(
+          isPaused ? '재개' : '일시정지',
+          style: labelStyle,
+        ),
+      );
+    }
+
+    if (widget.showWaveButton) {
+      // 웨이브 시작 전: 다음 Cycle 시작
+      return FilledButton.icon(
+        onPressed: widget.onStartWave,
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF1C7E62),
+          foregroundColor: Colors.white,
+          padding: buttonPadding,
+          shape: buttonShape,
+        ),
+        icon: const Icon(Icons.play_arrow_rounded, size: 18),
+        label: Text(widget.nextWaveLabel, style: labelStyle),
+      );
+    }
+
+    // 스테이지 종료 후: 빈 자리 유지 (레이아웃 유지)
+    return const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
     final entries = TowerCatalog.buildMenu;
@@ -700,7 +785,7 @@ class _BuildBarState extends State<_BuildBar> {
         children: [
           SizedBox(height: 76, child: _BuildSummaryStrip(definition: specDef)),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -718,6 +803,13 @@ class _BuildBarState extends State<_BuildBar> {
                   ],
                 ],
               ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: _buildActionButton(),
             ),
           ),
         ],
@@ -867,7 +959,7 @@ class _SpecDot extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 6),
-      child: Text('?', style: TextStyle(color: Colors.white30, fontSize: 12)),
+      child: Text('\u00b7', style: TextStyle(color: Colors.white30, fontSize: 12)),
     );
   }
 }
@@ -968,9 +1060,7 @@ class _TowerActionBar extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final subtitle = tower.branchLabel != null
-        ? '?? ${tower.level} ? ${tower.branchLabel}'
-        : '?? ${tower.level} ? ${tower.shortDescription}';
+    final subtitle = tower.branchLabel ?? tower.shortDescription;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1023,7 +1113,7 @@ class _TowerActionBar extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               IconButton(
-                tooltip: '??',
+                tooltip: '판매',
                 onPressed: onSell,
                 style: IconButton.styleFrom(
                   backgroundColor: const Color(0x22EF4E4E),
@@ -1123,45 +1213,15 @@ class _ResultOverlay extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               _RewardRow(
-                label: '경험치',
-                value: '+${completionResult?.xpAwarded ?? 0}',
-              ),
-              _RewardRow(
                 label: '메타 골드',
                 value: '+${completionResult?.softCurrencyAwarded ?? 0}',
               ),
-              const SizedBox(height: 16),
-              const Divider(color: Colors.white10),
-              const SizedBox(height: 12),
-              for (final objective in completionResult?.objectives ?? const [])
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    children: [
-                      Icon(
-                        objective.completed
-                            ? Icons.check_circle_rounded
-                            : Icons.radio_button_unchecked_rounded,
-                        size: 16,
-                        color: objective.completed
-                            ? const Color(0xFF98D67C)
-                            : Colors.white24,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _localizeObjective(objective.label),
-                          style: TextStyle(
-                            color: objective.completed
-                                ? Colors.white
-                                : Colors.white38,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              const SizedBox(height: 8),
+              _RewardRow(
+                label: '기지 체력',
+                value:
+                    '${sessionController.baseHealth}/${sessionController.maxBaseHealth}',
+              ),
             ],
             const SizedBox(height: 24),
             if (cleared && hasNextStage)
@@ -1189,44 +1249,73 @@ class _ResultOverlay extends StatelessWidget {
     );
   }
 
-  String _localizeObjective(String label) {
-    if (label.contains('Clear the stage')) {
-      return '스테이지 클리어';
-    }
-    if (label.contains('Defeat the Bastion Overlord')) {
-      return '기갑 군주 처치';
-    }
-    if (label.contains('Do not sell any towers')) {
-      return '타워 판매 금지';
-    }
-    final healthMatch = RegExp(
-      r'Finish with at least (\d+) base health',
-    ).firstMatch(label);
-    if (healthMatch != null) {
-      return '기지 체력 ${healthMatch.group(1)} 이상으로 완료';
-    }
-    if (label.contains('Build an Archer')) {
-      return '궁수 건설';
-    }
-    if (label.contains('Build a Guard Barracks')) {
-      return '병영 건설';
-    }
-    if (label.contains('Build a Mage tower')) {
-      return '마법사 건설';
-    }
-    if (label.contains('Build a Frost tower')) {
-      return '빙결 건설';
-    }
-    if (label.contains('Build a Coin Mill')) {
-      return '금화 방앗간 건설';
-    }
-    if (label.contains('Build a Ballista')) {
-      return '발리스타 건설';
-    }
-    if (label.contains('Build an Emberkeep')) {
-      return '엠버킵 건설';
-    }
-    return label;
+}
+
+class _PauseOverlay extends StatelessWidget {
+  const _PauseOverlay({required this.isBackground, required this.onResume});
+
+  final bool isBackground;
+  final VoidCallback onResume;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.65),
+      alignment: Alignment.center,
+      child: Container(
+        width: 280,
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161D26),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.pause_circle_filled_rounded,
+                size: 56, color: Color(0xFFE4C67A)),
+            const SizedBox(height: 16),
+            const Text(
+              '일시정지',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isBackground
+                  ? '앱이 백그라운드로 이동했습니다.\n재개하려면 아래 버튼을 눌러주세요.'
+                  : '게임이 일시정지되었습니다.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onResume,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1C7E62),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                label: const Text(
+                  '재개',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

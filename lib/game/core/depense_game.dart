@@ -76,7 +76,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   bool _pausedManually = false;
   int _coins = 0;
   int _baseHealth = 0;
-  String _statusText = 'Choose a tower card or tap an existing tower.';
+  String _statusText = '카드를 선택하거나 배치된 타워를 탭하세요.';
   int? _selectedTowerIndex;
   int _towersBuilt = 0;
   int _towersSold = 0;
@@ -343,6 +343,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   @override
   void update(double dt) {
+    audioService.update(dt);
+
     if (_pausedManually || _stageCleared || _stageFailed) {
       super.update(dt);
       return;
@@ -2166,7 +2168,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         canvas,
         sprite,
         center: _citadelCenter.toOffset(),
-        size: _tileSize * 0.96,
+        size: _tileSize * 2.0,
         fallbackTint: const Color(0xFF6C7E8C),
       );
     } else {

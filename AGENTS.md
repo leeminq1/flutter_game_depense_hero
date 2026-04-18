@@ -57,3 +57,4 @@ When those decisions are made, update:
 - [DESIGN.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/DESIGN.md)
 - [PRODUCT_SENSE.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/PRODUCT_SENSE.md)
 - [docs/product-specs/core-game-loop.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/core-game-loop.md)
+

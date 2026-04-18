@@ -108,6 +108,11 @@ class GameSessionController extends ChangeNotifier {
     battleState = 'prep';
     _speedMultiplier = 1.0;
     _remainingEnemies = 0;
+    stageCleared = false;
+    stageFailed = false;
+    waveInProgress = false;
+    currentWave = 0;
+    statusText = '전장을 준비하거나 배치할 타워를 선택하세요.';
     notifyListeners();
   }
 

@@ -55,7 +55,8 @@
       "Bash(/c/Users/min21/anaconda3/envs/cplex_env/python.exe -c \"from PIL import Image; print\\('Pillow OK'\\)\")",
       "Bash(/c/Users/min21/anaconda3/.venv/Scripts/python.exe -c \"from PIL import Image; print\\('Pillow OK'\\)\")",
       "Bash(/c/Users/min21/anaconda3/envs/cplex_env/python.exe fix_sprites.py)",
-      "Bash(/c/Users/min21/anaconda3/envs/cplex_env/python.exe fix_sprites_targeted.py)"
+      "Bash(/c/Users/min21/anaconda3/envs/cplex_env/python.exe fix_sprites_targeted.py)",
+      "Bash(dart analyze:*)"
     ]
   }
 }
