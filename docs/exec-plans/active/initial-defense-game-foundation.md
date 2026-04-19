@@ -112,6 +112,7 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-15: The splash/title screen now has a dedicated portrait-safe variant so `360x800` no longer crops the `DEPENSE` title, and the battlefield build summary plus default battle guidance no longer ship with garbled placeholder text.
 - 2026-04-16: Citadel-siege follow-up fixes now restore authored front routes and on-board telegraphs, re-lock tower placement to valid buildable tiles only, allow immediate manual cycle starts during recovery, and normalize the outlier landmark and supply-node sprite sizes back to the environment asset set.
 - 2026-04-16: Act 1 siege runtime now follows the rebuilt `full-map 1x1 placement + explicit obstacle` model: Coin Mill no longer depends on supply-node-only placement in the playable, the citadel is rendered as a `1x1` center anchor, visible environment obstacles now own build blocking and enemy detours, and obstacle density drops from stage 1 through stage 5 instead of relying on generic blocked-tile overlays.
+- 2026-04-19: A dedicated authored-map workflow now exists under `docs/design-docs/map-authoring/`, establishing the plan to handcraft the 30-stage campaign by act instead of leaning on unrestricted random obstacle generation.
 
 ## Risks
 
@@ -125,6 +126,7 @@ Create the first playable vertical slice and the documentation discipline needed
 - The compact battle HUD and status banner now rely on tighter horizontal packing, so any future HUD additions should be checked on narrow Android portrait widths before shipping.
 - A full all-direction pivot would multiply enemy art and route-authoring complexity, so it should favor authored multi-front corridors before any attempt at unrestricted roaming enemies.
 - Web validation is now part of the product-spec contract, so future UI and gameplay work should expose enough observable state for Playwright-driven QA on top of Flame rendering.
+- Citadel position variance can improve map identity, but if introduced too broadly before Act 1 is stable it may weaken onboarding and increase implementation churn.
 
 ## Exit Criteria
 

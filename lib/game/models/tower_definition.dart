@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
-import 'package:depense_game/game/audio/audio_catalog.dart';
 import 'package:depense_game/game/audio/audio_event.dart';
 
 enum TowerKind {
@@ -91,7 +90,7 @@ class TowerCatalog {
       range: 135,
       damage: 16,
       cooldown: 0.85,
-      color: AudioCatalog.archerColor,
+      color: Color(0xFF8BC34A),
       attackEvent: AudioEvent.arrowShot,
       branches: [
         TowerBranchDefinition(
@@ -116,7 +115,7 @@ class TowerCatalog {
       range: 90,
       damage: 20,
       cooldown: 1.15,
-      color: AudioCatalog.barracksColor,
+      color: Color(0xFF5C8FC9),
       attackEvent: AudioEvent.slashHit,
       branches: [
         TowerBranchDefinition(
@@ -141,7 +140,7 @@ class TowerCatalog {
       range: 125,
       damage: 28,
       cooldown: 1.25,
-      color: AudioCatalog.mageColor,
+      color: Color(0xFF9C27B0),
       attackEvent: AudioEvent.magicHit,
       branches: [
         TowerBranchDefinition(
@@ -166,7 +165,7 @@ class TowerCatalog {
       range: 115,
       damage: 10,
       cooldown: 1.05,
-      color: AudioCatalog.frostColor,
+      color: Color(0xFF80DEEA),
       attackEvent: AudioEvent.magicHit,
       branches: [
         TowerBranchDefinition(
@@ -192,7 +191,7 @@ class TowerCatalog {
       range: 0,
       damage: 0,
       cooldown: 0,
-      color: AudioCatalog.millColor,
+      color: Color(0xFFFFD54F),
       attackEvent: AudioEvent.coinGain,
       branches: [
         TowerBranchDefinition(
@@ -219,7 +218,7 @@ class TowerCatalog {
       range: 175,
       damage: 58,
       cooldown: 1.95,
-      color: AudioCatalog.ballistaColor,
+      color: Color(0xFF8D6E63),
       attackEvent: AudioEvent.armorHit,
       branches: [
         TowerBranchDefinition(
@@ -245,7 +244,7 @@ class TowerCatalog {
       range: 118,
       damage: 18,
       cooldown: 1.30,
-      color: AudioCatalog.emberkeepColor,
+      color: Color(0xFFFF5722),
       attackEvent: AudioEvent.magicHit,
       branches: [
         TowerBranchDefinition(

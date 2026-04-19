@@ -175,3 +175,24 @@ Sieges should not vary by:
 - arbitrary path ambiguity
 - unreadable decorative obstruction
 - random route generation in the first playable
+
+## Authored Campaign Expansion
+
+After the first playable baseline is stable, campaign map growth should follow an `authored map` workflow.
+
+Rules:
+
+- prefer handcrafted obstacle layouts over unrestricted random generation
+- vary citadel placement only through approved patterns
+- vary front pressure through authored cycle order
+- keep map identity tied to stage learning goals, not only to enemy stat scaling
+
+Working companion docs:
+
+- [map-authoring/README.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/README.md)
+- [map-authoring/castle-and-spawn-rules.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/castle-and-spawn-rules.md)
+- [map-authoring/obstacle-language.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/obstacle-language.md)
+
+Campaign authoring target:
+
+- `6 acts x 5 handcrafted siege maps`

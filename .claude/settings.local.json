@@ -56,7 +56,17 @@
       "Bash(/c/Users/min21/anaconda3/.venv/Scripts/python.exe -c \"from PIL import Image; print\\('Pillow OK'\\)\")",
       "Bash(/c/Users/min21/anaconda3/envs/cplex_env/python.exe fix_sprites.py)",
       "Bash(/c/Users/min21/anaconda3/envs/cplex_env/python.exe fix_sprites_targeted.py)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "Bash(python -c \"import graphify\")",
+      "Bash(pip install *)",
+      "Bash(python -c \"import sys; open\\('.graphify_python', 'w'\\).write\\(sys.executable\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import graphify; print\\(graphify.__version__\\)\")",
+      "Bash(pip show *)",
+      "Bash(/c/Users/min21/AppData/Local/Microsoft/WindowsApps/python.exe --version)",
+      "Bash(powershell.exe -Command \"python --version\")",
+      "Bash(powershell.exe -Command \"python -c 'import graphify; print\\(graphify.__version__\\)'\")",
+      "Bash(powershell.exe -Command ' *)"
     ]
   }
 }
