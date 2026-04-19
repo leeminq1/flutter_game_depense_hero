@@ -203,7 +203,7 @@ class HomeScreen extends StatelessWidget {
             nextStage.description,
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: AppTheme.inkMuted),
+            ).textTheme.bodySmall?.copyWith(color: AppTheme.inkMuted),
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -350,43 +350,41 @@ class HomeScreen extends StatelessWidget {
                         : Colors.transparent,
                   ),
                 ),
-                child: Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Text(
-                        '${stage.stageNumber}',
-                        style: TextStyle(
-                          color: isUnlocked
-                              ? AppTheme.ink
-                              : AppTheme.inkMuted.withValues(alpha: 0.3),
-                          fontWeight: FontWeight.bold,
-                        ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${stage.stageNumber}',
+                      style: TextStyle(
+                        color: isUnlocked
+                            ? AppTheme.ink
+                            : AppTheme.inkMuted.withValues(alpha: 0.3),
+                        fontWeight: FontWeight.bold,
                       ),
-                      if (isCleared)
-                        Positioned(
-                          bottom: 4,
-                          child: Row(
-                            children: List.generate(
-                              3,
-                              (i) => Icon(
-                                Icons.star_rounded,
-                                size: 8,
-                                color: i < stage.stars
-                                    ? Colors.amber
-                                    : AppTheme.inkMuted.withValues(alpha: 0.3),
-                              ),
-                            ),
+                    ),
+                    if (isCleared) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                          3,
+                          (i) => Icon(
+                            Icons.star_rounded,
+                            size: 10,
+                            color: i < stage.stars
+                                ? Colors.amber
+                                : AppTheme.inkMuted.withValues(alpha: 0.3),
                           ),
                         ),
-                      if (!isUnlocked)
-                        const Icon(
-                          Icons.lock_rounded,
-                          size: 14,
-                          color: AppTheme.line,
-                        ),
+                      ),
                     ],
-                  ),
+                    if (!isUnlocked)
+                      const Icon(
+                        Icons.lock_rounded,
+                        size: 14,
+                        color: AppTheme.line,
+                      ),
+                  ],
                 ),
               ),
             );

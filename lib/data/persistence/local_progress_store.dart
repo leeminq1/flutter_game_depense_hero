@@ -276,7 +276,7 @@ class LocalProgressStore implements ProgressStore {
       final record =
           existingRecord ?? (StageProgressRecord()..stageNumber = stageNumber);
       record.unlocked = true;
-      record.stars = starsAwarded > record.stars ? starsAwarded : record.stars;
+      record.stars = starsAwarded > 0 ? starsAwarded : record.stars;
       record.firstClearedAt ??= DateTime.now();
       record.lastClearedAt = DateTime.now();
       totalStars = record.stars;

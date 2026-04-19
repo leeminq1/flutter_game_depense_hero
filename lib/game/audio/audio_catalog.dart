@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:depense_game/game/audio/audio_event.dart';
 
 class AudioEntry {
@@ -43,7 +41,7 @@ class AudioCatalog {
       ],
       baseVolume: 0.85,
       pooled: true,
-      maxPlayers: 4,
+      maxPlayers: 3,
     ),
     AudioEvent.towerUpgrade: AudioEntry(
       assets: ['sfx/build/upgrade_click.ogg'],
@@ -56,7 +54,7 @@ class AudioCatalog {
       ],
       baseVolume: 0.80,
       pooled: true,
-      maxPlayers: 8,
+      maxPlayers: 4,
     ),
     AudioEvent.slashHit: AudioEntry(
       assets: [
@@ -65,7 +63,7 @@ class AudioCatalog {
       ],
       baseVolume: 0.70,
       pooled: true,
-      maxPlayers: 10,
+      maxPlayers: 4,
     ),
     AudioEvent.armorHit: AudioEntry(
       assets: [
@@ -75,7 +73,7 @@ class AudioCatalog {
       ],
       baseVolume: 0.75,
       pooled: true,
-      maxPlayers: 10,
+      maxPlayers: 4,
     ),
     AudioEvent.magicHit: AudioEntry(
       assets: [
@@ -84,7 +82,7 @@ class AudioCatalog {
       ],
       baseVolume: 0.72,
       pooled: true,
-      maxPlayers: 8,
+      maxPlayers: 3,
     ),
     AudioEvent.enemyDeathElite: AudioEntry(
       assets: ['sfx/combat/enemy_death_elite_01.ogg'],
@@ -99,7 +97,7 @@ class AudioCatalog {
       ],
       baseVolume: 0.65,
       pooled: true,
-      maxPlayers: 6,
+      maxPlayers: 3,
     ),
     AudioEvent.waveClear: AudioEntry(
       assets: ['jingles/wave_clear.ogg'],
@@ -114,12 +112,4 @@ class AudioCatalog {
       baseVolume: 0.80,
     ),
   };
-
-  static const Color archerColor = Color(0xFF5E8F4C);
-  static const Color barracksColor = Color(0xFF84634C);
-  static const Color mageColor = Color(0xFF6D63B8);
-  static const Color frostColor = Color(0xFF4C8E96);
-  static const Color millColor = Color(0xFFB59344);
-  static const Color ballistaColor = Color(0xFF7C5E3A);
-  static const Color emberkeepColor = Color(0xFFBC5B2C);
 }

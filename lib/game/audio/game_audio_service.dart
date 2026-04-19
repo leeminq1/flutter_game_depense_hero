@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 
 import 'package:depense_game/game/audio/audio_catalog.dart';
 import 'package:depense_game/game/audio/audio_event.dart';
@@ -8,15 +7,15 @@ import 'package:flame_audio/flame_audio.dart' hide AudioEvent;
 
 /// 전투 SFX 최소 재생 간격 (초). 이 간격보다 빠르게 반복 요청되면 드롭.
 const _minIntervalByEvent = {
-  AudioEvent.arrowShot: 0.05,
-  AudioEvent.slashHit: 0.04,
-  AudioEvent.armorHit: 0.04,
-  AudioEvent.magicHit: 0.06,
-  AudioEvent.coinGain: 0.10,
+  AudioEvent.arrowShot: 0.08,
+  AudioEvent.slashHit: 0.07,
+  AudioEvent.armorHit: 0.07,
+  AudioEvent.magicHit: 0.10,
+  AudioEvent.coinGain: 0.15,
 };
 
 /// 동시에 처리 중인 SFX 요청 최대 수. 초과 시 전투 SFX는 드롭.
-const _maxPendingSfx = 8;
+const _maxPendingSfx = 4;
 
 class GameAudioService {
   GameAudioService(this._settings);
@@ -54,10 +53,7 @@ class GameAudioService {
           );
         }
       }
-    } catch (e, stack) {
-      debugPrint('GameAudioService: Initialization error: $e');
-      debugPrint(stack.toString());
-      // Re-throw to inform bootstrap, but we've logged the detail.
+    } catch (e) {
       rethrow;
     }
   }

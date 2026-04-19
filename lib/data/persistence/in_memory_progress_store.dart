@@ -240,7 +240,7 @@ class InMemoryProgressStore implements ProgressStore {
         );
     final updatedRecord = record.copyWith(
       unlocked: true,
-      stars: starsAwarded > record.stars ? starsAwarded : record.stars,
+      stars: starsAwarded > 0 ? starsAwarded : record.stars,
       firstClearedAt: record.firstClearedAt ?? DateTime.now(),
       lastClearedAt: DateTime.now(),
     );

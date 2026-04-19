@@ -39,6 +39,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   bool _hintBannerVisible = true;
   Timer? _hintTimer;
   bool _isBackgroundPaused = false;
+  int? _immediateStarsAwarded;
 
   @override
   void initState() {
@@ -72,8 +73,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           setState(() => _isBackgroundPaused = true);
         }
       case AppLifecycleState.resumed:
-        game.resumeEngine();
-        // 오버레이는 사용자가 직접 닫을 때까지 유지
+        break;
       case AppLifecycleState.detached:
         break;
     }
@@ -110,9 +110,11 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     _hintTimer?.cancel();
     setState(() {
+      _isBackgroundPaused = false;
       _activeMetaUpgrades = resolvedMeta;
       _stageNumber = stageNumber;
       _completionResult = null;
+      _immediateStarsAwarded = null;
       _isEvaluating = false;
       _gameEpoch += 1;
       _hintBannerVisible = true;
@@ -171,21 +173,29 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       _isEvaluating = true;
       final evaluation = game.evaluateCurrentRun();
 
-      final result = await widget.bootstrap.progressStore.recordStageCompletion(
-        stageNumber: _sessionController.stageNumber,
-        evaluation: evaluation,
-        totalStages: CampaignData.totalStages,
-      );
-
-      await _refreshOverview();
-
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() => _immediateStarsAwarded = evaluation.starsAwarded);
       }
 
-      setState(() {
-        _completionResult = result;
-      });
+      try {
+        final result = await widget.bootstrap.progressStore.recordStageCompletion(
+          stageNumber: _sessionController.stageNumber,
+          evaluation: evaluation,
+          totalStages: CampaignData.totalStages,
+        );
+
+        await _refreshOverview();
+
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _completionResult = result;
+        });
+      } catch (_) {
+        // DB 저장 실패해도 별 표시는 유지됨
+      }
     }
   }
 
@@ -296,6 +306,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       isBackground: _isBackgroundPaused,
                       onResume: () {
                         if (_isBackgroundPaused) {
+                          game.resumeEngine();
                           setState(() => _isBackgroundPaused = false);
                         }
                         if (session.isPaused) {
@@ -309,6 +320,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                     child: _ResultOverlay(
                       sessionController: session,
                       completionResult: _completionResult,
+                      immediateStarsAwarded: _immediateStarsAwarded,
                       stage: currentStage,
                       hasNextStage: _stageNumber < CampaignData.totalStages,
                       onRetry: () => _loadStage(_stageNumber),
@@ -601,63 +613,6 @@ class _StatusBanner extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ignore: unused_element
-class _FrontStatusPanel extends StatelessWidget {
-  const _FrontStatusPanel({required this.sessionController});
-
-  final GameSessionController sessionController;
-
-  @override
-  Widget build(BuildContext context) {
-    final activeText = sessionController.activeFronts.isEmpty
-        ? '대기 중'
-        : sessionController.activeFronts.join(' · ');
-    final nextText = sessionController.nextFronts.isEmpty
-        ? '없음'
-        : sessionController.nextFronts.join(' · ');
-    final recoveryText = sessionController.recoveryActive
-        ? '${sessionController.recoverySecondsRemaining.ceil()}s'
-        : '-';
-
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 340),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xD90B121A),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: DefaultTextStyle(
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '상태 ${sessionController.battleState} · ${sessionController.loopLabel} ${sessionController.currentWave}/${sessionController.totalWaves}',
-              style: const TextStyle(
-                color: Color(0xFFE4C67A),
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text('활성 전선: $activeText'),
-            const SizedBox(height: 4),
-            Text('다음 전선: $nextText'),
-            const SizedBox(height: 4),
-            Text('정비 타이머: $recoveryText'),
-          ],
         ),
       ),
     );
@@ -1142,6 +1097,7 @@ class _ResultOverlay extends StatelessWidget {
   const _ResultOverlay({
     required this.sessionController,
     required this.completionResult,
+    required this.immediateStarsAwarded,
     required this.stage,
     required this.hasNextStage,
     required this.onRetry,
@@ -1151,6 +1107,7 @@ class _ResultOverlay extends StatelessWidget {
 
   final GameSessionController sessionController;
   final StageCompletionResult? completionResult;
+  final int? immediateStarsAwarded;
   final StageProgressSnapshot stage;
   final bool hasNextStage;
   final VoidCallback onRetry;
@@ -1204,7 +1161,7 @@ class _ResultOverlay extends StatelessWidget {
                   for (var i = 0; i < 3; i += 1)
                     Icon(
                       Icons.star_rounded,
-                      color: (completionResult?.starsAwarded ?? 0) > i
+                      color: (completionResult?.starsAwarded ?? immediateStarsAwarded ?? 0) > i
                           ? const Color(0xFFE4C67A)
                           : Colors.white10,
                       size: 32,
