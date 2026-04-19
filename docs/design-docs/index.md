@@ -4,8 +4,14 @@
 | --- | --- | --- |
 | [core-beliefs.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/core-beliefs.md) | drafted | Shared principles for agent work and game direction |
 | [combat-pillars.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/combat-pillars.md) | drafted | Defines what combat should optimize for |
-| [map-authoring/README.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/README.md) | drafted | Workflow and source of truth for handcrafted campaign battlefield design |
-| [map-authoring/act-1-map-bible.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/act-1-map-bible.md) | drafted | First authored pass for the five Act 1 siege maps |
+| [map-authoring/README.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/README.md) | drafted | 현재 게임 구조 기준의 Stage/Cycle 맵 설계 워크플로우 |
+| [map-authoring/map-pillars.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/map-pillars.md) | drafted | 좋은 맵이 무엇인지 판단하는 핵심 설계 원칙 |
+| [map-authoring/castle-and-spawn-rules.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/castle-and-spawn-rules.md) | drafted | 성 위치 패턴과 스폰 방향 규칙 |
+| [map-authoring/obstacle-language.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/obstacle-language.md) | drafted | 장애물 역할과 배치 언어 정리 |
+| [map-authoring/stage-card-template.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-card-template.md) | drafted | Stage 하나를 설계할 때 쓰는 템플릿 |
+| [map-authoring/stage-1-5-map-bible.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-1-5-map-bible.md) | drafted | 초반 Stage 1~5 수작업 맵 방향 정리 |
+| [map-authoring/stage-1-working-card.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-1-working-card.md) | drafted | Stage 1 실제 설계 초안 |
+| [map-authoring/visual-guide.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/visual-guide.md) | drafted | Stage, Cycle, 장애물 구조를 시각적으로 읽는 가이드 |
 | [content-pipeline.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/content-pipeline.md) | drafted | Asset and definition authoring workflow |
 | [art-direction-lpc-fantasy.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/art-direction-lpc-fantasy.md) | drafted | Visual direction built around LPC modular sprite generation |
 | [enemy-roster-bible.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/enemy-roster-bible.md) | drafted | Detailed role, pacing, silhouette, and counter design for the enemy roster |

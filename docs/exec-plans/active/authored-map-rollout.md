@@ -1,54 +1,50 @@
-# Authored Map Rollout
+# 수작업 스테이지 맵 롤아웃
 
-## Objective
+## 목적
 
-Create a sustainable workflow for building the campaign as `hand-authored siege maps` instead of relying on broad random obstacle generation.
+현재 게임 구조에 맞춰 `Stage > Cycle` 기준의 수작업 맵 제작 체계를 정리하고, 초반 `Stage 1~5`를 먼저 고정한다.
 
-## Why This Exists
+## 왜 이 작업을 하는가
 
-The game is strongest when players can:
+- 맵이 이 게임의 핵심 재미를 만든다
+- 랜덤 장애물보다 수작업 맵이 더 읽기 쉽고 전략성이 높다
+- 성 위치, 스폰 방향, 장애물 구조가 Stage별 개성을 만들 수 있다
 
-- read the fortress layout
-- understand why a route is dangerous
-- improve through better positioning on repeat attempts
+## 현재 합의
 
-That requires authored geometry, authored front pressure, and deliberate obstacle language.
+- `Act`, `Siege` 용어는 더 이상 사용하지 않는다
+- 실제 게임 기준 용어는 `Stage`, `Cycle`이다
+- 한 Stage는 하나의 맵과 하나의 전투 단위를 의미한다
+- 각 Stage 안에는 보통 `3~4 Cycle`이 들어간다
 
-## Deliverables
+## 작업 범위
 
-- map authoring rules in `docs/design-docs/map-authoring/`
-- one reviewed map bible for `Act 1`
-- a stage card template we can reuse for all 30 sieges
-- a later implementation pass that converts approved cards into runtime data
+1. `docs/design-docs/map-authoring/` 전체를 현행 용어 기준으로 정리
+2. 시각 자료 중심의 문서 체계 정리
+3. Stage 1~5 초안 작성
+4. Stage 1 좌표 고정
 
-## Rollout Order
+## 진행 상태
 
-1. lock map rules and collaboration workflow
-2. hand-author `Sieges 1-5`
-3. validate fun and readability in runtime
-4. hand-author `Sieges 6-10`
-5. continue by act, not by isolated stage
+- [x] map-authoring 폴더 한국어 기준 정리
+- [x] Stage/Cycle 용어로 통일
+- [x] 시각 가이드 문서 추가
+- [x] Stage 1~5 맵 바이블 초안 정리
+- [x] Stage 1 작업 카드 초안 정리
+- [ ] Stage 1 좌표 확정
+- [ ] Stage 2 작업 카드 작성
+- [ ] 코드 데이터 연결 방식 정리
 
-## Current Decisions
+## 리스크
 
-- 2026-04-19: campaign maps should prefer authored layouts over unrestricted random obstacle generation
-- 2026-04-19: citadel position may vary by approved pattern instead of staying permanently centered
-- 2026-04-19: the first concrete authored-map pass should focus on `Act 1`
-- 2026-04-19: obstacle clusters must have gameplay jobs, not only visual flavor
+- 맵 문서와 실제 런타임 데이터 구조가 어긋날 수 있다
+- 장애물 역할이 문서상으로는 좋아 보여도 실제 전투에서 밋밋할 수 있다
+- 성 위치 변주가 카메라/HUD와 충돌할 수 있다
 
-## Risks
+## 다음 단계
 
-- too much castle-position variance too early could hurt readability
-- fully free citadel placement could break camera and HUD assumptions
-- overcomplicated obstacle shapes could feel unfair on mobile screens
-- adding tower-damaging enemies too broadly could make runs feel noisy instead of tactical
+가장 먼저 할 일:
 
-## Working Rule
-
-Do not convert a draft stage into code until its stage card locks:
-
-- citadel pattern
-- cycle front order
-- obstacle roles
-- fallback pocket
-- intended kill zone
+1. Stage 1 좌표를 확정한다
+2. Stage 2 초안을 만든다
+3. 문서 구조를 실제 코드 데이터와 연결할 필드 이름을 정한다

@@ -3345,13 +3345,18 @@ class CampaignData {
         return [
           AssaultCycleDefinition(
             number: 1,
-            activeFronts: const [SpawnDirection.north, SpawnDirection.south],
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
             recoveryGoldBonus: 40,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 3, interval: 0.95),
-              spawn(SpawnDirection.north, EnemyKind.scout, 2, interval: 0.88),
-              spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.95),
-              spawn(SpawnDirection.south, EnemyKind.scout, 1, interval: 0.88),
+              spawn(SpawnDirection.north, EnemyKind.raider, 2, interval: 1.0),
+              spawn(SpawnDirection.west, EnemyKind.raider, 2, interval: 1.0),
+              spawn(SpawnDirection.east, EnemyKind.scout, 1, interval: 0.92),
+              spawn(SpawnDirection.south, EnemyKind.scout, 1, interval: 0.92),
             ],
           ),
           AssaultCycleDefinition(
@@ -3368,23 +3373,18 @@ class CampaignData {
                 SpawnDirection.north,
                 EnemyKind.raider,
                 3,
-                interval: 0.92,
+                interval: 0.95,
                 intensity: 1.05,
               ),
-              spawn(
-                SpawnDirection.south,
-                EnemyKind.raider,
-                3,
-                interval: 0.92,
-                intensity: 1.05,
-              ),
-              spawn(SpawnDirection.east, EnemyKind.scout, 2, interval: 0.88),
               spawn(
                 SpawnDirection.west,
-                EnemyKind.shieldInfantry,
-                2,
-                interval: 1.18,
+                EnemyKind.raider,
+                3,
+                interval: 0.95,
+                intensity: 1.05,
               ),
+              spawn(SpawnDirection.east, EnemyKind.scout, 2, interval: 0.9),
+              spawn(SpawnDirection.south, EnemyKind.raider, 2, interval: 0.94),
             ],
           ),
           AssaultCycleDefinition(
@@ -3401,36 +3401,36 @@ class CampaignData {
               spawn(
                 SpawnDirection.north,
                 EnemyKind.raider,
-                4,
-                interval: 0.9,
+                3,
+                interval: 0.92,
                 intensity: 1.08,
               ),
               spawn(
-                SpawnDirection.south,
+                SpawnDirection.west,
                 EnemyKind.raider,
-                4,
-                interval: 0.9,
+                3,
+                interval: 0.92,
                 intensity: 1.08,
               ),
               spawn(
                 SpawnDirection.east,
                 EnemyKind.shieldInfantry,
-                2,
-                interval: 1.14,
+                1,
+                interval: 1.16,
                 intensity: 1.04,
               ),
               spawn(
-                SpawnDirection.west,
-                EnemyKind.shieldInfantry,
+                SpawnDirection.south,
+                EnemyKind.scout,
                 2,
-                interval: 1.14,
-                intensity: 1.04,
+                interval: 0.88,
+                intensity: 1.06,
               ),
               spawn(
                 SpawnDirection.north,
-                EnemyKind.bannerCaptain,
+                EnemyKind.shieldInfantry,
                 1,
-                interval: 2.2,
+                interval: 1.25,
               ),
             ],
           ),
@@ -3800,6 +3800,164 @@ class CampaignData {
   static List<StageObstacleDefinition> _actOneObstaclesForStage(
     int stageNumber,
   ) {
+    final stageOneOuterProps = const [
+      StageObstacleDefinition(
+        assetPath: 'assets/sprites/environment/props/road_signpost.png',
+        occupiedCells: [
+          [1, 2],
+        ],
+        scale: 1.0,
+      ),
+      StageObstacleDefinition(
+        assetPath: 'assets/sprites/environment/props/well.png',
+        occupiedCells: [
+          [12, 2],
+        ],
+        scale: 1.0,
+      ),
+      StageObstacleDefinition(
+        assetPath: 'assets/sprites/environment/props/wooden_fence_segment.png',
+        occupiedCells: [
+          [1, 11],
+        ],
+        scale: 1.0,
+      ),
+      StageObstacleDefinition(
+        assetPath: 'assets/sprites/environment/props/wagon_wreck.png',
+        occupiedCells: [
+          [12, 11],
+        ],
+        scale: 1.0,
+      ),
+      StageObstacleDefinition(
+        assetPath: 'assets/sprites/environment/props/supply_crate.png',
+        occupiedCells: [
+          [2, 9],
+        ],
+        scale: 1.0,
+      ),
+      StageObstacleDefinition(
+        assetPath: 'assets/sprites/environment/props/siege_crate.png',
+        occupiedCells: [
+          [11, 9],
+        ],
+        scale: 1.0,
+      ),
+    ];
+    final stageOneInnerWalls = const [
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [5, 3],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [6, 3],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [7, 3],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [8, 3],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [3, 5],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [3, 6],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [3, 7],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [9, 5],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [9, 6],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [9, 7],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [5, 9],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [6, 9],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [7, 9],
+        ],
+        scale: 0.51,
+      ),
+      StageObstacleDefinition(
+        assetPath:
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+        occupiedCells: [
+          [8, 9],
+        ],
+        scale: 0.51,
+      ),
+    ];
     final cornerObstacles = const [
       StageObstacleDefinition(
         assetPath: 'assets/sprites/environment/props/road_signpost.png',
@@ -3896,7 +4054,7 @@ class CampaignData {
     ];
 
     return switch (stageNumber) {
-      1 => [...cornerObstacles, ...nodeObstacles, ...ringBarriers],
+      1 => [...stageOneOuterProps, ...stageOneInnerWalls],
       2 => [
         ...cornerObstacles,
         ...nodeObstacles,
@@ -3998,16 +4156,25 @@ class CampaignData {
           [6, 0],
           [6, 1],
           [6, 2],
-          [6, 3],
+          [5, 2],
+          [4, 2],
+          [4, 3],
+          [4, 4],
+          [5, 4],
           [6, 4],
           [6, 5],
         ],
         SpawnDirection.south: [
-          [6, 13],
-          [6, 12],
-          [6, 11],
-          [6, 10],
-          [6, 9],
+          [7, 13],
+          [7, 12],
+          [7, 11],
+          [8, 11],
+          [9, 11],
+          [9, 10],
+          [9, 9],
+          [9, 8],
+          [8, 8],
+          [7, 8],
           [6, 8],
           [6, 7],
         ],
@@ -4016,16 +4183,24 @@ class CampaignData {
           [12, 6],
           [11, 6],
           [10, 6],
-          [9, 6],
-          [8, 6],
+          [10, 7],
+          [10, 8],
+          [9, 8],
+          [8, 8],
+          [7, 8],
+          [7, 7],
           [7, 6],
         ],
         SpawnDirection.west: [
           [0, 6],
           [1, 6],
           [2, 6],
-          [3, 6],
-          [4, 6],
+          [2, 5],
+          [2, 4],
+          [3, 4],
+          [4, 4],
+          [5, 4],
+          [5, 5],
           [5, 6],
         ],
       },

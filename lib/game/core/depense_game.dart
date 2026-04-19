@@ -76,8 +76,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   bool _pausedManually = false;
   int _coins = 0;
   int _baseHealth = 0;
-  String _statusText = '카드를 선택하거나 배치된 타워를 탭하세요.';
+  String _statusText = '아래 카드를 클릭해서 건물을 배치하세요.';
   int? _selectedTowerIndex;
+  double _selectedTowerOverlayTimer = 0;
   int _towersBuilt = 0;
   int _towersSold = 0;
   final Set<String> _builtTowerKinds = {};
@@ -169,21 +170,22 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (towerKind != null &&
         !TowerCatalog.isUnlocked(towerKind, metaUpgrades)) {
       final definition = TowerCatalog.byKind(towerKind);
-      _statusText =
-          definition.unlockHint ??
-          '${definition.label} is not unlocked in this build yet.';
+      _showStatus(
+        definition.unlockHint ?? '${definition.label}은(는) 아직 해금되지 않았습니다.',
+      );
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
     }
     sessionController.setSelectedBuildable(towerKind);
-    _selectedTowerIndex = null;
+    _clearSelectedTowerSelection();
     if (towerKind != null) {
-      _statusText =
-          '${TowerCatalog.byKind(towerKind).label} selected. Tap a valid tile to place it.';
+      _showStatus(
+        '${TowerCatalog.byKind(towerKind).label} 카드를 선택했습니다. 빈 타일을 터치해 배치하세요.',
+      );
       audioService.play(AudioEvent.uiSelect);
     } else {
-      _statusText = 'Build selection cleared.';
+      _showStatus('아래 카드를 클릭해서 건물을 배치하세요.');
     }
     _syncSession();
   }
@@ -203,6 +205,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         builtTowerKinds: _builtTowerKinds,
       ),
     );
+  }
+
+  void _showStatus(String message) {
+    _statusText = message;
+  }
+
+  void _showSelectedTowerOverlay() {
+    _selectedTowerOverlayTimer = 3.0;
+  }
+
+  void _clearSelectedTowerSelection() {
+    _selectedTowerIndex = null;
+    sessionController.setSelectedTower(null);
+    _selectedTowerOverlayTimer = 0;
   }
 
   void startNextWave() {
@@ -232,7 +248,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         cycle?.activeFronts ?? _frontsForWave(stage.waves[_currentWaveIndex]);
     _nextFronts = _nextFrontsForIndex(_currentWaveIndex);
     _statusText = _isSiegeMode
-        ? 'Cycle $waveNumber 시작! ${_frontLabel(_activeFronts)} 전선이 활성화됩니다.'
+        ? 'Cycle $waveNumber 시작! ${_frontShortLabel(_activeFronts)} 전선이 열립니다.'
         : waveNumber <= 2
         ? 'Wave $waveNumber 시작! 적 경로를 확인하세요.'
         : 'Wave $waveNumber 시작!';
@@ -252,24 +268,24 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void togglePaused() {
     _pausedManually = !_pausedManually;
     paused = _pausedManually;
-    _statusText = _pausedManually ? '????' : '?? ??';
+    _showStatus(_pausedManually ? '일시정지됨' : '전투 재개');
     _syncSession();
   }
 
   void upgradeSelectedTower() {
     final tower = _selectedTower;
     if (tower == null) {
-      _statusText = '?????? ??? ?????.';
+      _showStatus('업그레이드할 건물이 없습니다.');
       _syncSession();
       return;
     }
     if (!tower.canUpgrade) {
-      _statusText = '${tower.definition.label}?(?) ?? ?? ?????.';
+      _showStatus('${tower.definition.label}은(는) 더 이상 업그레이드할 수 없습니다.');
       _syncSession();
       return;
     }
     if (_coins < tower.upgradeCost) {
-      _statusText = '${tower.definition.label} ?????? ??? ?????.';
+      _showStatus('${tower.definition.label} 업그레이드에 필요한 코인이 부족합니다.');
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
@@ -282,7 +298,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       tower.cooldownRemaining,
       tower.currentCooldown,
     );
-    _statusText = '${tower.definition.label} ?? ${tower.level}? ?????????.';
+    _showStatus('건물을 선택해 업그레이드나 철거가 가능합니다.');
+    _showSelectedTowerOverlay();
     audioService.play(AudioEvent.towerUpgrade);
     _syncSelectedTower();
     _syncSession();
@@ -292,7 +309,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final index = _selectedTowerIndex;
     final tower = _selectedTower;
     if (index == null || tower == null) {
-      _statusText = '??? ??? ?????.';
+      _showStatus('철거할 건물이 없습니다.');
       _syncSession();
       return;
     }
@@ -300,10 +317,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _coins += tower.sellValue;
     _towers.removeAt(index);
     _towersSold += 1;
-    _selectedTowerIndex = null;
-    sessionController.setSelectedTower(null);
-    _statusText =
-        '${tower.definition.label}?(?) ${tower.sellValue} ??? ??????.';
+    _clearSelectedTowerSelection();
+    _showStatus(
+      '${tower.definition.label}을(를) 철거하고 ${tower.sellValue} 코인을 회수했습니다.',
+    );
     audioService.play(AudioEvent.coinGain);
     _syncSession();
   }
@@ -311,12 +328,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void chooseBranchForSelectedTower(String branchId) {
     final tower = _selectedTower;
     if (tower == null) {
-      _statusText = '?? ??? ?????.';
+      _showStatus('분기를 선택할 건물이 없습니다.');
       _syncSession();
       return;
     }
     if (!tower.canChooseBranch) {
-      _statusText = '? ??? ?? ??? ??? ? ????.';
+      _showStatus('이 건물은 지금 분기 선택을 할 수 없습니다.');
       _syncSession();
       return;
     }
@@ -329,13 +346,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
     }
     if (branch == null) {
-      _statusText = '? ? ?? ?? ?????.';
+      _showStatus('선택한 분기 정보를 찾을 수 없습니다.');
       _syncSession();
       return;
     }
 
     tower.branchId = branchId;
-    _statusText = '${tower.definition.label}?(?) ${branch.label} ??? ??????.';
+    _showStatus('건물을 선택해 업그레이드나 철거가 가능합니다.');
+    _showSelectedTowerOverlay();
     audioService.play(AudioEvent.uiConfirm);
     _syncSelectedTower();
     _syncSession();
@@ -344,6 +362,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   @override
   void update(double dt) {
     audioService.update(dt);
+    _updateSelectionOverlay(dt);
 
     if (_pausedManually || _stageCleared || _stageFailed) {
       super.update(dt);
@@ -396,7 +415,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (towerIndex != null) {
       _selectedTowerIndex = towerIndex;
       sessionController.setSelectedTower(_towers[towerIndex].details);
-      _statusText = '${_towers[towerIndex].definition.label} 선택됨';
+      _showStatus('건물을 선택해 업그레이드나 철거가 가능합니다.');
+      _showSelectedTowerOverlay();
       _syncSession();
       return;
     }
@@ -407,9 +427,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void _handlePlacement(Vector2 position) {
     final selection = sessionController.selectedBuildable;
     if (selection == null) {
-      sessionController.setSelectedTower(null);
-      _selectedTowerIndex = null;
-      _statusText = '카드를 선택하거나 배치된 타워를 탭하세요.';
+      _clearSelectedTowerSelection();
+      _showStatus('아래 카드를 클릭해서 건물을 배치하세요.');
       _syncSession();
       return;
     }
@@ -426,23 +445,23 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     if (snapTarget == null) {
-      // 유효한 슬롯 밖을 탭하면 카드 선택 취소
       sessionController.setSelectedBuildable(null);
-      _statusText = '유효한 빈 슬롯을 탭해 배치하세요.';
+      _showStatus('유효한 빈 타일을 터치해 건물을 배치하세요.');
       _syncSession();
       return;
     }
 
     final definition = TowerCatalog.byKind(selection);
     if (!definition.isUnlocked(metaUpgrades)) {
-      _statusText =
-          definition.unlockHint ?? '${definition.label}은(는) 아직 해금되지 않았습니다.';
+      _showStatus(
+        definition.unlockHint ?? '${definition.label}은(는) 아직 해금되지 않았습니다.',
+      );
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
     }
     if (_coins < definition.cost) {
-      _statusText = '${definition.label} 건설에 코인이 부족합니다.';
+      _showStatus('${definition.label} 건설에 필요한 코인이 부족합니다.');
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
@@ -456,9 +475,24 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _builtTowerKinds.add(definition.kind.name);
     _selectedTowerIndex = _towers.length - 1;
     sessionController.setSelectedBuildable(null);
-    _statusText = '${definition.label} 배치 완료. 전투 중에도 계속 건설할 수 있습니다.';
+    _showStatus('건물을 선택해 업그레이드나 철거가 가능합니다.');
+    _showSelectedTowerOverlay();
     audioService.play(AudioEvent.towerPlace);
     _syncSelectedTower();
+    _syncSession();
+  }
+
+  void _updateSelectionOverlay(double dt) {
+    if (_selectedTowerIndex == null || _selectedTowerOverlayTimer <= 0) {
+      return;
+    }
+
+    _selectedTowerOverlayTimer = math.max(0, _selectedTowerOverlayTimer - dt);
+    if (_selectedTowerOverlayTimer > 0) {
+      return;
+    }
+
+    _clearSelectedTowerSelection();
     _syncSession();
   }
 
@@ -544,7 +578,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           _baseHealth = 0;
           _stageFailed = true;
           _waveActive = false;
-          _statusText = '??? ??????. ??? ???? ?? ?????.';
+          _showStatus('기지가 함락되었습니다. 다시 도전해 방어선을 정비하세요.');
         }
       }
     }
@@ -1789,7 +1823,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       includeTowerCells: true,
     );
     if (resolvedCells.isNotEmpty) {
-      return _vectorPathFromCells(resolvedCells, direction: dir);
+      return _vectorPathFromCells(
+        resolvedCells,
+        direction: dir,
+        randomizeEdgeAnchor: true,
+      );
     }
     final authoredPath = _pathsByDirection[dir];
     if (authoredPath != null && authoredPath.length >= 2) {
@@ -1940,13 +1978,18 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   List<Vector2> _vectorPathFromCells(
     List<List<int>> cells, {
     required SpawnDirection direction,
+    bool randomizeEdgeAnchor = false,
   }) {
     if (cells.isEmpty) {
       return const [];
     }
     final citadelCenter = _resolvedCitadelCenter();
     final points = <Vector2>[
-      _edgeAnchorForFront(direction, cells.first),
+      _edgeAnchorForFront(
+        direction,
+        cells.first,
+        randomizeAlongEdge: randomizeEdgeAnchor,
+      ),
       for (final cell in cells)
         Vector2(
           _gridOrigin.x + (cell[0] * _tileSize) + (_tileSize / 2),
@@ -1959,16 +2002,53 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return points;
   }
 
-  Vector2 _edgeAnchorForFront(SpawnDirection front, List<int> cell) {
+  Vector2 _edgeAnchorForFront(
+    SpawnDirection front,
+    List<int> cell, {
+    bool randomizeAlongEdge = false,
+  }) {
     final cellCenter = Vector2(
       _gridOrigin.x + (cell[0] * _tileSize) + (_tileSize / 2),
       _gridOrigin.y + (cell[1] * _tileSize) + (_tileSize / 2),
     );
+    if (!randomizeAlongEdge) {
+      return switch (front) {
+        SpawnDirection.north => Vector2(cellCenter.x, 0),
+        SpawnDirection.south => Vector2(cellCenter.x, size.y),
+        SpawnDirection.east => Vector2(size.x, cellCenter.y),
+        SpawnDirection.west => Vector2(0, cellCenter.y),
+      };
+    }
+
+    final tileGrid = stage.tileGrid;
+    final rng = math.Random();
+    final gridWidth = tileGrid?.isNotEmpty == true
+        ? tileGrid!.first.length * _tileSize
+        : size.x;
+    final gridHeight = tileGrid?.isNotEmpty == true
+        ? tileGrid!.length * _tileSize
+        : size.y;
+    final minX = _gridOrigin.x;
+    final minY = _gridOrigin.y;
+    final maxX = minX + gridWidth;
+    final maxY = minY + gridHeight;
     return switch (front) {
-      SpawnDirection.north => Vector2(cellCenter.x, 0),
-      SpawnDirection.south => Vector2(cellCenter.x, size.y),
-      SpawnDirection.east => Vector2(size.x, cellCenter.y),
-      SpawnDirection.west => Vector2(0, cellCenter.y),
+      SpawnDirection.north => Vector2(
+        minX + rng.nextDouble() * gridWidth,
+        minY - _tileSize,
+      ),
+      SpawnDirection.south => Vector2(
+        minX + rng.nextDouble() * gridWidth,
+        maxY + _tileSize,
+      ),
+      SpawnDirection.east => Vector2(
+        maxX + _tileSize,
+        minY + rng.nextDouble() * gridHeight,
+      ),
+      SpawnDirection.west => Vector2(
+        minX - _tileSize,
+        minY + rng.nextDouble() * gridHeight,
+      ),
     };
   }
 
@@ -2032,6 +2112,22 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
             SpawnDirection.south => '남쪽',
             SpawnDirection.east => '동쪽',
             SpawnDirection.west => '서쪽',
+          };
+        })
+        .join(' · ');
+  }
+
+  String _frontShortLabel(List<SpawnDirection> fronts) {
+    if (fronts.isEmpty) {
+      return '대기';
+    }
+    return fronts
+        .map((front) {
+          return switch (front) {
+            SpawnDirection.north => '북',
+            SpawnDirection.south => '남',
+            SpawnDirection.east => '동',
+            SpawnDirection.west => '서',
           };
         })
         .join(' · ');
@@ -2546,19 +2642,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (path.isEmpty) {
       return _citadelCenter;
     }
+    final inset = math.max(18.0, _tileSize * 0.75);
     for (final point in path) {
-      if (point.x >= 0 &&
-          point.x <= size.x &&
-          point.y >= 0 &&
-          point.y <= size.y) {
+      if (point.x >= inset &&
+          point.x <= size.x - inset &&
+          point.y >= inset &&
+          point.y <= size.y - inset) {
         return point;
       }
     }
     return switch (front) {
-      SpawnDirection.north => Vector2(_citadelCenter.x, 0),
-      SpawnDirection.south => Vector2(_citadelCenter.x, size.y),
-      SpawnDirection.east => Vector2(size.x, _citadelCenter.y),
-      SpawnDirection.west => Vector2(0, _citadelCenter.y),
+      SpawnDirection.north => Vector2(_citadelCenter.x, inset),
+      SpawnDirection.south => Vector2(_citadelCenter.x, size.y - inset),
+      SpawnDirection.east => Vector2(size.x - inset, _citadelCenter.y),
+      SpawnDirection.west => Vector2(inset, _citadelCenter.y),
     };
   }
 

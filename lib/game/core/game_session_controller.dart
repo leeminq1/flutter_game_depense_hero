@@ -63,7 +63,7 @@ class GameSessionController extends ChangeNotifier {
   TowerKind? selectedBuildable;
   SelectedTowerDetails? selectedTower;
   Set<String> builtTowerKinds = const {};
-  String statusText = '전장을 준비하거나 배치할 타워를 선택하세요.';
+  String statusText = '아래 카드를 클릭해서 건물을 배치하세요.';
   List<String> activeFronts = const [];
   List<String> nextFronts = const [];
   double recoverySecondsRemaining = 0;
@@ -112,7 +112,7 @@ class GameSessionController extends ChangeNotifier {
     stageFailed = false;
     waveInProgress = false;
     currentWave = 0;
-    statusText = '전장을 준비하거나 배치할 타워를 선택하세요.';
+    statusText = '아래 카드를 클릭해서 건물을 배치하세요.';
     notifyListeners();
   }
 

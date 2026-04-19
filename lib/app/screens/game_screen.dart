@@ -38,6 +38,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   bool _hintBannerVisible = true;
   Timer? _hintTimer;
+  bool _towerActionBarVisible = false;
+  Timer? _towerActionBarTimer;
+  String _lastStatusText = '';
+  String? _lastSelectedTowerSignature;
   bool _isBackgroundPaused = false;
   int? _immediateStarsAwarded;
 
@@ -55,6 +59,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _hintTimer?.cancel();
+    _towerActionBarTimer?.cancel();
     _sessionController.removeListener(_handleSessionChanged);
     super.dispose();
   }
@@ -109,6 +114,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     }
 
     _hintTimer?.cancel();
+    _towerActionBarTimer?.cancel();
     setState(() {
       _isBackgroundPaused = false;
       _activeMetaUpgrades = resolvedMeta;
@@ -118,6 +124,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       _isEvaluating = false;
       _gameEpoch += 1;
       _hintBannerVisible = true;
+      _towerActionBarVisible = false;
+      _lastStatusText = '';
+      _lastSelectedTowerSignature = null;
       _game = DefensePrototypeGame(
         stage: stage,
         sessionController: _sessionController,
@@ -125,9 +134,72 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         metaUpgrades: resolvedMeta,
       );
     });
-    _hintTimer = Timer(const Duration(seconds: 4), () {
+    _hintTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) setState(() => _hintBannerVisible = false);
     });
+  }
+
+  void _showHintBanner() {
+    _hintTimer?.cancel();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _hintBannerVisible = true);
+    _hintTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() => _hintBannerVisible = false);
+      }
+    });
+  }
+
+  void _showTowerActionBar() {
+    _towerActionBarTimer?.cancel();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _towerActionBarVisible = true);
+    _towerActionBarTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() => _towerActionBarVisible = false);
+      }
+    });
+  }
+
+  String? _selectedTowerSignature(SelectedTowerDetails? tower) {
+    if (tower == null) {
+      return null;
+    }
+    return [
+      tower.kind.name,
+      tower.level.toString(),
+      tower.upgradeCost.toString(),
+      tower.sellValue.toString(),
+      tower.branchId ?? '-',
+    ].join(':');
+  }
+
+  void _handleTransientHud() {
+    final statusText = _sessionController.statusText;
+    if (statusText.isNotEmpty && statusText != _lastStatusText) {
+      _lastStatusText = statusText;
+      _showHintBanner();
+    }
+
+    final signature = _selectedTowerSignature(_sessionController.selectedTower);
+    if (signature == _lastSelectedTowerSignature) {
+      return;
+    }
+
+    _lastSelectedTowerSignature = signature;
+    if (signature == null) {
+      _towerActionBarTimer?.cancel();
+      if (mounted && _towerActionBarVisible) {
+        setState(() => _towerActionBarVisible = false);
+      }
+      return;
+    }
+
+    _showTowerActionBar();
   }
 
   Future<void> _showExitDialog(BuildContext context) async {
@@ -167,6 +239,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       return;
     }
 
+    _handleTransientHud();
+
     if ((_sessionController.stageCleared || _sessionController.stageFailed) &&
         !_isEvaluating &&
         _completionResult == null) {
@@ -178,11 +252,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       }
 
       try {
-        final result = await widget.bootstrap.progressStore.recordStageCompletion(
-          stageNumber: _sessionController.stageNumber,
-          evaluation: evaluation,
-          totalStages: CampaignData.totalStages,
-        );
+        final result = await widget.bootstrap.progressStore
+            .recordStageCompletion(
+              stageNumber: _sessionController.stageNumber,
+              evaluation: evaluation,
+              totalStages: CampaignData.totalStages,
+            );
 
         await _refreshOverview();
 
@@ -226,116 +301,117 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         backgroundColor: const Color(0xFF071B2F),
         body: SafeArea(
           child: AnimatedBuilder(
-          animation: _sessionController,
-          builder: (context, _) {
-            final session = _sessionController;
-            final showWaveButton =
-                !session.waveInProgress &&
-                !session.stageCleared &&
-                !session.stageFailed &&
-                session.currentWave < session.totalWaves;
-            final nextLoopNumber = session.currentWave + 1;
+            animation: _sessionController,
+            builder: (context, _) {
+              final session = _sessionController;
+              final showWaveButton =
+                  !session.waveInProgress &&
+                  !session.stageCleared &&
+                  !session.stageFailed &&
+                  session.currentWave < session.totalWaves;
+              final nextLoopNumber = session.currentWave + 1;
 
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                Column(
-                  children: [
-                    _TopHud(
-                      sessionController: session,
-                      onBack: () => _showExitDialog(context),
-                      onTogglePause: game.togglePaused,
-                    ),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: GameWidget(
-                              key: ValueKey(_gameEpoch),
-                              game: game,
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  Column(
+                    children: [
+                      _TopHud(
+                        sessionController: session,
+                        onBack: () => _showExitDialog(context),
+                        onTogglePause: game.togglePaused,
+                      ),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: GameWidget(
+                                key: ValueKey(_gameEpoch),
+                                game: game,
+                              ),
                             ),
-                          ),
-                          if (_hintBannerVisible &&
-                              session.statusText.isNotEmpty)
-                            Positioned(
-                              top: 12,
-                              left: 16,
-                              right: isCompactBattlefield ? 16 : 172,
-                              child: Align(
-                                alignment: Alignment.topLeft,
-                                child: _StatusBanner(
-                                  text: session.statusText,
-                                  maxWidth: isCompactBattlefield ? 320 : 360,
+                            if (_hintBannerVisible &&
+                                session.statusText.isNotEmpty)
+                              Positioned(
+                                top: 4,
+                                left: 12,
+                                right: isCompactBattlefield ? 12 : 164,
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: _StatusBanner(
+                                    text: session.statusText,
+                                    maxWidth: isCompactBattlefield ? 336 : 392,
+                                  ),
                                 ),
                               ),
-                            ),
-                          if (session.selectedTower != null)
-                            Positioned(
-                              left: 16,
-                              right: 16,
-                              bottom: 16,
-                              child: _TowerActionBar(
-                                sessionController: session,
-                                onUpgrade: game.upgradeSelectedTower,
-                                onSell: game.sellSelectedTower,
+                            if (_towerActionBarVisible &&
+                                session.selectedTower != null)
+                              Positioned(
+                                left: 16,
+                                right: 16,
+                                bottom: 16,
+                                child: _TowerActionBar(
+                                  sessionController: session,
+                                  onUpgrade: game.upgradeSelectedTower,
+                                  onSell: game.sellSelectedTower,
+                                ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
+                      ),
+                      _BuildBar(
+                        sessionController: session,
+                        metaUpgrades: activeMetaUpgrades,
+                        onSelect: game.selectBuildable,
+                        showWaveButton: showWaveButton,
+                        nextWaveLabel: session.recoveryActive
+                            ? '다음 ${session.loopLabel}'
+                            : '${session.loopLabel} $nextLoopNumber 시작',
+                        onStartWave: game.startNextWave,
+                        waveInProgress: session.waveInProgress,
+                        isPaused: session.isPaused,
+                        onTogglePause: game.togglePaused,
+                      ),
+                    ],
+                  ),
+                  if ((_isBackgroundPaused || session.isPaused) &&
+                      !session.stageCleared &&
+                      !session.stageFailed)
+                    Positioned.fill(
+                      child: _PauseOverlay(
+                        isBackground: _isBackgroundPaused,
+                        onResume: () {
+                          if (_isBackgroundPaused) {
+                            game.resumeEngine();
+                            setState(() => _isBackgroundPaused = false);
+                          }
+                          if (session.isPaused) {
+                            game.togglePaused();
+                          }
+                        },
                       ),
                     ),
-                    _BuildBar(
-                      sessionController: session,
-                      metaUpgrades: activeMetaUpgrades,
-                      onSelect: game.selectBuildable,
-                      showWaveButton: showWaveButton,
-                      nextWaveLabel: session.recoveryActive
-                          ? '다음 ${session.loopLabel}'
-                          : '${session.loopLabel} $nextLoopNumber 시작',
-                      onStartWave: game.startNextWave,
-                      waveInProgress: session.waveInProgress,
-                      isPaused: session.isPaused,
-                      onTogglePause: game.togglePaused,
-                    ),
-                  ],
-                ),
-                if ((_isBackgroundPaused || session.isPaused) &&
-                    !session.stageCleared &&
-                    !session.stageFailed)
-                  Positioned.fill(
-                    child: _PauseOverlay(
-                      isBackground: _isBackgroundPaused,
-                      onResume: () {
-                        if (_isBackgroundPaused) {
-                          game.resumeEngine();
-                          setState(() => _isBackgroundPaused = false);
-                        }
-                        if (session.isPaused) {
-                          game.togglePaused();
-                        }
-                      },
-                    ),
-                  ),
-                if (session.stageCleared || session.stageFailed)
-                  Positioned.fill(
-                    child: _ResultOverlay(
-                      sessionController: session,
-                      completionResult: _completionResult,
-                      immediateStarsAwarded: _immediateStarsAwarded,
-                      stage: currentStage,
-                      hasNextStage: _stageNumber < CampaignData.totalStages,
-                      onRetry: () => _loadStage(_stageNumber),
-                      onNextStage: () => _loadStage(
-                        (_stageNumber + 1).clamp(1, CampaignData.totalStages),
+                  if (session.stageCleared || session.stageFailed)
+                    Positioned.fill(
+                      child: _ResultOverlay(
+                        sessionController: session,
+                        completionResult: _completionResult,
+                        immediateStarsAwarded: _immediateStarsAwarded,
+                        stage: currentStage,
+                        hasNextStage: _stageNumber < CampaignData.totalStages,
+                        onRetry: () => _loadStage(_stageNumber),
+                        onNextStage: () => _loadStage(
+                          (_stageNumber + 1).clamp(1, CampaignData.totalStages),
+                        ),
+                        onReturnToCamp: widget.onExitToCamp,
                       ),
-                      onReturnToCamp: widget.onExitToCamp,
                     ),
-                  ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
-    ),
     );
   }
 }
@@ -581,38 +657,42 @@ class _StatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xCC0A1018),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white10),
-          ),
-          child: Row(
-            children: [
-              const Icon(
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xD60A1018),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 1),
+              child: Icon(
                 Icons.campaign_rounded,
-                size: 18,
+                size: 16,
                 color: Color(0xFFE4C67A),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                text,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  height: 1.2,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -687,8 +767,9 @@ class _BuildBarState extends State<_BuildBar> {
       return FilledButton.icon(
         onPressed: widget.onTogglePause,
         style: FilledButton.styleFrom(
-          backgroundColor:
-              isPaused ? const Color(0xFF1C7E62) : const Color(0xFFB8760B),
+          backgroundColor: isPaused
+              ? const Color(0xFF1C7E62)
+              : const Color(0xFFB8760B),
           foregroundColor: Colors.white,
           padding: buttonPadding,
           shape: buttonShape,
@@ -697,10 +778,7 @@ class _BuildBarState extends State<_BuildBar> {
           isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
           size: 18,
         ),
-        label: Text(
-          isPaused ? '재개' : '일시정지',
-          style: labelStyle,
-        ),
+        label: Text(isPaused ? '재개' : '일시정지', style: labelStyle),
       );
     }
 
@@ -914,7 +992,10 @@ class _SpecDot extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 6),
-      child: Text('\u00b7', style: TextStyle(color: Colors.white30, fontSize: 12)),
+      child: Text(
+        '\u00b7',
+        style: TextStyle(color: Colors.white30, fontSize: 12),
+      ),
     );
   }
 }
@@ -1161,7 +1242,11 @@ class _ResultOverlay extends StatelessWidget {
                   for (var i = 0; i < 3; i += 1)
                     Icon(
                       Icons.star_rounded,
-                      color: (completionResult?.starsAwarded ?? immediateStarsAwarded ?? 0) > i
+                      color:
+                          (completionResult?.starsAwarded ??
+                                  immediateStarsAwarded ??
+                                  0) >
+                              i
                           ? const Color(0xFFE4C67A)
                           : Colors.white10,
                       size: 32,
@@ -1205,7 +1290,6 @@ class _ResultOverlay extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _PauseOverlay extends StatelessWidget {
@@ -1230,8 +1314,11 @@ class _PauseOverlay extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.pause_circle_filled_rounded,
-                size: 56, color: Color(0xFFE4C67A)),
+            const Icon(
+              Icons.pause_circle_filled_rounded,
+              size: 56,
+              color: Color(0xFFE4C67A),
+            ),
             const SizedBox(height: 16),
             const Text(
               '일시정지',

@@ -2,36 +2,36 @@
 
 ## Canonical Battlefield Spec
 
-The first production battlefield for `Citadel Siege` uses this exact spec.
+The first production battlefield for `Pixel Guard: Wave` uses this exact spec.
 
 | Item | Value |
 | --- | --- |
 | Grid size | `14 x 14` |
 | Tile size | `52 px` |
 | Board size | `728 x 728 px` |
-| Citadel footprint | central `3 x 3` block |
-| Citadel cells | `col 5-7`, `row 5-7` |
+| Castle footprint | central `3 x 3` block |
+| Castle cells | `col 5-7`, `row 5-7` |
 | Minimum zoom target | `0.55x` |
 | Default overview zoom target | `0.75x` |
 
 ## Zone Model
 
-Every siege map should read as five zones:
+Every stage map should read as five zones:
 
 1. `Core Zone`
-   - citadel cells
+   - castle cells
    - never buildable
 2. `Inner Ring`
    - premium cross-coverage build space
    - best for high-value towers
 3. `Outer Ring`
    - riskier economy and front-control space
-   - best for early stalling and supply-node tension
-4. `Breach Fronts`
+   - best for early stalling and pressure routing
+4. `Spawn Fronts`
    - north, south, east, west ingress spaces
-   - telegraphed and color-coded
+   - telegraphed and readable
 5. `Fallback Pockets`
-   - late-run rebuild anchors near the inner ring
+   - rebuild anchors near the inner ring
 
 ## Tile Types
 
@@ -43,17 +43,17 @@ enum TileType {
   buildable,
   blocked,
   supplyNode,
-  citadel,
+  castle,
 }
 ```
 
-## Citadel Rules
+## Castle Rules
 
-The citadel is both a gameplay object and a visual landmark.
+The castle is both a gameplay object and a visual landmark.
 
 Requirements:
 
-- one center HP pool
+- one shared HP pool
 - one visible landmark sprite
 - clear damage feedback
 - strong visual presence at any zoom
@@ -66,13 +66,13 @@ Required art slot:
 
 The first production version must use `authored routes`.
 
-Do not ship the first multi-front mode with fully free pathfinding.
+Do not ship the first stage campaign with fully free pathfinding.
 
 Required stage field:
 
 - `pathsByDirection`
 
-## Canonical Siege 1 Example
+## Canonical Stage 1 Example
 
 This is the baseline `14 x 14` authored example used for implementation.
 
@@ -81,7 +81,7 @@ Legend:
 - `X` = `blocked`
 - `B` = `buildable`
 - `$` = `supplyNode`
-- `C` = `citadel`
+- `C` = `castle`
 - `N`,`S`,`E`,`W` = path cells belonging to the north, south, east, and west fronts
 
 ```text
@@ -126,12 +126,12 @@ Fallback pockets:
 
 ## Obstacle Rule
 
-Act 1 playable sieges should rely on visible environment obstacles first.
+Early stage maps should rely on visible environment obstacles first.
 
 Rules:
 
 - only cells occupied by visible obstacle sprites are blocked
-- obstacle density should be highest in early stages and decrease across the act
+- obstacle density should be highest in early stages and decrease across the stage bracket
 - enemies must detour around those obstacles
 - players must never be able to build on those obstacle cells
 
@@ -148,7 +148,7 @@ Telegraph methods:
 - front-edge glow
 - path tint pulse
 - HUD front icons
-- recovery-window next-cycle panel
+- next-cycle preview panel
 
 ## Camera Rules
 
@@ -162,28 +162,29 @@ Requirements:
 
 ## Production Variance Rules
 
-Sieges should vary by:
+Stage maps should vary by:
 
 - route bends
 - obstacle layout and density
 - fallback pocket placement
 - front activation order
 - decoration theme
+- castle position pattern
 
-Sieges should not vary by:
+Stage maps should not vary by:
 
 - arbitrary path ambiguity
 - unreadable decorative obstruction
-- random route generation in the first playable
+- fully random route generation in the first playable
 
 ## Authored Campaign Expansion
 
-After the first playable baseline is stable, campaign map growth should follow an `authored map` workflow.
+After the first playable baseline is stable, campaign map growth should follow an `authored stage map` workflow.
 
 Rules:
 
 - prefer handcrafted obstacle layouts over unrestricted random generation
-- vary citadel placement only through approved patterns
+- vary castle placement only through approved patterns
 - vary front pressure through authored cycle order
 - keep map identity tied to stage learning goals, not only to enemy stat scaling
 
@@ -192,7 +193,9 @@ Working companion docs:
 - [map-authoring/README.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/README.md)
 - [map-authoring/castle-and-spawn-rules.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/castle-and-spawn-rules.md)
 - [map-authoring/obstacle-language.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/obstacle-language.md)
+- [map-authoring/stage-1-5-map-bible.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-1-5-map-bible.md)
+- [map-authoring/visual-guide.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/visual-guide.md)
 
 Campaign authoring target:
 
-- `6 acts x 5 handcrafted siege maps`
+- `30 handcrafted stage maps`
