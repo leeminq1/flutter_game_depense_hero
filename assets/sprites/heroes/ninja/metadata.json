@@ -1,0 +1,68 @@
+{
+  "id": "ninja",
+  "description": "Crimson assassin, dark hood, daggers, red cape",
+  "body_type": "teen",
+  "lpc_items": [
+    {
+      "item_id": "torso_armour_leather",
+      "variant": "",
+      "recolor": "brown"
+    },
+    {
+      "item_id": "hat_hood_cloth",
+      "variant": "hood_black",
+      "recolor": ""
+    },
+    {
+      "item_id": "belt_double",
+      "variant": "",
+      "recolor": ""
+    },
+    {
+      "item_id": "weapon_sword_dagger",
+      "variant": "",
+      "recolor": ""
+    },
+    {
+      "item_id": "cape_solid",
+      "variant": "",
+      "recolor": "red"
+    }
+  ],
+  "frame_layout": {
+    "spritesheet": "standard/walk.png (832x256)",
+    "directions": {
+      "north": 0,
+      "west": 1,
+      "south": 2
+    },
+    "frames": {
+      "base": {
+        "col": 4,
+        "x": 256
+      },
+      "walk_02": {
+        "col": 2,
+        "x": 128
+      },
+      "walk_03": {
+        "col": 6,
+        "x": 384
+      }
+    }
+  },
+  "east_direction": "runtime_mirrored_from_west",
+  "extracted_files": {
+    "south/base": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\ninja\\south\\base.png",
+    "south/walk_02": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\ninja\\south\\walk_02.png",
+    "south/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\ninja\\south\\walk_03.png",
+    "west/base": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\ninja\\west\\base.png",
+    "west/walk_02": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\ninja\\west\\walk_02.png",
+    "west/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\ninja\\west\\walk_03.png",
+    "north/base": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\ninja\\north\\base.png",
+    "north/walk_02": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\ninja\\north\\walk_02.png",
+    "north/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\ninja\\north\\walk_03.png"
+  },
+  "attribution": "Universal LPC Spritesheet Character Generator",
+  "url": "https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
+}

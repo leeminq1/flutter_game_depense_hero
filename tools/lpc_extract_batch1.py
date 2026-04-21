@@ -4,10 +4,10 @@ Uses Playwright + PIL to automate the LPC site, download walk.png (832x256),
 then crop 64x64 frames from the correct row/column for each direction.
 
 walk.png layout (4 rows x 13 cols of 64x64 each):
-  Row 0 (y=0):   SOUTH / Down  (walking toward viewer)
-  Row 1 (y=64):  WEST  / Left  (walking left)
-  Row 2 (y=128): EAST  / Right (walking right - runtime mirror in MVP)
-  Row 3 (y=192): NORTH / Up    (walking away from viewer)
+  Row 0 (y=0):   NORTH / Up    (walking away from viewer)
+  Row 1 (y=64):  WEST  / Left
+  Row 2 (y=128): SOUTH / Down  (walking toward viewer)
+  Row 3 (y=192): EAST  / Right (runtime mirror in MVP)
 
 Frame indices within each row (0-indexed):
   base    -> col 4 (frame /5 in 1-indexed LPC naming)
@@ -30,10 +30,10 @@ DOWNLOAD_TMP = Path(__file__).parent.parent / "tmp" / "lpc_downloads"
 # Frame layout in walk.png: row index per direction, column index per frame name
 # walk.png is 832x256 (13 cols x 4 rows of 64x64 frames)
 DIRECTION_ROW = {
-    "south": 0,  # Row 0: walking toward viewer
+    "north": 0,  # Row 0: walking away from viewer
     "west":  1,  # Row 1: walking left
-    "east":  2,  # Row 2: walking right (runtime-mirrored in MVP, skip for now)
-    "north": 3,  # Row 3: walking away from viewer
+    "south": 2,  # Row 2: walking toward viewer
+    "east":  3,  # Row 3: walking right (runtime-mirrored in MVP, skip for now)
 }
 FRAME_COL = {
     "base":    4,  # col 4 = LPC frame /5 (neutral planted)

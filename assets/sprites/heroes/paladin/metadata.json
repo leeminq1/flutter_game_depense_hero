@@ -1,0 +1,73 @@
+{
+  "id": "paladin",
+  "description": "Holy cleric, legion armor, gold helm, mace, white cape",
+  "body_type": "male",
+  "lpc_items": [
+    {
+      "item_id": "torso_armour_legion",
+      "variant": "",
+      "recolor": ""
+    },
+    {
+      "item_id": "shoulders_legion",
+      "variant": "",
+      "recolor": ""
+    },
+    {
+      "item_id": "hat_helmet_legion",
+      "variant": "",
+      "recolor": "gold"
+    },
+    {
+      "item_id": "weapon_blunt_mace",
+      "variant": "",
+      "recolor": ""
+    },
+    {
+      "item_id": "belt_mage",
+      "variant": "",
+      "recolor": ""
+    },
+    {
+      "item_id": "cape_solid",
+      "variant": "",
+      "recolor": "white"
+    }
+  ],
+  "frame_layout": {
+    "spritesheet": "standard/walk.png (832x256)",
+    "directions": {
+      "north": 0,
+      "west": 1,
+      "south": 2
+    },
+    "frames": {
+      "base": {
+        "col": 4,
+        "x": 256
+      },
+      "walk_02": {
+        "col": 2,
+        "x": 128
+      },
+      "walk_03": {
+        "col": 6,
+        "x": 384
+      }
+    }
+  },
+  "east_direction": "runtime_mirrored_from_west",
+  "extracted_files": {
+    "south/base": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\paladin\\south\\base.png",
+    "south/walk_02": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\paladin\\south\\walk_02.png",
+    "south/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\paladin\\south\\walk_03.png",
+    "west/base": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\paladin\\west\\base.png",
+    "west/walk_02": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\paladin\\west\\walk_02.png",
+    "west/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\paladin\\west\\walk_03.png",
+    "north/base": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\paladin\\north\\base.png",
+    "north/walk_02": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\paladin\\north\\walk_02.png",
+    "north/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\paladin\\north\\walk_03.png"
+  },
+  "attribution": "Universal LPC Spritesheet Character Generator",
+  "url": "https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
+}

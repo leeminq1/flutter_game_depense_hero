@@ -1,0 +1,6 @@
+Hero: mage
+Description: Fire wizard, red robe, black hood, magic staff, red cape
+Source: Universal LPC Spritesheet Character Generator
+URL: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+License: CC-BY-SA 3.0 / GPL 3.0 (see generator credits page)
+Items: torso_clothes_robe, shoulders_mantal, hat_hood_cloth, weapon_magic_loop, belt_mage, cape_solid

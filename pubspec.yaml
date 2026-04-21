@@ -139,6 +139,27 @@ flutter:
     - assets/sprites/enemies/wolf_scout/north/
     - assets/sprites/enemies/wolf_scout/south/
     - assets/sprites/enemies/wolf_scout/west/
+    - assets/sprites/heroes/
+    - assets/sprites/heroes/knight/
+    - assets/sprites/heroes/knight/north/
+    - assets/sprites/heroes/knight/south/
+    - assets/sprites/heroes/knight/west/
+    - assets/sprites/heroes/archer/
+    - assets/sprites/heroes/archer/north/
+    - assets/sprites/heroes/archer/south/
+    - assets/sprites/heroes/archer/west/
+    - assets/sprites/heroes/mage/
+    - assets/sprites/heroes/mage/north/
+    - assets/sprites/heroes/mage/south/
+    - assets/sprites/heroes/mage/west/
+    - assets/sprites/heroes/ninja/
+    - assets/sprites/heroes/ninja/north/
+    - assets/sprites/heroes/ninja/south/
+    - assets/sprites/heroes/ninja/west/
+    - assets/sprites/heroes/paladin/
+    - assets/sprites/heroes/paladin/north/
+    - assets/sprites/heroes/paladin/south/
+    - assets/sprites/heroes/paladin/west/
     - assets/sprites/defenders/
     - assets/sprites/environment/
     - assets/sprites/environment/landmarks/

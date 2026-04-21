@@ -1,0 +1,6 @@
+Hero: ninja
+Description: Crimson assassin, dark hood, daggers, red cape
+Source: Universal LPC Spritesheet Character Generator
+URL: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+License: CC-BY-SA 3.0 / GPL 3.0 (see generator credits page)
+Items: torso_armour_leather, hat_hood_cloth, belt_double, weapon_sword_dagger, cape_solid

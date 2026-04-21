@@ -1,0 +1,6 @@
+Hero: paladin
+Description: Holy cleric, legion armor, gold helm, mace, white cape
+Source: Universal LPC Spritesheet Character Generator
+URL: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+License: CC-BY-SA 3.0 / GPL 3.0 (see generator credits page)
+Items: torso_armour_legion, shoulders_legion, hat_helmet_legion, weapon_blunt_mace, belt_mage, cape_solid

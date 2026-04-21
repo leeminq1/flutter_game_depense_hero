@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 import { chromium } from 'playwright';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,9 +9,7 @@ const rootDir = path.resolve(__dirname, '..', '..');
 
 function getArg(flag) {
   const index = process.argv.indexOf(flag);
-  if (index === -1) {
-    return null;
-  }
+  if (index === -1) return null;
   return process.argv[index + 1] ?? null;
 }
 
@@ -28,62 +25,90 @@ if (!specsPath || !outDirArg) {
 const generatorUrl =
   'https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/';
 
-const configureEnemy = async (page, config) => {
-  return page.evaluate(async (cfg) => {
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    await window.setDefaultSelections();
-    const stateModule = await import(
-      'https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/sources/state/state.js'
-    );
-    const { state, resetAll, selectItem, getSelectionGroup, getStateDeps } =
-      stateModule;
-    const deps = getStateDeps();
+/**
+ * Build a v2 JSON config from a spec's selections array.
+ * Each selection is [itemId, variant] from the PS1 format.
+ * The system maps by itemId so key names are arbitrary.
+ */
+const buildJsonConfig = (spec) => {
+  const baseSelections = {
+    body:       { itemId: 'body',            variant: '', recolor: 'light' },
+    head:       { itemId: 'heads_human_male', variant: '', recolor: 'light' },
+    expression: { itemId: 'face_neutral',     variant: '', recolor: 'light' },
+  };
 
-    await resetAll();
-    state.bodyType = cfg.bodyType;
-
-    for (const itemId of cfg.removeItemIds || []) {
-      delete state.selections[getSelectionGroup(itemId)];
+  const itemSelections = {};
+  for (let i = 0; i < spec.selections.length; i++) {
+    const [itemId, variant] = spec.selections[i];
+    const key = `item_${i}`;
+    // Decide whether to use recolor or variant based on what the LPC site expects.
+    // For color-only items (plate armour, helm), use recolor. For style items, use variant.
+    const colorItems = [
+      'body', 'heads_human_male', 'heads_human_female', 'heads_elf',
+      'torso_armour_plate', 'torso_armour_leather', 'torso_armour_legion', 'torso_clothes_robe',
+      'shoulders_plate', 'shoulders_leather', 'shoulders_mantal', 'shoulders_legion',
+      'hat_helmet_close', 'hat_helmet_legion', 'hat_helmet_horned',
+      'cape_solid', 'cape_tattered',
+      'belt_mage', 'belt_double', 'belt_leather', 'belt_robe',
+      'shield_kite', 'shield_round', 'shield_heater_wood', 'shield_heater_revised_wood',
+    ];
+    if (colorItems.includes(itemId) && variant) {
+      itemSelections[key] = { itemId, variant: '', recolor: variant };
+    } else {
+      itemSelections[key] = { itemId, variant: variant || '', recolor: '' };
     }
+  }
 
-    for (const [itemId, variant] of cfg.selections) {
-      selectItem(itemId, variant ?? '');
-    }
+  // Remove default head/body if spec overrides them
+  const specItemIds = Object.values(itemSelections).map(s => s.itemId);
+  const selections = { ...baseSelections, ...itemSelections };
+  if (specItemIds.some(id => id.startsWith('heads_') && id !== 'heads_human_male')) {
+    delete selections.head;
+  }
 
-    deps.syncSelectionsToHash();
-    await deps.renderCharacter(state.selections, state.bodyType);
-    deps.redraw();
-    await sleep(350);
-
-    return {
-      hash: window.location.hash,
-    };
-  }, config);
+  return {
+    version: 2,
+    bodyType: spec.bodyType || 'male',
+    selections,
+    selectedAnimation: 'walk',
+  };
 };
 
-const downloadAnimationZip = async (page, id) => {
-  const archiveDir = path.resolve(
-    rootDir,
-    'output',
-    'playwright',
-    'lpc-animation-zips',
-  );
+/**
+ * Import character config via clipboard JSON and trigger ZIP download.
+ */
+const configureAndDownload = async (page, spec) => {
+  const config = buildJsonConfig(spec);
+
+  // Reset previous state
+  await page.evaluate(() => window.setDefaultSelections());
+  await page.waitForTimeout(2000);
+
+  // Write config to clipboard and import
+  await page.evaluate((cfg) => navigator.clipboard.writeText(JSON.stringify(cfg)), config);
+  await page.waitForTimeout(800);
+  await page.getByText('Import from Clipboard (JSON)').click();
+  await page.waitForTimeout(3500);
+
+  // Download ZIP
+  const archiveDir = path.resolve(rootDir, 'output', 'playwright', 'lpc-animation-zips');
   await fs.mkdir(archiveDir, { recursive: true });
-  const archivePath = path.join(archiveDir, `${id}.zip`);
-  const [download] = await Promise.all([
-    page.waitForEvent('download', { timeout: 120000 }),
-    page.getByText('ZIP: Split by animation and frame').click(),
-  ]);
+  const archivePath = path.join(archiveDir, `${spec.id}.zip`);
+
+  // Click download button and wait
+  const downloadPromise = page.waitForEvent('download', { timeout: 60000 });
+  await page.getByText('ZIP: Split by animation and frame').click();
+  const download = await downloadPromise;
   await download.saveAs(archivePath);
-  return archivePath;
+
+  const hash = await page.evaluate(() => window.location.hash);
+  return { animationZipPath: archivePath, hash };
 };
 
 const formatZipNotes = (result) => {
   const details = [
     `base <= ${result.baseArchivePath || 'unset'}`,
-    ...(result.zipExports ?? []).map(
-      (extra) => `${extra.suffix} <= ${extra.archivePath}`,
-    ),
+    ...(result.zipExports ?? []).map(e => `${e.suffix} <= ${e.archivePath}`),
   ];
   return details.join(', ');
 };
@@ -93,67 +118,57 @@ const main = async () => {
   const outDir = path.resolve(rootDir, outDirArg);
   await fs.mkdir(outDir, { recursive: true });
   if (reportPath) {
-    await fs.mkdir(
-      path.dirname(path.resolve(rootDir, reportPath)),
-      { recursive: true },
-    );
+    await fs.mkdir(path.dirname(path.resolve(rootDir, reportPath)), { recursive: true });
   }
 
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto(generatorUrl, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(
-    () => typeof window.setDefaultSelections === 'function',
-  );
+  const browser = await chromium.launch({ headless: false });
 
   const results = [];
   for (const spec of specs) {
-    const configured = await configureEnemy(page, spec);
-    const animationZipPath = await downloadAnimationZip(page, spec.id);
-    results.push({
-      id: spec.id,
-      outputPath: path.join(outDir, `${spec.id}.png`),
-      hash: configured.hash ?? '',
-      animationZipPath,
-      baseArchivePath: spec.baseArchivePath ?? null,
-      zipExports: spec.zipExports ?? [],
-    });
+    console.error(`Configuring: ${spec.id}`);
+    // Fresh context per hero to avoid state bleed between downloads
+    const context = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
+    const page = await context.newPage();
+    try {
+      await page.goto(generatorUrl, { waitUntil: 'networkidle', timeout: 60000 });
+      await page.waitForFunction(() => typeof window.setDefaultSelections === 'function', { timeout: 30000 });
+      await page.waitForTimeout(3000);
+
+      const { animationZipPath, hash } = await configureAndDownload(page, spec);
+      results.push({
+        id: spec.id,
+        outputPath: path.join(outDir, `${spec.id}.png`),
+        hash,
+        animationZipPath,
+        baseArchivePath: spec.baseArchivePath ?? null,
+        zipExports: spec.zipExports ?? [],
+      });
+      console.error(`  Done: ${spec.id} → ${animationZipPath}`);
+    } catch (err) {
+      console.error(`  ERROR ${spec.id}: ${err.message}`);
+      results.push({
+        id: spec.id, outputPath: '', hash: '', animationZipPath: '',
+        baseArchivePath: spec.baseArchivePath ?? null, zipExports: spec.zipExports ?? [],
+      });
+    } finally {
+      await context.close();
+    }
   }
 
   await browser.close();
 
   if (reportPath) {
     const lines = [
-      '# LPC Generated Enemy Sprites',
+      '# LPC Generated Hero Sprites',
       '',
-      'These enemy sprites were generated from the Universal LPC generator through a Playwright-driven Node export script.',
-      'High-level role prompts live in `assets/sprites/enemies/AI_GENERATION_PROMPTS.md`, and exact LPC selections live in `tools/generate_lpc_enemy_sprites.ps1`.',
-      '',
-      '| Enemy | Files | Notes |',
+      '| Hero | Files | Notes |',
       '| --- | --- | --- |',
-      ...results.map(
-        (result) =>
-          `| ${result.id} | assets/sprites/enemies/${result.id}.png plus walk companions | ZIP frame mapping: ${formatZipNotes(result)} |`,
+      ...results.map(r =>
+        `| ${r.id} | assets/sprites/heroes/${r.id}/ | ZIP frame mapping: ${formatZipNotes(r)} |`
       ),
       '',
-      '## Source and Format',
-      '',
-      '- Source generator: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/',
-      '- License status: LPC-derived assets require attribution. Preserve the generator credits export before shipping.',
-      '- Export format: transparent RGBA PNG, 64x64 centered crop from the split animation ZIP.',
-      '- Canonical frame mapping: base `standard/walk/down/5.png`, `walk_02` `standard/walk/down/3.png`, `walk_03` `standard/walk/down/7.png`.',
-      '- Local polish is applied only to the extracted base PNGs after export.',
-      '',
-      'Attribution is still required for LPC-derived assets.',
-      `Source generator: ${generatorUrl}`,
-      'Regenerate with: `powershell -ExecutionPolicy Bypass -File .\\tools\\generate_lpc_enemy_sprites.ps1`',
-      '',
     ];
-    await fs.writeFile(
-      path.resolve(rootDir, reportPath),
-      lines.join('\n'),
-      'utf8',
-    );
+    await fs.writeFile(path.resolve(rootDir, reportPath), lines.join('\n'), 'utf8');
   }
 
   process.stdout.write(JSON.stringify({ results }, null, 2));

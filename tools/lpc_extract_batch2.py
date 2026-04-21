@@ -4,10 +4,10 @@ Enemies: banner_captain, wolf_scout, skeleton, bone_archer,
          plague_bearer, corrupted_knight, hex_sniper, bastion_priest
 
 walk.png layout (832x256 = 13 cols x 4 rows of 64x64):
-  Row 0 (y=0):   SOUTH / Down
+  Row 0 (y=0):   NORTH / Up
   Row 1 (y=64):  WEST  / Left
-  Row 2 (y=128): EAST  / Right  (runtime-mirrored, skipped)
-  Row 3 (y=192): NORTH / Up
+  Row 2 (y=128): SOUTH / Down
+  Row 3 (y=192): EAST  / Right  (runtime-mirrored, skipped)
 
 Frame columns (0-indexed):
   base    = col 4
@@ -27,7 +27,7 @@ OUTPUT_DIR   = Path(__file__).parent.parent / "assets" / "sprites" / "enemies"
 DOWNLOAD_TMP = Path(__file__).parent.parent / "tmp" / "lpc_downloads"
 LPC_URL      = "https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
 
-DIRECTION_ROW = {"south": 0, "west": 1, "north": 3}
+DIRECTION_ROW = {"north": 0, "west": 1, "south": 2}
 FRAME_COL     = {"base": 4, "walk_02": 2, "walk_03": 6}
 
 ENEMIES = {

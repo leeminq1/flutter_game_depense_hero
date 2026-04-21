@@ -1,4 +1,5 @@
 import 'package:depense_game/game/models/tower_definition.dart';
+import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:flutter/foundation.dart';
 
 class TowerBranchChoiceDetails {
@@ -43,6 +44,24 @@ class SelectedTowerDetails {
   final String? branchLabel;
 }
 
+class SelectedHeroDetails {
+  const SelectedHeroDetails({
+    required this.kind,
+    required this.label,
+    required this.level,
+    required this.upgradeCost,
+    required this.shortDescription,
+    required this.canUpgrade,
+  });
+
+  final HeroKind kind;
+  final String label;
+  final int level;
+  final int upgradeCost;
+  final String shortDescription;
+  final bool canUpgrade;
+}
+
 class GameSessionController extends ChangeNotifier {
   int stageNumber = 1;
   int totalStages = 30;
@@ -61,7 +80,9 @@ class GameSessionController extends ChangeNotifier {
   int towersBuilt = 0;
   int maxTowerLevel = 1;
   TowerKind? selectedBuildable;
+  HeroKind? selectedHeroBuildable;
   SelectedTowerDetails? selectedTower;
+  SelectedHeroDetails? selectedHero;
   Set<String> builtTowerKinds = const {};
   String statusText = '아래 카드를 클릭해서 건물을 배치하세요.';
   List<String> activeFronts = const [];
@@ -100,7 +121,9 @@ class GameSessionController extends ChangeNotifier {
     maxTowerLevel = 1;
     builtTowerKinds = const {};
     selectedTower = null;
+    selectedHero = null;
     selectedBuildable = null;
+    selectedHeroBuildable = null;
     activeFronts = const [];
     nextFronts = const [];
     recoverySecondsRemaining = 0;
@@ -119,7 +142,19 @@ class GameSessionController extends ChangeNotifier {
   void setSelectedBuildable(TowerKind? towerKind) {
     selectedBuildable = towerKind;
     if (towerKind != null) {
+      selectedHeroBuildable = null;
       selectedTower = null;
+      selectedHero = null;
+    }
+    notifyListeners();
+  }
+
+  void setSelectedHeroBuildable(HeroKind? heroKind) {
+    selectedHeroBuildable = heroKind;
+    if (heroKind != null) {
+      selectedBuildable = null;
+      selectedTower = null;
+      selectedHero = null;
     }
     notifyListeners();
   }
@@ -128,6 +163,18 @@ class GameSessionController extends ChangeNotifier {
     selectedTower = details;
     if (details != null) {
       selectedBuildable = null;
+      selectedHeroBuildable = null;
+      selectedHero = null;
+    }
+    notifyListeners();
+  }
+
+  void setSelectedHero(SelectedHeroDetails? details) {
+    selectedHero = details;
+    if (details != null) {
+      selectedBuildable = null;
+      selectedHeroBuildable = null;
+      selectedTower = null;
     }
     notifyListeners();
   }

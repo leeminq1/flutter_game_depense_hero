@@ -6,6 +6,7 @@ import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
 import 'package:depense_game/game/core/depense_game.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
+import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
@@ -42,6 +43,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Timer? _towerActionBarTimer;
   String _lastStatusText = '';
   String? _lastSelectedTowerSignature;
+  String? _lastSelectedHeroSignature;
   bool _isBackgroundPaused = false;
   int? _immediateStarsAwarded;
 
@@ -127,6 +129,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       _towerActionBarVisible = false;
       _lastStatusText = '';
       _lastSelectedTowerSignature = null;
+      _lastSelectedHeroSignature = null;
       _game = DefensePrototypeGame(
         stage: stage,
         sessionController: _sessionController,
@@ -178,6 +181,17 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     ].join(':');
   }
 
+  String? _selectedHeroSignature(SelectedHeroDetails? hero) {
+    if (hero == null) {
+      return null;
+    }
+    return [
+      hero.kind.name,
+      hero.level.toString(),
+      hero.upgradeCost.toString(),
+    ].join(':');
+  }
+
   void _handleTransientHud() {
     final statusText = _sessionController.statusText;
     if (statusText.isNotEmpty && statusText != _lastStatusText) {
@@ -187,11 +201,20 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     final signature = _selectedTowerSignature(_sessionController.selectedTower);
     if (signature == _lastSelectedTowerSignature) {
-      return;
+      final heroSignature = _selectedHeroSignature(
+        _sessionController.selectedHero,
+      );
+      if (heroSignature == _lastSelectedHeroSignature) {
+        return;
+      }
     }
 
     _lastSelectedTowerSignature = signature;
-    if (signature == null) {
+    final heroSignature = _selectedHeroSignature(
+      _sessionController.selectedHero,
+    );
+    _lastSelectedHeroSignature = heroSignature;
+    if (signature == null && heroSignature == null) {
       _towerActionBarTimer?.cancel();
       if (mounted && _towerActionBarVisible) {
         setState(() => _towerActionBarVisible = false);
@@ -356,6 +379,17 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                   onSell: game.sellSelectedTower,
                                 ),
                               ),
+                            if (_towerActionBarVisible &&
+                                session.selectedHero != null)
+                              Positioned(
+                                left: 16,
+                                right: 16,
+                                bottom: 16,
+                                child: _HeroActionBar(
+                                  sessionController: session,
+                                  onUpgrade: game.upgradeSelectedHero,
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -363,6 +397,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         sessionController: session,
                         metaUpgrades: activeMetaUpgrades,
                         onSelect: game.selectBuildable,
+                        onSelectHero: game.selectHeroBuildable,
                         showWaveButton: showWaveButton,
                         nextWaveLabel: session.recoveryActive
                             ? '다음 ${session.loopLabel}'
@@ -704,6 +739,7 @@ class _BuildBar extends StatefulWidget {
     required this.sessionController,
     required this.metaUpgrades,
     required this.onSelect,
+    required this.onSelectHero,
     this.showWaveButton = false,
     this.nextWaveLabel = '',
     this.onStartWave,
@@ -715,6 +751,7 @@ class _BuildBar extends StatefulWidget {
   final GameSessionController sessionController;
   final ResolvedMetaUpgrades metaUpgrades;
   final ValueChanged<TowerKind?> onSelect;
+  final ValueChanged<HeroKind?> onSelectHero;
   final bool showWaveButton;
   final String nextWaveLabel;
   final VoidCallback? onStartWave;
@@ -728,6 +765,7 @@ class _BuildBar extends StatefulWidget {
 
 class _BuildBarState extends State<_BuildBar> {
   TowerKind? _specKind;
+  HeroKind? _specHeroKind;
 
   @override
   void initState() {
@@ -746,12 +784,29 @@ class _BuildBarState extends State<_BuildBar> {
         _specKind != null) {
       setState(() => _specKind = null);
     }
+    if (widget.sessionController.selectedHeroBuildable == null &&
+        _specHeroKind != null) {
+      setState(() => _specHeroKind = null);
+    }
   }
 
   void _handleCardTap(TowerKind kind) {
     final alreadySelected = widget.sessionController.selectedBuildable == kind;
-    setState(() => _specKind = alreadySelected ? null : kind);
+    setState(() {
+      _specKind = alreadySelected ? null : kind;
+      _specHeroKind = null;
+    });
     widget.onSelect(alreadySelected ? null : kind);
+  }
+
+  void _handleHeroCardTap(HeroKind kind) {
+    final alreadySelected =
+        widget.sessionController.selectedHeroBuildable == kind;
+    setState(() {
+      _specHeroKind = alreadySelected ? null : kind;
+      _specKind = null;
+    });
+    widget.onSelectHero(alreadySelected ? null : kind);
   }
 
   Widget _buildActionButton() {
@@ -804,8 +859,12 @@ class _BuildBarState extends State<_BuildBar> {
   @override
   Widget build(BuildContext context) {
     final entries = TowerCatalog.buildMenu;
+    final heroEntries = HeroCatalog.buildMenu;
     final specDef = _specKind != null
         ? entries.firstWhere((tower) => tower.kind == _specKind)
+        : null;
+    final specHero = _specHeroKind != null
+        ? heroEntries.firstWhere((hero) => hero.kind == _specHeroKind)
         : null;
 
     return Container(
@@ -816,7 +875,13 @@ class _BuildBarState extends State<_BuildBar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(height: 76, child: _BuildSummaryStrip(definition: specDef)),
+          SizedBox(
+            height: 76,
+            child: _BuildSummaryStrip(
+              definition: specDef,
+              heroDefinition: specHero,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
             child: SingleChildScrollView(
@@ -831,6 +896,19 @@ class _BuildBarState extends State<_BuildBar> {
                           widget.sessionController.selectedBuildable ==
                           tower.kind,
                       onPressed: () => _handleCardTap(tower.kind),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  for (final hero in heroEntries) ...[
+                    _HeroBuildCard(
+                      hero: hero,
+                      isUnlocked: hero.isUnlockedForStage(
+                        widget.sessionController.stageNumber,
+                      ),
+                      isSelected:
+                          widget.sessionController.selectedHeroBuildable ==
+                          hero.kind,
+                      onPressed: () => _handleHeroCardTap(hero.kind),
                     ),
                     const SizedBox(width: 12),
                   ],
@@ -852,12 +930,17 @@ class _BuildBarState extends State<_BuildBar> {
 }
 
 class _BuildSummaryStrip extends StatelessWidget {
-  const _BuildSummaryStrip({required this.definition});
+  const _BuildSummaryStrip({required this.definition, this.heroDefinition});
 
   final TowerDefinition? definition;
+  final HeroDefinition? heroDefinition;
 
   @override
   Widget build(BuildContext context) {
+    final hero = heroDefinition;
+    if (hero != null) {
+      return _HeroCardSummary(definition: hero);
+    }
     if (definition == null) {
       return Container(
         width: double.infinity,
@@ -914,6 +997,73 @@ class _TowerCardSummary extends StatelessWidget {
         ? _rating(1 / definition.cooldown, 1 / 0.85)
         : '5/5';
 
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A1018),
+        border: Border(bottom: BorderSide(color: Colors.white10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Text(
+                definition.label,
+                style: const TextStyle(
+                  color: Color(0xFFE4C67A),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      _SpecMetric(label: '사거리', value: rangeRating),
+                      const _SpecDot(),
+                      _SpecMetric(label: '피해량', value: damageRating),
+                      const _SpecDot(),
+                      _SpecMetric(label: '속도', value: speedRating),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            definition.shortDescription,
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroCardSummary extends StatelessWidget {
+  const _HeroCardSummary({required this.definition});
+
+  final HeroDefinition definition;
+
+  String _rating(double value, double max) {
+    final score = ((value / max) * 5).clamp(0.0, 5.0);
+    return '${score.round().clamp(1, 5)}/5';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rangeRating = _rating(definition.range, 150);
+    final damageRating = _rating(definition.damage, 42);
+    final speedRating = _rating(1 / definition.cooldown, 1 / 0.48);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1078,6 +1228,82 @@ class _BuildCard extends StatelessWidget {
   }
 }
 
+class _HeroBuildCard extends StatelessWidget {
+  const _HeroBuildCard({
+    required this.hero,
+    required this.isUnlocked,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  final HeroDefinition hero;
+  final bool isUnlocked;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: isUnlocked ? onPressed : null,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: 88,
+        height: 104,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF1C2733) : const Color(0xFF161D26),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? hero.color.withValues(alpha: 0.68)
+                : Colors.white10,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _heroIcon(hero.kind),
+              color: isUnlocked
+                  ? (isSelected ? const Color(0xFFE4C67A) : hero.color)
+                  : Colors.white24,
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              hero.label,
+              style: TextStyle(
+                color: isUnlocked ? Colors.white : Colors.white38,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              isUnlocked ? '${hero.cost}' : 'S${hero.unlockStage}',
+              style: TextStyle(
+                color: isUnlocked ? const Color(0xFFE4C67A) : Colors.white24,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _heroIcon(HeroKind kind) {
+    return switch (kind) {
+      HeroKind.knight => Icons.security_rounded,
+      HeroKind.archer => Icons.gps_fixed_rounded,
+      HeroKind.mage => Icons.auto_fix_high_rounded,
+      HeroKind.ninja => Icons.flash_on_rounded,
+      HeroKind.paladin => Icons.shield_moon_rounded,
+    };
+  }
+}
+
 class _TowerActionBar extends StatelessWidget {
   const _TowerActionBar({
     required this.sessionController,
@@ -1167,6 +1393,72 @@ class _TowerActionBar extends StatelessWidget {
             style: const TextStyle(color: Colors.white70, fontSize: 12),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroActionBar extends StatelessWidget {
+  const _HeroActionBar({
+    required this.sessionController,
+    required this.onUpgrade,
+  });
+
+  final GameSessionController sessionController;
+  final VoidCallback onUpgrade;
+
+  @override
+  Widget build(BuildContext context) {
+    final hero = sessionController.selectedHero;
+    if (hero == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xF2161D26),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: 12,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${hero.label} Lv.${hero.level}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${hero.shortDescription} 빈 타일을 터치하면 이동합니다.',
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          FilledButton.tonalIcon(
+            onPressed: hero.canUpgrade ? onUpgrade : null,
+            icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+            label: Text('${hero.upgradeCost}'),
           ),
         ],
       ),

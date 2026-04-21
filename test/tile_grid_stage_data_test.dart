@@ -70,7 +70,8 @@ void main() {
         expect(
           tileGrid.first.length,
           14,
-          reason: 'Stage $stageNumber siege grids should use 14 tile columns.',
+          reason:
+              'Stage $stageNumber authored grids should use 14 tile columns.',
         );
 
         expect(
@@ -79,13 +80,13 @@ void main() {
               .where((tile) => tile == TileType.citadel)
               .length,
           1,
-          reason: 'Stage $stageNumber siege grids should use a 1x1 citadel.',
+          reason: 'Stage $stageNumber authored grids should use a 1x1 citadel.',
         );
         expect(stage.supplyNodeCells, isEmpty);
         expect(
           stage.obstacles,
           isNotEmpty,
-          reason: 'Stage $stageNumber siege grids should define obstacles.',
+          reason: 'Stage $stageNumber authored grids should define obstacles.',
         );
 
         for (final entry in authoredPaths.entries) {
@@ -113,11 +114,18 @@ void main() {
                 'Stage $stageNumber route for $direction should start on its matching edge.',
           );
 
+          final citadelCell = stage.citadelCell ?? const [6, 6];
+          final citadelCol = citadelCell[0];
+          final citadelRow = citadelCell[1];
           final endsAtCitadelRing = switch (direction) {
-            SpawnDirection.north => end[0] == 6 && end[1] == 5,
-            SpawnDirection.south => end[0] == 6 && end[1] == 7,
-            SpawnDirection.east => end[0] == 7 && end[1] == 6,
-            SpawnDirection.west => end[0] == 5 && end[1] == 6,
+            SpawnDirection.north =>
+              end[0] == citadelCol && end[1] == citadelRow - 1,
+            SpawnDirection.south =>
+              end[0] == citadelCol && end[1] == citadelRow + 1,
+            SpawnDirection.east =>
+              end[0] == citadelCol + 1 && end[1] == citadelRow,
+            SpawnDirection.west =>
+              end[0] == citadelCol - 1 && end[1] == citadelRow,
           };
           expect(
             endsAtCitadelRing,
@@ -231,12 +239,139 @@ void main() {
     }
   });
 
-  test('act 1 siege stages reduce obstacle density as stage number rises', () {
+  test('authored Stage 1-10 maps expose four-front assault cycles', () {
+    const allFronts = {
+      SpawnDirection.north,
+      SpawnDirection.south,
+      SpawnDirection.east,
+      SpawnDirection.west,
+    };
+
+    final expectedObstacleCounts = {
+      1: 20,
+      2: 19,
+      3: 17,
+      4: 14,
+      5: 17,
+      6: 18,
+      7: 17,
+      8: 17,
+      9: 17,
+      10: 17,
+    };
+
+    final expectedCycleCounts = {
+      1: 3,
+      2: 3,
+      3: 4,
+      4: 4,
+      5: 4,
+      6: 4,
+      7: 4,
+      8: 4,
+      9: 4,
+      10: 4,
+    };
+
+    for (var stageNumber = 1; stageNumber <= 10; stageNumber += 1) {
+      final stage = CampaignData.stage(stageNumber);
+
+      expect(
+        stage.pathsByDirection?.keys.toSet(),
+        allFronts,
+        reason: 'Stage $stageNumber should keep the four-front map language.',
+      );
+      expect(
+        stage.assaultCycles.length,
+        expectedCycleCounts[stageNumber],
+        reason: 'Stage $stageNumber should use the authored Cycle count.',
+      );
+      expect(
+        stage.obstacles.length,
+        expectedObstacleCounts[stageNumber],
+        reason:
+            'Stage $stageNumber should keep its authored obstacle count until rebalanced.',
+      );
+
+      for (final cycle in stage.assaultCycles) {
+        expect(
+          cycle.activeFronts.toSet(),
+          allFronts,
+          reason:
+              'Stage $stageNumber Cycle ${cycle.number} should pressure all four fronts.',
+        );
+      }
+    }
+  });
+
+  test('authored Stage 1-10 obstacles do not sit on monster routes', () {
+    for (var stageNumber = 1; stageNumber <= 10; stageNumber += 1) {
+      final stage = CampaignData.stage(stageNumber);
+      final obstacleCells = {
+        for (final obstacle in stage.obstacles)
+          for (final cell in obstacle.occupiedCells) '${cell[0]},${cell[1]}',
+      };
+      final routeCells = {
+        for (final route in stage.pathsByDirection!.values)
+          for (final cell in route) '${cell[0]},${cell[1]}',
+      };
+
+      expect(
+        obstacleCells.intersection(routeCells),
+        isEmpty,
+        reason:
+            'Stage $stageNumber should keep authored obstacles off monster routes.',
+      );
+    }
+  });
+
+  test('authored Stage 1-10 obstacle counts are intentionally hand-tuned', () {
     final obstacleCounts = [
-      for (var stageNumber = 1; stageNumber <= 5; stageNumber += 1)
+      for (var stageNumber = 1; stageNumber <= 10; stageNumber += 1)
         CampaignData.stage(stageNumber).obstacles.length,
     ];
 
-    expect(obstacleCounts, orderedEquals([12, 10, 8, 6, 4]));
+    expect(
+      obstacleCounts,
+      orderedEquals([20, 19, 17, 14, 17, 18, 17, 17, 17, 17]),
+    );
+  });
+
+  test('stage 6-10 move the citadel through the first quadrant arc', () {
+    const expectedCells = {
+      6: [7, 5],
+      7: [8, 5],
+      8: [8, 4],
+      9: [9, 5],
+      10: [9, 4],
+    };
+
+    for (final entry in expectedCells.entries) {
+      final stage = CampaignData.stage(entry.key);
+
+      expect(stage.citadelCell, orderedEquals(entry.value));
+      expect(stage.tileGrid![entry.value[1]][entry.value[0]], TileType.citadel);
+    }
+  });
+
+  test('stage 7 no longer uses the legacy fallback map', () {
+    final stage = CampaignData.stage(7);
+
+    expect(stage.tileGrid!.length, 14);
+    expect(stage.tileGrid!.first.length, 14);
+    expect(stage.pathsByDirection?.keys.toSet(), {
+      SpawnDirection.north,
+      SpawnDirection.south,
+      SpawnDirection.east,
+      SpawnDirection.west,
+    });
+    expect(stage.assaultCycles, isNotEmpty);
+  });
+
+  test('stage 6 keeps the first shifted citadel position', () {
+    final stage = CampaignData.stage(6);
+
+    expect(stage.citadelCell, orderedEquals([7, 5]));
+    expect(stage.tileGrid![5][7], TileType.citadel);
   });
 }

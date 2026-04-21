@@ -39,6 +39,8 @@ Responsibilities:
 
 - Pool high-frequency sounds: projectile hits, tower shots, coin gain, placement.
 - Cap simultaneous plays per category, especially `enemyHit` and `death`.
+- Queue repeated combat SFX through the game loop and drain only a small per-frame budget.
+- Keep boundary jingles such as `waveClear` and `stageClear` as direct one-shot feedback.
 - Add small random variation by file selection, not pitch-shifting every frame.
 - Preload only the current stage's hot sounds plus global UI sounds.
 - Clear stage-specific cache when leaving the stage if memory becomes an issue.

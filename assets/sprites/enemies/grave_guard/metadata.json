@@ -31,9 +31,9 @@
     ]
   ],
   "direction_rows": {
-    "south": 0,
+    "north": 0,
     "west": 1,
-    "north": 3
+    "south": 2
   },
   "frame_cols": {
     "base": 4,

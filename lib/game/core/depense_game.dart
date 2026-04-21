@@ -7,6 +7,7 @@ import 'package:depense_game/game/audio/audio_event.dart';
 import 'package:depense_game/game/audio/game_audio_service.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/enemy_definition.dart';
+import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/game_visual_registry.dart';
@@ -59,6 +60,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   final List<_Enemy> _enemies = [];
   final List<_TowerPlacement> _towers = [];
+  final List<_HeroPlacement> _heroes = [];
   final List<_ProjectileVisual> _projectiles = [];
   final List<_BeamVisual> _beams = [];
   final List<_PulseVisual> _pulses = [];
@@ -78,6 +80,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   int _baseHealth = 0;
   String _statusText = '아래 카드를 클릭해서 건물을 배치하세요.';
   int? _selectedTowerIndex;
+  int? _selectedHeroIndex;
   double _selectedTowerOverlayTimer = 0;
   int _towersBuilt = 0;
   int _towersSold = 0;
@@ -179,6 +182,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
     sessionController.setSelectedBuildable(towerKind);
     _clearSelectedTowerSelection();
+    _clearSelectedHeroSelection();
     if (towerKind != null) {
       _showStatus(
         '${TowerCatalog.byKind(towerKind).label} 카드를 선택했습니다. 빈 타일을 터치해 배치하세요.',
@@ -187,6 +191,45 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     } else {
       _showStatus('아래 카드를 클릭해서 건물을 배치하세요.');
     }
+    _syncSession();
+  }
+
+  void selectHeroBuildable(HeroKind? heroKind) {
+    if (heroKind == null) {
+      sessionController.setSelectedHeroBuildable(null);
+      _showStatus('아래 카드에서 타워나 영웅을 선택하세요.');
+      _syncSession();
+      return;
+    }
+
+    final definition = HeroCatalog.byKind(heroKind);
+    if (!definition.isUnlockedForStage(stage.number)) {
+      _showStatus(
+        '${definition.label}은 Stage ${definition.unlockStage}부터 사용할 수 있습니다.',
+      );
+      audioService.play(AudioEvent.uiError);
+      _syncSession();
+      return;
+    }
+
+    final existingIndex = _heroes.indexWhere(
+      (hero) => hero.definition.kind == heroKind,
+    );
+    if (existingIndex >= 0) {
+      _selectedHeroIndex = existingIndex;
+      _selectedTowerIndex = null;
+      sessionController.setSelectedHero(_heroes[existingIndex].details);
+      _showStatus('${definition.label}을 선택했습니다. 빈 타일을 터치하면 이동합니다.');
+      audioService.play(AudioEvent.uiSelect);
+      _syncSession();
+      return;
+    }
+
+    sessionController.setSelectedHeroBuildable(heroKind);
+    _clearSelectedTowerSelection();
+    _selectedHeroIndex = null;
+    _showStatus('${definition.label}을 선택했습니다. 빈 타일을 터치해 배치하세요.');
+    audioService.play(AudioEvent.uiSelect);
     _syncSession();
   }
 
@@ -219,6 +262,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _selectedTowerIndex = null;
     sessionController.setSelectedTower(null);
     _selectedTowerOverlayTimer = 0;
+  }
+
+  void _clearSelectedHeroSelection() {
+    _selectedHeroIndex = null;
+    sessionController.setSelectedHero(null);
   }
 
   void startNextWave() {
@@ -293,7 +341,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     _coins -= tower.upgradeCost;
     tower.totalSpent += tower.upgradeCost;
+    final hpRatio = (tower.hitPoints / tower.maxHitPoints).clamp(0.0, 1.0);
     tower.level += 1;
+    tower.hitPoints = math.max(
+      tower.hitPoints + 32,
+      tower.maxHitPoints * hpRatio,
+    );
     tower.cooldownRemaining = math.min(
       tower.cooldownRemaining,
       tower.currentCooldown,
@@ -322,6 +375,38 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       '${tower.definition.label}을(를) 철거하고 ${tower.sellValue} 코인을 회수했습니다.',
     );
     audioService.play(AudioEvent.coinGain);
+    _syncSession();
+  }
+
+  void upgradeSelectedHero() {
+    final hero = _selectedHero;
+    if (hero == null) {
+      _showStatus('업그레이드할 영웅이 없습니다.');
+      _syncSession();
+      return;
+    }
+    if (!hero.canUpgrade) {
+      _showStatus('${hero.definition.label}은 더 이상 업그레이드할 수 없습니다.');
+      _syncSession();
+      return;
+    }
+    if (_coins < hero.upgradeCost) {
+      _showStatus('${hero.definition.label} 업그레이드에 필요한 골드가 부족합니다.');
+      audioService.play(AudioEvent.uiError);
+      _syncSession();
+      return;
+    }
+
+    _coins -= hero.upgradeCost;
+    hero.totalSpent += hero.upgradeCost;
+    hero.level += 1;
+    hero.cooldownRemaining = math.min(
+      hero.cooldownRemaining,
+      hero.currentCooldown,
+    );
+    _showStatus('${hero.definition.label}을 업그레이드했습니다. 빈 타일을 터치하면 이동합니다.');
+    audioService.play(AudioEvent.towerUpgrade);
+    _syncSelectedHero();
     _syncSession();
   }
 
@@ -373,6 +458,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _updateWaveSpawning(dt);
     _updateEnemies(dt);
     _updateTowers(dt);
+    _updateHeroes(dt);
     _updateVisuals(dt);
     _checkWaveResolution();
     _syncSession();
@@ -398,6 +484,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawSlots(canvas);
     _drawPulses(canvas);
     _drawTowers(canvas);
+    _drawHeroes(canvas);
     _drawProjectiles(canvas);
     _drawEnemies(canvas);
     _drawImpacts(canvas);
@@ -411,9 +498,22 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _handleTap(Vector2 position) {
+    final heroIndex = _heroIndexAt(position);
+    if (heroIndex != null) {
+      _selectedHeroIndex = heroIndex;
+      _selectedTowerIndex = null;
+      sessionController.setSelectedHero(_heroes[heroIndex].details);
+      _showStatus(
+        '${_heroes[heroIndex].definition.label}을 선택했습니다. 빈 타일을 터치하면 이동합니다.',
+      );
+      _syncSession();
+      return;
+    }
+
     final towerIndex = _towerIndexAt(position);
     if (towerIndex != null) {
       _selectedTowerIndex = towerIndex;
+      _selectedHeroIndex = null;
       sessionController.setSelectedTower(_towers[towerIndex].details);
       _showStatus('건물을 선택해 업그레이드나 철거가 가능합니다.');
       _showSelectedTowerOverlay();
@@ -425,6 +525,18 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _handlePlacement(Vector2 position) {
+    final heroSelection = sessionController.selectedHeroBuildable;
+    if (heroSelection != null) {
+      _handleHeroPlacement(position, heroSelection);
+      return;
+    }
+
+    final selectedHero = _selectedHero;
+    if (selectedHero != null) {
+      _handleHeroMove(position, selectedHero);
+      return;
+    }
+
     final selection = sessionController.selectedBuildable;
     if (selection == null) {
       _clearSelectedTowerSelection();
@@ -482,6 +594,64 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _syncSession();
   }
 
+  void _handleHeroPlacement(Vector2 position, HeroKind heroKind) {
+    final definition = HeroCatalog.byKind(heroKind);
+    Vector2? snapTarget;
+    var bestDist = 42.0;
+    for (final cell in _buildGridPositions()) {
+      final d = cell.distanceTo(position);
+      if (d < bestDist) {
+        bestDist = d;
+        snapTarget = cell;
+      }
+    }
+
+    if (snapTarget == null) {
+      sessionController.setSelectedHeroBuildable(null);
+      _showStatus('영웅을 배치할 빈 타일을 선택하세요.');
+      _syncSession();
+      return;
+    }
+    if (_coins < definition.cost) {
+      _showStatus('${definition.label} 고용에 필요한 골드가 부족합니다.');
+      audioService.play(AudioEvent.uiError);
+      _syncSession();
+      return;
+    }
+
+    _coins -= definition.cost;
+    _heroes.add(
+      _HeroPlacement(definition: definition, position: snapTarget.clone()),
+    );
+    _selectedHeroIndex = _heroes.length - 1;
+    sessionController.setSelectedHeroBuildable(null);
+    _showStatus('${definition.label}을 배치했습니다. 영웅을 선택하면 이동과 업그레이드가 가능합니다.');
+    audioService.play(AudioEvent.towerPlace);
+    _syncSelectedHero();
+    _syncSession();
+  }
+
+  void _handleHeroMove(Vector2 position, _HeroPlacement hero) {
+    Vector2? snapTarget;
+    var bestDist = 42.0;
+    for (final cell in _buildGridPositions()) {
+      final d = cell.distanceTo(position);
+      if (d < bestDist) {
+        bestDist = d;
+        snapTarget = cell;
+      }
+    }
+    if (snapTarget == null) {
+      _showStatus('이동할 수 있는 빈 타일을 선택하세요.');
+      _syncSession();
+      return;
+    }
+    hero.position.setFrom(snapTarget);
+    _showStatus('${hero.definition.label}을 이동했습니다.');
+    _syncSelectedHero();
+    _syncSession();
+  }
+
   void _updateSelectionOverlay(double dt) {
     if (_selectedTowerIndex == null || _selectedTowerOverlayTimer <= 0) {
       return;
@@ -499,6 +669,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   int? _towerIndexAt(Vector2 position) {
     for (var i = 0; i < _towers.length; i += 1) {
       if (_towers[i].position.distanceTo(position) <= (_tileSize * 0.42)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  int? _heroIndexAt(Vector2 position) {
+    for (var i = 0; i < _heroes.length; i += 1) {
+      if (_heroes[i].position.distanceTo(position) <= (_tileSize * 0.42)) {
         return i;
       }
     }
@@ -568,7 +747,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         }
       }
       _applyEnemyAbility(enemy, dt);
+      final towerAttackSlow = _applyEnemyTowerAttack(enemy);
       enemy.advance(_pathForEnemy(enemy), dt, _citadelCenter);
+      if (towerAttackSlow > 0) {
+        enemy.staggerTimer = math.max(enemy.staggerTimer, towerAttackSlow);
+      }
 
       if (enemy.reachedGoal) {
         _baseHealth -= enemy.currentBaseDamage;
@@ -609,6 +792,47 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
       _fireTower(tower);
     }
+  }
+
+  double _applyEnemyTowerAttack(_Enemy enemy) {
+    if (enemy.towerAttackCooldown > 0 || _towers.isEmpty) {
+      return 0;
+    }
+
+    var targetIndex = -1;
+    var bestDistance = _tileSize * 0.92;
+    for (var i = 0; i < _towers.length; i += 1) {
+      final distance = _towers[i].position.distanceTo(enemy.position);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        targetIndex = i;
+      }
+    }
+    if (targetIndex < 0) {
+      return 0;
+    }
+
+    final tower = _towers[targetIndex];
+    final damage = math.max(3.0, enemy.currentBaseDamage * 5.0);
+    tower.hitPoints -= damage;
+    enemy.towerAttackCooldown = 1.25;
+    enemy.towerAttackVisualTimer = 0.22;
+    _spawnImpact(tower.position, const Color(0xAAFF6A4C), 18, 0.16);
+    audioService.play(AudioEvent.armorHit);
+
+    if (tower.hitPoints <= 0) {
+      _spawnImpact(tower.position, const Color(0xAAFFB15A), 30, 0.28);
+      _towers.removeAt(targetIndex);
+      if (_selectedTowerIndex == targetIndex) {
+        _clearSelectedTowerSelection();
+      } else if (_selectedTowerIndex != null &&
+          _selectedTowerIndex! > targetIndex) {
+        _selectedTowerIndex = _selectedTowerIndex! - 1;
+      }
+      _showStatus('몬스터가 타워를 파괴했습니다. 해당 칸에 다시 건설할 수 있습니다.');
+    }
+
+    return 0.10;
   }
 
   void _fireTower(_TowerPlacement tower) {
@@ -1817,6 +2041,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return _pathsByDirection[enemy.spawnDirection] ?? _pathPoints;
   }
 
+  SpawnDirection _directionFromDelta(Vector2 delta) {
+    if (delta.x.abs() > delta.y.abs()) {
+      return delta.x >= 0 ? SpawnDirection.east : SpawnDirection.west;
+    }
+    return delta.y >= 0 ? SpawnDirection.south : SpawnDirection.north;
+  }
+
   List<Vector2> _spawnPathForDirection(SpawnDirection dir) {
     final resolvedCells = _resolvedRouteCellsForDirection(
       dir,
@@ -2363,7 +2594,84 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     for (final tower in _towers) {
       if (tower.position.distanceTo(pos) < (_tileSize * 0.72)) return true;
     }
+    for (var i = 0; i < _heroes.length; i += 1) {
+      if (i == _selectedHeroIndex) {
+        continue;
+      }
+      if (_heroes[i].position.distanceTo(pos) < (_tileSize * 0.72)) {
+        return true;
+      }
+    }
     return false;
+  }
+
+  void _updateHeroes(double dt) {
+    for (final hero in _heroes) {
+      hero.cooldownRemaining -= dt;
+      if (hero.attackVisualTimer > 0) {
+        hero.attackVisualTimer = math.max(0, hero.attackVisualTimer - dt);
+      }
+      hero.animTimer += dt;
+      if (hero.animTimer >= 0.15) {
+        hero.animTimer -= 0.15;
+        hero.animFrame =
+            (hero.animFrame + 1) %
+            HeroVisualCatalog.byKind(hero.definition.kind).frames;
+      }
+      if (hero.cooldownRemaining > 0) {
+        continue;
+      }
+      _fireHero(hero);
+    }
+  }
+
+  void _fireHero(_HeroPlacement hero) {
+    final target = _pickTarget(hero.position, hero.currentRange);
+    if (target == null) {
+      return;
+    }
+    hero.cooldownRemaining = hero.currentCooldown;
+    hero.attackVisualTimer = 0.22;
+    hero.facing = _directionFromDelta(target.position - hero.position);
+
+    final damageType = switch (hero.definition.kind) {
+      HeroKind.mage => _DamageType.magic,
+      _ => _DamageType.physical,
+    };
+    final adjustedDamage = _adjustDamageForEnemy(
+      target: target,
+      damage: hero.currentDamage,
+      damageType: damageType,
+    );
+    target.hitPoints -= adjustedDamage;
+
+    switch (hero.definition.kind) {
+      case HeroKind.mage:
+        _spawnBeam(
+          from: hero.position,
+          to: target.position,
+          color: hero.definition.color,
+          lifetime: 0.16,
+          strokeWidth: 3.2,
+        );
+        break;
+      case HeroKind.archer:
+        _spawnProjectile(
+          from: hero.position,
+          to: target.position,
+          color: hero.definition.color,
+          lifetime: 0.15,
+          radius: 3.0,
+        );
+        break;
+      default:
+        _spawnImpact(target.position, hero.definition.color, 18, 0.16);
+        target.staggerTimer = math.max(target.staggerTimer, 0.08);
+        break;
+    }
+
+    audioService.play(hero.definition.attackEvent);
+    _resolveEnemyDefeatIfNeeded(target);
   }
 
   double _distanceToSegment(Vector2 p, Vector2 a, Vector2 b) {
@@ -2420,6 +2728,31 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       if (tower.definition.kind == TowerKind.guardBarracks) {
         _drawBarracksDefenders(canvas, tower);
       }
+      final hpRatio = (tower.hitPoints / tower.maxHitPoints).clamp(0.0, 1.0);
+      if (hpRatio < 0.98) {
+        final barRect = Rect.fromLTWH(
+          center.dx - (_tileSize * 0.24),
+          center.dy - (_tileSize * 0.48),
+          _tileSize * 0.48,
+          4,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(barRect, const Radius.circular(3)),
+          Paint()..color = const Color(0x66000000),
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(
+              barRect.left,
+              barRect.top,
+              barRect.width * hpRatio,
+              barRect.height,
+            ),
+            const Radius.circular(3),
+          ),
+          Paint()..color = const Color(0xFFFF8A65),
+        );
+      }
       if (tower.level > 1) {
         _labelPaint.render(
           canvas,
@@ -2427,6 +2760,61 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           Vector2(center.dx - 8, center.dy + 12),
         );
       }
+    }
+  }
+
+  void _drawHeroes(Canvas canvas) {
+    for (var i = 0; i < _heroes.length; i += 1) {
+      final hero = _heroes[i];
+      final visual = HeroVisualCatalog.byKind(hero.definition.kind);
+      final directionKey = switch (hero.facing) {
+        SpawnDirection.north => 'north',
+        SpawnDirection.south => 'south',
+        SpawnDirection.east => 'west',
+        SpawnDirection.west => 'west',
+      };
+      final sprite = _visualRegistry.directionalHeroSprite(
+        hero.definition.kind,
+        direction: directionKey,
+        frame: hero.animFrame,
+      );
+      final center = hero.position.toOffset();
+      final isSelected = i == _selectedHeroIndex;
+      canvas.drawCircle(
+        center,
+        _tileSize * (isSelected ? 0.48 : 0.40),
+        Paint()
+          ..color = hero.definition.color.withValues(
+            alpha: isSelected ? 0.30 : 0.16,
+          ),
+      );
+      if (sprite != null) {
+        final bob = hero.attackVisualTimer > 0
+            ? hero.attackVisualTimer * 10
+            : 0;
+        _drawSprite(
+          canvas,
+          sprite,
+          center: Offset(center.dx, center.dy - bob),
+          size: visual.baseSize * visual.renderScale,
+          fallbackTint: visual.primaryColor,
+          flipX: hero.facing == SpawnDirection.east,
+        );
+      } else {
+        _drawTokenShape(
+          canvas,
+          center,
+          shape: visual.shape,
+          size: visual.baseSize,
+          fillColor: visual.primaryColor,
+          accentColor: visual.accentColor,
+        );
+      }
+      _labelPaint.render(
+        canvas,
+        'H${hero.level}',
+        Vector2(center.dx - 9, center.dy + 14),
+      );
     }
   }
 
@@ -2906,6 +3294,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
             ..strokeWidth = 3,
         );
       }
+      if (enemy.towerAttackVisualTimer > 0) {
+        canvas.drawCircle(
+          enemy.position.toOffset(),
+          15 + (enemy.towerAttackVisualTimer * 12),
+          Paint()
+            ..color = const Color(0x66FF7043)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.5,
+        );
+      }
       if (enemy.warlockCastVisualTimer > 0) {
         canvas.drawCircle(
           enemy.position.toOffset(),
@@ -3285,6 +3683,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     });
   }
 
+  void _syncSelectedHero() {
+    final hero = _selectedHero;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      sessionController.setSelectedHero(hero?.details);
+    });
+  }
+
   void _syncSession() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       sessionController.updateRuntime(
@@ -3330,16 +3735,57 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
     return _towers[index];
   }
+
+  _HeroPlacement? get _selectedHero {
+    final index = _selectedHeroIndex;
+    if (index == null || index < 0 || index >= _heroes.length) {
+      return null;
+    }
+    return _heroes[index];
+  }
+}
+
+class _HeroPlacement {
+  _HeroPlacement({required this.definition, required this.position})
+    : totalSpent = definition.cost;
+
+  final HeroDefinition definition;
+  final Vector2 position;
+  int level = 1;
+  int totalSpent;
+  double cooldownRemaining = 0;
+  double attackVisualTimer = 0;
+  int animFrame = 0;
+  double animTimer = 0;
+  SpawnDirection facing = SpawnDirection.south;
+
+  double get currentDamage => definition.damage * (1 + ((level - 1) * 0.38));
+  double get currentRange => definition.range * (1 + ((level - 1) * 0.07));
+  double get currentCooldown =>
+      math.max(0.24, definition.cooldown * (1 - ((level - 1) * 0.07)));
+  int get upgradeCost => (definition.cost * (0.70 + (level * 0.50))).round();
+  bool get canUpgrade => level < 3;
+
+  SelectedHeroDetails get details => SelectedHeroDetails(
+    kind: definition.kind,
+    label: definition.label,
+    level: level,
+    upgradeCost: upgradeCost,
+    shortDescription: definition.shortDescription,
+    canUpgrade: canUpgrade,
+  );
 }
 
 class _TowerPlacement {
   _TowerPlacement({required this.definition, required this.position})
-    : totalSpent = definition.cost;
+    : totalSpent = definition.cost,
+      hitPoints = 120 + (definition.cost * 0.65);
 
   final TowerDefinition definition;
   final Vector2 position;
   int level = 1;
   int totalSpent;
+  double hitPoints;
   double cooldownRemaining = 0;
   double economyTimer = 1.5;
   double attackVisualTimer = 0;
@@ -3376,6 +3822,8 @@ class _TowerPlacement {
   bool get canChooseBranch => level >= 2 && branchId == null;
   int get sellValue =>
       (totalSpent * (branchId == 'tribute' ? 0.82 : 0.7)).round();
+  double get maxHitPoints =>
+      120 + (definition.cost * 0.65) + ((level - 1) * 55);
 
   SelectedTowerDetails get details => SelectedTowerDetails(
     kind: definition.kind,
@@ -3466,6 +3914,8 @@ class _Enemy {
   bool bossPhaseOneTriggered = false;
   bool bossPhaseTwoTriggered = false;
   bool wasSlowedRecently = false;
+  double towerAttackCooldown = 0;
+  double towerAttackVisualTimer = 0;
 
   // Animation
   int animFrame = 0;
@@ -3545,6 +3995,12 @@ class _Enemy {
     }
     if (slowTimer <= 0) {
       wasSlowedRecently = false;
+    }
+    if (towerAttackCooldown > 0) {
+      towerAttackCooldown -= dt;
+    }
+    if (towerAttackVisualTimer > 0) {
+      towerAttackVisualTimer -= dt;
     }
   }
 

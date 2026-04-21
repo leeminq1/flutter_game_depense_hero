@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:depense_game/game/audio/audio_catalog.dart';
@@ -17,6 +18,24 @@ const _minIntervalByEvent = {
 /// 동시에 처리 중인 SFX 요청 최대 수. 초과 시 전투 SFX는 드롭.
 const _maxPendingSfx = 4;
 
+const _budgetedEvents = {
+  AudioEvent.arrowShot,
+  AudioEvent.slashHit,
+  AudioEvent.armorHit,
+  AudioEvent.magicHit,
+  AudioEvent.coinGain,
+  AudioEvent.baseDamage,
+};
+
+const _maxQueuedByEvent = {
+  AudioEvent.arrowShot: 2,
+  AudioEvent.slashHit: 2,
+  AudioEvent.armorHit: 2,
+  AudioEvent.magicHit: 2,
+  AudioEvent.coinGain: 1,
+  AudioEvent.baseDamage: 1,
+};
+
 class GameAudioService {
   GameAudioService(this._settings);
 
@@ -30,11 +49,12 @@ class GameAudioService {
 
   /// 현재 처리 중인 SFX 요청 수.
   int _pendingCount = 0;
+  final Map<AudioEvent, int> _queuedEvents = {};
 
   Future<void> initialize() async {
     // Note: FlameAudio.bgm.initialize() is often not required and can crash on some platforms.
     // bgm will initialize its player automatically on the first play() call.
-    
+
     final files = <String>{
       for (final entry in AudioCatalog.events.values) ...entry.assets,
     }.toList();
@@ -42,9 +62,11 @@ class GameAudioService {
     try {
       // Load all SFX assets into cache.
       await FlameAudio.audioCache.loadAll(files);
-      
+
       // Initialize pools for frequently played sounds (SFX).
-      for (final definition in AudioCatalog.events.values.where((e) => e.pooled)) {
+      for (final definition in AudioCatalog.events.values.where(
+        (e) => e.pooled,
+      )) {
         for (final asset in definition.assets) {
           _pools[asset] = await FlameAudio.createPool(
             asset,
@@ -66,9 +88,46 @@ class GameAudioService {
         _cooldownRemaining[event] = remaining - dt;
       }
     }
+    _drainQueuedEvents();
   }
 
   Future<void> play(AudioEvent event) async {
+    if (_budgetedEvents.contains(event)) {
+      final maxQueued = _maxQueuedByEvent[event] ?? 1;
+      final current = _queuedEvents[event] ?? 0;
+      if (current < maxQueued) {
+        _queuedEvents[event] = current + 1;
+      }
+      return;
+    }
+    return _playImmediate(event);
+  }
+
+  void _drainQueuedEvents() {
+    if (_queuedEvents.isEmpty || _pendingCount >= _maxPendingSfx) {
+      return;
+    }
+
+    var playedThisFrame = 0;
+    for (final event in List<AudioEvent>.from(_queuedEvents.keys)) {
+      if (playedThisFrame >= 2 || _pendingCount >= _maxPendingSfx) {
+        return;
+      }
+      final queued = _queuedEvents[event] ?? 0;
+      if (queued <= 0) {
+        _queuedEvents.remove(event);
+        continue;
+      }
+      _queuedEvents[event] = queued - 1;
+      if (_queuedEvents[event] == 0) {
+        _queuedEvents.remove(event);
+      }
+      playedThisFrame += 1;
+      unawaited(_playImmediate(event));
+    }
+  }
+
+  Future<void> _playImmediate(AudioEvent event) async {
     if (_settings.muted) {
       return;
     }
@@ -92,8 +151,11 @@ class GameAudioService {
     }
 
     final asset = _pickAsset(event, entry.assets);
-    final volume = (_settings.masterVolume * _settings.sfxVolume * entry.baseVolume)
-        .clamp(0.0, 1.0);
+    final volume =
+        (_settings.masterVolume * _settings.sfxVolume * entry.baseVolume).clamp(
+          0.0,
+          1.0,
+        );
 
     _pendingCount++;
     try {

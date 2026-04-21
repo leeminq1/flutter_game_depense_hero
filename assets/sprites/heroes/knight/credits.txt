@@ -1,0 +1,6 @@
+Hero: knight
+Description: Full plate knight, gold armor, blue cape, kite shield
+Source: Universal LPC Spritesheet Character Generator
+URL: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+License: CC-BY-SA 3.0 / GPL 3.0 (see generator credits page)
+Items: torso_armour_plate, shoulders_plate, hat_helmet_close, weapon_sword_arming, shield_kite, cape_solid

@@ -15,9 +15,9 @@ class CampaignData {
 
   static StageDefinition stage(int number) {
     final safeStage = number.clamp(1, totalStages);
-    final actOneSiege = _buildActOneCitadelSiege(safeStage);
-    if (actOneSiege != null) {
-      return actOneSiege;
+    final authoredCitadelStage = _buildAuthoredCitadelStage(safeStage);
+    if (authoredCitadelStage != null) {
+      return authoredCitadelStage;
     }
     final biome = _biomeForStage(safeStage);
     final environmentTheme = _environmentThemeForStage(safeStage);
@@ -29,8 +29,8 @@ class CampaignData {
     final tileGrid = _buildTileGrid(pathSequence, slotTemplate);
     final waveCount = safeStage >= 21 ? 5 : (safeStage >= 6 ? 4 : 3);
     final title = safeStage == 30
-        ? 'Siege 30 - Bastion Throne'
-        : 'Siege $safeStage - ${biome.title}';
+        ? 'Stage 30 - Bastion Throne'
+        : 'Stage $safeStage - ${biome.title}';
 
     return StageDefinition(
       number: safeStage,
@@ -1398,7 +1398,7 @@ class CampaignData {
           kind: kind,
           label: 'Raider',
           specialDescription: 'Enrages below half health and runs faster.',
-          hitPoints: (44 * hpMultiplier * intensity).round(),
+          hitPoints: (57 * hpMultiplier * intensity).round(),
           speed: 48 * moveSpeedMultiplier,
           rewardCoins: math.max(
             6,
@@ -1412,7 +1412,7 @@ class CampaignData {
           kind: kind,
           label: 'Scout',
           specialDescription: 'Dodges the first physical hit that lands on it.',
-          hitPoints: (30 * hpMultiplier * math.max(0.9, intensity)).round(),
+          hitPoints: (39 * hpMultiplier * math.max(0.9, intensity)).round(),
           speed: 68 * moveSpeedMultiplier,
           rewardCoins: math.max(
             5,
@@ -1427,7 +1427,7 @@ class CampaignData {
           label: 'Banner Captain',
           specialDescription:
               'Periodically rallies nearby bandits with speed and damage buffs.',
-          hitPoints: (60 * hpMultiplier * intensity).round(),
+          hitPoints: (78 * hpMultiplier * intensity).round(),
           speed: 44 * moveSpeedMultiplier,
           rewardCoins: math.max(
             9,
@@ -1442,7 +1442,7 @@ class CampaignData {
           label: 'Wolf Scout',
           specialDescription:
               'Dodges its first physical hit and sprints harder when wounded.',
-          hitPoints: (38 * hpMultiplier * math.max(0.95, intensity)).round(),
+          hitPoints: (49 * hpMultiplier * math.max(0.95, intensity)).round(),
           speed: 74 * moveSpeedMultiplier,
           rewardCoins: math.max(
             7,
@@ -1456,7 +1456,7 @@ class CampaignData {
           kind: kind,
           label: 'Shield Infantry',
           specialDescription: 'Reduces damage from physical towers.',
-          hitPoints: (86 * hpMultiplier * intensity).round(),
+          hitPoints: (112 * hpMultiplier * intensity).round(),
           speed: 34 * moveSpeedMultiplier,
           rewardCoins: math.max(
             10,
@@ -1470,7 +1470,7 @@ class CampaignData {
           kind: kind,
           label: 'Cult Adept',
           specialDescription: 'Periodically hastes nearby allies.',
-          hitPoints: (58 * hpMultiplier * intensity).round(),
+          hitPoints: (75 * hpMultiplier * intensity).round(),
           speed: 42 * moveSpeedMultiplier,
           rewardCoins: math.max(
             10,
@@ -1484,7 +1484,7 @@ class CampaignData {
           kind: kind,
           label: 'Skeleton',
           specialDescription: 'Revives once with partial health.',
-          hitPoints: (78 * hpMultiplier * intensity).round(),
+          hitPoints: (101 * hpMultiplier * intensity).round(),
           speed: 40 * moveSpeedMultiplier,
           rewardCoins: math.max(
             11,
@@ -1499,7 +1499,7 @@ class CampaignData {
           label: 'Bone Archer',
           specialDescription:
               'Leaves a fresh skeleton behind when it is destroyed.',
-          hitPoints: (66 * hpMultiplier * intensity).round(),
+          hitPoints: (86 * hpMultiplier * intensity).round(),
           speed: 44 * moveSpeedMultiplier,
           rewardCoins: math.max(
             13,
@@ -1514,7 +1514,7 @@ class CampaignData {
           label: 'Grave Guard',
           specialDescription:
               'Resists slows and pushes through control effects.',
-          hitPoints: (172 * hpMultiplier * (intensity + 0.08)).round(),
+          hitPoints: (224 * hpMultiplier * (intensity + 0.08)).round(),
           speed: 26 * moveSpeedMultiplier,
           rewardCoins: math.max(
             20,
@@ -1529,7 +1529,7 @@ class CampaignData {
           label: 'Plague Bearer',
           specialDescription:
               'Heals nearby undead and shrouds them in brief damage reduction.',
-          hitPoints: (104 * hpMultiplier * intensity).round(),
+          hitPoints: (135 * hpMultiplier * intensity).round(),
           speed: 34 * moveSpeedMultiplier,
           rewardCoins: math.max(
             21,
@@ -1544,7 +1544,7 @@ class CampaignData {
           label: 'Corrupted Knight',
           specialDescription:
               'Charges harder when wounded and resists physical fire.',
-          hitPoints: (145 * hpMultiplier * (intensity + 0.15)).round(),
+          hitPoints: (189 * hpMultiplier * (intensity + 0.15)).round(),
           speed: 30 * moveSpeedMultiplier,
           rewardCoins: math.max(
             18,
@@ -1559,7 +1559,7 @@ class CampaignData {
           label: 'Hex Sniper',
           specialDescription:
               'Refreshes a ward for itself and the most important nearby ally.',
-          hitPoints: (92 * hpMultiplier * intensity).round(),
+          hitPoints: (120 * hpMultiplier * intensity).round(),
           speed: 38 * moveSpeedMultiplier,
           rewardCoins: math.max(
             25,
@@ -1574,7 +1574,7 @@ class CampaignData {
           label: 'Warlock',
           specialDescription:
               'Wards allies and summons skeleton reinforcements.',
-          hitPoints: (98 * hpMultiplier * intensity).round(),
+          hitPoints: (127 * hpMultiplier * intensity).round(),
           speed: 33 * moveSpeedMultiplier,
           rewardCoins: math.max(
             22,
@@ -1589,7 +1589,7 @@ class CampaignData {
           label: 'Bastion Priest',
           specialDescription:
               'Heals elite allies and restores a ward to keep the line standing.',
-          hitPoints: (138 * hpMultiplier * (intensity + 0.06)).round(),
+          hitPoints: (179 * hpMultiplier * (intensity + 0.06)).round(),
           speed: 28 * moveSpeedMultiplier,
           rewardCoins: math.max(
             29,
@@ -1604,7 +1604,7 @@ class CampaignData {
           label: 'Bastion Overlord',
           specialDescription:
               'Final boss that phases, wards itself, and summons defenders.',
-          hitPoints: (1100 * hpMultiplier * math.max(1.0, intensity)).round(),
+          hitPoints: (1430 * hpMultiplier * math.max(1.0, intensity)).round(),
           speed: 24 * moveSpeedMultiplier,
           rewardCoins: math.max(
             180,
@@ -3217,12 +3217,13 @@ class CampaignData {
     return slots;
   }
 
-  static StageDefinition? _buildActOneCitadelSiege(int stageNumber) {
-    if (stageNumber < 1 || stageNumber > 5) {
+  static StageDefinition? _buildAuthoredCitadelStage(int stageNumber) {
+    if (stageNumber < 1 || stageNumber > 10) {
       return null;
     }
 
-    final layout = _actOneLayouts[stageNumber - 1];
+    final layout = _authoredCitadelLayouts[stageNumber - 1];
+    final citadelCell = layout.citadelCell;
     final pathsByDirection = layout.pathsByDirection;
     for (final entry in pathsByDirection.entries) {
       _validateSiegeRoute(
@@ -3230,27 +3231,33 @@ class CampaignData {
         direction: entry.key,
         columns: 14,
         rows: 14,
+        citadelCell: citadelCell,
       );
     }
 
     final primaryRoute = pathsByDirection[layout.primaryFront]!;
-    final legacyPathSequence = _legacyPathSequenceForSiege(primaryRoute);
-    final obstacles = _actOneObstaclesForStage(stageNumber);
+    final legacyPathSequence = _legacyPathSequenceForSiege(
+      primaryRoute,
+      citadelCell: citadelCell,
+    );
+    final obstacles = _authoredCitadelObstaclesForStage(stageNumber);
     final tileGrid = _buildCitadelTileGrid(
       columns: 14,
       rows: 14,
+      citadelCell: citadelCell,
       obstacleCells: _obstacleCellsFromDefinitions(obstacles),
     );
-    final assaultCycles = _buildActOneAssaultCycles(stageNumber);
+    final assaultCycles = _buildAuthoredCitadelAssaultCycles(stageNumber);
 
     return StageDefinition(
       number: stageNumber,
       actNumber: 1,
-      title: _actOneTitles[stageNumber - 1],
-      description: _actOneDescriptions[stageNumber - 1],
+      title: _authoredCitadelTitle(stageNumber),
+      description: _authoredCitadelDescription(stageNumber),
       startingCoins: 380,
       baseHealth: 40,
       citadelHp: 40,
+      citadelCell: citadelCell,
       environmentTheme: StageEnvironmentTheme.frontierRoad,
       pathNodes: _normalizedPathNodes(
         legacyPathSequence,
@@ -3264,7 +3271,7 @@ class CampaignData {
       pathClearance: 45.0,
       buildGridSpacing: 12.0,
       decorations: const [],
-      objectives: _actOneObjectives(stageNumber),
+      objectives: _authoredCitadelObjectives(stageNumber),
       unlockRequirements: _unlockRequirementsForStage(stageNumber),
       tileGrid: tileGrid,
       pathSequence: legacyPathSequence,
@@ -3291,7 +3298,9 @@ class CampaignData {
     );
   }
 
-  static List<StageObjectiveDefinition> _actOneObjectives(int stageNumber) {
+  static List<StageObjectiveDefinition> _authoredCitadelObjectives(
+    int stageNumber,
+  ) {
     final keepThreshold = switch (stageNumber) {
       1 => 34,
       2 => 32,
@@ -3303,7 +3312,7 @@ class CampaignData {
     return [
       const StageObjectiveDefinition(
         type: StageObjectiveType.clearStage,
-        label: 'Clear the siege',
+        label: 'Clear the Stage',
       ),
       StageObjectiveDefinition(
         type: StageObjectiveType.keepBaseHealth,
@@ -3318,7 +3327,7 @@ class CampaignData {
     ];
   }
 
-  static List<AssaultCycleDefinition> _buildActOneAssaultCycles(
+  static List<AssaultCycleDefinition> _buildAuthoredCitadelAssaultCycles(
     int stageNumber,
   ) {
     FrontSpawnGroupDefinition spawn(
@@ -3439,41 +3448,74 @@ class CampaignData {
         return [
           AssaultCycleDefinition(
             number: 1,
-            activeFronts: const [SpawnDirection.north],
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
             recoveryGoldBonus: 40,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.92),
-              spawn(SpawnDirection.north, EnemyKind.scout, 2, interval: 0.86),
+              spawn(SpawnDirection.east, EnemyKind.scout, 3, interval: 0.78),
+              spawn(SpawnDirection.north, EnemyKind.raider, 2, interval: 0.98),
+              spawn(SpawnDirection.south, EnemyKind.raider, 2, interval: 1.0),
+              spawn(SpawnDirection.west, EnemyKind.raider, 2, interval: 0.96),
             ],
           ),
           AssaultCycleDefinition(
             number: 2,
-            activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
             recoveryGoldBonus: 45,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.9),
-              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.82),
               spawn(
-                SpawnDirection.north,
-                EnemyKind.shieldInfantry,
-                1,
-                interval: 1.2,
+                SpawnDirection.east,
+                EnemyKind.scout,
+                4,
+                interval: 0.74,
+                intensity: 1.04,
               ),
+              spawn(SpawnDirection.north, EnemyKind.raider, 3, interval: 0.94),
+              spawn(SpawnDirection.west, EnemyKind.raider, 3, interval: 0.94),
+              spawn(SpawnDirection.south, EnemyKind.scout, 2, interval: 0.88),
             ],
           ),
           AssaultCycleDefinition(
             number: 3,
-            activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
             recoveryGoldBonus: 50,
             isFinalBreach: true,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 5, interval: 0.88),
-              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.8),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.scout,
+                4,
+                interval: 0.72,
+                intensity: 1.08,
+              ),
               spawn(
                 SpawnDirection.north,
+                EnemyKind.raider,
+                4,
+                interval: 0.9,
+                intensity: 1.06,
+              ),
+              spawn(SpawnDirection.west, EnemyKind.raider, 3, interval: 0.9),
+              spawn(SpawnDirection.south, EnemyKind.scout, 3, interval: 0.84),
+              spawn(
+                SpawnDirection.east,
                 EnemyKind.shieldInfantry,
-                2,
-                interval: 1.15,
+                1,
+                interval: 1.18,
               ),
             ],
           ),
@@ -3482,55 +3524,72 @@ class CampaignData {
         return [
           AssaultCycleDefinition(
             number: 1,
-            activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
             recoveryGoldBonus: 45,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.9),
-              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.82),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                1,
+                interval: 1.18,
+              ),
+              spawn(SpawnDirection.north, EnemyKind.raider, 3, interval: 0.92),
+              spawn(SpawnDirection.west, EnemyKind.scout, 2, interval: 0.8),
+              spawn(SpawnDirection.south, EnemyKind.raider, 2, interval: 0.94),
             ],
           ),
           AssaultCycleDefinition(
             number: 2,
             activeFronts: const [
               SpawnDirection.north,
+              SpawnDirection.south,
               SpawnDirection.west,
               SpawnDirection.east,
             ],
             recoveryGoldBonus: 50,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.88),
-              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.8),
               spawn(
                 SpawnDirection.east,
                 EnemyKind.shieldInfantry,
                 2,
                 interval: 1.16,
               ),
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.88),
+              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.78),
+              spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.9),
             ],
           ),
           AssaultCycleDefinition(
             number: 3,
             activeFronts: const [
               SpawnDirection.north,
+              SpawnDirection.south,
               SpawnDirection.west,
               SpawnDirection.east,
             ],
             recoveryGoldBonus: 55,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.86),
-              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.8),
               spawn(
                 SpawnDirection.east,
                 EnemyKind.shieldInfantry,
                 3,
                 interval: 1.12,
               ),
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.86),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.76),
+              spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.88),
             ],
           ),
           AssaultCycleDefinition(
             number: 4,
             activeFronts: const [
               SpawnDirection.north,
+              SpawnDirection.south,
               SpawnDirection.west,
               SpawnDirection.east,
             ],
@@ -3552,12 +3611,7 @@ class CampaignData {
                 interval: 1.08,
                 intensity: 1.06,
               ),
-              spawn(
-                SpawnDirection.east,
-                EnemyKind.bannerCaptain,
-                1,
-                interval: 2.15,
-              ),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.84),
             ],
           ),
         ];
@@ -3565,17 +3619,25 @@ class CampaignData {
         return [
           AssaultCycleDefinition(
             number: 1,
-            activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
             recoveryGoldBonus: 45,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.9),
-              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.82),
+              spawn(SpawnDirection.north, EnemyKind.raider, 3, interval: 0.86),
+              spawn(SpawnDirection.east, EnemyKind.raider, 3, interval: 0.86),
+              spawn(SpawnDirection.south, EnemyKind.scout, 2, interval: 0.8),
+              spawn(SpawnDirection.west, EnemyKind.scout, 2, interval: 0.8),
             ],
           ),
           AssaultCycleDefinition(
             number: 2,
             activeFronts: const [
               SpawnDirection.north,
+              SpawnDirection.south,
               SpawnDirection.west,
               SpawnDirection.east,
             ],
@@ -3584,6 +3646,7 @@ class CampaignData {
               spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.88),
               spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.8),
               spawn(SpawnDirection.east, EnemyKind.raider, 4, interval: 0.88),
+              spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.9),
             ],
           ),
           AssaultCycleDefinition(
@@ -3630,6 +3693,197 @@ class CampaignData {
             ],
           ),
         ];
+      case 5:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
+            recoveryGoldBonus: 50,
+            groups: [
+              spawn(SpawnDirection.east, EnemyKind.scout, 4, interval: 0.74),
+              spawn(SpawnDirection.north, EnemyKind.raider, 3, interval: 0.86),
+              spawn(SpawnDirection.west, EnemyKind.raider, 3, interval: 0.86),
+              spawn(SpawnDirection.south, EnemyKind.scout, 2, interval: 0.8),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
+            recoveryGoldBonus: 55,
+            groups: [
+              spawn(SpawnDirection.east, EnemyKind.scout, 5, interval: 0.72),
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.84),
+              spawn(SpawnDirection.west, EnemyKind.raider, 4, interval: 0.84),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.84),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
+            recoveryGoldBonus: 60,
+            groups: [
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.08,
+              ),
+              spawn(SpawnDirection.north, EnemyKind.raider, 5, interval: 0.82),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.76),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.82),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
+            recoveryGoldBonus: 65,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                3,
+                interval: 1.02,
+                intensity: 1.08,
+              ),
+              spawn(SpawnDirection.north, EnemyKind.raider, 5, interval: 0.8),
+              spawn(SpawnDirection.west, EnemyKind.scout, 5, interval: 0.74),
+              spawn(SpawnDirection.south, EnemyKind.raider, 5, interval: 0.8),
+              spawn(
+                SpawnDirection.south,
+                EnemyKind.bannerCaptain,
+                1,
+                interval: 2.15,
+              ),
+            ],
+          ),
+        ];
+      case 6:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.east,
+              SpawnDirection.south,
+              SpawnDirection.west,
+            ],
+            recoveryGoldBonus: 50,
+            groups: [
+              spawn(SpawnDirection.east, EnemyKind.scout, 4, interval: 0.72),
+              spawn(SpawnDirection.north, EnemyKind.raider, 3, interval: 0.84),
+              spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.88),
+              spawn(SpawnDirection.west, EnemyKind.raider, 3, interval: 0.88),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.east,
+              SpawnDirection.south,
+              SpawnDirection.west,
+            ],
+            recoveryGoldBonus: 55,
+            groups: [
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                2,
+                interval: 0.76,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                1,
+                interval: 1.08,
+              ),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.84),
+              spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.78),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.east,
+              SpawnDirection.south,
+              SpawnDirection.west,
+            ],
+            recoveryGoldBonus: 60,
+            groups: [
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.04,
+              ),
+              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.82),
+              spawn(SpawnDirection.south, EnemyKind.raider, 5, interval: 0.82),
+              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.76),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.east,
+              SpawnDirection.south,
+              SpawnDirection.west,
+            ],
+            recoveryGoldBonus: 65,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.0,
+                intensity: 1.06,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.wolfScout,
+                2,
+                interval: 0.74,
+                intensity: 1.04,
+              ),
+              spawn(
+                SpawnDirection.south,
+                EnemyKind.raider,
+                5,
+                interval: 0.8,
+                intensity: 1.06,
+              ),
+              spawn(
+                SpawnDirection.west,
+                EnemyKind.bannerCaptain,
+                1,
+                interval: 2.2,
+              ),
+            ],
+          ),
+        ];
       default:
         return [
           AssaultCycleDefinition(
@@ -3638,6 +3892,7 @@ class CampaignData {
               SpawnDirection.north,
               SpawnDirection.west,
               SpawnDirection.east,
+              SpawnDirection.south,
             ],
             recoveryGoldBonus: 50,
             groups: [
@@ -3649,6 +3904,7 @@ class CampaignData {
                 2,
                 interval: 1.12,
               ),
+              spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.9),
             ],
           ),
           AssaultCycleDefinition(
@@ -3732,7 +3988,42 @@ class CampaignData {
     }
   }
 
-  static List<List<int>> _legacyPathSequenceForSiege(List<List<int>> route) {
+  static String _authoredCitadelTitle(int stageNumber) {
+    return switch (stageNumber) {
+      1 => 'Stage 1 - 사방 방어 입문',
+      2 => 'Stage 2 - 방향별 압박 차이',
+      3 => 'Stage 3 - 첫 중장 체크',
+      4 => 'Stage 4 - 성 주변 재정비',
+      5 => 'Stage 5 - 초반 종합 시험',
+      6 => 'Stage 6 - 우상단 첫 변형',
+      7 => 'Stage 7 - 우측 성문 압박',
+      8 => 'Stage 8 - 북동 압박 강화',
+      9 => 'Stage 9 - 좌측 장거리 우회',
+      10 => 'Stage 10 - 우상단 미니 보스형',
+      _ => 'Stage $stageNumber',
+    };
+  }
+
+  static String _authoredCitadelDescription(int stageNumber) {
+    return switch (stageNumber) {
+      1 => '첫 Stage부터 사방에서 적이 들어옵니다. 장애물 우회를 읽고 중앙 성을 지키세요.',
+      2 => '사방 압박은 유지하되 동쪽 길이가 짧아집니다. 먼저 막을 방향을 판단하세요.',
+      3 => '방패 보병이 본격적으로 등장합니다. 물리 피해만으로 버티기 어렵습니다.',
+      4 => '성 주변 공간을 넓힌 재정비 Stage입니다. 바깥 성벽을 이용해 킬존을 만드세요.',
+      5 => '초반 구간 종합 시험입니다. 빠른 적, 중장, 사방 분산을 모두 처리해야 합니다.',
+      6 => '성이 우상단으로 이동합니다. 하단 넓은 공간을 활용하고 북동 압박을 막으세요.',
+      7 => '성이 조금 더 오른쪽에 자리합니다. 동쪽 짧은 압박과 남쪽 우회를 동시에 봅니다.',
+      8 => '성이 북동쪽으로 올라갑니다. 북쪽과 동쪽 접근이 빨라져 선제 배치가 중요합니다.',
+      9 => '성이 오른쪽으로 더 밀립니다. 좌측 긴 우회와 동쪽 성 앞 압박을 나눠 처리하세요.',
+      10 => '우상단 미니 보스형 Stage입니다. 세 방향 동시 압박과 짧은 성 앞 전투를 견디세요.',
+      _ => 'Stage $stageNumber',
+    };
+  }
+
+  static List<List<int>> _legacyPathSequenceForSiege(
+    List<List<int>> route, {
+    required List<int> citadelCell,
+  }) {
     if (route.isEmpty) {
       return const [];
     }
@@ -3743,14 +4034,16 @@ class CampaignData {
     final tail = route.last;
     var col = tail[0];
     var row = tail[1];
-    while (col != 6 || row != 6) {
-      if (col < 6) {
+    final citadelCol = citadelCell[0];
+    final citadelRow = citadelCell[1];
+    while (col != citadelCol || row != citadelRow) {
+      if (col < citadelCol) {
         col += 1;
-      } else if (col > 6) {
+      } else if (col > citadelCol) {
         col -= 1;
-      } else if (row < 6) {
+      } else if (row < citadelRow) {
         row += 1;
-      } else if (row > 6) {
+      } else if (row > citadelRow) {
         row -= 1;
       }
       sequence.add([col, row]);
@@ -3761,6 +4054,7 @@ class CampaignData {
   static List<List<TileType>> _buildCitadelTileGrid({
     required int columns,
     required int rows,
+    required List<int> citadelCell,
     required List<List<int>> obstacleCells,
   }) {
     final grid = List.generate(
@@ -3768,7 +4062,14 @@ class CampaignData {
       (_) => List.generate(columns, (_) => TileType.buildable),
     );
 
-    grid[6][6] = TileType.citadel;
+    final citadelCol = citadelCell[0];
+    final citadelRow = citadelCell[1];
+    if (citadelRow >= 0 &&
+        citadelRow < rows &&
+        citadelCol >= 0 &&
+        citadelCol < columns) {
+      grid[citadelRow][citadelCol] = TileType.citadel;
+    }
 
     for (final cell in obstacleCells) {
       final col = cell[0];
@@ -3797,273 +4098,212 @@ class CampaignData {
     return cells.values.toList();
   }
 
-  static List<StageObstacleDefinition> _actOneObstaclesForStage(
+  static List<StageObstacleDefinition> _authoredCitadelObstaclesForStage(
     int stageNumber,
   ) {
-    final stageOneOuterProps = const [
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/road_signpost.png',
+    const wall = 'assets/sprites/environment/landmarks/bastion_wall_chunk.png';
+    const sign = 'assets/sprites/environment/props/road_signpost.png';
+    const well = 'assets/sprites/environment/props/well.png';
+    const fence = 'assets/sprites/environment/props/wooden_fence_segment.png';
+    const wagon = 'assets/sprites/environment/props/wagon_wreck.png';
+    const supply = 'assets/sprites/environment/props/supply_crate.png';
+    const siege = 'assets/sprites/environment/props/siege_crate.png';
+
+    StageObstacleDefinition oneCell(
+      String assetPath,
+      int col,
+      int row, {
+      double scale = 1,
+    }) {
+      return StageObstacleDefinition(
+        assetPath: assetPath,
         occupiedCells: [
-          [1, 2],
+          [col, row],
         ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/well.png',
-        occupiedCells: [
-          [12, 2],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/wooden_fence_segment.png',
-        occupiedCells: [
-          [1, 11],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/wagon_wreck.png',
-        occupiedCells: [
-          [12, 11],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/supply_crate.png',
-        occupiedCells: [
-          [2, 9],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/siege_crate.png',
-        occupiedCells: [
-          [11, 9],
-        ],
-        scale: 1.0,
-      ),
-    ];
-    final stageOneInnerWalls = const [
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [5, 3],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [6, 3],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [7, 3],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [8, 3],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [3, 5],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [3, 6],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [3, 7],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [9, 5],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [9, 6],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [9, 7],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [5, 9],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [6, 9],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [7, 9],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [8, 9],
-        ],
-        scale: 0.51,
-      ),
-    ];
-    final cornerObstacles = const [
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/road_signpost.png',
-        occupiedCells: [
-          [1, 3],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/well.png',
-        occupiedCells: [
-          [12, 3],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/wooden_fence_segment.png',
-        occupiedCells: [
-          [1, 12],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/wagon_wreck.png',
-        occupiedCells: [
-          [12, 12],
-        ],
-        scale: 1.0,
-      ),
-    ];
-    final nodeObstacles = const [
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/supply_node_idle.png',
-        occupiedCells: [
-          [3, 4],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/supply_node_idle.png',
-        occupiedCells: [
-          [10, 4],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/supply_node_idle.png',
-        occupiedCells: [
-          [3, 9],
-        ],
-        scale: 1.0,
-      ),
-      StageObstacleDefinition(
-        assetPath: 'assets/sprites/environment/props/supply_node_idle.png',
-        occupiedCells: [
-          [10, 9],
-        ],
-        scale: 1.0,
-      ),
-    ];
-    final ringBarriers = const [
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [6, 3],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [3, 6],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [9, 6],
-        ],
-        scale: 0.51,
-      ),
-      StageObstacleDefinition(
-        assetPath:
-            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
-        occupiedCells: [
-          [6, 9],
-        ],
-        scale: 0.51,
-      ),
+        scale: scale,
+      );
+    }
+
+    List<StageObstacleDefinition> walls(List<List<int>> cells) {
+      return [
+        for (final cell in cells) oneCell(wall, cell[0], cell[1], scale: 0.51),
+      ];
+    }
+
+    final outerProps = [
+      oneCell(sign, 1, 2),
+      oneCell(well, 12, 2),
+      oneCell(fence, 1, 11),
+      oneCell(wagon, 12, 11),
+      oneCell(supply, 2, 9),
+      oneCell(siege, 11, 9),
     ];
 
     return switch (stageNumber) {
-      1 => [...stageOneOuterProps, ...stageOneInnerWalls],
-      2 => [
-        ...cornerObstacles,
-        ...nodeObstacles,
-        ringBarriers[0],
-        ringBarriers[3],
+      1 => [
+        ...outerProps,
+        ...walls([
+          [5, 3],
+          [6, 3],
+          [7, 3],
+          [8, 3],
+          [3, 5],
+          [3, 6],
+          [3, 7],
+          [9, 5],
+          [9, 6],
+          [9, 7],
+          [5, 9],
+          [6, 9],
+          [7, 9],
+          [8, 9],
+        ]),
       ],
-      3 => [...cornerObstacles, ...nodeObstacles],
-      4 => [...nodeObstacles, cornerObstacles[0], cornerObstacles[3]],
-      _ => [...nodeObstacles],
+      2 => [
+        ...outerProps,
+        ...walls([
+          [5, 3],
+          [6, 3],
+          [7, 3],
+          [9, 5],
+          [9, 7],
+          [10, 5],
+          [10, 7],
+          [5, 9],
+          [6, 9],
+          [8, 9],
+          [10, 8],
+          [3, 5],
+          [3, 6],
+        ]),
+      ],
+      3 => [
+        ...outerProps,
+        ...walls([
+          [6, 2],
+          [8, 2],
+          [9, 6],
+          [9, 8],
+          [10, 6],
+          [10, 8],
+          [5, 10],
+          [6, 10],
+          [7, 10],
+          [3, 6],
+          [4, 6],
+        ]),
+      ],
+      4 => [
+        ...outerProps,
+        ...walls([
+          [5, 3],
+          [7, 3],
+          [3, 5],
+          [9, 5],
+          [3, 7],
+          [9, 7],
+          [5, 9],
+          [7, 9],
+        ]),
+      ],
+      5 => [
+        ...outerProps,
+        ...walls([
+          [5, 3],
+          [6, 3],
+          [7, 3],
+          [8, 3],
+          [10, 7],
+          [11, 7],
+          [5, 9],
+          [7, 9],
+          [8, 9],
+          [3, 6],
+          [3, 7],
+        ]),
+      ],
+      6 => [
+        ...outerProps,
+        ...walls([
+          [8, 3],
+          [9, 3],
+          [9, 4],
+          [10, 4],
+          [10, 6],
+          [10, 7],
+          [5, 8],
+          [6, 8],
+          [9, 8],
+          [4, 5],
+          [4, 7],
+          [11, 6],
+        ]),
+      ],
+      7 => [
+        ...outerProps,
+        ...walls([
+          [10, 3],
+          [10, 4],
+          [11, 3],
+          [11, 6],
+          [11, 7],
+          [6, 8],
+          [7, 9],
+          [8, 9],
+          [10, 8],
+          [5, 5],
+          [5, 7],
+        ]),
+      ],
+      8 => [
+        ...outerProps,
+        ...walls([
+          [7, 2],
+          [10, 3],
+          [11, 5],
+          [10, 6],
+          [11, 7],
+          [7, 7],
+          [10, 8],
+          [10, 9],
+          [5, 4],
+          [5, 6],
+          [6, 9],
+        ]),
+      ],
+      9 => [
+        ...outerProps,
+        ...walls([
+          [8, 3],
+          [10, 3],
+          [11, 4],
+          [11, 6],
+          [10, 7],
+          [8, 8],
+          [11, 8],
+          [6, 5],
+          [5, 6],
+          [4, 9],
+          [7, 9],
+        ]),
+      ],
+      10 => [
+        ...outerProps,
+        ...walls([
+          [8, 2],
+          [7, 2],
+          [11, 3],
+          [11, 5],
+          [10, 6],
+          [8, 7],
+          [11, 7],
+          [6, 4],
+          [5, 5],
+          [4, 8],
+          [7, 9],
+        ]),
+      ],
+      _ => const [],
     };
   }
 
@@ -4072,6 +4312,7 @@ class CampaignData {
     required SpawnDirection direction,
     required int columns,
     required int rows,
+    required List<int> citadelCell,
   }) {
     if (route.isEmpty) {
       throw StateError('Siege route for $direction cannot be empty.');
@@ -4119,11 +4360,15 @@ class CampaignData {
     }
 
     final tail = route.last;
+    final citadelCol = citadelCell[0];
+    final citadelRow = citadelCell[1];
     final touchesCitadel = switch (direction) {
-      SpawnDirection.north => tail[0] == 6 && tail[1] == 5,
-      SpawnDirection.south => tail[0] == 6 && tail[1] == 7,
-      SpawnDirection.east => tail[0] == 7 && tail[1] == 6,
-      SpawnDirection.west => tail[0] == 5 && tail[1] == 6,
+      SpawnDirection.north =>
+        tail[0] == citadelCol && tail[1] == citadelRow - 1,
+      SpawnDirection.south =>
+        tail[0] == citadelCol && tail[1] == citadelRow + 1,
+      SpawnDirection.east => tail[0] == citadelCol + 1 && tail[1] == citadelRow,
+      SpawnDirection.west => tail[0] == citadelCol - 1 && tail[1] == citadelRow,
     };
     if (!touchesCitadel) {
       throw StateError(
@@ -4132,23 +4377,27 @@ class CampaignData {
     }
   }
 
-  static const List<String> _actOneTitles = [
-    'Siege 1 - North Watch',
-    'Siege 2 - Split Trail',
-    'Siege 3 - Crosswind Gate',
-    'Siege 4 - Encirclement Drill',
-    'Siege 5 - Forest Approaches',
+  // ignore: unused_field
+  static const List<String> _authoredCitadelTitles = [
+    'Stage 1 - 사방 압박 입문',
+    'Stage 2 - 방향별 강약 차이',
+    'Stage 3 - 첫 중장 체크',
+    'Stage 4 - 성 근처 압박',
+    'Stage 5 - 초반 종합 시험',
+    'Stage 6 - 오른쪽 위 성 첫 변형',
   ];
 
-  static const List<String> _actOneDescriptions = [
-    '북쪽 도로로 적들이 접근하고 있습니다. 성채를 방어하며 전장의 흐름을 익히세요.',
-    '적들이 북쪽과 서쪽 도로를 향해 압박을 가하기 시작합니다.',
-    '세 번째 전선이 열리고 동쪽에서 중무장한 적이 처음으로 등장합니다.',
-    '사방에서 적들이 몰려옵니다. 전장 전체를 주시하며 병력을 분배하십시오.',
-    '작전 구역의 마지막 웨이브입니다. 깃발 군장이 이끄는 대규모 공격이 사방에서 쏟아집니다.',
+  // ignore: unused_field
+  static const List<String> _authoredCitadelDescriptions = [
+    '첫 Stage부터 사방에서 적이 들어옵니다. 장애물 우회를 읽고 중앙 성을 지키세요.',
+    '사방 압박은 유지되지만 동쪽 길이 가장 짧습니다. 먼저 막을 방향을 판단하세요.',
+    '방패 보병이 본격적으로 등장합니다. 저지와 마법 대응을 함께 준비하세요.',
+    '성 근처까지 이어지는 짧은 직선 압박이 강해집니다. 마지막 방어선을 놓치지 마세요.',
+    '초반 구간 종합 시험입니다. 빠른 압박, 중장, 사방 분산을 모두 처리해야 합니다.',
+    '성이 오른쪽 위로 이동합니다. 짧은 북동 압박을 막고 아래쪽 넓은 킬존을 활용하세요.',
   ];
 
-  static const List<_CitadelSiegeLayout> _actOneLayouts = [
+  static const List<_CitadelSiegeLayout> _authoredCitadelLayouts = [
     _CitadelSiegeLayout(
       primaryFront: SpawnDirection.north,
       pathsByDirection: {
@@ -4206,21 +4455,30 @@ class CampaignData {
       },
     ),
     _CitadelSiegeLayout(
-      primaryFront: SpawnDirection.west,
+      primaryFront: SpawnDirection.east,
       pathsByDirection: {
         SpawnDirection.north: [
           [5, 0],
           [5, 1],
           [5, 2],
-          [5, 3],
+          [4, 2],
+          [3, 2],
+          [3, 3],
+          [3, 4],
+          [4, 4],
           [5, 4],
-          [5, 5],
+          [6, 4],
           [6, 5],
         ],
         SpawnDirection.south: [
-          [7, 13],
-          [7, 12],
-          [7, 11],
+          [8, 13],
+          [8, 12],
+          [9, 12],
+          [10, 12],
+          [10, 11],
+          [10, 10],
+          [9, 10],
+          [8, 10],
           [7, 10],
           [7, 9],
           [7, 8],
@@ -4228,13 +4486,12 @@ class CampaignData {
           [6, 7],
         ],
         SpawnDirection.east: [
-          [13, 5],
-          [12, 5],
-          [11, 5],
-          [10, 5],
-          [9, 5],
-          [8, 5],
-          [7, 5],
+          [13, 6],
+          [12, 6],
+          [11, 6],
+          [10, 6],
+          [9, 6],
+          [8, 6],
           [7, 6],
         ],
         SpawnDirection.west: [
@@ -4242,7 +4499,9 @@ class CampaignData {
           [1, 7],
           [2, 7],
           [3, 7],
-          [4, 7],
+          [3, 8],
+          [4, 8],
+          [5, 8],
           [5, 7],
           [5, 6],
         ],
@@ -4256,18 +4515,24 @@ class CampaignData {
           [7, 1],
           [7, 2],
           [7, 3],
-          [7, 4],
-          [7, 5],
+          [6, 3],
+          [5, 3],
+          [5, 4],
+          [5, 5],
           [6, 5],
         ],
         SpawnDirection.south: [
           [5, 13],
           [5, 12],
           [5, 11],
-          [5, 10],
+          [4, 11],
+          [3, 11],
+          [3, 10],
+          [3, 9],
+          [4, 9],
           [5, 9],
-          [5, 8],
-          [5, 7],
+          [6, 9],
+          [6, 8],
           [6, 7],
         ],
         SpawnDirection.east: [
@@ -4337,27 +4602,194 @@ class CampaignData {
           [6, 0],
           [6, 1],
           [6, 2],
-          [6, 3],
+          [5, 2],
+          [4, 2],
+          [4, 3],
+          [4, 4],
+          [5, 4],
           [6, 4],
           [6, 5],
         ],
         SpawnDirection.south: [
-          [6, 13],
-          [6, 12],
-          [6, 11],
+          [7, 13],
+          [7, 12],
+          [8, 12],
+          [9, 12],
+          [9, 11],
+          [9, 10],
+          [8, 10],
+          [7, 10],
           [6, 10],
           [6, 9],
           [6, 8],
           [6, 7],
         ],
         SpawnDirection.east: [
-          [13, 6],
-          [12, 6],
-          [11, 6],
+          [13, 5],
+          [12, 5],
+          [11, 5],
+          [10, 5],
           [10, 6],
           [9, 6],
           [8, 6],
           [7, 6],
+        ],
+        SpawnDirection.west: [
+          [0, 8],
+          [1, 8],
+          [2, 8],
+          [3, 8],
+          [4, 8],
+          [4, 7],
+          [4, 6],
+          [5, 6],
+        ],
+      },
+    ),
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.east,
+      citadelCell: [7, 5],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [7, 0],
+          [7, 1],
+          [8, 1],
+          [9, 1],
+          [9, 2],
+          [8, 2],
+          [7, 2],
+          [7, 3],
+          [7, 4],
+        ],
+        SpawnDirection.south: [
+          [6, 13],
+          [6, 12],
+          [5, 12],
+          [4, 12],
+          [4, 11],
+          [4, 10],
+          [5, 10],
+          [6, 10],
+          [7, 10],
+          [8, 10],
+          [8, 9],
+          [8, 8],
+          [7, 8],
+          [7, 7],
+          [7, 6],
+        ],
+        SpawnDirection.east: [
+          [13, 5],
+          [12, 5],
+          [11, 5],
+          [10, 5],
+          [9, 5],
+          [8, 5],
+        ],
+        SpawnDirection.west: [
+          [0, 7],
+          [1, 7],
+          [2, 7],
+          [3, 7],
+          [3, 6],
+          [4, 6],
+          [5, 6],
+          [5, 5],
+          [6, 5],
+        ],
+      },
+    ),
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.east,
+      citadelCell: [8, 5],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [8, 0],
+          [8, 1],
+          [9, 1],
+          [10, 1],
+          [10, 2],
+          [9, 2],
+          [8, 2],
+          [8, 3],
+          [8, 4],
+        ],
+        SpawnDirection.south: [
+          [7, 13],
+          [7, 12],
+          [6, 12],
+          [5, 12],
+          [5, 11],
+          [5, 10],
+          [6, 10],
+          [7, 10],
+          [8, 10],
+          [9, 10],
+          [9, 9],
+          [9, 8],
+          [8, 8],
+          [8, 7],
+          [8, 6],
+        ],
+        SpawnDirection.east: [
+          [13, 5],
+          [12, 5],
+          [11, 5],
+          [10, 5],
+          [9, 5],
+        ],
+        SpawnDirection.west: [
+          [0, 7],
+          [1, 7],
+          [2, 7],
+          [3, 7],
+          [4, 7],
+          [4, 6],
+          [5, 6],
+          [6, 6],
+          [7, 6],
+          [7, 5],
+        ],
+      },
+    ),
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.north,
+      citadelCell: [8, 4],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [8, 0],
+          [8, 1],
+          [9, 1],
+          [10, 1],
+          [10, 2],
+          [9, 2],
+          [8, 2],
+          [8, 3],
+        ],
+        SpawnDirection.south: [
+          [7, 13],
+          [7, 12],
+          [6, 12],
+          [5, 12],
+          [5, 11],
+          [5, 10],
+          [6, 10],
+          [7, 10],
+          [8, 10],
+          [9, 10],
+          [9, 9],
+          [9, 8],
+          [8, 8],
+          [8, 7],
+          [8, 6],
+          [8, 5],
+        ],
+        SpawnDirection.east: [
+          [13, 4],
+          [12, 4],
+          [11, 4],
+          [10, 4],
+          [9, 4],
         ],
         SpawnDirection.west: [
           [0, 6],
@@ -4365,7 +4797,119 @@ class CampaignData {
           [2, 6],
           [3, 6],
           [4, 6],
+          [4, 5],
+          [5, 5],
+          [6, 5],
+          [7, 5],
+          [7, 4],
+        ],
+      },
+    ),
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.west,
+      citadelCell: [9, 5],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [9, 0],
+          [9, 1],
+          [10, 1],
+          [11, 1],
+          [11, 2],
+          [10, 2],
+          [9, 2],
+          [9, 3],
+          [9, 4],
+        ],
+        SpawnDirection.south: [
+          [8, 13],
+          [8, 12],
+          [7, 12],
+          [6, 12],
+          [6, 11],
+          [6, 10],
+          [7, 10],
+          [8, 10],
+          [9, 10],
+          [10, 10],
+          [10, 9],
+          [10, 8],
+          [9, 8],
+          [9, 7],
+          [9, 6],
+        ],
+        SpawnDirection.east: [
+          [13, 5],
+          [12, 5],
+          [11, 5],
+          [10, 5],
+        ],
+        SpawnDirection.west: [
+          [0, 8],
+          [1, 8],
+          [2, 8],
+          [3, 8],
+          [4, 8],
+          [4, 7],
+          [5, 7],
+          [6, 7],
+          [7, 7],
+          [8, 7],
+          [8, 6],
+          [8, 5],
+        ],
+      },
+    ),
+    _CitadelSiegeLayout(
+      primaryFront: SpawnDirection.north,
+      citadelCell: [9, 4],
+      pathsByDirection: {
+        SpawnDirection.north: [
+          [9, 0],
+          [9, 1],
+          [10, 1],
+          [11, 1],
+          [11, 2],
+          [10, 2],
+          [9, 2],
+          [9, 3],
+        ],
+        SpawnDirection.south: [
+          [8, 13],
+          [8, 12],
+          [7, 12],
+          [6, 12],
+          [6, 11],
+          [6, 10],
+          [7, 10],
+          [8, 10],
+          [9, 10],
+          [10, 10],
+          [10, 9],
+          [10, 8],
+          [9, 8],
+          [9, 7],
+          [9, 6],
+          [9, 5],
+        ],
+        SpawnDirection.east: [
+          [13, 4],
+          [12, 4],
+          [11, 4],
+          [10, 4],
+        ],
+        SpawnDirection.west: [
+          [0, 7],
+          [1, 7],
+          [2, 7],
+          [3, 7],
+          [4, 7],
+          [4, 6],
           [5, 6],
+          [6, 6],
+          [7, 6],
+          [8, 6],
+          [8, 5],
+          [8, 4],
         ],
       },
     ),
@@ -4416,9 +4960,11 @@ class _BiomeProfile {
 class _CitadelSiegeLayout {
   const _CitadelSiegeLayout({
     required this.primaryFront,
+    this.citadelCell = const [6, 6],
     required this.pathsByDirection,
   });
 
   final SpawnDirection primaryFront;
+  final List<int> citadelCell;
   final Map<SpawnDirection, List<List<int>>> pathsByDirection;
 }

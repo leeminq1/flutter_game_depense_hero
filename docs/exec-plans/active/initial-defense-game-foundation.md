@@ -113,6 +113,8 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-16: Citadel-siege follow-up fixes now restore authored front routes and on-board telegraphs, re-lock tower placement to valid buildable tiles only, allow immediate manual cycle starts during recovery, and normalize the outlier landmark and supply-node sprite sizes back to the environment asset set.
 - 2026-04-16: Act 1 siege runtime now follows the rebuilt `full-map 1x1 placement + explicit obstacle` model: Coin Mill no longer depends on supply-node-only placement in the playable, the citadel is rendered as a `1x1` center anchor, visible environment obstacles now own build blocking and enemy detours, and obstacle density drops from stage 1 through stage 5 instead of relying on generic blocked-tile overlays.
 - 2026-04-19: A dedicated authored-map workflow now exists under `docs/design-docs/map-authoring/`, establishing the plan to handcraft the 30-stage campaign by act instead of leaning on unrestricted random obstacle generation.
+- 2026-04-21: Stage 6 now starts the quadrant-based castle-position arc with an authored `[7,5]` citadel, and campaign map generation can place the citadel from stage data instead of assuming the fixed `[6,6]` center.
+- 2026-04-21: Stage 7-10 are now planned as authored maps instead of fallback layouts, combat SFX are budgeted through a per-frame queue, monsters can damage towers, and the first stage-local hero purchase model is being introduced.
 
 ## Risks
 

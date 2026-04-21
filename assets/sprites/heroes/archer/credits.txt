@@ -1,0 +1,6 @@
+Hero: archer
+Description: Elf ranger, forest leather, bow, pointed ears
+Source: Universal LPC Spritesheet Character Generator
+URL: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+License: CC-BY-SA 3.0 / GPL 3.0 (see generator credits page)
+Items: head_ears_elven, torso_armour_leather, shoulders_leather, weapon_ranged_bow_normal, belt_double, cape_solid

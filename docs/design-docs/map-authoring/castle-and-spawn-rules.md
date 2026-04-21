@@ -49,10 +49,14 @@
 ```mermaid
 flowchart LR
     A["Stage 1~5"] --> B["중앙 성 중심"]
-    B --> C["가끔 위/아래 치우침 시도"]
-    C --> D["Stage 6 이후 좌우 치우침 확대"]
-    D --> E["후반에는 안쪽 코너 성 허용"]
+    B --> C["Stage 6~10\n1사분면 오른쪽 위"]
+    C --> D["Stage 11~15\n2사분면 왼쪽 위"]
+    D --> E["Stage 16~20\n3사분면 왼쪽 아래"]
+    E --> F["Stage 21~25\n4사분면 오른쪽 아래"]
+    F --> G["Stage 26~30\n혼합 최종 시험"]
 ```
+
+전체 30 Stage 위치 진행은 [campaign-position-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/campaign-position-plan.md)를 기준으로 한다.
 
 ## 스폰 규칙
 

@@ -16,6 +16,22 @@ The existing seven buildables remain the starting roster:
 - Ballista
 - Emberkeep
 
+## Hero Roster V1
+
+Heroes are stage-local gold purchases, not permanent progression in v1.
+
+The player buys a hero during the current Stage, places it on a valid empty tile, and may manually move it by selecting the hero and tapping another valid empty tile. Heroes do not auto-roam.
+
+| Hero | Unlock Stage | Primary Job |
+| --- | --- | --- |
+| Knight | Stage 1 | durable close-range holder near the citadel |
+| Archer | Stage 5 | long-range support and leak cleanup |
+| Mage | Stage 10 | magic burst against armor and clusters |
+| Ninja | Stage 15 | fast single-target cleanup |
+| Paladin | Stage 20 | expensive frontline anchor and elite duelist |
+
+Stage 25 opens the direction for advanced hero upgrades after the basic five-hero set is proven.
+
 ## Buildable Jobs In Citadel Siege
 
 | Tower | Primary Job | Best Use In Multi-Front Play |

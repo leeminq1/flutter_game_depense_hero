@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:depense_game/game/models/enemy_definition.dart';
+import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 
 enum VisualTokenShape {
@@ -402,5 +403,84 @@ class EnemyVisualCatalog {
       return directionalBaseAssetPath(kind, direction);
     }
     return 'assets/sprites/enemies/${enemyId(kind)}/$direction/walk_0${frame + 1}.png';
+  }
+}
+
+class HeroVisualCatalog {
+  static const List<HeroKind> kinds = HeroKind.values;
+
+  static UnitVisualDefinition byKind(HeroKind kind) {
+    switch (kind) {
+      case HeroKind.knight:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/heroes/knight/south/base.png',
+          shape: VisualTokenShape.hexagon,
+          primaryColor: Color(0xFF77A7FF),
+          accentColor: Color(0xFFE6F0FF),
+          baseSize: 20,
+          renderScale: 2.15,
+          generatorHint: 'hero knight, blue cloak, bright plate armor',
+          frames: 3,
+        );
+      case HeroKind.archer:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/heroes/archer/south/base.png',
+          shape: VisualTokenShape.diamond,
+          primaryColor: Color(0xFF9AD66F),
+          accentColor: Color(0xFFE6FFD0),
+          baseSize: 18,
+          renderScale: 2.1,
+          generatorHint: 'hero archer, green cloak, elegant longbow',
+          frames: 3,
+        );
+      case HeroKind.mage:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/heroes/mage/south/base.png',
+          shape: VisualTokenShape.caster,
+          primaryColor: Color(0xFFC07BFF),
+          accentColor: Color(0xFFF2D8FF),
+          baseSize: 19,
+          renderScale: 2.12,
+          generatorHint: 'hero mage, ornate purple robe, arcane staff',
+          frames: 3,
+        );
+      case HeroKind.ninja:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/heroes/ninja/south/base.png',
+          shape: VisualTokenShape.diamond,
+          primaryColor: Color(0xFFFF6D7A),
+          accentColor: Color(0xFFFFD0D5),
+          baseSize: 18,
+          renderScale: 2.08,
+          generatorHint: 'hero ninja, dark hood, crimson scarf, dual blades',
+          frames: 3,
+        );
+      case HeroKind.paladin:
+        return const UnitVisualDefinition(
+          assetPath: 'assets/sprites/heroes/paladin/south/base.png',
+          shape: VisualTokenShape.brute,
+          primaryColor: Color(0xFFFFD166),
+          accentColor: Color(0xFFFFF0BC),
+          baseSize: 21,
+          renderScale: 2.2,
+          generatorHint: 'hero paladin, white gold armor, holy mace and cape',
+          frames: 3,
+        );
+    }
+  }
+
+  static String directionalBaseAssetPath(HeroKind kind, String direction) {
+    return 'assets/sprites/heroes/${HeroCatalog.heroId(kind)}/$direction/base.png';
+  }
+
+  static String directionalFrameAssetPath(
+    HeroKind kind,
+    String direction,
+    int frame,
+  ) {
+    if (frame <= 0) {
+      return directionalBaseAssetPath(kind, direction);
+    }
+    return 'assets/sprites/heroes/${HeroCatalog.heroId(kind)}/$direction/walk_0${frame + 1}.png';
   }
 }

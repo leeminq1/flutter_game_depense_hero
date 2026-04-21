@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:depense_game/game/models/enemy_definition.dart';
+import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,7 @@ import 'package:flutter/services.dart';
 class GameVisualRegistry {
   final Map<String, ui.Image> _towerSprites = {};
   final Map<String, ui.Image> _enemySprites = {};
+  final Map<String, ui.Image> _heroSprites = {};
   final Map<String, ui.Image> _supportSprites = {};
   final Map<String, ui.Image> _environmentSprites = {};
 
@@ -106,6 +108,29 @@ class GameVisualRegistry {
           );
           if (assetKeys.contains(framePath)) {
             _enemySprites[framePath] = await _loadImage(framePath);
+          }
+        }
+      }
+    }
+
+    for (final kind in HeroVisualCatalog.kinds) {
+      for (final direction in const ['west', 'east', 'north', 'south']) {
+        final basePath = HeroVisualCatalog.directionalBaseAssetPath(
+          kind,
+          direction,
+        );
+        if (assetKeys.contains(basePath)) {
+          _heroSprites[basePath] = await _loadImage(basePath);
+        }
+        final visual = HeroVisualCatalog.byKind(kind);
+        for (var frame = 1; frame < visual.frames; frame++) {
+          final framePath = HeroVisualCatalog.directionalFrameAssetPath(
+            kind,
+            direction,
+            frame,
+          );
+          if (assetKeys.contains(framePath)) {
+            _heroSprites[framePath] = await _loadImage(framePath);
           }
         }
       }
@@ -239,6 +264,24 @@ class GameVisualRegistry {
       return directionalSprite;
     }
     return enemySprite(kind, frame: frame);
+  }
+
+  ui.Image? directionalHeroSprite(
+    HeroKind kind, {
+    required String direction,
+    int frame = 0,
+  }) {
+    final directionalPath = frame <= 0
+        ? HeroVisualCatalog.directionalBaseAssetPath(kind, direction)
+        : HeroVisualCatalog.directionalFrameAssetPath(kind, direction, frame);
+    final directionalSprite = _heroSprites[directionalPath];
+    if (directionalSprite != null) {
+      return directionalSprite;
+    }
+    return _heroSprites[HeroVisualCatalog.directionalBaseAssetPath(
+      kind,
+      'south',
+    )];
   }
 
   ui.Image? barracksDefenderSprite({required int level, String? branchId}) {

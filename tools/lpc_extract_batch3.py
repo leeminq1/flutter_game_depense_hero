@@ -6,7 +6,7 @@ from playwright.async_api import async_playwright
 OUTPUT_DIR   = Path(__file__).parent.parent / "assets" / "sprites" / "enemies"
 DOWNLOAD_TMP = Path(__file__).parent.parent / "tmp" / "lpc_downloads"
 LPC_URL      = "https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
-DIRECTION_ROW = {"south": 0, "west": 1, "north": 3}
+DIRECTION_ROW = {"north": 0, "west": 1, "south": 2}
 FRAME_COL     = {"base": 4, "walk_02": 2, "walk_03": 6}
 
 ENEMY_NAME = "bastion_overlord"

@@ -197,6 +197,7 @@ class StageDefinition {
     this.pathSequence,
     this.actNumber,
     this.citadelHp,
+    this.citadelCell,
     this.pathsByDirection,
     this.obstacles = const [],
     this.supplyNodeCells = const [],
@@ -210,6 +211,10 @@ class StageDefinition {
   final int startingCoins;
   final int baseHealth;
   final int? citadelHp;
+
+  /// Authored citadel cell as `[col, row]`.
+  /// When null, the citadel is inferred from [tileGrid] or the legacy center.
+  final List<int>? citadelCell;
   final StageEnvironmentTheme environmentTheme;
   final List<Offset> pathNodes;
   final List<Offset> buildSlots;
@@ -249,10 +254,7 @@ class StageDefinition {
 
   StageEvaluationResult evaluateRun(StageRunSummary summary) {
     if (!summary.cleared) {
-      return const StageEvaluationResult(
-        starsAwarded: 0,
-        objectiveResults: [],
-      );
+      return const StageEvaluationResult(starsAwarded: 0, objectiveResults: []);
     }
 
     // 별 기준: 클리어 시 남은 기지 체력 비율로 결정
@@ -274,7 +276,6 @@ class StageDefinition {
       objectiveResults: const [],
     );
   }
-
 }
 
 typedef SiegeDefinition = StageDefinition;

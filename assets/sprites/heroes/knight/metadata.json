@@ -1,0 +1,73 @@
+{
+  "id": "knight",
+  "description": "Full plate knight, gold armor, blue cape, kite shield",
+  "body_type": "muscular",
+  "lpc_items": [
+    {
+      "item_id": "torso_armour_plate",
+      "variant": "",
+      "recolor": "gold"
+    },
+    {
+      "item_id": "shoulders_plate",
+      "variant": "",
+      "recolor": "gold"
+    },
+    {
+      "item_id": "hat_helmet_close",
+      "variant": "",
+      "recolor": "gold"
+    },
+    {
+      "item_id": "weapon_sword_arming",
+      "variant": "",
+      "recolor": ""
+    },
+    {
+      "item_id": "shield_kite",
+      "variant": "",
+      "recolor": ""
+    },
+    {
+      "item_id": "cape_solid",
+      "variant": "",
+      "recolor": "blue"
+    }
+  ],
+  "frame_layout": {
+    "spritesheet": "standard/walk.png (832x256)",
+    "directions": {
+      "north": 0,
+      "west": 1,
+      "south": 2
+    },
+    "frames": {
+      "base": {
+        "col": 4,
+        "x": 256
+      },
+      "walk_02": {
+        "col": 2,
+        "x": 128
+      },
+      "walk_03": {
+        "col": 6,
+        "x": 384
+      }
+    }
+  },
+  "east_direction": "runtime_mirrored_from_west",
+  "extracted_files": {
+    "south/base": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\south\\base.png",
+    "south/walk_02": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\south\\walk_02.png",
+    "south/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\south\\walk_03.png",
+    "west/base": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\west\\base.png",
+    "west/walk_02": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\west\\walk_02.png",
+    "west/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\west\\walk_03.png",
+    "north/base": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\north\\base.png",
+    "north/walk_02": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\north\\walk_02.png",
+    "north/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\north\\walk_03.png"
+  },
+  "attribution": "Universal LPC Spritesheet Character Generator",
+  "url": "https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
+}
