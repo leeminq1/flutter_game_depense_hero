@@ -26,6 +26,11 @@ class SelectedTowerDetails {
     required this.canUpgrade,
     required this.canChooseBranch,
     required this.branchChoices,
+    this.economyIncomePerTick,
+    this.economyInterval,
+    this.economyIncomePerSecond,
+    this.economyCycleBonus,
+    this.economyBreakEvenSeconds,
     this.branchId,
     this.branchLabel,
   });
@@ -40,6 +45,11 @@ class SelectedTowerDetails {
   final bool canUpgrade;
   final bool canChooseBranch;
   final List<TowerBranchChoiceDetails> branchChoices;
+  final int? economyIncomePerTick;
+  final double? economyInterval;
+  final double? economyIncomePerSecond;
+  final int? economyCycleBonus;
+  final double? economyBreakEvenSeconds;
   final String? branchId;
   final String? branchLabel;
 }
@@ -51,6 +61,8 @@ class SelectedHeroDetails {
     required this.level,
     required this.upgradeCost,
     required this.shortDescription,
+    required this.abilityLabel,
+    required this.abilityDescription,
     required this.canUpgrade,
   });
 
@@ -59,6 +71,8 @@ class SelectedHeroDetails {
   final int level;
   final int upgradeCost;
   final String shortDescription;
+  final String abilityLabel;
+  final String abilityDescription;
   final bool canUpgrade;
 }
 

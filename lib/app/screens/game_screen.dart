@@ -177,6 +177,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       tower.level.toString(),
       tower.upgradeCost.toString(),
       tower.sellValue.toString(),
+      tower.economyIncomePerTick?.toString() ?? '-',
+      tower.economyCycleBonus?.toString() ?? '-',
       tower.branchId ?? '-',
     ].join(':');
   }
@@ -189,6 +191,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       hero.kind.name,
       hero.level.toString(),
       hero.upgradeCost.toString(),
+      hero.abilityLabel,
     ].join(':');
   }
 
@@ -1325,6 +1328,10 @@ class _TowerActionBar extends StatelessWidget {
     }
 
     final subtitle = tower.branchLabel ?? tower.shortDescription;
+    final economyIncome = tower.economyIncomePerTick;
+    final economyInterval = tower.economyInterval;
+    final economyPerSecond = tower.economyIncomePerSecond;
+    final economyBreakEven = tower.economyBreakEvenSeconds;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1396,6 +1403,18 @@ class _TowerActionBar extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
+          if (economyIncome != null &&
+              economyInterval != null &&
+              economyPerSecond != null &&
+              economyBreakEven != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              '수익 $economyIncome/${economyInterval.toStringAsFixed(1)}초 · 초당 ${economyPerSecond.toStringAsFixed(2)}골드 · 회수 약 ${economyBreakEven.round()}초 · Cycle 보너스 +${tower.economyCycleBonus ?? 0}',
+              style: const TextStyle(color: Color(0xFFE4C67A), fontSize: 11),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );
@@ -1457,9 +1476,12 @@ class _HeroActionBar extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      hero.shortDescription,
-                      style: const TextStyle(color: Colors.white54, fontSize: 12),
-                      maxLines: 1,
+                      '${hero.abilityLabel}: ${hero.abilityDescription}',
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                      ),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -1483,10 +1505,7 @@ class _HeroActionBar extends StatelessWidget {
                 style: IconButton.styleFrom(
                   backgroundColor: const Color(0x22EF4E4E),
                 ),
-                icon: const Icon(
-                  Icons.close_rounded,
-                  color: Color(0xFFEF4E4E),
-                ),
+                icon: const Icon(Icons.close_rounded, color: Color(0xFFEF4E4E)),
               ),
             ],
           ),

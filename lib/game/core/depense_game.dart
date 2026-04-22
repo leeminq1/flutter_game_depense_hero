@@ -378,7 +378,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _coins += tower.sellValue;
     _towers.removeAt(index);
     _towersSold += 1;
-    _maxTowerLevel = _towers.isEmpty ? 1 : _towers.map((t) => t.level).reduce(math.max);
+    _maxTowerLevel = _towers.isEmpty
+        ? 1
+        : _towers.map((t) => t.level).reduce(math.max);
     _clearSelectedTowerSelection();
     _showStatus(
       '${tower.definition.label}을(를) 철거하고 ${tower.sellValue} 코인을 회수했습니다.',
@@ -612,7 +614,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     _coins -= definition.cost;
     _towers.add(
-      _TowerPlacement(definition: definition, position: snapTarget.clone()),
+      _TowerPlacement(definition: definition, position: snapTarget.clone())
+        ..economyIncomeBonus = metaUpgrades.coinMillIncomeBonus,
     );
     _towersBuilt += 1;
     _builtTowerKinds.add(definition.kind.name);
@@ -845,9 +848,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     final tower = _towers[targetIndex];
-    final damage = math.max(3.0, enemy.currentBaseDamage * 5.0);
+    final damage =
+        math.max(6.0, enemy.currentBaseDamage * 7.0) *
+        _towerProtectionMultiplier(tower.position);
     tower.hitPoints -= damage;
-    enemy.towerAttackCooldown = 1.25;
+    enemy.towerAttackCooldown = 1.1;
     enemy.towerAttackVisualTimer = 0.22;
     _spawnImpact(tower.position, const Color(0xAAFF6A4C), 18, 0.16);
     audioService.play(AudioEvent.armorHit);
@@ -865,6 +870,21 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     return 0.10;
+  }
+
+  double _towerProtectionMultiplier(Vector2 towerPosition) {
+    var multiplier = 1.0;
+    for (final hero in _heroes) {
+      if (hero.definition.kind != HeroKind.knight) {
+        continue;
+      }
+      if (hero.position.distanceTo(towerPosition) > hero.currentRange) {
+        continue;
+      }
+      final aura = 0.82 - (metaUpgrades.guardDrillLevel * 0.015);
+      multiplier = math.min(multiplier, aura.clamp(0.72, 0.82));
+    }
+    return multiplier;
   }
 
   void _fireTower(_TowerPlacement tower) {
@@ -1271,6 +1291,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       adjusted *= target.damageReductionMultiplier;
     }
 
+    if (target.heroMarkedTimer > 0) {
+      adjusted *= 1.12 + (metaUpgrades.bowMasteryLevel * 0.01);
+    }
+
     return adjusted;
   }
 
@@ -1329,12 +1353,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (enemy.definition.kind == EnemyKind.bannerCaptain) {
       enemy.supportAbilityTimer -= dt;
       if (enemy.supportAbilityTimer <= 0) {
-        enemy.supportAbilityTimer = 3.2;
+        enemy.supportAbilityTimer = 3.0;
         enemy.supportCastVisualTimer = 0.75;
         _spawnPulse(
           center: enemy.position,
           color: const Color(0xFFD36A52),
-          maxRadius: 58,
+          maxRadius: 66,
           lifetime: 0.34,
           strokeWidth: 3,
         );
@@ -1342,16 +1366,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           if (ally == enemy || !_isBanditFamily(ally.definition.kind)) {
             continue;
           }
-          if (ally.position.distanceTo(enemy.position) <= 94) {
-            ally.hasteMultiplier = math.max(ally.hasteMultiplier, 1.15);
-            ally.hasteTimer = math.max(ally.hasteTimer, 1.8);
+          if (ally.position.distanceTo(enemy.position) <= 104) {
+            ally.hasteMultiplier = math.max(ally.hasteMultiplier, 1.18);
+            ally.hasteTimer = math.max(ally.hasteTimer, 2.2);
             ally.temporaryBaseDamageBonus = math.max(
               ally.temporaryBaseDamageBonus,
               1,
             );
             ally.temporaryDamageBonusTimer = math.max(
               ally.temporaryDamageBonusTimer,
-              1.8,
+              2.2,
             );
           }
         }
@@ -1398,12 +1422,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (enemy.definition.kind == EnemyKind.plagueBearer) {
       enemy.supportAbilityTimer -= dt;
       if (enemy.supportAbilityTimer <= 0) {
-        enemy.supportAbilityTimer = 4.0;
+        enemy.supportAbilityTimer = 3.8;
         enemy.supportCastVisualTimer = 0.8;
         _spawnPulse(
           center: enemy.position,
           color: const Color(0xFF88B16D),
-          maxRadius: 62,
+          maxRadius: 70,
           lifetime: 0.4,
           strokeWidth: 3,
         );
@@ -1411,9 +1435,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           if (!_isUndeadFamily(ally.definition.kind)) {
             continue;
           }
-          if (ally.position.distanceTo(enemy.position) <= 92) {
-            _healEnemy(ally, ally.definition.hitPoints * 0.08);
-            _grantDamageReduction(ally, multiplier: 0.88, duration: 1.5);
+          if (ally.position.distanceTo(enemy.position) <= 102) {
+            _healEnemy(ally, ally.definition.hitPoints * 0.10);
+            _grantDamageReduction(ally, multiplier: 0.86, duration: 1.7);
           }
         }
       }
@@ -2465,14 +2489,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final selection = sessionController.selectedBuildable;
     if (selection == null && !isHeroMove) return;
     final fillPaint = Paint()
-      ..color = isHeroMove
-          ? const Color(0x224FC9FF)
-          : _slotFillColor()
+      ..color = isHeroMove ? const Color(0x224FC9FF) : _slotFillColor()
       ..style = PaintingStyle.fill;
     final ringPaint = Paint()
-      ..color = isHeroMove
-          ? const Color(0xFF4FC9FF)
-          : _slotRingColor()
+      ..color = isHeroMove ? const Color(0xFF4FC9FF) : _slotRingColor()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     for (final cell in _buildGridPositions(selection: selection)) {
@@ -2659,6 +2679,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           hero.facing = _directionFromDelta(_walkDelta);
         }
       }
+      _applyHeroPassive(hero, dt);
       hero.cooldownRemaining -= dt;
       if (hero.attackVisualTimer > 0) {
         hero.attackVisualTimer = math.max(0, hero.attackVisualTimer - dt);
@@ -2677,6 +2698,45 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
+  void _applyHeroPassive(_HeroPlacement hero, double dt) {
+    if (hero.definition.kind != HeroKind.paladin) {
+      return;
+    }
+    hero.supportTimer -= dt;
+    if (hero.supportTimer > 0) {
+      return;
+    }
+    hero.supportTimer = math.max(1.8, 2.8 - (hero.level * 0.25));
+    _TowerPlacement? target;
+    var lowestRatio = 1.0;
+    for (final tower in _towers) {
+      if (tower.position.distanceTo(hero.position) > hero.currentRange) {
+        continue;
+      }
+      final ratio = (tower.hitPoints / tower.maxHitPoints).clamp(0.0, 1.0);
+      if (ratio < lowestRatio) {
+        lowestRatio = ratio;
+        target = tower;
+      }
+    }
+    if (target == null || lowestRatio >= 0.98) {
+      return;
+    }
+    final healAmount =
+        8.0 + (hero.level * 5.0) + (metaUpgrades.guardDrillLevel * 1.5);
+    target.hitPoints = math.min(
+      target.maxHitPoints,
+      target.hitPoints + healAmount,
+    );
+    _spawnPulse(
+      center: target.position,
+      color: hero.definition.color.withValues(alpha: 0.72),
+      maxRadius: 24,
+      lifetime: 0.24,
+      strokeWidth: 2.4,
+    );
+  }
+
   void _fireHero(_HeroPlacement hero) {
     final target = _pickTarget(hero.position, hero.currentRange);
     if (target == null) {
@@ -2690,9 +2750,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       HeroKind.mage => _DamageType.magic,
       _ => _DamageType.physical,
     };
+    final baseDamage = hero.currentDamage * _heroMetaDamageMultiplier(hero);
     final adjustedDamage = _adjustDamageForEnemy(
       target: target,
-      damage: hero.currentDamage,
+      damage: baseDamage,
       damageType: damageType,
     );
     target.hitPoints -= adjustedDamage;
@@ -2706,6 +2767,24 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           lifetime: 0.16,
           strokeWidth: 3.2,
         );
+        hero.shotCounter += 1;
+        if (hero.shotCounter % 3 == 0) {
+          for (final splash in _nearbyEnemiesExcluding(
+            target,
+            target.position,
+            54,
+            3,
+          )) {
+            final splashDamage = _adjustDamageForEnemy(
+              target: splash,
+              damage: baseDamage * 0.42,
+              damageType: _DamageType.magic,
+            );
+            splash.hitPoints -= splashDamage;
+            _spawnImpact(splash.position, hero.definition.color, 16, 0.14);
+            _resolveEnemyDefeatIfNeeded(splash);
+          }
+        }
         break;
       case HeroKind.archer:
         _spawnProjectile(
@@ -2715,8 +2794,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           lifetime: 0.15,
           radius: 3.0,
         );
+        target.heroMarkedTimer = math.max(target.heroMarkedTimer, 3.2);
         break;
-      default:
+      case HeroKind.ninja:
+        _spawnImpact(target.position, hero.definition.color, 20, 0.14);
+        if (target.hitPoints > 0 &&
+            target.hitPoints / target.definition.hitPoints <=
+                (0.28 + (metaUpgrades.frostFocusLevel * 0.01))) {
+          target.hitPoints -= target.definition.hitPoints * 0.18;
+          target.staggerTimer = math.max(target.staggerTimer, 0.14);
+          _spawnImpact(target.position, const Color(0xFFFFD1D6), 26, 0.18);
+        }
+        break;
+      case HeroKind.knight:
+      case HeroKind.paladin:
         _spawnImpact(target.position, hero.definition.color, 18, 0.16);
         target.staggerTimer = math.max(target.staggerTimer, 0.08);
         break;
@@ -2724,6 +2815,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     audioService.play(hero.definition.attackEvent);
     _resolveEnemyDefeatIfNeeded(target);
+  }
+
+  double _heroMetaDamageMultiplier(_HeroPlacement hero) {
+    return switch (hero.definition.kind) {
+      HeroKind.knight ||
+      HeroKind.paladin => 1 + (metaUpgrades.guardDrillLevel * 0.05),
+      HeroKind.archer => 1 + (metaUpgrades.bowMasteryLevel * 0.06),
+      HeroKind.mage => 1 + (metaUpgrades.arcaneMasteryLevel * 0.06),
+      HeroKind.ninja => 1 + (metaUpgrades.frostFocusLevel * 0.05),
+    };
   }
 
   double _distanceToSegment(Vector2 p, Vector2 a, Vector2 b) {
@@ -3815,8 +3916,10 @@ class _HeroPlacement {
   int totalSpent;
   double cooldownRemaining = 0;
   double attackVisualTimer = 0;
+  double supportTimer = 1.0;
   int animFrame = 0;
   double animTimer = 0;
+  int shotCounter = 0;
   SpawnDirection facing = SpawnDirection.south;
 
   double get currentDamage => definition.damage * (1 + ((level - 1) * 0.38));
@@ -3832,6 +3935,8 @@ class _HeroPlacement {
     level: level,
     upgradeCost: upgradeCost,
     shortDescription: definition.shortDescription,
+    abilityLabel: definition.abilityLabel,
+    abilityDescription: definition.abilityDescription,
     canUpgrade: canUpgrade,
   );
 }
@@ -3851,6 +3956,7 @@ class _TowerPlacement {
   double attackVisualTimer = 0;
   int shotCounter = 0;
   int lastWaveBonus = 0;
+  int economyIncomeBonus = 0;
   String? branchId;
 
   double get currentDamage => definition.damage * (1 + ((level - 1) * 0.45));
@@ -3903,6 +4009,22 @@ class _TowerPlacement {
           description: branch.description,
         ),
     ],
+    economyIncomePerTick: definition.economyIncome == null
+        ? null
+        : definition.economyIncome! + economyIncomeBonus,
+    economyInterval: definition.economyInterval,
+    economyIncomePerSecond:
+        definition.economyIncome == null || definition.economyInterval == null
+        ? null
+        : (definition.economyIncome! + economyIncomeBonus) /
+              definition.economyInterval!,
+    economyCycleBonus: lastWaveBonus,
+    economyBreakEvenSeconds:
+        definition.economyIncome == null || definition.economyInterval == null
+        ? null
+        : definition.cost /
+              ((definition.economyIncome! + economyIncomeBonus) /
+                  definition.economyInterval!),
     branchId: branchId,
     branchLabel: branchId == null
         ? null
@@ -3976,6 +4098,7 @@ class _Enemy {
   bool wasSlowedRecently = false;
   double towerAttackCooldown = 0;
   double towerAttackVisualTimer = 0;
+  double heroMarkedTimer = 0;
 
   // Animation
   int animFrame = 0;
@@ -4061,6 +4184,9 @@ class _Enemy {
     }
     if (towerAttackVisualTimer > 0) {
       towerAttackVisualTimer -= dt;
+    }
+    if (heroMarkedTimer > 0) {
+      heroMarkedTimer -= dt;
     }
   }
 

@@ -4,6 +4,7 @@
 | --- | --- | --- |
 | [core-beliefs.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/core-beliefs.md) | drafted | Shared principles for agent work and game direction |
 | [combat-pillars.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/combat-pillars.md) | drafted | Defines what combat should optimize for |
+| [gameplay-balance-pass.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/gameplay-balance-pass.md) | active | 초반 난이도, 골드 곡선, 타워 파괴감, 히어로 능력, 적 가족 시너지 기준 |
 | [map-authoring/README.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/README.md) | drafted | 현재 게임 구조 기준의 Stage/Cycle 맵 설계 워크플로우 |
 | [map-authoring/map-pillars.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/map-pillars.md) | drafted | 좋은 맵이 무엇인지 판단하는 핵심 설계 원칙 |
 | [map-authoring/castle-and-spawn-rules.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/castle-and-spawn-rules.md) | drafted | 성 위치 패턴과 스폰 방향 규칙 |

@@ -1,5 +1,7 @@
 import 'package:depense_game/data/campaign/campaign_data.dart';
+import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
+import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -239,7 +241,7 @@ void main() {
     }
   });
 
-  test('authored Stage 1-15 maps expose four-front assault cycles', () {
+  test('authored Stage 1-30 maps expose four-front assault cycles', () {
     const allFronts = {
       SpawnDirection.north,
       SpawnDirection.south,
@@ -267,7 +269,7 @@ void main() {
 
     final expectedCycleCounts = {
       1: 3,
-      2: 3,
+      2: 4,
       3: 4,
       4: 4,
       5: 4,
@@ -283,7 +285,7 @@ void main() {
       15: 4,
     };
 
-    for (var stageNumber = 1; stageNumber <= 15; stageNumber += 1) {
+    for (var stageNumber = 1; stageNumber <= 30; stageNumber += 1) {
       final stage = CampaignData.stage(stageNumber);
 
       expect(
@@ -293,12 +295,12 @@ void main() {
       );
       expect(
         stage.assaultCycles.length,
-        expectedCycleCounts[stageNumber],
+        expectedCycleCounts[stageNumber] ?? 4,
         reason: 'Stage $stageNumber should use the authored Cycle count.',
       );
       expect(
         stage.obstacles.length,
-        expectedObstacleCounts[stageNumber],
+        expectedObstacleCounts[stageNumber] ?? greaterThanOrEqualTo(12),
         reason:
             'Stage $stageNumber should keep its authored obstacle count until rebalanced.',
       );
@@ -314,8 +316,8 @@ void main() {
     }
   });
 
-  test('authored Stage 1-15 obstacles do not sit on monster routes', () {
-    for (var stageNumber = 1; stageNumber <= 15; stageNumber += 1) {
+  test('authored Stage 1-30 obstacles do not sit on monster routes', () {
+    for (var stageNumber = 1; stageNumber <= 30; stageNumber += 1) {
       final stage = CampaignData.stage(stageNumber);
       final obstacleCells = {
         for (final obstacle in stage.obstacles)
@@ -437,12 +439,16 @@ void main() {
 
   test('authored citadel stages use campaign balance helpers', () {
     final stage1 = CampaignData.stage(1);
+    final stage6 = CampaignData.stage(6);
     final stage11 = CampaignData.stage(11);
+    final stage30 = CampaignData.stage(30);
 
-    expect(stage1.startingCoins, 155);
+    expect(stage1.startingCoins, 150);
     expect(stage1.citadelHitPoints, 24);
-    expect(stage11.startingCoins, 210);
+    expect(stage6.startingCoins, 172);
+    expect(stage11.startingCoins, 182);
     expect(stage11.citadelHitPoints, 16);
+    expect(stage30.startingCoins, 220);
   });
 
   test('stage 6 keeps the first shifted citadel position', () {
@@ -450,5 +456,62 @@ void main() {
 
     expect(stage.citadelCell, orderedEquals([7, 5]));
     expect(stage.tileGrid![5][7], TileType.citadel);
+  });
+
+  test('stage 16-30 are authored instead of legacy fallback maps', () {
+    const expectedCells = {
+      16: [4, 8],
+      17: [5, 9],
+      18: [4, 9],
+      19: [3, 9],
+      20: [3, 10],
+      21: [8, 8],
+      22: [9, 8],
+      23: [8, 9],
+      24: [10, 9],
+      25: [10, 10],
+      26: [6, 6],
+      27: [4, 4],
+      28: [9, 4],
+      29: [4, 9],
+      30: [9, 9],
+    };
+
+    for (final entry in expectedCells.entries) {
+      final stage = CampaignData.stage(entry.key);
+      final cell = entry.value;
+
+      expect(stage.citadelCell, orderedEquals(cell));
+      expect(stage.tileGrid!.length, 14);
+      expect(stage.tileGrid!.first.length, 14);
+      expect(stage.pathsByDirection?.keys.toSet(), {
+        SpawnDirection.north,
+        SpawnDirection.south,
+        SpawnDirection.east,
+        SpawnDirection.west,
+      });
+      expect(stage.assaultCycles.length, 4);
+      expect(stage.obstacles, isNotEmpty);
+    }
+  });
+
+  test('hero definitions expose unique ability metadata', () {
+    for (final hero in HeroCatalog.buildMenu) {
+      expect(hero.abilityLabel, isNotEmpty);
+      expect(hero.abilityDescription, isNotEmpty);
+      expect(hero.roleTags, isNotEmpty);
+      expect(hero.upgradeBranch, isNotEmpty);
+    }
+  });
+
+  test('coin mill exposes economy values for ROI UI', () {
+    final coinMill = TowerCatalog.byKind(TowerKind.coinMill);
+
+    expect(coinMill.economyIncome, 4);
+    expect(coinMill.economyInterval, 4.5);
+    expect(
+      coinMill.cost / (coinMill.economyIncome! / coinMill.economyInterval!),
+      closeTo(101.25, 0.01),
+    );
   });
 }

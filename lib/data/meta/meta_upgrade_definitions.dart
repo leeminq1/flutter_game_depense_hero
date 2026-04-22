@@ -103,7 +103,7 @@ class MetaUpgradeCatalog {
       id: 'bow_mastery',
       label: 'Bow Mastery',
       description:
-          'Increase archer damage and critical volleys. Unlocks Ballista at level 2.',
+          'Increase archer tower damage, hero archer mark value, and critical volleys. Unlocks Ballista at level 2.',
       maxLevel: 5,
       baseCost: 100,
       levelCostMultipliers: [1.0, 1.34, 1.9, 2.6, 3.45],
@@ -115,7 +115,8 @@ class MetaUpgradeCatalog {
     MetaUpgradeDefinition(
       id: 'guard_drill',
       label: 'Guard Drill',
-      description: 'Improve barracks damage and stagger duration.',
+      description:
+          'Improve barracks damage, stagger duration, knight protection, and paladin sustain.',
       maxLevel: 5,
       baseCost: 100,
       levelCostMultipliers: [1.0, 1.3, 1.82, 2.45, 3.2],
@@ -128,7 +129,7 @@ class MetaUpgradeCatalog {
       id: 'arcane_mastery',
       label: 'Arcane Mastery',
       description:
-          'Increase mage burst and chain output. Unlocks Emberkeep at level 2.',
+          'Increase mage tower burst, hero mage output, and chain output. Unlocks Emberkeep at level 2.',
       maxLevel: 5,
       baseCost: 110,
       levelCostMultipliers: [1.0, 1.34, 1.88, 2.58, 3.42],
@@ -140,7 +141,8 @@ class MetaUpgradeCatalog {
     MetaUpgradeDefinition(
       id: 'frost_focus',
       label: 'Frost Focus',
-      description: 'Improve frost slow strength and pulse reach.',
+      description:
+          'Improve frost slow strength, pulse reach, and ninja execution pressure.',
       maxLevel: 5,
       baseCost: 100,
       levelCostMultipliers: [1.0, 1.3, 1.8, 2.4, 3.18],
@@ -175,14 +177,14 @@ class MetaUpgradeCatalog {
         return 'Starting Coins +${level * 25}';
       case 'bow_mastery':
         final unlockText = level >= 2 ? ' • Ballista unlocked' : '';
-        return 'Archer Damage +${level * 12}%$unlockText';
+        return 'Archer Damage +${level * 12}% - Hero Mark +$level%$unlockText';
       case 'guard_drill':
-        return 'Barracks Damage +${level * 12}% • Stun +${level * 8}%';
+        return 'Barracks Damage +${level * 12}% - Hero Guard +${level * 5}%';
       case 'arcane_mastery':
         final unlockText = level >= 2 ? ' • Emberkeep unlocked' : '';
-        return 'Mage Damage +${level * 10}%$unlockText';
+        return 'Mage Damage +${level * 10}% - Hero Mage +${level * 6}%$unlockText';
       case 'frost_focus':
-        return 'Slow +${level * 6}% • Range +${level * 8}%';
+        return 'Slow +${level * 6}% - Ninja Execute +$level%';
       case 'commerce_guild':
         return 'Coin Mill Income +$level • Stage Rewards +${level * 8}%';
       default:

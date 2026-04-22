@@ -905,56 +905,14 @@ class CampaignData {
     // Stage 1: 아처 2개 + 약간 여유 (이전: 4개 즉시 배치 가능)
     if (stageNumber <= 5) {
       return switch (stageNumber) {
-        1 => 155,
-        2 => 160,
-        3 => 165,
-        4 => 170,
-        _ => 175,
+        1 => 150,
+        2 => 155,
+        3 => 160,
+        4 => 165,
+        _ => 170,
       };
     }
-    if (stageNumber <= 10) {
-      return switch (stageNumber) {
-        6 => 210,
-        7 => 205,
-        8 => 200,
-        9 => 195,
-        _ => 190,
-      };
-    }
-    if (stageNumber <= 15) {
-      return switch (stageNumber) {
-        11 => 210,
-        12 => 208,
-        13 => 205,
-        14 => 202,
-        _ => 200,
-      };
-    }
-    if (stageNumber <= 20) {
-      return switch (stageNumber) {
-        16 => 198,
-        17 => 196,
-        18 => 194,
-        19 => 192,
-        _ => 190,
-      };
-    }
-    if (stageNumber <= 25) {
-      return switch (stageNumber) {
-        21 => 188,
-        22 => 186,
-        23 => 184,
-        24 => 182,
-        _ => 180,
-      };
-    }
-    return switch (stageNumber) {
-      26 => 178,
-      27 => 176,
-      28 => 174,
-      29 => 172,
-      _ => 170,
-    };
+    return 170 + ((stageNumber - 5) * 2);
   }
 
   static int _baseHealthForStage(int stageNumber) {
@@ -1389,7 +1347,7 @@ class CampaignData {
     required int stageNumber,
     required double intensity,
   }) {
-    final hpMultiplier = 1 + ((stageNumber - 1) * 0.15);
+    final hpMultiplier = 1 + ((stageNumber - 1) * 0.18);
     final actNumber = ((stageNumber - 1) ~/ 5) + 1;
     final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.06);
     final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.03);
@@ -3261,7 +3219,7 @@ class CampaignData {
       baseHealth: baseHealth,
       citadelHp: baseHealth,
       citadelCell: citadelCell,
-      environmentTheme: StageEnvironmentTheme.frontierRoad,
+      environmentTheme: _environmentThemeForStage(stageNumber),
       pathNodes: _normalizedPathNodes(
         legacyPathSequence,
         columns: 14,
@@ -3496,7 +3454,6 @@ class CampaignData {
               SpawnDirection.west,
             ],
             recoveryGoldBonus: 50,
-            isFinalBreach: true,
             groups: [
               spawn(
                 SpawnDirection.east,
@@ -3519,6 +3476,54 @@ class CampaignData {
                 EnemyKind.shieldInfantry,
                 1,
                 interval: 1.18,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: const [
+              SpawnDirection.north,
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ],
+            recoveryGoldBonus: 54,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.scout,
+                4,
+                interval: 0.7,
+                intensity: 1.10,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.raider,
+                4,
+                interval: 0.86,
+                intensity: 1.08,
+              ),
+              spawn(
+                SpawnDirection.west,
+                EnemyKind.raider,
+                4,
+                interval: 0.86,
+                intensity: 1.06,
+              ),
+              spawn(
+                SpawnDirection.south,
+                EnemyKind.scout,
+                3,
+                interval: 0.82,
+                intensity: 1.08,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.shieldInfantry,
+                1,
+                interval: 1.12,
+                intensity: 1.06,
               ),
             ],
           ),
@@ -3899,7 +3904,12 @@ class CampaignData {
             ],
             recoveryGoldBonus: 50,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.skeleton, 4, interval: 0.86),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                4,
+                interval: 0.86,
+              ),
               spawn(SpawnDirection.west, EnemyKind.scout, 3, interval: 0.78),
               spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.88),
               spawn(
@@ -3941,7 +3951,12 @@ class CampaignData {
             ],
             recoveryGoldBonus: 60,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.skeleton, 5, interval: 0.82),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                5,
+                interval: 0.82,
+              ),
               spawn(
                 SpawnDirection.west,
                 EnemyKind.wolfScout,
@@ -3999,12 +4014,7 @@ class CampaignData {
                 1,
                 interval: 2.18,
               ),
-              spawn(
-                SpawnDirection.south,
-                EnemyKind.raider,
-                4,
-                interval: 0.82,
-              ),
+              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.82),
             ],
           ),
         ];
@@ -4020,7 +4030,12 @@ class CampaignData {
             ],
             recoveryGoldBonus: 52,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.skeleton, 4, interval: 0.84),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                4,
+                interval: 0.84,
+              ),
               spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.76),
               spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.86),
               spawn(
@@ -4140,7 +4155,12 @@ class CampaignData {
             ],
             recoveryGoldBonus: 54,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.skeleton, 5, interval: 0.82),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                5,
+                interval: 0.82,
+              ),
               spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.74),
               spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.84),
               spawn(
@@ -4192,7 +4212,12 @@ class CampaignData {
             ],
             recoveryGoldBonus: 64,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.skeleton, 6, interval: 0.78),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                6,
+                interval: 0.78,
+              ),
               spawn(SpawnDirection.west, EnemyKind.scout, 5, interval: 0.72),
               spawn(
                 SpawnDirection.east,
@@ -4261,7 +4286,12 @@ class CampaignData {
             ],
             recoveryGoldBonus: 56,
             groups: [
-              spawn(SpawnDirection.west, EnemyKind.wolfScout, 2, interval: 0.72),
+              spawn(
+                SpawnDirection.west,
+                EnemyKind.wolfScout,
+                2,
+                interval: 0.72,
+              ),
               spawn(SpawnDirection.north, EnemyKind.skeleton, 5, interval: 0.8),
               spawn(SpawnDirection.east, EnemyKind.skeleton, 5, interval: 0.8),
               spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.82),
@@ -4388,7 +4418,12 @@ class CampaignData {
             recoveryGoldBonus: 60,
             groups: [
               spawn(SpawnDirection.west, EnemyKind.wolfScout, 3, interval: 0.7),
-              spawn(SpawnDirection.north, EnemyKind.skeleton, 5, interval: 0.78),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                5,
+                interval: 0.78,
+              ),
               spawn(SpawnDirection.east, EnemyKind.skeleton, 6, interval: 0.78),
               spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.8),
             ],
@@ -4515,6 +4550,39 @@ class CampaignData {
           ),
         ];
       default:
+        final common = stageNumber >= 26
+            ? EnemyKind.corruptedKnight
+            : stageNumber >= 21
+            ? EnemyKind.corruptedKnight
+            : stageNumber >= 16
+            ? EnemyKind.skeleton
+            : EnemyKind.raider;
+        final fast = stageNumber >= 26
+            ? EnemyKind.hexSniper
+            : stageNumber >= 21
+            ? EnemyKind.hexSniper
+            : stageNumber >= 16
+            ? EnemyKind.boneArcher
+            : EnemyKind.scout;
+        final tank = stageNumber >= 26
+            ? EnemyKind.graveGuard
+            : stageNumber >= 21
+            ? EnemyKind.graveGuard
+            : stageNumber >= 16
+            ? EnemyKind.graveGuard
+            : EnemyKind.shieldInfantry;
+        final support = stageNumber >= 26
+            ? EnemyKind.bastionPriest
+            : stageNumber >= 21
+            ? EnemyKind.warlock
+            : stageNumber >= 16
+            ? EnemyKind.plagueBearer
+            : EnemyKind.bannerCaptain;
+        final finalSupport = stageNumber >= 30
+            ? EnemyKind.bastionOverlord
+            : stageNumber >= 26
+            ? EnemyKind.warlock
+            : support;
         return [
           AssaultCycleDefinition(
             number: 1,
@@ -4526,15 +4594,10 @@ class CampaignData {
             ],
             recoveryGoldBonus: 50,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.88),
-              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.8),
-              spawn(
-                SpawnDirection.east,
-                EnemyKind.shieldInfantry,
-                2,
-                interval: 1.12,
-              ),
-              spawn(SpawnDirection.south, EnemyKind.raider, 3, interval: 0.9),
+              spawn(SpawnDirection.north, common, 4, interval: 0.88),
+              spawn(SpawnDirection.west, fast, 3, interval: 0.86),
+              spawn(SpawnDirection.east, tank, 2, interval: 1.12),
+              spawn(SpawnDirection.south, common, 3, interval: 0.9),
             ],
           ),
           AssaultCycleDefinition(
@@ -4547,15 +4610,11 @@ class CampaignData {
             ],
             recoveryGoldBonus: 55,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 4, interval: 0.86),
-              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.78),
-              spawn(
-                SpawnDirection.east,
-                EnemyKind.shieldInfantry,
-                2,
-                interval: 1.08,
-              ),
-              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.86),
+              spawn(SpawnDirection.north, common, 4, interval: 0.86),
+              spawn(SpawnDirection.west, fast, 4, interval: 0.82),
+              spawn(SpawnDirection.east, tank, 2, interval: 1.08),
+              spawn(SpawnDirection.south, common, 4, interval: 0.86),
+              spawn(SpawnDirection.east, support, 1, interval: 2.2),
             ],
           ),
           AssaultCycleDefinition(
@@ -4568,15 +4627,11 @@ class CampaignData {
             ],
             recoveryGoldBonus: 60,
             groups: [
-              spawn(SpawnDirection.north, EnemyKind.raider, 5, interval: 0.84),
-              spawn(SpawnDirection.west, EnemyKind.scout, 4, interval: 0.78),
-              spawn(
-                SpawnDirection.east,
-                EnemyKind.shieldInfantry,
-                3,
-                interval: 1.06,
-              ),
-              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.84),
+              spawn(SpawnDirection.north, common, 5, interval: 0.84),
+              spawn(SpawnDirection.west, fast, 4, interval: 0.8),
+              spawn(SpawnDirection.east, tank, 3, interval: 1.06),
+              spawn(SpawnDirection.south, common, 4, interval: 0.84),
+              spawn(SpawnDirection.south, support, 1, interval: 2.1),
             ],
           ),
           AssaultCycleDefinition(
@@ -4592,26 +4647,21 @@ class CampaignData {
             groups: [
               spawn(
                 SpawnDirection.north,
-                EnemyKind.raider,
+                common,
                 5,
                 interval: 0.82,
                 intensity: 1.08,
               ),
-              spawn(SpawnDirection.west, EnemyKind.scout, 5, interval: 0.76),
+              spawn(SpawnDirection.west, fast, 4, interval: 0.78),
               spawn(
                 SpawnDirection.east,
-                EnemyKind.shieldInfantry,
+                tank,
                 3,
                 interval: 1.02,
                 intensity: 1.08,
               ),
-              spawn(
-                SpawnDirection.south,
-                EnemyKind.bannerCaptain,
-                1,
-                interval: 2.15,
-              ),
-              spawn(SpawnDirection.south, EnemyKind.raider, 4, interval: 0.84),
+              spawn(SpawnDirection.south, finalSupport, 1, interval: 2.15),
+              spawn(SpawnDirection.south, common, 4, interval: 0.84),
             ],
           ),
         ];
@@ -4619,6 +4669,41 @@ class CampaignData {
   }
 
   static String _authoredCitadelTitle(int stageNumber) {
+    const titles = [
+      'Stage 1 - 사방 방어 입문',
+      'Stage 2 - 동쪽 압박 강화',
+      'Stage 3 - 첫 중장갑 체크',
+      'Stage 4 - 성 주변 재정비',
+      'Stage 5 - 초반 종합 시험',
+      'Stage 6 - 우상단 첫 변형',
+      'Stage 7 - 동측 성문 압박',
+      'Stage 8 - 북동 압박 강화',
+      'Stage 9 - 좌측 장거리 우회',
+      'Stage 10 - 우상단 미니 보스전',
+      'Stage 11 - 좌상단 첫 변형',
+      'Stage 12 - 북쪽 성문 압박',
+      'Stage 13 - 북서 동시 압박',
+      'Stage 14 - 서쪽 긴급 방어',
+      'Stage 15 - 좌상단 미니 보스전',
+      'Stage 16 - 좌하단 첫 변형',
+      'Stage 17 - 남서 보급로 압박',
+      'Stage 18 - 하단 후퇴 거점',
+      'Stage 19 - 서남 장거리 우회',
+      'Stage 20 - 좌하단 성기사 시험',
+      'Stage 21 - 우하단 첫 변형',
+      'Stage 22 - 동남 관문 방어',
+      'Stage 23 - 남쪽 넓은 킬존',
+      'Stage 24 - 동측 성 앞 압박',
+      'Stage 25 - 우하단 고급 업그레이드',
+      'Stage 26 - 중앙 회귀 시험',
+      'Stage 27 - 좌상단 재압박',
+      'Stage 28 - 우상단 재압박',
+      'Stage 29 - 좌하단 재압박',
+      'Stage 30 - 최종 사방 공성전',
+    ];
+    if (stageNumber >= 1 && stageNumber <= titles.length) {
+      return titles[stageNumber - 1];
+    }
     return switch (stageNumber) {
       1 => 'Stage 1 - 사방 방어 입문',
       2 => 'Stage 2 - 방향별 압박 차이',
@@ -4640,6 +4725,41 @@ class CampaignData {
   }
 
   static String _authoredCitadelDescription(int stageNumber) {
+    const descriptions = [
+      '첫 Stage부터 사방에서 적이 들어옵니다. 장애물 우회를 읽고 중앙 성을 지키세요.',
+      'Stage 2부터 4 Cycle로 전환됩니다. 동쪽 빠른 적과 사방 압박을 함께 처리하세요.',
+      '방패 보병이 본격적으로 등장합니다. 단일 화력만으로 버티기 어렵습니다.',
+      '성 주변 공간을 재정비하는 Stage입니다. 바깥 성벽을 이용해 후퇴 사선을 만드세요.',
+      '초반 구간 종합 시험입니다. 빠른 적, 중장갑, 사방 분산을 모두 처리해야 합니다.',
+      '성이 우상단으로 이동합니다. 하단 넓은 공간을 쓰고 북동 압박을 막으세요.',
+      '성이 조금 더 오른쪽에 놓입니다. 동쪽 짧은 압박과 남쪽 우회를 동시에 봅니다.',
+      '성이 북동쪽으로 올라갑니다. 북쪽과 동쪽 접근이 빨라져 선제 배치가 중요합니다.',
+      '성이 오른쪽으로 더 밀립니다. 좌측 긴 우회와 동쪽 짧은 압박을 나눠 처리하세요.',
+      '우상단 미니 보스형 Stage입니다. 세 방향 동시 압박과 짧은 성 앞 전투를 견디세요.',
+      '성이 좌상단으로 이동합니다. 서쪽과 북쪽 긴급 압박을 막고 오른쪽 넓은 사선을 쓰세요.',
+      '성이 북쪽으로 더 올라갑니다. 북쪽 성문 압박을 빠르게 막고 남동쪽 우회를 활용하세요.',
+      '북쪽과 서쪽 압박이 동시에 빨라집니다. 아래쪽 후퇴 거점과 오른쪽 사선을 함께 쓰세요.',
+      '성이 왼쪽 깊숙이 이동합니다. 서쪽 긴급 방어와 동쪽 장거리 물량을 동시에 처리하세요.',
+      '좌상단 미니 보스형 Stage입니다. 북서쪽 짧은 압박과 남동쪽 물량을 모두 견디세요.',
+      '성이 좌하단으로 내려갑니다. 아래쪽 짧은 압박과 북쪽 긴 사선을 처음으로 함께 다룹니다.',
+      '남서 보급로가 흔들립니다. 남쪽 압박을 빠르게 정리하고 서쪽 방어를 보강하세요.',
+      '하단 후퇴 거점이 핵심입니다. 성 앞 좁은 공간이 무너지기 전에 위쪽 사선을 만드세요.',
+      '서남쪽 장거리 우회가 강해집니다. 서쪽에만 몰아짓지 말고 북동쪽 화력도 준비하세요.',
+      '좌하단 구간의 정점입니다. 성기사 해금 이후의 방어 유지력을 시험합니다.',
+      '성이 우하단으로 이동합니다. 동쪽 짧은 압박과 남쪽 성문 압박이 동시에 강해집니다.',
+      '동남 관문 방어 Stage입니다. 오른쪽 전선을 늦추고 북서쪽 장거리 사선을 확보하세요.',
+      '남쪽 넓은 킬존을 쓰는 Stage입니다. 빠른 적이 성 아래를 통과하기 전에 끊어내세요.',
+      '동쪽 성 앞 압박이 가장 짧아집니다. 긴급 대응 타워와 영웅 이동 판단이 중요합니다.',
+      '우하단 구간의 정점입니다. 고급 영웅 업그레이드와 경제 판단을 함께 시험합니다.',
+      '성이 중앙으로 잠시 돌아오지만 적 조합은 후반형입니다. 네 전선을 모두 균형 있게 막으세요.',
+      '좌상단 재압박입니다. 이전 좌상단 경험에 후반 지원 적이 섞여 들어옵니다.',
+      '우상단 재압박입니다. 짧은 동쪽 압박과 강한 지원 적을 빠르게 제거하세요.',
+      '좌하단 재압박입니다. 남쪽과 서쪽에서 성이 빠르게 노출됩니다.',
+      '최종 사방 공성전입니다. 모든 전선과 보스 압박을 동시에 견디는 마지막 시험입니다.',
+    ];
+    if (stageNumber >= 1 && stageNumber <= descriptions.length) {
+      return descriptions[stageNumber - 1];
+    }
     return switch (stageNumber) {
       1 => '첫 Stage부터 사방에서 적이 들어옵니다. 장애물 우회를 읽고 중앙 성을 지키세요.',
       2 => '사방 압박은 유지하되 동쪽 길이가 짧아집니다. 먼저 막을 방향을 판단하세요.',
@@ -5028,8 +5148,89 @@ class CampaignData {
           [9, 8],
         ]),
       ],
-      _ => const [],
+      _ => _generatedAuthoredCitadelObstacles(
+        stageNumber: stageNumber,
+        outerProps: outerProps,
+        wallAssetPath: wall,
+        oneCell: oneCell,
+      ),
     };
+  }
+
+  static List<StageObstacleDefinition> _generatedAuthoredCitadelObstacles({
+    required int stageNumber,
+    required List<StageObstacleDefinition> outerProps,
+    required String wallAssetPath,
+    required StageObstacleDefinition Function(
+      String assetPath,
+      int col,
+      int row, {
+      double scale,
+    })
+    oneCell,
+  }) {
+    if (stageNumber < 1 || stageNumber > _authoredCitadelLayouts.length) {
+      return const [];
+    }
+
+    final layout = _authoredCitadelLayouts[stageNumber - 1];
+    final blocked = <String>{
+      _cellKey(layout.citadelCell[0], layout.citadelCell[1]),
+      for (final route in layout.pathsByDirection.values)
+        for (final cell in route) _cellKey(cell[0], cell[1]),
+    };
+    final used = <String>{...blocked};
+    final result = <StageObstacleDefinition>[];
+
+    void tryAdd(StageObstacleDefinition obstacle) {
+      final cells = obstacle.occupiedCells;
+      if (cells.any((cell) => used.contains(_cellKey(cell[0], cell[1])))) {
+        return;
+      }
+      for (final cell in cells) {
+        used.add(_cellKey(cell[0], cell[1]));
+      }
+      result.add(obstacle);
+    }
+
+    for (final prop in outerProps) {
+      tryAdd(prop);
+    }
+
+    final citadelCol = layout.citadelCell[0];
+    final citadelRow = layout.citadelCell[1];
+    final candidates = [
+      [citadelCol - 2, citadelRow - 2],
+      [citadelCol, citadelRow - 2],
+      [citadelCol + 2, citadelRow - 2],
+      [citadelCol - 2, citadelRow],
+      [citadelCol + 2, citadelRow],
+      [citadelCol - 2, citadelRow + 2],
+      [citadelCol, citadelRow + 2],
+      [citadelCol + 2, citadelRow + 2],
+      [3, 3],
+      [10, 3],
+      [3, 10],
+      [10, 10],
+      [5, 5],
+      [8, 5],
+      [5, 8],
+      [8, 8],
+    ];
+
+    for (final cell in candidates) {
+      final col = cell[0];
+      final row = cell[1];
+      if (col < 1 || col > 12 || row < 1 || row > 12) {
+        continue;
+      }
+      tryAdd(oneCell(wallAssetPath, col, row, scale: 0.51));
+      if (result.length >= 18) {
+        break;
+      }
+    }
+
+    return result;
   }
 
   static void _validateSiegeRoute({
@@ -5122,7 +5323,33 @@ class CampaignData {
     '성이 오른쪽 위로 이동합니다. 짧은 북동 압박을 막고 아래쪽 넓은 킬존을 활용하세요.',
   ];
 
-  static const List<_CitadelSiegeLayout> _authoredCitadelLayouts = [
+  static _CitadelSiegeLayout _directCitadelLayout({
+    required SpawnDirection primaryFront,
+    required List<int> citadelCell,
+  }) {
+    final col = citadelCell[0];
+    final row = citadelCell[1];
+    return _CitadelSiegeLayout(
+      primaryFront: primaryFront,
+      citadelCell: citadelCell,
+      pathsByDirection: {
+        SpawnDirection.north: [
+          for (var r = 0; r < row; r += 1) [col, r],
+        ],
+        SpawnDirection.south: [
+          for (var r = 13; r > row; r -= 1) [col, r],
+        ],
+        SpawnDirection.east: [
+          for (var c = 13; c > col; c -= 1) [c, row],
+        ],
+        SpawnDirection.west: [
+          for (var c = 0; c < col; c += 1) [c, row],
+        ],
+      },
+    );
+  }
+
+  static final List<_CitadelSiegeLayout> _authoredCitadelLayouts = [
     _CitadelSiegeLayout(
       primaryFront: SpawnDirection.north,
       pathsByDirection: {
@@ -5902,6 +6129,66 @@ class CampaignData {
           [2, 3],
         ],
       },
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.south,
+      citadelCell: const [4, 8],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.south,
+      citadelCell: const [5, 9],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.south,
+      citadelCell: const [4, 9],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.west,
+      citadelCell: const [3, 9],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.south,
+      citadelCell: const [3, 10],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.east,
+      citadelCell: const [8, 8],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.east,
+      citadelCell: const [9, 8],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.south,
+      citadelCell: const [8, 9],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.east,
+      citadelCell: const [10, 9],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.south,
+      citadelCell: const [10, 10],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.north,
+      citadelCell: const [6, 6],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.north,
+      citadelCell: const [4, 4],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.east,
+      citadelCell: const [9, 4],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.west,
+      citadelCell: const [4, 9],
+    ),
+    _directCitadelLayout(
+      primaryFront: SpawnDirection.east,
+      citadelCell: const [9, 9],
     ),
   ];
 

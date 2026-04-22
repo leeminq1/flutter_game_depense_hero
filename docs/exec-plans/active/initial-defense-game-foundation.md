@@ -117,6 +117,7 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-21: Stage 7-10 are now planned as authored maps instead of fallback layouts, combat SFX are budgeted through a per-frame queue, monsters can damage towers, and the first stage-local hero purchase model is being introduced.
 - 2026-04-22: Stage 11 now starts the second-quadrant authored map arc with a `[4,5]` citadel, and authored citadel stages now reuse the central starting-gold and base-health balancing helpers instead of hardcoded `380/40` values.
 - 2026-04-22: Stage 11 was shifted further into the second quadrant at `[4,5]`, and Stage 12-15 now complete the authored second-quadrant arc through `[5,4]`, `[4,4]`, `[3,4]`, and `[3,3]`.
+- 2026-04-22: Gameplay balance pass removed starting-gold bracket jumps, raised enemy HP scaling, made Stage 2 a 4-Cycle stage, extended authored citadel maps through Stage 30, strengthened tower destruction pressure, and gave heroes distinct lightweight abilities tied to existing meta tracks.
 
 ## Risks
 
