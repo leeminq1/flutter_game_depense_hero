@@ -239,7 +239,7 @@ void main() {
     }
   });
 
-  test('authored Stage 1-10 maps expose four-front assault cycles', () {
+  test('authored Stage 1-15 maps expose four-front assault cycles', () {
     const allFronts = {
       SpawnDirection.north,
       SpawnDirection.south,
@@ -258,6 +258,11 @@ void main() {
       8: 17,
       9: 17,
       10: 17,
+      11: 18,
+      12: 18,
+      13: 18,
+      14: 18,
+      15: 18,
     };
 
     final expectedCycleCounts = {
@@ -271,9 +276,14 @@ void main() {
       8: 4,
       9: 4,
       10: 4,
+      11: 4,
+      12: 4,
+      13: 4,
+      14: 4,
+      15: 4,
     };
 
-    for (var stageNumber = 1; stageNumber <= 10; stageNumber += 1) {
+    for (var stageNumber = 1; stageNumber <= 15; stageNumber += 1) {
       final stage = CampaignData.stage(stageNumber);
 
       expect(
@@ -304,8 +314,8 @@ void main() {
     }
   });
 
-  test('authored Stage 1-10 obstacles do not sit on monster routes', () {
-    for (var stageNumber = 1; stageNumber <= 10; stageNumber += 1) {
+  test('authored Stage 1-15 obstacles do not sit on monster routes', () {
+    for (var stageNumber = 1; stageNumber <= 15; stageNumber += 1) {
       final stage = CampaignData.stage(stageNumber);
       final obstacleCells = {
         for (final obstacle in stage.obstacles)
@@ -325,15 +335,31 @@ void main() {
     }
   });
 
-  test('authored Stage 1-10 obstacle counts are intentionally hand-tuned', () {
+  test('authored Stage 1-15 obstacle counts are intentionally hand-tuned', () {
     final obstacleCounts = [
-      for (var stageNumber = 1; stageNumber <= 10; stageNumber += 1)
+      for (var stageNumber = 1; stageNumber <= 15; stageNumber += 1)
         CampaignData.stage(stageNumber).obstacles.length,
     ];
 
     expect(
       obstacleCounts,
-      orderedEquals([20, 19, 17, 14, 17, 18, 17, 17, 17, 17]),
+      orderedEquals([
+        20,
+        19,
+        17,
+        14,
+        17,
+        18,
+        17,
+        17,
+        17,
+        17,
+        18,
+        18,
+        18,
+        18,
+        18,
+      ]),
     );
   });
 
@@ -366,6 +392,57 @@ void main() {
       SpawnDirection.west,
     });
     expect(stage.assaultCycles, isNotEmpty);
+  });
+
+  test('stage 11 starts the second quadrant authored arc', () {
+    final stage = CampaignData.stage(11);
+
+    expect(stage.citadelCell, orderedEquals([4, 5]));
+    expect(stage.tileGrid![5][4], TileType.citadel);
+    expect(stage.tileGrid!.length, 14);
+    expect(stage.tileGrid!.first.length, 14);
+    expect(stage.pathsByDirection?.keys.toSet(), {
+      SpawnDirection.north,
+      SpawnDirection.south,
+      SpawnDirection.east,
+      SpawnDirection.west,
+    });
+    expect(stage.assaultCycles.length, 4);
+  });
+
+  test('stage 11-15 complete the second quadrant arc', () {
+    const expectedCells = {
+      11: [4, 5],
+      12: [5, 4],
+      13: [4, 4],
+      14: [3, 4],
+      15: [3, 3],
+    };
+
+    for (final entry in expectedCells.entries) {
+      final stage = CampaignData.stage(entry.key);
+      final cell = entry.value;
+
+      expect(stage.citadelCell, orderedEquals(cell));
+      expect(stage.tileGrid![cell[1]][cell[0]], TileType.citadel);
+      expect(stage.pathsByDirection?.keys.toSet(), {
+        SpawnDirection.north,
+        SpawnDirection.south,
+        SpawnDirection.east,
+        SpawnDirection.west,
+      });
+      expect(stage.assaultCycles.length, 4);
+    }
+  });
+
+  test('authored citadel stages use campaign balance helpers', () {
+    final stage1 = CampaignData.stage(1);
+    final stage11 = CampaignData.stage(11);
+
+    expect(stage1.startingCoins, 155);
+    expect(stage1.citadelHitPoints, 24);
+    expect(stage11.startingCoins, 210);
+    expect(stage11.citadelHitPoints, 16);
   });
 
   test('stage 6 keeps the first shifted citadel position', () {

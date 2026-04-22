@@ -37,7 +37,12 @@
 | Stage 4 | 코드 적용 초안, 플레이 검증 대기 | 성 근처 최종 방어 압박 |
 | Stage 5 | 코드 적용 초안, 플레이 검증 대기 | 초반 규칙 종합 시험 |
 | Stage 6 | 코드 적용 초안, 플레이 검증 대기 | 오른쪽 위 성 첫 변형 |
-| Stage 7~10 | 컨셉 계획 | 1사분면 성 위치 심화 구간 |
+| Stage 7~10 | 코드 적용 초안, 플레이 검증 대기 | 1사분면 성 위치 심화 구간 |
+| Stage 11 | 코드 적용 초안, 플레이 검증 대기 | 왼쪽 위 성 첫 변형 |
+| Stage 12~15 | 코드 적용 초안, 플레이 검증 대기 | 2사분면 성 위치와 오른쪽 넓은 킬존 |
+| Stage 16~20 | 구간 계획 | 3사분면 성 위치와 방어선 유지 |
+| Stage 21~25 | 구간 계획 | 4사분면 성 위치와 후반 업그레이드 압박 |
+| Stage 26~30 | 구간 계획 | 혼합 위치와 최종 시험 |
 
 ## 왜 수작업 맵이 중요한가
 
@@ -80,6 +85,24 @@
   - Stage 6 구현 초안과 오른쪽 위 성 첫 변형 기준
 - [stage-6-10-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-6-10-plan.md)
   - Stage 6~10 성 위치 변경 구간 컨셉 계획
+- [stage-11-15-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-11-15-plan.md)
+  - Stage 11~15 왼쪽 위 성 위치 구간 계획
+- [stage-11-working-card.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-11-working-card.md)
+  - Stage 11 구현 초안과 왼쪽 위 성 첫 변형 기준
+- [stage-12-working-card.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-12-working-card.md)
+  - Stage 12 구현 초안과 북쪽 성문 압박 기준
+- [stage-13-working-card.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-13-working-card.md)
+  - Stage 13 구현 초안과 북서 동시 압박 기준
+- [stage-14-working-card.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-14-working-card.md)
+  - Stage 14 구현 초안과 서쪽 긴급 방어 기준
+- [stage-15-working-card.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-15-working-card.md)
+  - Stage 15 구현 초안과 좌상단 미니 보스형 기준
+- [stage-16-20-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-16-20-plan.md)
+  - Stage 16~20 왼쪽 아래 성 위치 구간 계획
+- [stage-21-25-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-21-25-plan.md)
+  - Stage 21~25 오른쪽 아래 성 위치 구간 계획
+- [stage-26-30-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-26-30-plan.md)
+  - Stage 26~30 혼합 위치와 최종 시험 구간 계획
 - [visual-guide.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/visual-guide.md)
   - Mermaid, ASCII, 좌표 설명용 시각 가이드
 
@@ -96,7 +119,7 @@
 
 ## 다음 작업
 
-1. Stage 2~5를 실제 기기에서 플레이 검증한다.
-2. Stage별로 너무 쉽거나 억울한 방향을 조정한다.
-3. Stage 2~5가 괜찮으면 작업 카드를 확정 상태로 바꾼다.
-4. Stage 6 성 위치 후보를 사용자와 함께 고르고 새 구간을 시작한다.
+1. Stage 1~10을 실제 기기에서 플레이 검증한다.
+2. 성 위치, 장애물, 스폰 화살표, 경로가 문서와 일치하는지 확인한다.
+3. Stage 11 작업 카드를 만들고 2사분면 구간을 시작한다.
+4. Stage 11~15를 하나씩 코드에 옮긴 뒤 실제 플레이 결과를 문서에 다시 반영한다.
