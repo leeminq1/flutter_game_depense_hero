@@ -13,10 +13,11 @@ const _minIntervalByEvent = {
   AudioEvent.armorHit: 0.07,
   AudioEvent.magicHit: 0.10,
   AudioEvent.coinGain: 0.15,
+  AudioEvent.baseDamage: 0.25,
 };
 
 /// 동시에 처리 중인 SFX 요청 최대 수. 초과 시 전투 SFX는 드롭.
-const _maxPendingSfx = 4;
+const _maxPendingSfx = 3;
 
 const _budgetedEvents = {
   AudioEvent.arrowShot,
@@ -103,13 +104,17 @@ class GameAudioService {
     return _playImmediate(event);
   }
 
+  final List<AudioEvent> _drainBuffer = [];
+
   void _drainQueuedEvents() {
     if (_queuedEvents.isEmpty || _pendingCount >= _maxPendingSfx) {
       return;
     }
+    _drainBuffer.clear();
+    _drainBuffer.addAll(_queuedEvents.keys);
 
     var playedThisFrame = 0;
-    for (final event in List<AudioEvent>.from(_queuedEvents.keys)) {
+    for (final event in _drainBuffer) {
       if (playedThisFrame >= 2 || _pendingCount >= _maxPendingSfx) {
         return;
       }

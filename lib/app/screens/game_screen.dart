@@ -387,7 +387,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 bottom: 16,
                                 child: _HeroActionBar(
                                   sessionController: session,
+                                  onMove: game.enterHeroMoveMode,
                                   onUpgrade: game.upgradeSelectedHero,
+                                  onDeselect: game.clearSelectedHero,
                                 ),
                               ),
                           ],
@@ -1403,11 +1405,15 @@ class _TowerActionBar extends StatelessWidget {
 class _HeroActionBar extends StatelessWidget {
   const _HeroActionBar({
     required this.sessionController,
+    required this.onMove,
     required this.onUpgrade,
+    required this.onDeselect,
   });
 
   final GameSessionController sessionController;
+  final VoidCallback onMove;
   final VoidCallback onUpgrade;
+  final VoidCallback onDeselect;
 
   @override
   Widget build(BuildContext context) {
@@ -1430,35 +1436,59 @@ class _HeroActionBar extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${hero.label} Lv.${hero.level}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                  ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${hero.label} Lv.${hero.level}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      hero.shortDescription,
+                      style: const TextStyle(color: Colors.white54, fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${hero.shortDescription} 빈 타일을 터치하면 이동합니다.',
-                  style: const TextStyle(color: Colors.white60, fontSize: 12),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+              ),
+              FilledButton.tonalIcon(
+                onPressed: onMove,
+                icon: const Icon(Icons.open_with_rounded, size: 16),
+                label: const Text('이동'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.tonalIcon(
+                onPressed: hero.canUpgrade ? onUpgrade : null,
+                icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+                label: Text('${hero.upgradeCost}'),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: '취소',
+                onPressed: onDeselect,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0x22EF4E4E),
                 ),
-              ],
-            ),
-          ),
-          FilledButton.tonalIcon(
-            onPressed: hero.canUpgrade ? onUpgrade : null,
-            icon: const Icon(Icons.arrow_upward_rounded, size: 16),
-            label: Text('${hero.upgradeCost}'),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Color(0xFFEF4E4E),
+                ),
+              ),
+            ],
           ),
         ],
       ),

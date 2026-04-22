@@ -83,6 +83,7 @@ class GameSessionController extends ChangeNotifier {
   HeroKind? selectedHeroBuildable;
   SelectedTowerDetails? selectedTower;
   SelectedHeroDetails? selectedHero;
+  bool heroMoveMode = false;
   Set<String> builtTowerKinds = const {};
   String statusText = '아래 카드를 클릭해서 건물을 배치하세요.';
   List<String> activeFronts = const [];
@@ -122,6 +123,7 @@ class GameSessionController extends ChangeNotifier {
     builtTowerKinds = const {};
     selectedTower = null;
     selectedHero = null;
+    heroMoveMode = false;
     selectedBuildable = null;
     selectedHeroBuildable = null;
     activeFronts = const [];
@@ -176,6 +178,11 @@ class GameSessionController extends ChangeNotifier {
       selectedHeroBuildable = null;
       selectedTower = null;
     }
+    notifyListeners();
+  }
+
+  void setHeroMoveMode(bool value) {
+    heroMoveMode = value;
     notifyListeners();
   }
 

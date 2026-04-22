@@ -901,57 +901,59 @@ class CampaignData {
   }
 
   static int _startingCoinsForStage(int stageNumber) {
+    // 시작 골드를 줄여서 초반부터 긴장감 확보
+    // Stage 1: 아처 2개 + 약간 여유 (이전: 4개 즉시 배치 가능)
     if (stageNumber <= 5) {
       return switch (stageNumber) {
-        1 => 240,
-        2 => 235,
-        3 => 230,
-        4 => 225,
-        _ => 220,
+        1 => 155,
+        2 => 160,
+        3 => 165,
+        4 => 170,
+        _ => 175,
       };
     }
     if (stageNumber <= 10) {
       return switch (stageNumber) {
-        6 => 250,
-        7 => 248,
-        8 => 246,
-        9 => 244,
-        _ => 242,
+        6 => 210,
+        7 => 205,
+        8 => 200,
+        9 => 195,
+        _ => 190,
       };
     }
     if (stageNumber <= 15) {
       return switch (stageNumber) {
-        11 => 255,
-        12 => 252,
-        13 => 250,
-        14 => 248,
-        _ => 246,
+        11 => 210,
+        12 => 208,
+        13 => 205,
+        14 => 202,
+        _ => 200,
       };
     }
     if (stageNumber <= 20) {
       return switch (stageNumber) {
-        16 => 244,
-        17 => 242,
-        18 => 240,
-        19 => 238,
-        _ => 236,
+        16 => 198,
+        17 => 196,
+        18 => 194,
+        19 => 192,
+        _ => 190,
       };
     }
     if (stageNumber <= 25) {
       return switch (stageNumber) {
-        21 => 232,
-        22 => 230,
-        23 => 228,
-        24 => 226,
-        _ => 224,
+        21 => 188,
+        22 => 186,
+        23 => 184,
+        24 => 182,
+        _ => 180,
       };
     }
     return switch (stageNumber) {
-      26 => 222,
-      27 => 220,
-      28 => 218,
-      29 => 216,
-      _ => 214,
+      26 => 178,
+      27 => 176,
+      28 => 174,
+      29 => 172,
+      _ => 170,
     };
   }
 
@@ -1025,8 +1027,8 @@ class CampaignData {
                 stageNumber: 1,
                 intensity: 0.92,
               ),
-              count: 3,
-              spawnInterval: 1.05,
+              count: 4,
+              spawnInterval: 0.82,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1035,7 +1037,7 @@ class CampaignData {
                 intensity: 0.88,
               ),
               count: 2,
-              spawnInterval: 1.2,
+              spawnInterval: 0.95,
             ),
           ],
           2 => [
@@ -1045,8 +1047,8 @@ class CampaignData {
                 stageNumber: 1,
                 intensity: 1.0,
               ),
-              count: 4,
-              spawnInterval: 0.98,
+              count: 5,
+              spawnInterval: 0.78,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1055,7 +1057,7 @@ class CampaignData {
                 intensity: 0.95,
               ),
               count: 3,
-              spawnInterval: 1.08,
+              spawnInterval: 0.88,
             ),
           ],
           _ => [
@@ -1065,8 +1067,8 @@ class CampaignData {
                 stageNumber: 1,
                 intensity: 1.08,
               ),
-              count: 5,
-              spawnInterval: 0.92,
+              count: 6,
+              spawnInterval: 0.74,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1074,8 +1076,8 @@ class CampaignData {
                 stageNumber: 1,
                 intensity: 1.0,
               ),
-              count: 3,
-              spawnInterval: 1.0,
+              count: 4,
+              spawnInterval: 0.82,
             ),
           ],
         };
@@ -1089,8 +1091,8 @@ class CampaignData {
                 stageNumber: 2,
                 intensity: 0.96,
               ),
-              count: 4,
-              spawnInterval: 0.98,
+              count: 5,
+              spawnInterval: 0.78,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1099,7 +1101,7 @@ class CampaignData {
                 intensity: 0.92,
               ),
               count: 3,
-              spawnInterval: 1.08,
+              spawnInterval: 0.88,
             ),
           ],
           2 => [
@@ -1110,7 +1112,7 @@ class CampaignData {
                 intensity: 1.05,
               ),
               count: 5,
-              spawnInterval: 0.9,
+              spawnInterval: 0.74,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1118,8 +1120,8 @@ class CampaignData {
                 stageNumber: 2,
                 intensity: 1.0,
               ),
-              count: 3,
-              spawnInterval: 0.98,
+              count: 4,
+              spawnInterval: 0.82,
             ),
           ],
           _ => [
@@ -1130,7 +1132,7 @@ class CampaignData {
                 intensity: 1.05,
               ),
               count: 5,
-              spawnInterval: 0.94,
+              spawnInterval: 0.76,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1138,8 +1140,8 @@ class CampaignData {
                 stageNumber: 2,
                 intensity: 1.08,
               ),
-              count: 4,
-              spawnInterval: 0.92,
+              count: 5,
+              spawnInterval: 0.74,
             ),
           ],
         };
@@ -1153,8 +1155,8 @@ class CampaignData {
                 stageNumber: 3,
                 intensity: 1.0,
               ),
-              count: 4,
-              spawnInterval: 0.94,
+              count: 5,
+              spawnInterval: 0.76,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1163,7 +1165,7 @@ class CampaignData {
                 intensity: 0.96,
               ),
               count: 3,
-              spawnInterval: 1.0,
+              spawnInterval: 0.82,
             ),
           ],
           2 => [
@@ -1173,8 +1175,8 @@ class CampaignData {
                 stageNumber: 3,
                 intensity: 1.0,
               ),
-              count: 4,
-              spawnInterval: 0.95,
+              count: 5,
+              spawnInterval: 0.78,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1182,8 +1184,8 @@ class CampaignData {
                 stageNumber: 3,
                 intensity: 0.78,
               ),
-              count: 1,
-              spawnInterval: 1.4,
+              count: 2,
+              spawnInterval: 1.1,
             ),
           ],
           _ => [
@@ -1193,8 +1195,8 @@ class CampaignData {
                 stageNumber: 3,
                 intensity: 1.06,
               ),
-              count: 4,
-              spawnInterval: 0.9,
+              count: 5,
+              spawnInterval: 0.72,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1202,8 +1204,8 @@ class CampaignData {
                 stageNumber: 3,
                 intensity: 0.84,
               ),
-              count: 2,
-              spawnInterval: 1.35,
+              count: 3,
+              spawnInterval: 1.05,
             ),
           ],
         };
@@ -1217,8 +1219,8 @@ class CampaignData {
                 stageNumber: 4,
                 intensity: 1.0,
               ),
-              count: 4,
-              spawnInterval: 0.92,
+              count: 5,
+              spawnInterval: 0.74,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1226,8 +1228,8 @@ class CampaignData {
                 stageNumber: 4,
                 intensity: 0.82,
               ),
-              count: 1,
-              spawnInterval: 1.3,
+              count: 2,
+              spawnInterval: 1.05,
             ),
           ],
           2 => [
@@ -1237,8 +1239,8 @@ class CampaignData {
                 stageNumber: 4,
                 intensity: 1.02,
               ),
-              count: 4,
-              spawnInterval: 0.92,
+              count: 5,
+              spawnInterval: 0.74,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1247,7 +1249,7 @@ class CampaignData {
                 intensity: 0.88,
               ),
               count: 2,
-              spawnInterval: 1.28,
+              spawnInterval: 1.0,
             ),
           ],
           _ => [
@@ -1257,8 +1259,8 @@ class CampaignData {
                 stageNumber: 4,
                 intensity: 1.08,
               ),
-              count: 4,
-              spawnInterval: 0.88,
+              count: 5,
+              spawnInterval: 0.70,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1266,8 +1268,8 @@ class CampaignData {
                 stageNumber: 4,
                 intensity: 1.04,
               ),
-              count: 3,
-              spawnInterval: 0.92,
+              count: 4,
+              spawnInterval: 0.74,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1276,7 +1278,7 @@ class CampaignData {
                 intensity: 0.92,
               ),
               count: 2,
-              spawnInterval: 1.22,
+              spawnInterval: 0.95,
             ),
           ],
         };
@@ -1291,7 +1293,7 @@ class CampaignData {
                 intensity: 1.06,
               ),
               count: 5,
-              spawnInterval: 0.9,
+              spawnInterval: 0.72,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1299,8 +1301,8 @@ class CampaignData {
                 stageNumber: 5,
                 intensity: 0.86,
               ),
-              count: 1,
-              spawnInterval: 1.26,
+              count: 2,
+              spawnInterval: 1.0,
             ),
           ],
           2 => [
@@ -1310,8 +1312,8 @@ class CampaignData {
                 stageNumber: 5,
                 intensity: 1.08,
               ),
-              count: 5,
-              spawnInterval: 0.9,
+              count: 6,
+              spawnInterval: 0.72,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1320,7 +1322,7 @@ class CampaignData {
                 intensity: 0.92,
               ),
               count: 2,
-              spawnInterval: 1.22,
+              spawnInterval: 0.95,
             ),
           ],
           _ => [
@@ -1330,8 +1332,8 @@ class CampaignData {
                 stageNumber: 5,
                 intensity: 1.12,
               ),
-              count: 4,
-              spawnInterval: 0.86,
+              count: 5,
+              spawnInterval: 0.68,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1339,8 +1341,8 @@ class CampaignData {
                 stageNumber: 5,
                 intensity: 1.08,
               ),
-              count: 4,
-              spawnInterval: 0.88,
+              count: 5,
+              spawnInterval: 0.70,
             ),
             SpawnGroupDefinition(
               enemy: enemyForKind(
@@ -1348,8 +1350,8 @@ class CampaignData {
                 stageNumber: 5,
                 intensity: 1.0,
               ),
-              count: 2,
-              spawnInterval: 1.15,
+              count: 3,
+              spawnInterval: 0.90,
             ),
           ],
         };
@@ -1387,10 +1389,10 @@ class CampaignData {
     required int stageNumber,
     required double intensity,
   }) {
-    final hpMultiplier = 1 + ((stageNumber - 1) * 0.11);
+    final hpMultiplier = 1 + ((stageNumber - 1) * 0.15);
     final actNumber = ((stageNumber - 1) ~/ 5) + 1;
-    final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.04);
-    final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.05);
+    final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.06);
+    final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.03);
 
     switch (kind) {
       case EnemyKind.raider:

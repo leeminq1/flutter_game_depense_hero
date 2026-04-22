@@ -91,6 +91,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   double _zoom = 1.0;
   double _scaleStart = 1.0;
 
+  Shader? _cachedBgShader;
+  int _maxTowerLevel = 1;
+  double _syncTimer = 0.0;
+  bool _sessionDirty = false;
+  final Vector2 _walkDelta = Vector2.zero();
+
   bool get _isSiegeMode =>
       stage.assaultCycles.isNotEmpty &&
       (stage.pathsByDirection?.isNotEmpty ?? false);
@@ -127,12 +133,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       loopLabel: _isSiegeMode ? 'Cycle' : 'Wave',
     );
     _nextFronts = _nextFrontsForIndex(-1);
-    _syncSession();
+    _flushSession();
   }
 
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
+    _cachedBgShader = null;
     _gridOrigin = _resolvedGridOrigin();
     _pathsByDirection = _resolvedPathsByDirection();
     final pathSequence = stage.pathSequence;
@@ -343,6 +350,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     tower.totalSpent += tower.upgradeCost;
     final hpRatio = (tower.hitPoints / tower.maxHitPoints).clamp(0.0, 1.0);
     tower.level += 1;
+    if (tower.level > _maxTowerLevel) _maxTowerLevel = tower.level;
     tower.hitPoints = math.max(
       tower.hitPoints + 32,
       tower.maxHitPoints * hpRatio,
@@ -370,6 +378,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _coins += tower.sellValue;
     _towers.removeAt(index);
     _towersSold += 1;
+    _maxTowerLevel = _towers.isEmpty ? 1 : _towers.map((t) => t.level).reduce(math.max);
     _clearSelectedTowerSelection();
     _showStatus(
       '${tower.definition.label}을(를) 철거하고 ${tower.sellValue} 코인을 회수했습니다.',
@@ -404,9 +413,23 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       hero.cooldownRemaining,
       hero.currentCooldown,
     );
-    _showStatus('${hero.definition.label}을 업그레이드했습니다. 빈 타일을 터치하면 이동합니다.');
+    _showStatus('${hero.definition.label}을 업그레이드했습니다.');
     audioService.play(AudioEvent.towerUpgrade);
     _syncSelectedHero();
+    _syncSession();
+  }
+
+  void enterHeroMoveMode() {
+    if (_selectedHeroIndex == null) return;
+    sessionController.setHeroMoveMode(true);
+    _showStatus('이동할 빈 타일을 선택하세요.');
+    _syncSession();
+  }
+
+  void clearSelectedHero() {
+    _selectedHeroIndex = null;
+    sessionController.setSelectedHero(null);
+    sessionController.setHeroMoveMode(false);
     _syncSession();
   }
 
@@ -461,7 +484,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _updateHeroes(dt);
     _updateVisuals(dt);
     _checkWaveResolution();
-    _syncSession();
+    _syncTimer += dt;
+    if (_syncTimer >= 0.066) {
+      _syncTimer = 0;
+      if (_sessionDirty) {
+        _sessionDirty = false;
+        _flushSession();
+      }
+    }
     super.update(dt);
   }
 
@@ -469,9 +499,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void render(Canvas canvas) {
     super.render(canvas);
 
+    _cachedBgShader ??= _backgroundShader();
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.x, size.y),
-      Paint()..shader = _backgroundShader(),
+      Paint()..shader = _cachedBgShader!,
     );
 
     _drawGroundTexture(canvas);
@@ -532,7 +563,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     final selectedHero = _selectedHero;
-    if (selectedHero != null) {
+    if (selectedHero != null && sessionController.heroMoveMode) {
       _handleHeroMove(position, selectedHero);
       return;
     }
@@ -646,8 +677,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _syncSession();
       return;
     }
-    hero.position.setFrom(snapTarget);
-    _showStatus('${hero.definition.label}을 이동했습니다.');
+    hero.walkTarget = snapTarget.clone();
+    sessionController.setHeroMoveMode(false);
+    _showStatus('${hero.definition.label}이 이동합니다.');
     _syncSelectedHero();
     _syncSession();
   }
@@ -2429,13 +2461,18 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawSlots(Canvas canvas) {
+    final isHeroMove = sessionController.heroMoveMode;
     final selection = sessionController.selectedBuildable;
-    if (selection == null) return;
+    if (selection == null && !isHeroMove) return;
     final fillPaint = Paint()
-      ..color = _slotFillColor()
+      ..color = isHeroMove
+          ? const Color(0x224FC9FF)
+          : _slotFillColor()
       ..style = PaintingStyle.fill;
     final ringPaint = Paint()
-      ..color = _slotRingColor()
+      ..color = isHeroMove
+          ? const Color(0xFF4FC9FF)
+          : _slotRingColor()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     for (final cell in _buildGridPositions(selection: selection)) {
@@ -2607,6 +2644,21 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   void _updateHeroes(double dt) {
     for (final hero in _heroes) {
+      if (hero.walkTarget != null) {
+        final target = hero.walkTarget!;
+        _walkDelta.setFrom(target);
+        _walkDelta.sub(hero.position);
+        final dist = _walkDelta.length;
+        final step = _HeroPlacement.walkSpeed * dt;
+        if (dist <= step) {
+          hero.position.setFrom(target);
+          hero.walkTarget = null;
+        } else {
+          _walkDelta.scale(1.0 / dist);
+          hero.position.addScaled(_walkDelta, step);
+          hero.facing = _directionFromDelta(_walkDelta);
+        }
+      }
       hero.cooldownRemaining -= dt;
       if (hero.attackVisualTimer > 0) {
         hero.attackVisualTimer = math.max(0, hero.attackVisualTimer - dt);
@@ -3690,7 +3742,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     });
   }
 
+  /// Marks session state as needing a sync.
+  /// Actual Flutter notification happens in the 15fps throttle (update loop).
   void _syncSession() {
+    _sessionDirty = true;
+  }
+
+  /// Performs the actual session sync — called only from the 15fps throttle.
+  void _flushSession() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       sessionController.updateRuntime(
         currentWave: _currentWaveIndex + 1,
@@ -3701,9 +3760,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         stageFailed: _stageFailed,
         isPaused: _pausedManually,
         towersBuilt: _towersBuilt,
-        maxTowerLevel: _towers.isEmpty
-            ? 1
-            : _towers.map((tower) => tower.level).reduce(math.max),
+        maxTowerLevel: _maxTowerLevel,
         builtTowerKinds: _builtTowerKinds,
         statusText: _statusText,
         actNumber: stage.actNumber ?? (((stage.number - 1) ~/ 5) + 1),
@@ -3749,8 +3806,11 @@ class _HeroPlacement {
   _HeroPlacement({required this.definition, required this.position})
     : totalSpent = definition.cost;
 
+  static const double walkSpeed = 90.0;
+
   final HeroDefinition definition;
   final Vector2 position;
+  Vector2? walkTarget;
   int level = 1;
   int totalSpent;
   double cooldownRemaining = 0;

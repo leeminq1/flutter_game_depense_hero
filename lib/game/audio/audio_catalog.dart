@@ -19,18 +19,26 @@ class AudioCatalog {
     AudioEvent.uiClick: AudioEntry(
       assets: ['sfx/ui/click_primary.ogg'],
       baseVolume: 0.55,
+      pooled: true,
+      maxPlayers: 2,
     ),
     AudioEvent.uiSelect: AudioEntry(
       assets: ['sfx/ui/select_primary.ogg'],
       baseVolume: 0.55,
+      pooled: true,
+      maxPlayers: 2,
     ),
     AudioEvent.uiConfirm: AudioEntry(
       assets: ['sfx/ui/confirm_primary.ogg'],
       baseVolume: 0.60,
+      pooled: true,
+      maxPlayers: 2,
     ),
     AudioEvent.uiError: AudioEntry(
       assets: ['sfx/ui/error_primary.ogg'],
       baseVolume: 0.60,
+      pooled: true,
+      maxPlayers: 2,
     ),
     AudioEvent.towerPlace: AudioEntry(
       assets: [
@@ -46,6 +54,8 @@ class AudioCatalog {
     AudioEvent.towerUpgrade: AudioEntry(
       assets: ['sfx/build/upgrade_click.ogg'],
       baseVolume: 0.75,
+      pooled: true,
+      maxPlayers: 2,
     ),
     AudioEvent.arrowShot: AudioEntry(
       assets: [
@@ -102,14 +112,20 @@ class AudioCatalog {
     AudioEvent.waveClear: AudioEntry(
       assets: ['jingles/wave_clear.ogg'],
       baseVolume: 0.75,
+      pooled: true,
+      maxPlayers: 1,
     ),
     AudioEvent.stageClear: AudioEntry(
       assets: ['jingles/stage_clear.ogg'],
       baseVolume: 0.85,
+      pooled: true,
+      maxPlayers: 1,
     ),
     AudioEvent.baseDamage: AudioEntry(
       assets: ['sfx/ui/error_primary.ogg'],
       baseVolume: 0.80,
+      pooled: true,
+      maxPlayers: 2,
     ),
   };
 }
