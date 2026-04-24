@@ -40,6 +40,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   bool _hintBannerVisible = true;
   Timer? _hintTimer;
   bool _towerActionBarVisible = false;
+  bool _actionBarWasShownForCurrentSelection = false;
+  int _lastSelectionVersion = -1;
   Timer? _towerActionBarTimer;
   String _lastStatusText = '';
   String? _lastSelectedTowerSignature;
@@ -161,6 +163,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       return;
     }
     setState(() => _towerActionBarVisible = true);
+    _actionBarWasShownForCurrentSelection = true;
     _towerActionBarTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() => _towerActionBarVisible = false);
@@ -203,22 +206,29 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     }
 
     final signature = _selectedTowerSignature(_sessionController.selectedTower);
-    if (signature == _lastSelectedTowerSignature) {
-      final heroSignature = _selectedHeroSignature(
-        _sessionController.selectedHero,
-      );
-      if (heroSignature == _lastSelectedHeroSignature) {
-        return;
-      }
-    }
-
-    _lastSelectedTowerSignature = signature;
     final heroSignature = _selectedHeroSignature(
       _sessionController.selectedHero,
     );
+    final currentVersion = _sessionController.selectionVersion;
+    final userTapped = currentVersion != _lastSelectionVersion;
+    if (userTapped) {
+      _lastSelectionVersion = currentVersion;
+      _actionBarWasShownForCurrentSelection = false;
+    }
+
+    final sameSelection =
+        signature == _lastSelectedTowerSignature &&
+        heroSignature == _lastSelectedHeroSignature;
+    if (sameSelection &&
+        (_towerActionBarVisible || _actionBarWasShownForCurrentSelection)) {
+      return;
+    }
+
+    _lastSelectedTowerSignature = signature;
     _lastSelectedHeroSignature = heroSignature;
     if (signature == null && heroSignature == null) {
       _towerActionBarTimer?.cancel();
+      _actionBarWasShownForCurrentSelection = false;
       if (mounted && _towerActionBarVisible) {
         setState(() => _towerActionBarVisible = false);
       }
@@ -487,6 +497,13 @@ class _TopHud extends StatelessWidget {
           label:
               '${sessionController.loopLabel} ${sessionController.currentWave}/${sessionController.totalWaves}',
         ),
+        if (sessionController.waveInProgress &&
+            sessionController.remainingEnemies > 0)
+          _HudChip(
+            icon: Icons.groups_rounded,
+            color: const Color(0xFFFF6B6B),
+            label: '${sessionController.remainingEnemies}',
+          ),
         _HudChip(
           icon: Icons.account_balance_rounded,
           color: const Color(0xFF7BC6FF),

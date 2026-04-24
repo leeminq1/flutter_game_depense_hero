@@ -1,5 +1,5 @@
-import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
+import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:flutter/foundation.dart';
 
 class TowerBranchChoiceDetails {
@@ -99,7 +99,7 @@ class GameSessionController extends ChangeNotifier {
   SelectedHeroDetails? selectedHero;
   bool heroMoveMode = false;
   Set<String> builtTowerKinds = const {};
-  String statusText = '아래 카드를 클릭해서 건물을 배치하세요.';
+  String statusText = '아래 카드를 탭해서 건물을 배치하세요.';
   List<String> activeFronts = const [];
   List<String> nextFronts = const [];
   double recoverySecondsRemaining = 0;
@@ -108,10 +108,12 @@ class GameSessionController extends ChangeNotifier {
 
   int _remainingEnemies = 0;
   double _speedMultiplier = 1.0;
+  int _selectionVersion = 0;
 
   int get remainingEnemies => _remainingEnemies;
   double get speedMultiplier => _speedMultiplier;
   String get speedLabel => '${_speedMultiplier.toStringAsFixed(1)}x';
+  int get selectionVersion => _selectionVersion;
 
   void hydrate({
     required int stageNumber,
@@ -151,11 +153,27 @@ class GameSessionController extends ChangeNotifier {
     stageFailed = false;
     waveInProgress = false;
     currentWave = 0;
-    statusText = '아래 카드를 클릭해서 건물을 배치하세요.';
+    _selectionVersion = 0;
+    statusText = '아래 카드를 탭해서 건물을 배치하세요.';
+    notifyListeners();
+  }
+
+  void bumpSelectionVersion() {
+    _selectionVersion += 1;
     notifyListeners();
   }
 
   void setSelectedBuildable(TowerKind? towerKind) {
+    final changed =
+        selectedBuildable != towerKind ||
+        (towerKind != null &&
+            (selectedHeroBuildable != null ||
+                selectedTower != null ||
+                selectedHero != null));
+    if (!changed) {
+      return;
+    }
+
     selectedBuildable = towerKind;
     if (towerKind != null) {
       selectedHeroBuildable = null;
@@ -166,6 +184,16 @@ class GameSessionController extends ChangeNotifier {
   }
 
   void setSelectedHeroBuildable(HeroKind? heroKind) {
+    final changed =
+        selectedHeroBuildable != heroKind ||
+        (heroKind != null &&
+            (selectedBuildable != null ||
+                selectedTower != null ||
+                selectedHero != null));
+    if (!changed) {
+      return;
+    }
+
     selectedHeroBuildable = heroKind;
     if (heroKind != null) {
       selectedBuildable = null;
@@ -176,6 +204,16 @@ class GameSessionController extends ChangeNotifier {
   }
 
   void setSelectedTower(SelectedTowerDetails? details) {
+    final changed =
+        !_towerDetailsEqual(selectedTower, details) ||
+        (details != null &&
+            (selectedBuildable != null ||
+                selectedHeroBuildable != null ||
+                selectedHero != null));
+    if (!changed) {
+      return;
+    }
+
     selectedTower = details;
     if (details != null) {
       selectedBuildable = null;
@@ -186,6 +224,16 @@ class GameSessionController extends ChangeNotifier {
   }
 
   void setSelectedHero(SelectedHeroDetails? details) {
+    final changed =
+        !_heroDetailsEqual(selectedHero, details) ||
+        (details != null &&
+            (selectedBuildable != null ||
+                selectedHeroBuildable != null ||
+                selectedTower != null));
+    if (!changed) {
+      return;
+    }
+
     selectedHero = details;
     if (details != null) {
       selectedBuildable = null;
@@ -196,11 +244,17 @@ class GameSessionController extends ChangeNotifier {
   }
 
   void setHeroMoveMode(bool value) {
+    if (heroMoveMode == value) {
+      return;
+    }
     heroMoveMode = value;
     notifyListeners();
   }
 
   void setSpeedMultiplier(double speed) {
+    if (_speedMultiplier == speed) {
+      return;
+    }
     _speedMultiplier = speed;
     notifyListeners();
   }
@@ -226,6 +280,35 @@ class GameSessionController extends ChangeNotifier {
     String battleState = 'prep',
     int remainingEnemies = 0,
   }) {
+    final nextBuiltKinds = Set<String>.from(builtTowerKinds);
+    final nextActiveFronts = List<String>.from(activeFronts);
+    final nextFrontsList = List<String>.from(nextFronts);
+
+    final changed =
+        this.actNumber != actNumber ||
+        this.currentWave != currentWave ||
+        this.loopLabel != loopLabel ||
+        this.coins != coins ||
+        this.baseHealth != baseHealth ||
+        this.waveInProgress != waveInProgress ||
+        this.stageCleared != stageCleared ||
+        this.stageFailed != stageFailed ||
+        this.isPaused != isPaused ||
+        this.towersBuilt != towersBuilt ||
+        this.maxTowerLevel != maxTowerLevel ||
+        !setEquals(this.builtTowerKinds, nextBuiltKinds) ||
+        this.statusText != statusText ||
+        !listEquals(this.activeFronts, nextActiveFronts) ||
+        !listEquals(this.nextFronts, nextFrontsList) ||
+        this.recoverySecondsRemaining != recoverySecondsRemaining ||
+        this.recoveryActive != recoveryActive ||
+        this.battleState != battleState ||
+        _remainingEnemies != remainingEnemies;
+
+    if (!changed) {
+      return;
+    }
+
     this.actNumber = actNumber;
     this.currentWave = currentWave;
     this.loopLabel = loopLabel;
@@ -237,14 +320,74 @@ class GameSessionController extends ChangeNotifier {
     this.isPaused = isPaused;
     this.towersBuilt = towersBuilt;
     this.maxTowerLevel = maxTowerLevel;
-    this.builtTowerKinds = Set<String>.from(builtTowerKinds);
+    this.builtTowerKinds = nextBuiltKinds;
     this.statusText = statusText;
-    this.activeFronts = List<String>.from(activeFronts);
-    this.nextFronts = List<String>.from(nextFronts);
+    this.activeFronts = nextActiveFronts;
+    this.nextFronts = nextFrontsList;
     this.recoverySecondsRemaining = recoverySecondsRemaining;
     this.recoveryActive = recoveryActive;
     this.battleState = battleState;
     _remainingEnemies = remainingEnemies;
     notifyListeners();
+  }
+
+  bool _towerDetailsEqual(SelectedTowerDetails? a, SelectedTowerDetails? b) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a == null || b == null) {
+      return false;
+    }
+    return a.kind == b.kind &&
+        a.label == b.label &&
+        a.level == b.level &&
+        a.upgradeCost == b.upgradeCost &&
+        a.sellValue == b.sellValue &&
+        a.shortDescription == b.shortDescription &&
+        a.abilityDescription == b.abilityDescription &&
+        a.canUpgrade == b.canUpgrade &&
+        a.canChooseBranch == b.canChooseBranch &&
+        a.economyIncomePerTick == b.economyIncomePerTick &&
+        a.economyInterval == b.economyInterval &&
+        a.economyIncomePerSecond == b.economyIncomePerSecond &&
+        a.economyCycleBonus == b.economyCycleBonus &&
+        a.economyBreakEvenSeconds == b.economyBreakEvenSeconds &&
+        a.branchId == b.branchId &&
+        a.branchLabel == b.branchLabel &&
+        _branchChoicesEqual(a.branchChoices, b.branchChoices);
+  }
+
+  bool _branchChoicesEqual(
+    List<TowerBranchChoiceDetails> a,
+    List<TowerBranchChoiceDetails> b,
+  ) {
+    if (a.length != b.length) {
+      return false;
+    }
+    for (var i = 0; i < a.length; i += 1) {
+      if (a[i].id != b[i].id ||
+          a[i].label != b[i].label ||
+          a[i].description != b[i].description) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _heroDetailsEqual(SelectedHeroDetails? a, SelectedHeroDetails? b) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a == null || b == null) {
+      return false;
+    }
+    return a.kind == b.kind &&
+        a.label == b.label &&
+        a.level == b.level &&
+        a.upgradeCost == b.upgradeCost &&
+        a.shortDescription == b.shortDescription &&
+        a.abilityLabel == b.abilityLabel &&
+        a.abilityDescription == b.abilityDescription &&
+        a.canUpgrade == b.canUpgrade;
   }
 }

@@ -265,6 +265,11 @@ void main() {
       13: 18,
       14: 18,
       15: 18,
+      16: 18,
+      17: 18,
+      18: 18,
+      19: 18,
+      20: 18,
     };
 
     final expectedCycleCounts = {
@@ -460,11 +465,11 @@ void main() {
 
   test('stage 16-30 are authored instead of legacy fallback maps', () {
     const expectedCells = {
-      16: [4, 8],
-      17: [5, 9],
-      18: [4, 9],
-      19: [3, 9],
-      20: [3, 10],
+      16: [5, 8],
+      17: [4, 8],
+      18: [5, 9],
+      19: [4, 9],
+      20: [3, 9],
       21: [8, 8],
       22: [9, 8],
       23: [8, 9],

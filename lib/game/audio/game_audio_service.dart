@@ -1,87 +1,139 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:depense_game/game/audio/android_sound_pool_backend.dart';
 import 'package:depense_game/game/audio/audio_catalog.dart';
 import 'package:depense_game/game/audio/audio_event.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
+import 'package:depense_game/game/audio/combat_sfx_backend.dart';
+import 'package:depense_game/game/audio/flame_sfx_backend.dart';
 import 'package:flame_audio/flame_audio.dart' hide AudioEvent;
 
-/// 전투 SFX 최소 재생 간격 (초). 이 간격보다 빠르게 반복 요청되면 드롭.
 const _minIntervalByEvent = {
+  AudioEvent.uiClick: 0.05,
+  AudioEvent.uiSelect: 0.10,
+  AudioEvent.uiConfirm: 0.16,
+  AudioEvent.uiError: 0.24,
+  AudioEvent.towerPlace: 0.18,
+  AudioEvent.towerUpgrade: 0.20,
   AudioEvent.arrowShot: 0.08,
-  AudioEvent.slashHit: 0.07,
-  AudioEvent.armorHit: 0.07,
-  AudioEvent.magicHit: 0.10,
-  AudioEvent.coinGain: 0.15,
-  AudioEvent.baseDamage: 0.25,
+  AudioEvent.slashHit: 0.12,
+  AudioEvent.armorHit: 0.16,
+  AudioEvent.magicHit: 0.18,
+  AudioEvent.enemyDeathElite: 0.26,
+  AudioEvent.coinGain: 0.32,
+  AudioEvent.baseDamage: 0.48,
 };
 
-/// 동시에 처리 중인 SFX 요청 최대 수. 초과 시 전투 SFX는 드롭.
-const _maxPendingSfx = 3;
+const _maxPendingSfx = 1;
+const _maxQueuedSfx = 6;
+const _maxDrainedPerUpdate = 1;
+const _globalQueuedSfxGap = 0.05;
+const _combatBurstWindow = 0.35;
+const _combatBurstThreshold = 8;
+const _combatSilenceDuration = 0.45;
 
-const _budgetedEvents = {
+const _combatRouteEvents = {
+  AudioEvent.uiClick,
+  AudioEvent.uiSelect,
+  AudioEvent.uiConfirm,
+  AudioEvent.uiError,
+  AudioEvent.towerPlace,
+  AudioEvent.towerUpgrade,
   AudioEvent.arrowShot,
   AudioEvent.slashHit,
   AudioEvent.armorHit,
   AudioEvent.magicHit,
+  AudioEvent.enemyDeathElite,
+  AudioEvent.coinGain,
+  AudioEvent.baseDamage,
+};
+
+const _milestoneEvents = {AudioEvent.waveClear, AudioEvent.stageClear};
+
+const _combatHeavyEvents = {
+  AudioEvent.arrowShot,
+  AudioEvent.slashHit,
+  AudioEvent.armorHit,
+  AudioEvent.magicHit,
+  AudioEvent.enemyDeathElite,
   AudioEvent.coinGain,
   AudioEvent.baseDamage,
 };
 
 const _maxQueuedByEvent = {
-  AudioEvent.arrowShot: 2,
-  AudioEvent.slashHit: 2,
-  AudioEvent.armorHit: 2,
-  AudioEvent.magicHit: 2,
+  AudioEvent.uiClick: 1,
+  AudioEvent.uiSelect: 1,
+  AudioEvent.uiConfirm: 1,
+  AudioEvent.uiError: 1,
+  AudioEvent.towerPlace: 1,
+  AudioEvent.towerUpgrade: 1,
+  AudioEvent.arrowShot: 1,
+  AudioEvent.slashHit: 1,
+  AudioEvent.armorHit: 1,
+  AudioEvent.magicHit: 1,
+  AudioEvent.enemyDeathElite: 1,
   AudioEvent.coinGain: 1,
   AudioEvent.baseDamage: 1,
 };
+
+const _drainPriority = [
+  AudioEvent.baseDamage,
+  AudioEvent.uiError,
+  AudioEvent.towerPlace,
+  AudioEvent.towerUpgrade,
+  AudioEvent.coinGain,
+  AudioEvent.enemyDeathElite,
+  AudioEvent.armorHit,
+  AudioEvent.magicHit,
+  AudioEvent.slashHit,
+  AudioEvent.arrowShot,
+  AudioEvent.uiConfirm,
+  AudioEvent.uiSelect,
+  AudioEvent.uiClick,
+];
 
 class GameAudioService {
   GameAudioService(this._settings);
 
   final AudioSettingsController _settings;
-  final Map<String, AudioPool> _pools = {};
+  final FlameSfxBackend _flameBackend = FlameSfxBackend();
+  CombatSfxBackend? _combatBackend;
   final Map<AudioEvent, int> _roundRobin = {};
   final Random _random = Random();
-
-  /// 이벤트별 남은 쿨다운 시간.
   final Map<AudioEvent, double> _cooldownRemaining = {};
-
-  /// 현재 처리 중인 SFX 요청 수.
-  int _pendingCount = 0;
   final Map<AudioEvent, int> _queuedEvents = {};
+  final List<AudioEvent> _drainBuffer = [];
+
+  bool _combatBackendReady = false;
+  int _pendingCount = 0;
+  double _globalCooldownRemaining = 0;
+  double _combatBurstRemaining = 0;
+  int _combatBurstCount = 0;
+  double _combatSilenceRemaining = 0;
 
   Future<void> initialize() async {
-    // Note: FlameAudio.bgm.initialize() is often not required and can crash on some platforms.
-    // bgm will initialize its player automatically on the first play() call.
-
-    final files = <String>{
+    final allAssets = <String>{
       for (final entry in AudioCatalog.events.values) ...entry.assets,
-    }.toList();
+    };
+    await _flameBackend.initialize(allAssets);
 
-    try {
-      // Load all SFX assets into cache.
-      await FlameAudio.audioCache.loadAll(files);
-
-      // Initialize pools for frequently played sounds (SFX).
-      for (final definition in AudioCatalog.events.values.where(
-        (e) => e.pooled,
-      )) {
-        for (final asset in definition.assets) {
-          _pools[asset] = await FlameAudio.createPool(
-            asset,
-            maxPlayers: definition.maxPlayers,
-            minPlayers: 1,
-          );
-        }
-      }
-    } catch (e) {
-      rethrow;
+    final androidBackend = AndroidSoundPoolBackend();
+    final ready = await androidBackend.initialize({
+      for (final event in _combatRouteEvents)
+        ...?AudioCatalog.events[event]?.assets,
+    });
+    if (ready) {
+      _combatBackend = androidBackend;
+      _combatBackendReady = true;
+      return;
     }
+
+    await androidBackend.dispose();
+    _combatBackend = null;
+    _combatBackendReady = false;
   }
 
-  /// 게임 루프에서 매 프레임 호출 — 이벤트별 쿨다운 차감.
   void update(double dt) {
     for (final event in _minIntervalByEvent.keys) {
       final remaining = _cooldownRemaining[event];
@@ -89,11 +141,50 @@ class GameAudioService {
         _cooldownRemaining[event] = remaining - dt;
       }
     }
+    if (_globalCooldownRemaining > 0) {
+      _globalCooldownRemaining = max(0, _globalCooldownRemaining - dt);
+    }
+    if (_combatBurstRemaining > 0) {
+      _combatBurstRemaining = max(0, _combatBurstRemaining - dt);
+      if (_combatBurstRemaining == 0) {
+        _combatBurstCount = 0;
+      }
+    }
+    if (_combatSilenceRemaining > 0) {
+      _combatSilenceRemaining = max(0, _combatSilenceRemaining - dt);
+    }
     _drainQueuedEvents();
   }
 
   Future<void> play(AudioEvent event) async {
-    if (_budgetedEvents.contains(event)) {
+    if (_settings.muted) {
+      return;
+    }
+
+    if (_milestoneEvents.contains(event)) {
+      unawaited(_playImmediate(event));
+      return;
+    }
+
+    if (_combatSilenceRemaining > 0 &&
+        _combatHeavyEvents.contains(event) &&
+        event != AudioEvent.baseDamage) {
+      return;
+    }
+
+    if (_combatHeavyEvents.contains(event)) {
+      _recordCombatBurst();
+    }
+
+    if (_combatRouteEvents.contains(event)) {
+      final totalQueued = _queuedEvents.values.fold<int>(
+        0,
+        (sum, count) => sum + count,
+      );
+      if (totalQueued >= _maxQueuedSfx) {
+        return;
+      }
+
       final maxQueued = _maxQueuedByEvent[event] ?? 1;
       final current = _queuedEvents[event] ?? 0;
       if (current < maxQueued) {
@@ -101,33 +192,49 @@ class GameAudioService {
       }
       return;
     }
-    return _playImmediate(event);
+
+    unawaited(_playImmediate(event));
   }
 
-  final List<AudioEvent> _drainBuffer = [];
-
   void _drainQueuedEvents() {
-    if (_queuedEvents.isEmpty || _pendingCount >= _maxPendingSfx) {
+    if (_queuedEvents.isEmpty ||
+        _pendingCount >= _maxPendingSfx ||
+        _globalCooldownRemaining > 0) {
       return;
     }
-    _drainBuffer.clear();
-    _drainBuffer.addAll(_queuedEvents.keys);
 
-    var playedThisFrame = 0;
+    _drainBuffer.clear();
+    for (final event in _drainPriority) {
+      if ((_queuedEvents[event] ?? 0) > 0) {
+        _drainBuffer.add(event);
+      }
+    }
+    for (final event in _queuedEvents.keys) {
+      if (!_drainBuffer.contains(event)) {
+        _drainBuffer.add(event);
+      }
+    }
+
+    var playedThisUpdate = 0;
     for (final event in _drainBuffer) {
-      if (playedThisFrame >= 2 || _pendingCount >= _maxPendingSfx) {
+      if (playedThisUpdate >= _maxDrainedPerUpdate ||
+          _pendingCount >= _maxPendingSfx ||
+          _globalCooldownRemaining > 0) {
         return;
       }
+
       final queued = _queuedEvents[event] ?? 0;
       if (queued <= 0) {
         _queuedEvents.remove(event);
         continue;
       }
+
       _queuedEvents[event] = queued - 1;
       if (_queuedEvents[event] == 0) {
         _queuedEvents.remove(event);
       }
-      playedThisFrame += 1;
+
+      playedThisUpdate += 1;
       unawaited(_playImmediate(event));
     }
   }
@@ -142,17 +249,17 @@ class GameAudioService {
       return;
     }
 
-    // 전투 SFX 쓰로틀링: 쿨다운 중이거나 pending 초과 시 드롭.
     final minInterval = _minIntervalByEvent[event];
     if (minInterval != null) {
       final remaining = _cooldownRemaining[event] ?? 0.0;
-      if (remaining > 0) {
-        return; // 쿨다운 중 — 드롭
-      }
-      if (_pendingCount >= _maxPendingSfx) {
-        return; // 동시 요청 초과 — 드롭
+      if (remaining > 0 || _pendingCount >= _maxPendingSfx) {
+        return;
       }
       _cooldownRemaining[event] = minInterval;
+    }
+
+    if (!_milestoneEvents.contains(event) && _globalCooldownRemaining > 0) {
+      return;
     }
 
     final asset = _pickAsset(event, entry.assets);
@@ -162,18 +269,47 @@ class GameAudioService {
           1.0,
         );
 
-    _pendingCount++;
+    _pendingCount += 1;
     try {
-      final pool = _pools[asset];
-      if (entry.pooled && pool != null) {
-        await pool.start(volume: volume);
-      } else {
-        await FlameAudio.play(asset, volume: volume);
-      }
+      await _backendFor(event).play(asset, volume: volume);
     } catch (_) {
       // Audio must never block gameplay.
     } finally {
-      _pendingCount--;
+      _pendingCount -= 1;
+      if (!_milestoneEvents.contains(event)) {
+        _globalCooldownRemaining = _globalQueuedSfxGap;
+      }
+    }
+  }
+
+  CombatSfxBackend _backendFor(AudioEvent event) {
+    if (_combatBackendReady &&
+        _combatBackend != null &&
+        _combatRouteEvents.contains(event) &&
+        !_milestoneEvents.contains(event)) {
+      return _combatBackend!;
+    }
+    return _flameBackend;
+  }
+
+  void _recordCombatBurst() {
+    if (_combatBurstRemaining <= 0) {
+      _combatBurstRemaining = _combatBurstWindow;
+      _combatBurstCount = 0;
+    }
+
+    _combatBurstCount += 1;
+    if (_combatBurstCount < _combatBurstThreshold) {
+      return;
+    }
+
+    _combatBurstCount = 0;
+    _combatSilenceRemaining = _combatSilenceDuration;
+    for (final event in _combatHeavyEvents) {
+      if (event == AudioEvent.baseDamage) {
+        continue;
+      }
+      _queuedEvents.remove(event);
     }
   }
 
@@ -181,7 +317,7 @@ class GameAudioService {
     try {
       await FlameAudio.bgm.stop();
     } catch (_) {
-      // Ignore stop failures to keep runtime resilient.
+      // Ignore music teardown failures.
     }
   }
 
@@ -189,6 +325,10 @@ class GameAudioService {
     if (_settings.muted) {
       await stopMusic();
     }
+  }
+
+  Future<void> dispose() async {
+    await _combatBackend?.dispose();
   }
 
   String _pickAsset(AudioEvent event, List<String> assets) {

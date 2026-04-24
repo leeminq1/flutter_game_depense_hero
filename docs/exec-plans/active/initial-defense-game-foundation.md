@@ -118,6 +118,8 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-22: Stage 11 now starts the second-quadrant authored map arc with a `[4,5]` citadel, and authored citadel stages now reuse the central starting-gold and base-health balancing helpers instead of hardcoded `380/40` values.
 - 2026-04-22: Stage 11 was shifted further into the second quadrant at `[4,5]`, and Stage 12-15 now complete the authored second-quadrant arc through `[5,4]`, `[4,4]`, `[3,4]`, and `[3,3]`.
 - 2026-04-22: Gameplay balance pass removed starting-gold bracket jumps, raised enemy HP scaling, made Stage 2 a 4-Cycle stage, extended authored citadel maps through Stage 30, strengthened tower destruction pressure, and gave heroes distinct lightweight abilities tied to existing meta tracks.
+- 2026-04-25: Stage 16-20 now use explicit third-quadrant authored layouts and custom undead pressure cycles instead of placeholder direct routes, and the map-authoring docs now describe the lower-left campaign policy in Korean.
+- 2026-04-25: Combat HUD and audio stabilization now treat the enemy counter as "remaining enemies in the current Cycle", keep Cycle-to-Cycle progression on manual start, route short combat SFX through an Android low-latency backend, and reduce runtime HUD churn through dirtied-session comparison instead of broad post-frame syncing.
 
 ## Risks
 
@@ -188,3 +190,5 @@ Create the first playable vertical slice and the documentation discipline needed
 - The sample campaign battlefield is now authored as tile data first, which fixes path-adjacent placement false negatives and makes path centering consistent across the full 30-stage arc.
 - Battle UI guidance now lives in Flutter overlays above a dedicated gameplay viewport, reducing overlap between status text, tower controls, and the `Wave` CTA during live combat.
 - Enemy visibility at wave start is now tied to immediate on-path placement rather than waiting for the first movement update, which makes early spawns easier to validate during gameplay smoke tests.
+- Combat audio now uses a stricter queued SFX budget with burst suppression, and hero placement UX now exposes valid slots plus reliable reselection affordances so mobile playtests are less likely to stall on audio spam or hidden controls.
+- The top battle HUD now reports remaining enemies for the active Cycle instead of only currently alive enemies, and recovery states now hold on a manual-ready state until the player starts the next Cycle.
