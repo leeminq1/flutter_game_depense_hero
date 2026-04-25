@@ -120,6 +120,10 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-22: Gameplay balance pass removed starting-gold bracket jumps, raised enemy HP scaling, made Stage 2 a 4-Cycle stage, extended authored citadel maps through Stage 30, strengthened tower destruction pressure, and gave heroes distinct lightweight abilities tied to existing meta tracks.
 - 2026-04-25: Stage 16-20 now use explicit third-quadrant authored layouts and custom undead pressure cycles instead of placeholder direct routes, and the map-authoring docs now describe the lower-left campaign policy in Korean.
 - 2026-04-25: Combat HUD and audio stabilization now treat the enemy counter as "remaining enemies in the current Cycle", keep Cycle-to-Cycle progression on manual start, route short combat SFX through an Android low-latency backend, and reduce runtime HUD churn through dirtied-session comparison instead of broad post-frame syncing.
+- 2026-04-25: Cycle stall protection now force-resolves invisible or invalid enemies near the citadel, so the final visible breach does not leave Stage 1 Cycle 3 stuck in an endless "pause" state.
+- 2026-04-25: Remaining-enemy HUD now reconciles from runtime state (`alive + pending spawns`) instead of trusting only event-style increments and decrements, and empty-field late spawns are accelerated to avoid Stage 1 Cycle 3 appearing frozen between the last groups.
+- 2026-04-25: Runtime front spawns now enter from the edge aligned to their first route cell instead of a fully randomized edge anchor, preventing single-enemy late groups from lingering offscreen and blocking Cycle completion.
+- 2026-04-25: Cycle reconciliation now treats any enemy with `HP <= 0` as terminal even if an earlier defeat path failed to remove it immediately, preventing a hidden dead enemy from leaving the HUD at `1` after all visible threats are gone.
 
 ## Risks
 

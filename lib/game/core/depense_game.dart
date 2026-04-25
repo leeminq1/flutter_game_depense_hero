@@ -487,6 +487,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _updateTowers(dt);
     _updateHeroes(dt);
     _updateVisuals(dt);
+    if (_waveActive &&
+        _enemies.isEmpty &&
+        _pendingEnemySpawnsForCurrentWave() > 0) {
+      _spawnTimer = math.min(_spawnTimer, 0.25);
+    }
+    _reconcileRemainingEnemyCount();
     _checkWaveResolution();
     _syncTimer += dt;
     if (_syncTimer >= 0.066) {
@@ -739,6 +745,63 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return wave.groups.fold<int>(0, (sum, group) => sum + group.count);
   }
 
+  bool _isFiniteVector(Vector2 value) {
+    return value.x.isFinite && value.y.isFinite;
+  }
+
+  double _citadelGoalRadius(_Enemy enemy) {
+    final baseRadius = _tileSize * 0.68;
+    return switch (enemy.definition.kind) {
+      EnemyKind.corruptedKnight ||
+      EnemyKind.graveGuard ||
+      EnemyKind.bastionOverlord => baseRadius * 1.25,
+      _ => baseRadius,
+    };
+  }
+
+  int _pendingEnemySpawnsForCurrentWave() {
+    if (!_waveActive || _currentWaveIndex < 0) {
+      return 0;
+    }
+    final wave = stage.waves[_currentWaveIndex];
+    if (_currentSpawnGroupIndex >= wave.groups.length) {
+      return 0;
+    }
+
+    var pending = 0;
+    for (
+      var index = _currentSpawnGroupIndex;
+      index < wave.groups.length;
+      index += 1
+    ) {
+      final group = wave.groups[index];
+      final spawned = index == _currentSpawnGroupIndex ? _spawnedInGroup : 0;
+      pending += math.max(0, group.count - spawned);
+    }
+    return pending;
+  }
+
+  bool _isEnemyTerminalForCycle(_Enemy enemy) {
+    final path = _pathForEnemy(enemy);
+    return enemy.hitPoints <= 0 ||
+        enemy.reachedGoal ||
+        !_isFiniteVector(enemy.position) ||
+        path.length < 2 ||
+        enemy.progress >= 0.995 ||
+        enemy.distanceToCitadel <= _citadelGoalRadius(enemy);
+  }
+
+  void _reconcileRemainingEnemyCount() {
+    final nextCount = !_waveActive || _currentWaveIndex < 0
+        ? 0
+        : _enemies.where((enemy) => !_isEnemyTerminalForCycle(enemy)).length +
+              _pendingEnemySpawnsForCurrentWave();
+    if (nextCount != _remainingEnemiesInCycle) {
+      _remainingEnemiesInCycle = nextCount;
+      _syncSession();
+    }
+  }
+
   void _consumeRemainingEnemy() {
     _remainingEnemiesInCycle = math.max(0, _remainingEnemiesInCycle - 1);
     _syncSession();
@@ -781,6 +844,17 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     var playedBaseDamageSfx = false;
     for (var index = _enemies.length - 1; index >= 0; index -= 1) {
       final enemy = _enemies[index];
+      if (enemy.hitPoints <= 0) {
+        _consumeRemainingEnemy();
+        _enemies.removeAt(index);
+        continue;
+      }
+      final path = _pathForEnemy(enemy);
+      if (path.length < 2 || !_isFiniteVector(enemy.position)) {
+        _consumeRemainingEnemy();
+        _enemies.removeAt(index);
+        continue;
+      }
       enemy.tickStatus(dt);
       enemy.animTimer += dt;
       if (enemy.animTimer >= 0.15) {
@@ -799,9 +873,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
       _applyEnemyAbility(enemy, dt);
       final towerAttackSlow = _applyEnemyTowerAttack(enemy);
-      enemy.advance(_pathForEnemy(enemy), dt, _citadelCenter);
+      enemy.advance(path, dt, _citadelCenter);
+      if (!_isFiniteVector(enemy.position)) {
+        _consumeRemainingEnemy();
+        _enemies.removeAt(index);
+        continue;
+      }
       if (towerAttackSlow > 0) {
         enemy.staggerTimer = math.max(enemy.staggerTimer, towerAttackSlow);
+      }
+      if (!enemy.reachedGoal &&
+          enemy.distanceToCitadel <= _citadelGoalRadius(enemy)) {
+        enemy.reachedGoal = true;
+        enemy.progress = 1;
+        enemy.position.setFrom(_citadelCenter);
       }
 
       if (enemy.reachedGoal) {
@@ -1979,7 +2064,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     final wave = stage.waves[_currentWaveIndex];
     final finishedSpawning = _currentSpawnGroupIndex >= wave.groups.length;
-    if (!finishedSpawning || _enemies.isNotEmpty) {
+    if (!finishedSpawning) {
+      return;
+    }
+    _enemies.removeWhere(_isEnemyTerminalForCycle);
+    _reconcileRemainingEnemyCount();
+    if (_enemies.isNotEmpty) {
       return;
     }
 
@@ -2137,10 +2227,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       includeTowerCells: true,
     );
     if (resolvedCells.isNotEmpty) {
+      // Keep live spawns aligned to the authored lane entry so a lone final
+      // enemy cannot drift far offscreen before entering the visible field.
       return _vectorPathFromCells(
         resolvedCells,
         direction: dir,
-        randomizeEdgeAnchor: true,
+        randomizeEdgeAnchor: false,
       );
     }
     final authoredPath = _pathsByDirection[dir];
