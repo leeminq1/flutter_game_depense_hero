@@ -124,6 +124,7 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-25: Remaining-enemy HUD now reconciles from runtime state (`alive + pending spawns`) instead of trusting only event-style increments and decrements, and empty-field late spawns are accelerated to avoid Stage 1 Cycle 3 appearing frozen between the last groups.
 - 2026-04-25: Runtime front spawns now enter from the edge aligned to their first route cell instead of a fully randomized edge anchor, preventing single-enemy late groups from lingering offscreen and blocking Cycle completion.
 - 2026-04-25: Cycle reconciliation now treats any enemy with `HP <= 0` as terminal even if an earlier defeat path failed to remove it immediately, preventing a hidden dead enemy from leaving the HUD at `1` after all visible threats are gone.
+- 2026-04-25: Stage clear/fail resolution now flushes pending session state before the terminal-state early return and marks status text dirty immediately, so Flutter overlays switch to the result popup as soon as the citadel falls or the last Cycle resolves.
 
 ## Risks
 

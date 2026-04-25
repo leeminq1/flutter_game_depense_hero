@@ -257,6 +257,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   void _showStatus(String message) {
     _statusText = message;
+    _syncSession();
   }
 
   void _showSelectedTowerOverlay() {
@@ -477,6 +478,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _updateSelectionOverlay(dt);
 
     if (_pausedManually || _stageCleared || _stageFailed) {
+      if (_sessionDirty) {
+        _sessionDirty = false;
+        _flushSession();
+      }
       super.update(dt);
       return;
     }
@@ -802,7 +807,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  void _consumeRemainingEnemy() {
+  void _consumeRemainingEnemy([String reason = 'unknown']) {
     _remainingEnemiesInCycle = math.max(0, _remainingEnemiesInCycle - 1);
     _syncSession();
   }
@@ -845,13 +850,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     for (var index = _enemies.length - 1; index >= 0; index -= 1) {
       final enemy = _enemies[index];
       if (enemy.hitPoints <= 0) {
-        _consumeRemainingEnemy();
+        _consumeRemainingEnemy('dead_cleanup');
         _enemies.removeAt(index);
         continue;
       }
       final path = _pathForEnemy(enemy);
       if (path.length < 2 || !_isFiniteVector(enemy.position)) {
-        _consumeRemainingEnemy();
+        _consumeRemainingEnemy('invalid_path_or_position');
         _enemies.removeAt(index);
         continue;
       }
@@ -875,7 +880,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       final towerAttackSlow = _applyEnemyTowerAttack(enemy);
       enemy.advance(path, dt, _citadelCenter);
       if (!_isFiniteVector(enemy.position)) {
-        _consumeRemainingEnemy();
+        _consumeRemainingEnemy('non_finite_after_advance');
         _enemies.removeAt(index);
         continue;
       }
@@ -895,7 +900,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           playedBaseDamageSfx = true;
           audioService.play(AudioEvent.baseDamage);
         }
-        _consumeRemainingEnemy();
+        _consumeRemainingEnemy('reached_goal');
         _enemies.removeAt(index);
         if (_baseHealth <= 0) {
           _baseHealth = 0;
@@ -1433,7 +1438,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     } else {
       audioService.play(AudioEvent.coinGain);
     }
-    _consumeRemainingEnemy();
+    _consumeRemainingEnemy('defeat');
     _enemies.remove(target);
     _spawnImpact(target.position, const Color(0x88FFD27A), 22, 0.24);
     return true;
