@@ -113,10 +113,11 @@ class GameAudioService {
   double _combatSilenceRemaining = 0;
 
   Future<void> initialize() async {
-    final allAssets = <String>{
-      for (final entry in AudioCatalog.events.values) ...entry.assets,
+    final flameAssets = <String>{
+      for (final event in _milestoneEvents)
+        ...?AudioCatalog.events[event]?.assets,
     };
-    await _flameBackend.initialize(allAssets);
+    await _flameBackend.initialize(flameAssets);
 
     final androidBackend = AndroidSoundPoolBackend();
     final ready = await androidBackend.initialize({
@@ -271,7 +272,11 @@ class GameAudioService {
 
     _pendingCount += 1;
     try {
-      await _backendFor(event).play(asset, volume: volume);
+      final backend = _backendFor(event);
+      if (backend == null) {
+        return;
+      }
+      await backend.play(asset, volume: volume);
     } catch (_) {
       // Audio must never block gameplay.
     } finally {
@@ -282,13 +287,18 @@ class GameAudioService {
     }
   }
 
-  CombatSfxBackend _backendFor(AudioEvent event) {
-    if (_combatBackendReady &&
-        _combatBackend != null &&
-        _combatRouteEvents.contains(event) &&
-        !_milestoneEvents.contains(event)) {
-      return _combatBackend!;
+  CombatSfxBackend? _backendFor(AudioEvent event) {
+    if (_milestoneEvents.contains(event)) {
+      return _flameBackend;
     }
+
+    if (_combatRouteEvents.contains(event)) {
+      if (_combatBackendReady && _combatBackend != null) {
+        return _combatBackend!;
+      }
+      return null;
+    }
+
     return _flameBackend;
   }
 
@@ -318,12 +328,6 @@ class GameAudioService {
       await FlameAudio.bgm.stop();
     } catch (_) {
       // Ignore music teardown failures.
-    }
-  }
-
-  Future<void> refreshVolumes() async {
-    if (_settings.muted) {
-      await stopMusic();
     }
   }
 

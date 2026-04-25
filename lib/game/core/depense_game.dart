@@ -242,10 +242,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _syncSession();
   }
 
-  Future<void> refreshAudioSettings() {
-    return audioService.refreshVolumes();
-  }
-
   StageEvaluationResult evaluateCurrentRun() {
     return stage.evaluateRun(
       StageRunSummary(
@@ -745,6 +741,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   void _consumeRemainingEnemy() {
     _remainingEnemiesInCycle = math.max(0, _remainingEnemiesInCycle - 1);
+    _syncSession();
   }
 
   void _updateWaveSpawning(double dt) {
@@ -1903,6 +1900,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     enemy.staggerTimer = 0.28;
     enemy.progress = math.max(0, summoner.progress - 0.04);
     _remainingEnemiesInCycle += 1;
+    _syncSession();
     _enemies.add(enemy);
     _spawnImpact(enemy.position, const Color(0xFF8B6AE8), 26, 0.3);
   }

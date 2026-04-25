@@ -80,8 +80,10 @@ class MainActivity : FlutterActivity() {
     private fun preloadAssets(assets: List<String>): Boolean {
         return try {
             val pool = ensureSoundPool()
+            var loadedCount = 0
             for (asset in assets) {
                 if (soundIds.containsKey(asset)) {
+                    loadedCount += 1
                     continue
                 }
 
@@ -89,9 +91,10 @@ class MainActivity : FlutterActivity() {
                 val soundId = pool.load(cachedFile.absolutePath, 1)
                 if (soundId > 0) {
                     soundIds[asset] = soundId
+                    loadedCount += 1
                 }
             }
-            true
+            loadedCount > 0
         } catch (_: Throwable) {
             false
         }
