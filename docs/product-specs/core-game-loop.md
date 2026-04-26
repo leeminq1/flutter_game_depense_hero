@@ -4,7 +4,7 @@
 
 The project now targets `Citadel Siege`.
 
-This is a siege-based, multi-front fortress-defense game where enemies attack a central `Citadel` from `north`, `south`, `east`, and `west`. The player places and upgrades defenses around the citadel, stabilizes multiple fronts, survives a fixed number of assault cycles, and clears a siege.
+This is a siege-based, multi-front fortress-defense game where enemies attack a player-shaped `Citadel` defense from `north`, `south`, `east`, and `west`. The player builds walls, gates, towers, and one chosen hero around the citadel, stabilizes multiple fronts, survives a fixed number of assault cycles, and clears a siege.
 
 This replaces the old single-lane, right-to-left stage fantasy.
 
@@ -12,9 +12,9 @@ This replaces the old single-lane, right-to-left stage fantasy.
 
 The intended emotional arc is:
 
-- early: "I can hold one side."
+- early: "I can shape the battlefield with my first wall line."
 - mid: "I need a full defense network."
-- late: "I am surviving a coordinated siege from every direction."
+- late: "My fortress plan can survive a coordinated siege from every direction."
 
 ## Session Structure
 
@@ -25,16 +25,16 @@ One siege uses this flow:
 1. `Preparation Phase`
    - battlefield preview
    - active-front preview for cycle 1
-   - initial placement
+  - initial wall, gate, and tower planning with the chosen hero already defending beside the citadel
 2. `Assault Cycle`
    - one or more fronts activate
    - enemies spawn in groups assigned to specific fronts
-   - the player may still build or upgrade during combat
+   - enemies may breach player-built barriers if all routes are sealed
 3. `Recovery Window`
    - short controlled pause between cycles
    - cycle reward payout
    - telegraph of the next active fronts
-   - normal-cost rebuilding
+   - normal-cost rebuilding and barrier repair
 4. `Escalation`
    - more simultaneous fronts
    - more elite and support overlap
@@ -62,44 +62,45 @@ Siege fail:
 
 ### Core Layout
 
-- the citadel sits at the center of the battlefield
+- the citadel position follows the campaign quadrant arc and returns near center late
 - enemies always route toward the citadel
 - the playable battlefield is the full green combat field between the HUD and the build bar
-- real environment obstacles define blocked cells; empty grass cells remain buildable
+- player-built barriers define most blocked cells; empty grass cells remain buildable
 
 ### Route Rule
 
-The first production version uses `front-authored entry points` plus `obstacle-aware grid routing`, not a painted fixed road.
+The current production version uses `front-authored entry points` plus `barrier-aware grid routing`, not a painted fixed road.
 
 Allowed in the first playable:
 
 - 2-front, 3-front, and 4-front edge spawns
-- obstacle-driven detours around visible map props
-- stage-to-stage obstacle reduction that shortens routes over time
+- three fixed route entries per direction
+- player-built walls, fences, and gates that can redirect or block enemies
+- full route sealing; sealed enemies attack the nearest barrier until a route opens
 - special enemies that temporarily break the normal rule only in controlled cases
 
 Not allowed in the first playable:
 
 - invisible blocked overlays or fake road tiles that do not match visible scenery
-- player-built mazing as the baseline mode
 - enemies choosing arbitrary tiles as attack vectors without telegraph
 
 ### Build Rule
 
 - all towers, including `Coin Mill`, occupy `1x1`
-- any non-citadel, non-obstacle, non-occupied battlefield cell may accept a tower
-- visible environment obstacles must block both tower placement and enemy routing
+- towers, walls, fences, and gates occupy `1x1`
+- any non-citadel, non-occupied battlefield cell may accept a tower or barrier
+- towers do not block enemy movement; barriers do
 
 ## Real-Time Build Rule
 
-The player may build during combat, but panic-building should be weaker than planned building.
+The player builds during preparation and recovery, not during active assault.
 
 Cost rule:
 
 - preparation and recovery build cost: `100%`
-- live assault build cost: `130%`
+- live assault building: disabled for towers and barriers
 
-This preserves the current game's active build identity without turning the mode into finger-speed spam.
+This turns combat into a test of the fortress plan instead of finger-speed spam.
 
 ## Tactical Resource Rule
 
@@ -166,7 +167,8 @@ The first playable of the new mode is only complete when all of the following ar
 
 - a siege can be started and completed on the new multi-front battlefield
 - at least one siege uses more than two active fronts
-- the player can place and upgrade towers during both prep and live combat
+- the player can place towers and barriers during prep and recovery
+- sealed routes cause enemies to breach barriers instead of disappearing or stalling
 - recovery windows show next-front telegraphs
 - defeat and clear results persist correctly
 - the mode remains readable on mobile-sized portrait layouts

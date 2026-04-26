@@ -9,8 +9,8 @@ The first production battlefield for `Pixel Guard: Wave` uses this exact spec.
 | Grid size | `14 x 14` |
 | Tile size | `52 px` |
 | Board size | `728 x 728 px` |
-| Castle footprint | central `3 x 3` block |
-| Castle cells | `col 5-7`, `row 5-7` |
+| Castle footprint | runtime `1 x 1`, visually larger landmark |
+| Castle cells | campaign-authored `citadelCell` |
 | Minimum zoom target | `0.55x` |
 | Default overview zoom target | `0.75x` |
 
@@ -71,10 +71,20 @@ Do not ship the first stage campaign with fully free pathfinding.
 Required stage field:
 
 - `pathsByDirection`
+- `spawnRoutes`
+
+Each direction owns three fixed spawn entries:
+
+| Direction | Entries |
+| --- | --- |
+| North | `[3,0]`, `[6,0]`, `[10,0]` |
+| South | `[3,13]`, `[6,13]`, `[10,13]` |
+| West | `[0,3]`, `[0,6]`, `[0,10]` |
+| East | `[13,3]`, `[13,6]`, `[13,10]` |
 
 ## Canonical Stage 1 Example
 
-This is the baseline `14 x 14` authored example used for implementation.
+This is the older centered baseline `14 x 14` authored example. Current v2 runtime keeps the same grid and route-entry rules, but Stage 1 places the citadel at `[1,12]` so the player reads the lower-left corner defense immediately.
 
 Legend:
 
@@ -124,20 +134,21 @@ Fallback pockets:
 - west fallback pocket: cells around `[2, 5]` and `[2, 7]`
 - east fallback pocket: cells around `[11, 5]` and `[11, 7]`
 
-## Obstacle Rule
+## Barrier And Obstacle Rule
 
-Early stage maps should rely on visible environment obstacles first.
+Current v2 maps should rely on player-built barriers first.
 
 Rules:
 
-- only cells occupied by visible obstacle sprites are blocked
-- obstacle density should be highest in early stages and decrease across the stage bracket
-- enemies must detour around those obstacles
-- players must never be able to build on those obstacle cells
+- authored blocking obstacles are removed from the main campaign pass
+- walls, fences, and gates block enemy routing
+- towers never block enemy routing
+- if every route is blocked, enemies attack the nearest barrier until a path opens
 
 Future-facing option:
 
-- supply nodes may return later as a separate economy-layer rule once the obstacle-driven battlefield is stable
+- non-blocking decorative props may return once the player-built wall language is stable
+- supply nodes may return later as a separate economy-layer rule
 
 ## Telegraph Rules
 
@@ -164,8 +175,8 @@ Requirements:
 
 Stage maps should vary by:
 
-- route bends
-- obstacle layout and density
+- active route count
+- player-available build space around the citadel
 - fallback pocket placement
 - front activation order
 - decoration theme

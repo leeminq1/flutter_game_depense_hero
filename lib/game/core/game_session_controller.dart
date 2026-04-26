@@ -1,4 +1,5 @@
 import 'package:depense_game/game/models/hero_definition.dart';
+import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:flutter/foundation.dart';
 
@@ -94,7 +95,15 @@ class GameSessionController extends ChangeNotifier {
   int towersBuilt = 0;
   int maxTowerLevel = 1;
   TowerKind? selectedBuildable;
+  BarrierKind? selectedBarrierBuildable;
   HeroKind? selectedHeroBuildable;
+  HeroKind? chosenHeroKind;
+  bool heroSummoned = false;
+  bool heroSummonAvailable = false;
+  bool chosenHeroAlive = false;
+  bool heroReviveAvailable = false;
+  double chosenHeroHitPoints = 0;
+  double chosenHeroMaxHitPoints = 0;
   SelectedTowerDetails? selectedTower;
   SelectedHeroDetails? selectedHero;
   bool heroMoveMode = false;
@@ -141,7 +150,14 @@ class GameSessionController extends ChangeNotifier {
     selectedHero = null;
     heroMoveMode = false;
     selectedBuildable = null;
+    selectedBarrierBuildable = null;
     selectedHeroBuildable = null;
+    heroSummoned = false;
+    heroSummonAvailable = false;
+    chosenHeroAlive = false;
+    heroReviveAvailable = false;
+    chosenHeroHitPoints = 0;
+    chosenHeroMaxHitPoints = 0;
     activeFronts = const [];
     nextFronts = const [];
     recoverySecondsRemaining = 0;
@@ -168,6 +184,7 @@ class GameSessionController extends ChangeNotifier {
         selectedBuildable != towerKind ||
         (towerKind != null &&
             (selectedHeroBuildable != null ||
+                selectedBarrierBuildable != null ||
                 selectedTower != null ||
                 selectedHero != null));
     if (!changed) {
@@ -176,6 +193,29 @@ class GameSessionController extends ChangeNotifier {
 
     selectedBuildable = towerKind;
     if (towerKind != null) {
+      selectedHeroBuildable = null;
+      selectedBarrierBuildable = null;
+      selectedTower = null;
+      selectedHero = null;
+    }
+    notifyListeners();
+  }
+
+  void setSelectedBarrierBuildable(BarrierKind? barrierKind) {
+    final changed =
+        selectedBarrierBuildable != barrierKind ||
+        (barrierKind != null &&
+            (selectedBuildable != null ||
+                selectedHeroBuildable != null ||
+                selectedTower != null ||
+                selectedHero != null));
+    if (!changed) {
+      return;
+    }
+
+    selectedBarrierBuildable = barrierKind;
+    if (barrierKind != null) {
+      selectedBuildable = null;
       selectedHeroBuildable = null;
       selectedTower = null;
       selectedHero = null;
@@ -188,6 +228,7 @@ class GameSessionController extends ChangeNotifier {
         selectedHeroBuildable != heroKind ||
         (heroKind != null &&
             (selectedBuildable != null ||
+                selectedBarrierBuildable != null ||
                 selectedTower != null ||
                 selectedHero != null));
     if (!changed) {
@@ -197,6 +238,7 @@ class GameSessionController extends ChangeNotifier {
     selectedHeroBuildable = heroKind;
     if (heroKind != null) {
       selectedBuildable = null;
+      selectedBarrierBuildable = null;
       selectedTower = null;
       selectedHero = null;
     }
@@ -208,6 +250,7 @@ class GameSessionController extends ChangeNotifier {
         !_towerDetailsEqual(selectedTower, details) ||
         (details != null &&
             (selectedBuildable != null ||
+                selectedBarrierBuildable != null ||
                 selectedHeroBuildable != null ||
                 selectedHero != null));
     if (!changed) {
@@ -217,6 +260,7 @@ class GameSessionController extends ChangeNotifier {
     selectedTower = details;
     if (details != null) {
       selectedBuildable = null;
+      selectedBarrierBuildable = null;
       selectedHeroBuildable = null;
       selectedHero = null;
     }
@@ -228,6 +272,7 @@ class GameSessionController extends ChangeNotifier {
         !_heroDetailsEqual(selectedHero, details) ||
         (details != null &&
             (selectedBuildable != null ||
+                selectedBarrierBuildable != null ||
                 selectedHeroBuildable != null ||
                 selectedTower != null));
     if (!changed) {
@@ -237,6 +282,7 @@ class GameSessionController extends ChangeNotifier {
     selectedHero = details;
     if (details != null) {
       selectedBuildable = null;
+      selectedBarrierBuildable = null;
       selectedHeroBuildable = null;
       selectedTower = null;
     }
@@ -256,6 +302,42 @@ class GameSessionController extends ChangeNotifier {
       return;
     }
     _speedMultiplier = speed;
+    notifyListeners();
+  }
+
+  void setChosenHero(HeroKind? heroKind) {
+    if (chosenHeroKind == heroKind) {
+      return;
+    }
+    chosenHeroKind = heroKind;
+    notifyListeners();
+  }
+
+  void setHeroSummonState({required bool summoned, required bool available}) {
+    if (heroSummoned == summoned && heroSummonAvailable == available) {
+      return;
+    }
+    heroSummoned = summoned;
+    heroSummonAvailable = available;
+    notifyListeners();
+  }
+
+  void setChosenHeroStatus({
+    required bool alive,
+    required bool reviveAvailable,
+    required double hitPoints,
+    required double maxHitPoints,
+  }) {
+    if (chosenHeroAlive == alive &&
+        heroReviveAvailable == reviveAvailable &&
+        chosenHeroHitPoints == hitPoints &&
+        chosenHeroMaxHitPoints == maxHitPoints) {
+      return;
+    }
+    chosenHeroAlive = alive;
+    heroReviveAvailable = reviveAvailable;
+    chosenHeroHitPoints = hitPoints;
+    chosenHeroMaxHitPoints = maxHitPoints;
     notifyListeners();
   }
 

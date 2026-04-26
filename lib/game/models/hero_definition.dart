@@ -37,7 +37,7 @@ class HeroDefinition {
   final Color color;
   final AudioEvent attackEvent;
 
-  bool isUnlockedForStage(int stageNumber) => stageNumber >= unlockStage;
+  bool isUnlockedForStage(int stageNumber) => true;
 }
 
 class HeroCatalog {

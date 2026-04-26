@@ -34,7 +34,9 @@ Gold uses:
 
 - tower placement
 - tower upgrades
-- tactical rebuilding
+- wall, fence, gate placement
+- tactical rebuilding and barrier repair during recovery
+- one free selected-hero revive during recovery after the auto-placed hero falls
 - command charge activation or refill later
 
 ### 2. Permanent Soft Currency: `Meta Gold`
@@ -87,14 +89,14 @@ They fund:
 
 The new mode needs more opening currency than the old single-lane layout because the player must answer multiple fronts earlier.
 
-| Act | Starting Gold |
+| Stage Range | Starting Gold |
 | --- | --- |
-| 1 | 380 |
-| 2 | 350 |
-| 3 | 320 |
-| 4 | 300 |
-| 5 | 280 |
-| 6 | 260 |
+| 1-5 | 300 |
+| 6-10 | 330 |
+| 11-15 | 360 |
+| 16-20 | 390 |
+| 21-25 | 420 |
+| 26-30 | 450 |
 
 ## Citadel HP Curve
 
@@ -169,7 +171,7 @@ The player can build at all times, but not at equal efficiency.
 | --- | --- |
 | Preparation phase | 1.0x |
 | Recovery window | 1.0x |
-| Live assault | 1.3x |
+| Live assault | building disabled |
 
 ## Sell Rule
 

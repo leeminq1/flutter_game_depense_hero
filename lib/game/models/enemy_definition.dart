@@ -28,6 +28,9 @@ class EnemyDefinition {
     required this.rewardCoins,
     required this.citadelDamage,
     required this.color,
+    this.structureDamage,
+    this.structureAttackCooldown = 1.2,
+    this.canBreachWalls = true,
   });
 
   final EnemyKind kind;
@@ -38,6 +41,10 @@ class EnemyDefinition {
   final int rewardCoins;
   final int citadelDamage;
   final Color color;
+  final int? structureDamage;
+  final double structureAttackCooldown;
+  final bool canBreachWalls;
 
   int get baseDamage => citadelDamage;
+  int get baseStructureDamage => structureDamage ?? (citadelDamage * 8);
 }

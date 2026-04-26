@@ -7,6 +7,7 @@ import 'package:depense_game/data/persistence/progression_models.dart';
 import 'package:depense_game/game/core/depense_game.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
+import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
@@ -36,6 +37,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   int _gameEpoch = 0;
   bool _isEvaluating = false;
   ResolvedMetaUpgrades? _activeMetaUpgrades;
+  HeroKind? _chosenHeroKind;
 
   bool _hintBannerVisible = true;
   Timer? _hintTimer;
@@ -90,7 +92,23 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   Future<void> _initialize() async {
     await _refreshOverview();
+    await _chooseHero(force: true);
     await _loadStage(_stageNumber);
+  }
+
+  Future<void> _chooseHero({bool force = false}) async {
+    if (!force && _chosenHeroKind != null) {
+      return;
+    }
+    final choice = await showDialog<HeroKind>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _HeroChoiceDialog(initialKind: _chosenHeroKind),
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() => _chosenHeroKind = choice ?? HeroKind.knight);
   }
 
   Future<void> _refreshOverview() async {
@@ -137,6 +155,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         sessionController: _sessionController,
         audioService: widget.bootstrap.audioService,
         metaUpgrades: resolvedMeta,
+        chosenHeroKind: _chosenHeroKind ?? HeroKind.knight,
       );
     });
     _hintTimer = Timer(const Duration(seconds: 3), () {
@@ -411,7 +430,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       _BuildBar(
                         sessionController: session,
                         metaUpgrades: activeMetaUpgrades,
+                        chosenHeroKind: _chosenHeroKind ?? HeroKind.knight,
                         onSelect: game.selectBuildable,
+                        onSelectBarrier: game.selectBarrierBuildable,
                         onSelectHero: game.selectHeroBuildable,
                         showWaveButton: showWaveButton,
                         nextWaveLabel: session.recoveryActive
@@ -449,7 +470,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         immediateStarsAwarded: _immediateStarsAwarded,
                         stage: currentStage,
                         hasNextStage: _stageNumber < CampaignData.totalStages,
-                        onRetry: () => _loadStage(_stageNumber),
+                        onRetry: () async {
+                          await _chooseHero(force: true);
+                          await _loadStage(_stageNumber);
+                        },
                         onNextStage: () => _loadStage(
                           (_stageNumber + 1).clamp(1, CampaignData.totalStages),
                         ),
@@ -463,6 +487,122 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         ),
       ),
     );
+  }
+}
+
+class _HeroChoiceDialog extends StatefulWidget {
+  const _HeroChoiceDialog({this.initialKind});
+
+  final HeroKind? initialKind;
+
+  @override
+  State<_HeroChoiceDialog> createState() => _HeroChoiceDialogState();
+}
+
+class _HeroChoiceDialogState extends State<_HeroChoiceDialog> {
+  late HeroKind _selectedKind = widget.initialKind ?? HeroKind.knight;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = HeroCatalog.byKind(_selectedKind);
+    return AlertDialog(
+      backgroundColor: const Color(0xFF101822),
+      title: const Text('영웅을 선택하세요.', style: TextStyle(color: Colors.white)),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final hero in HeroCatalog.buildMenu)
+                  ChoiceChip(
+                    selected: hero.kind == _selectedKind,
+                    label: Text(hero.label),
+                    avatar: Icon(_heroIcon(hero.kind), size: 18),
+                    onSelected: (_) =>
+                        setState(() => _selectedKind = hero.kind),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              height: 104,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected.color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: selected.color.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Image.asset(
+                'assets/sprites/heroes/${HeroCatalog.heroId(selected.kind)}/south/base.png',
+                height: 86,
+                filterQuality: FilterQuality.none,
+                errorBuilder: (context, error, stackTrace) => Icon(
+                  _heroIcon(selected.kind),
+                  color: selected.color,
+                  size: 48,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.24),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    selected.label,
+                    style: const TextStyle(
+                      color: Color(0xFFE4C67A),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    selected.shortDescription,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${selected.abilityLabel}: ${selected.abilityDescription}',
+                    style: const TextStyle(color: Colors.white60, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_selectedKind),
+          child: const Text('시작'),
+        ),
+      ],
+    );
+  }
+
+  IconData _heroIcon(HeroKind kind) {
+    return switch (kind) {
+      HeroKind.knight => Icons.security_rounded,
+      HeroKind.archer => Icons.gps_fixed_rounded,
+      HeroKind.mage => Icons.auto_fix_high_rounded,
+      HeroKind.ninja => Icons.flash_on_rounded,
+      HeroKind.paladin => Icons.shield_moon_rounded,
+    };
   }
 }
 
@@ -760,7 +900,9 @@ class _BuildBar extends StatefulWidget {
   const _BuildBar({
     required this.sessionController,
     required this.metaUpgrades,
+    required this.chosenHeroKind,
     required this.onSelect,
+    required this.onSelectBarrier,
     required this.onSelectHero,
     this.showWaveButton = false,
     this.nextWaveLabel = '',
@@ -772,7 +914,9 @@ class _BuildBar extends StatefulWidget {
 
   final GameSessionController sessionController;
   final ResolvedMetaUpgrades metaUpgrades;
+  final HeroKind chosenHeroKind;
   final ValueChanged<TowerKind?> onSelect;
+  final ValueChanged<BarrierKind?> onSelectBarrier;
   final ValueChanged<HeroKind?> onSelectHero;
   final bool showWaveButton;
   final String nextWaveLabel;
@@ -785,9 +929,12 @@ class _BuildBar extends StatefulWidget {
   State<_BuildBar> createState() => _BuildBarState();
 }
 
+enum _BuildTab { towers, barriers, hero }
+
 class _BuildBarState extends State<_BuildBar> {
   TowerKind? _specKind;
-  HeroKind? _specHeroKind;
+  BarrierKind? _specBarrierKind;
+  _BuildTab _activeTab = _BuildTab.towers;
 
   @override
   void initState() {
@@ -806,9 +953,9 @@ class _BuildBarState extends State<_BuildBar> {
         _specKind != null) {
       setState(() => _specKind = null);
     }
-    if (widget.sessionController.selectedHeroBuildable == null &&
-        _specHeroKind != null) {
-      setState(() => _specHeroKind = null);
+    if (widget.sessionController.selectedBarrierBuildable == null &&
+        _specBarrierKind != null) {
+      setState(() => _specBarrierKind = null);
     }
   }
 
@@ -816,19 +963,30 @@ class _BuildBarState extends State<_BuildBar> {
     final alreadySelected = widget.sessionController.selectedBuildable == kind;
     setState(() {
       _specKind = alreadySelected ? null : kind;
-      _specHeroKind = null;
+      _specBarrierKind = null;
+      _activeTab = _BuildTab.towers;
     });
     widget.onSelect(alreadySelected ? null : kind);
   }
 
-  void _handleHeroCardTap(HeroKind kind) {
+  void _handleBarrierCardTap(BarrierKind kind) {
     final alreadySelected =
-        widget.sessionController.selectedHeroBuildable == kind;
+        widget.sessionController.selectedBarrierBuildable == kind;
     setState(() {
-      _specHeroKind = alreadySelected ? null : kind;
+      _specBarrierKind = alreadySelected ? null : kind;
       _specKind = null;
+      _activeTab = _BuildTab.barriers;
     });
-    widget.onSelectHero(alreadySelected ? null : kind);
+    widget.onSelectBarrier(alreadySelected ? null : kind);
+  }
+
+  void _handleHeroCardTap() {
+    setState(() {
+      _activeTab = _BuildTab.hero;
+      _specKind = null;
+      _specBarrierKind = null;
+    });
+    widget.onSelectHero(widget.chosenHeroKind);
   }
 
   Widget _buildActionButton() {
@@ -881,13 +1039,22 @@ class _BuildBarState extends State<_BuildBar> {
   @override
   Widget build(BuildContext context) {
     final entries = TowerCatalog.buildMenu;
-    final heroEntries = HeroCatalog.buildMenu;
+    final barrierEntries = BarrierCatalog.buildMenu;
+    final chosenHero = HeroCatalog.byKind(widget.chosenHeroKind);
     final specDef = _specKind != null
         ? entries.firstWhere((tower) => tower.kind == _specKind)
         : null;
-    final specHero = _specHeroKind != null
-        ? heroEntries.firstWhere((hero) => hero.kind == _specHeroKind)
+    final specBarrier = _specBarrierKind != null
+        ? barrierEntries.firstWhere(
+            (barrier) => barrier.kind == _specBarrierKind,
+          )
         : null;
+    final specHero = _activeTab == _BuildTab.hero ? chosenHero : null;
+    final canBuild = !widget.waveInProgress;
+    final canReviveHero =
+        canBuild &&
+        widget.sessionController.recoveryActive &&
+        widget.sessionController.heroReviveAvailable;
 
     return Container(
       decoration: const BoxDecoration(
@@ -901,7 +1068,25 @@ class _BuildBarState extends State<_BuildBar> {
             height: 76,
             child: _BuildSummaryStrip(
               definition: specDef,
+              barrierDefinition: specBarrier,
               heroDefinition: specHero,
+              sessionController: widget.sessionController,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: _BuildTabSelector(
+              activeTab: _activeTab,
+              onChanged: (tab) {
+                setState(() {
+                  _activeTab = tab;
+                  _specKind = null;
+                  _specBarrierKind = null;
+                });
+                widget.onSelect(null);
+                widget.onSelectBarrier(null);
+                widget.onSelectHero(null);
+              },
             ),
           ),
           Padding(
@@ -910,27 +1095,37 @@ class _BuildBarState extends State<_BuildBar> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (final tower in entries) ...[
-                    _BuildCard(
-                      tower: tower,
-                      isUnlocked: tower.isUnlocked(widget.metaUpgrades),
-                      isSelected:
-                          widget.sessionController.selectedBuildable ==
-                          tower.kind,
-                      onPressed: () => _handleCardTap(tower.kind),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  for (final hero in heroEntries) ...[
-                    _HeroBuildCard(
-                      hero: hero,
-                      isUnlocked: hero.isUnlockedForStage(
-                        widget.sessionController.stageNumber,
+                  if (_activeTab == _BuildTab.towers)
+                    for (final tower in entries) ...[
+                      _BuildCard(
+                        tower: tower,
+                        isUnlocked:
+                            canBuild && tower.isUnlocked(widget.metaUpgrades),
+                        isSelected:
+                            widget.sessionController.selectedBuildable ==
+                            tower.kind,
+                        onPressed: () => _handleCardTap(tower.kind),
                       ),
-                      isSelected:
-                          widget.sessionController.selectedHeroBuildable ==
-                          hero.kind,
-                      onPressed: () => _handleHeroCardTap(hero.kind),
+                      const SizedBox(width: 12),
+                    ],
+                  if (_activeTab == _BuildTab.barriers)
+                    for (final barrier in barrierEntries) ...[
+                      _BarrierBuildCard(
+                        barrier: barrier,
+                        isEnabled: canBuild,
+                        isSelected:
+                            widget.sessionController.selectedBarrierBuildable ==
+                            barrier.kind,
+                        onPressed: () => _handleBarrierCardTap(barrier.kind),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                  if (_activeTab == _BuildTab.hero) ...[
+                    _HeroBuildCard(
+                      hero: chosenHero,
+                      isUnlocked: canReviveHero,
+                      isSelected: false,
+                      onPressed: canReviveHero ? _handleHeroCardTap : null,
                     ),
                     const SizedBox(width: 12),
                   ],
@@ -951,17 +1146,80 @@ class _BuildBarState extends State<_BuildBar> {
   }
 }
 
+class _BuildTabSelector extends StatelessWidget {
+  const _BuildTabSelector({required this.activeTab, required this.onChanged});
+
+  final _BuildTab activeTab;
+  final ValueChanged<_BuildTab> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<_BuildTab>(
+      showSelectedIcon: false,
+      style: ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0xFF1C7E62);
+          }
+          return const Color(0xFF161D26);
+        }),
+        foregroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return Colors.white70;
+        }),
+        side: WidgetStateProperty.all(const BorderSide(color: Colors.white12)),
+      ),
+      segments: const [
+        ButtonSegment(
+          value: _BuildTab.towers,
+          icon: Icon(Icons.account_balance_rounded, size: 16),
+          label: Text('타워'),
+        ),
+        ButtonSegment(
+          value: _BuildTab.barriers,
+          icon: Icon(Icons.fence_rounded, size: 16),
+          label: Text('성벽'),
+        ),
+        ButtonSegment(
+          value: _BuildTab.hero,
+          icon: Icon(Icons.person_rounded, size: 16),
+          label: Text('영웅'),
+        ),
+      ],
+      selected: {activeTab},
+      onSelectionChanged: (selection) => onChanged(selection.first),
+    );
+  }
+}
+
 class _BuildSummaryStrip extends StatelessWidget {
-  const _BuildSummaryStrip({required this.definition, this.heroDefinition});
+  const _BuildSummaryStrip({
+    required this.definition,
+    required this.sessionController,
+    this.barrierDefinition,
+    this.heroDefinition,
+  });
 
   final TowerDefinition? definition;
+  final GameSessionController sessionController;
+  final BarrierDefinition? barrierDefinition;
   final HeroDefinition? heroDefinition;
 
   @override
   Widget build(BuildContext context) {
     final hero = heroDefinition;
     if (hero != null) {
-      return _HeroCardSummary(definition: hero);
+      return _HeroCardSummary(
+        definition: hero,
+        sessionController: sessionController,
+      );
+    }
+    final barrier = barrierDefinition;
+    if (barrier != null) {
+      return _BarrierCardSummary(definition: barrier);
     }
     if (definition == null) {
       return Container(
@@ -1072,9 +1330,13 @@ class _TowerCardSummary extends StatelessWidget {
 }
 
 class _HeroCardSummary extends StatelessWidget {
-  const _HeroCardSummary({required this.definition});
+  const _HeroCardSummary({
+    required this.definition,
+    required this.sessionController,
+  });
 
   final HeroDefinition definition;
+  final GameSessionController sessionController;
 
   String _rating(double value, double max) {
     final score = ((value / max) * 5).clamp(0.0, 5.0);
@@ -1086,6 +1348,13 @@ class _HeroCardSummary extends StatelessWidget {
     final rangeRating = _rating(definition.range, 150);
     final damageRating = _rating(definition.damage, 42);
     final speedRating = _rating(1 / definition.cooldown, 1 / 0.48);
+    final hp = sessionController.chosenHeroHitPoints.round();
+    final maxHp = sessionController.chosenHeroMaxHitPoints.round();
+    final status = sessionController.chosenHeroAlive
+        ? '전장 배치됨 HP $hp/$maxHp'
+        : sessionController.heroReviveAvailable
+        ? '사망 - 회복창에서 1회 무료 부활 가능'
+        : '부활 사용 완료';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1127,8 +1396,55 @@ class _HeroCardSummary extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            definition.shortDescription,
+            '$status · ${definition.shortDescription}',
             style: const TextStyle(color: Colors.white60, fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BarrierCardSummary extends StatelessWidget {
+  const _BarrierCardSummary({required this.definition});
+
+  final BarrierDefinition definition;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A1018),
+        border: Border(bottom: BorderSide(color: Colors.white10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Text(
+                definition.label,
+                style: const TextStyle(
+                  color: Color(0xFFE4C67A),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 10),
+              _SpecMetric(label: 'HP', value: '${definition.hitPoints}'),
+              const _SpecDot(),
+              _SpecMetric(label: 'Repair', value: '${definition.repairCost}'),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Blocks enemy movement. If every route is sealed, enemies breach it.',
+            style: TextStyle(color: Colors.white60, fontSize: 12),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1250,6 +1566,82 @@ class _BuildCard extends StatelessWidget {
   }
 }
 
+class _BarrierBuildCard extends StatelessWidget {
+  const _BarrierBuildCard({
+    required this.barrier,
+    required this.isEnabled,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  final BarrierDefinition barrier;
+  final bool isEnabled;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: isEnabled ? onPressed : null,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: 88,
+        height: 104,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF2B261B) : const Color(0xFF161D26),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFFE4C67A).withValues(alpha: 0.7)
+                : Colors.white10,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _barrierIcon(barrier.kind),
+              color: isEnabled ? barrier.color : Colors.white24,
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              barrier.label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isEnabled ? Colors.white : Colors.white38,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${barrier.cost}',
+              style: TextStyle(
+                color: isEnabled ? const Color(0xFFE4C67A) : Colors.white24,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _barrierIcon(BarrierKind kind) {
+    return switch (kind) {
+      BarrierKind.woodFence => Icons.fence_rounded,
+      BarrierKind.stoneWall => Icons.grid_view_rounded,
+      BarrierKind.reinforcedWall => Icons.account_balance_rounded,
+      BarrierKind.gate => Icons.door_front_door_rounded,
+    };
+  }
+}
+
 class _HeroBuildCard extends StatelessWidget {
   const _HeroBuildCard({
     required this.hero,
@@ -1261,7 +1653,7 @@ class _HeroBuildCard extends StatelessWidget {
   final HeroDefinition hero;
   final bool isUnlocked;
   final bool isSelected;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -1302,7 +1694,7 @@ class _HeroBuildCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              isUnlocked ? '${hero.cost}' : 'S${hero.unlockStage}',
+              isUnlocked ? '무료 부활' : '대기',
               style: TextStyle(
                 color: isUnlocked ? const Color(0xFFE4C67A) : Colors.white24,
                 fontSize: 12,

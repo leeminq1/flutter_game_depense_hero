@@ -6,7 +6,7 @@ This document maps the current roster into the new multi-front siege format so i
 
 ## Defense Roster
 
-The existing seven buildables remain the starting roster:
+The existing seven towers remain the starting tower roster:
 
 - Archer Tower
 - Guard Barracks
@@ -16,11 +16,20 @@ The existing seven buildables remain the starting roster:
 - Ballista
 - Emberkeep
 
+The fortress-builder layer adds four barrier buildables:
+
+| Barrier | Cost | HP | Primary Job |
+| --- | --- | --- | --- |
+| Wood Fence | 15 | 80 | cheap early routing and disposable delay |
+| Stone Wall | 35 | 220 | main wall line |
+| Reinforced Wall | 75 | 420 | late durable breach buffer |
+| Gate | 45 | 180 | enemy blocker that keeps hero movement readable |
+
 ## Hero Roster V1
 
-Heroes are stage-local gold purchases, not permanent progression in v1.
+Heroes are chosen before a run begins. The selected hero persists across next-stage flow, but retry/new-run flows ask the player to choose again.
 
-The player buys a hero during the current Stage, places it on a valid empty tile, and may manually move it by selecting the hero and tapping another valid empty tile. Heroes do not auto-roam.
+During a siege, the chosen hero is placed automatically beside the citadel for free. If the hero dies, the `Hero` tab exposes one free revive during a recovery window; after that revive is used, the hero is unavailable for the rest of the stage.
 
 | Hero | Unlock Stage | Primary Job |
 | --- | --- | --- |
@@ -30,7 +39,7 @@ The player buys a hero during the current Stage, places it on a valid empty tile
 | Ninja | Stage 15 | fast single-target cleanup |
 | Paladin | Stage 20 | expensive frontline anchor and elite duelist |
 
-Stage 25 opens the direction for advanced hero upgrades after the basic five-hero set is proven.
+All five heroes are available for selection from the beginning. Stage unlocks no longer gate hero choice.
 
 ## Buildable Jobs In Citadel Siege
 

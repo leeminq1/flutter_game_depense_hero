@@ -901,18 +901,12 @@ class CampaignData {
   }
 
   static int _startingCoinsForStage(int stageNumber) {
-    // 시작 골드를 줄여서 초반부터 긴장감 확보
-    // Stage 1: 아처 2개 + 약간 여유 (이전: 4개 즉시 배치 가능)
-    if (stageNumber <= 5) {
-      return switch (stageNumber) {
-        1 => 150,
-        2 => 155,
-        3 => 160,
-        4 => 165,
-        _ => 170,
-      };
-    }
-    return 170 + ((stageNumber - 5) * 2);
+    if (stageNumber <= 5) return 300;
+    if (stageNumber <= 10) return 330;
+    if (stageNumber <= 15) return 360;
+    if (stageNumber <= 20) return 390;
+    if (stageNumber <= 25) return 420;
+    return 450;
   }
 
   static int _baseHealthForStage(int stageNumber) {
@@ -3178,13 +3172,13 @@ class CampaignData {
   }
 
   static StageDefinition? _buildAuthoredCitadelStage(int stageNumber) {
-    if (stageNumber < 1 || stageNumber > _authoredCitadelLayouts.length) {
+    if (stageNumber < 1 || stageNumber > totalStages) {
       return null;
     }
 
-    final layout = _authoredCitadelLayouts[stageNumber - 1];
-    final citadelCell = layout.citadelCell;
-    final pathsByDirection = layout.pathsByDirection;
+    final citadelCell = _fortressCitadelCellForStage(stageNumber);
+    final spawnRoutes = _fortressSpawnRoutes();
+    final pathsByDirection = _fortressRepresentativePaths(citadelCell);
     for (final entry in pathsByDirection.entries) {
       _validateSiegeRoute(
         route: entry.value,
@@ -3195,19 +3189,23 @@ class CampaignData {
       );
     }
 
-    final primaryRoute = pathsByDirection[layout.primaryFront]!;
+    final primaryFront = _primaryFrontForStage(stageNumber);
+    final primaryRoute = pathsByDirection[primaryFront]!;
     final legacyPathSequence = _legacyPathSequenceForSiege(
       primaryRoute,
       citadelCell: citadelCell,
     );
-    final obstacles = _authoredCitadelObstaclesForStage(stageNumber);
+    final obstacles = const <StageObstacleDefinition>[];
     final tileGrid = _buildCitadelTileGrid(
       columns: 14,
       rows: 14,
       citadelCell: citadelCell,
       obstacleCells: _obstacleCellsFromDefinitions(obstacles),
     );
-    final assaultCycles = _buildAuthoredCitadelAssaultCycles(stageNumber);
+    final assaultCycles = _fortressAssaultCycles(
+      stageNumber,
+      _buildAuthoredCitadelAssaultCycles(stageNumber),
+    );
     final baseHealth = _baseHealthForStage(stageNumber);
 
     return StageDefinition(
@@ -3240,6 +3238,8 @@ class CampaignData {
       obstacles: obstacles,
       supplyNodeCells: const [],
       assaultCycles: assaultCycles,
+      spawnRoutes: spawnRoutes,
+      initialBarrierOptions: const [],
       waves: [
         for (final cycle in assaultCycles)
           WaveDefinition(
@@ -3252,11 +3252,181 @@ class CampaignData {
                   count: group.count,
                   spawnInterval: group.spawnInterval,
                   direction: group.front,
+                  routeId: group.routeId,
                 ),
             ],
           ),
       ],
     );
+  }
+
+  static List<int> _fortressCitadelCellForStage(int stageNumber) {
+    const cells = {
+      1: [1, 12],
+      2: [2, 12],
+      3: [2, 11],
+      4: [3, 10],
+      5: [4, 9],
+      6: [12, 12],
+      7: [11, 12],
+      8: [11, 11],
+      9: [10, 10],
+      10: [9, 9],
+      11: [12, 1],
+      12: [12, 2],
+      13: [11, 2],
+      14: [10, 3],
+      15: [9, 4],
+      16: [1, 1],
+      17: [2, 1],
+      18: [2, 2],
+      19: [3, 3],
+      20: [4, 4],
+      21: [6, 6],
+      22: [7, 6],
+      23: [6, 7],
+      24: [7, 7],
+      25: [6, 6],
+      26: [6, 6],
+      27: [7, 6],
+      28: [6, 7],
+      29: [7, 7],
+      30: [6, 6],
+    };
+    return cells[stageNumber] ?? const [6, 6];
+  }
+
+  static SpawnDirection _primaryFrontForStage(int stageNumber) {
+    if (stageNumber <= 5) return SpawnDirection.north;
+    if (stageNumber <= 10) return SpawnDirection.north;
+    if (stageNumber <= 15) return SpawnDirection.south;
+    if (stageNumber <= 20) return SpawnDirection.south;
+    return SpawnDirection.north;
+  }
+
+  static List<SpawnRouteDefinition> _fortressSpawnRoutes() {
+    const entries = <(SpawnDirection, List<List<int>>)>[
+      (
+        SpawnDirection.north,
+        [
+          [3, 0],
+          [6, 0],
+          [10, 0],
+        ],
+      ),
+      (
+        SpawnDirection.south,
+        [
+          [3, 13],
+          [6, 13],
+          [10, 13],
+        ],
+      ),
+      (
+        SpawnDirection.west,
+        [
+          [0, 3],
+          [0, 6],
+          [0, 10],
+        ],
+      ),
+      (
+        SpawnDirection.east,
+        [
+          [13, 3],
+          [13, 6],
+          [13, 10],
+        ],
+      ),
+    ];
+    return [
+      for (final entry in entries)
+        for (var index = 0; index < entry.$2.length; index += 1)
+          SpawnRouteDefinition(
+            id: '${entry.$1.name}_${index + 1}',
+            direction: entry.$1,
+            routeIndex: index,
+            entryCell: entry.$2[index],
+          ),
+    ];
+  }
+
+  static Map<SpawnDirection, List<List<int>>> _fortressRepresentativePaths(
+    List<int> citadelCell,
+  ) {
+    return {
+      for (final direction in SpawnDirection.values)
+        direction: _routeFromEdgeToCitadelRing(
+          _middleEntryForDirection(direction),
+          direction,
+          citadelCell,
+        ),
+    };
+  }
+
+  static List<int> _middleEntryForDirection(SpawnDirection direction) {
+    return switch (direction) {
+      SpawnDirection.north => const [6, 0],
+      SpawnDirection.south => const [6, 13],
+      SpawnDirection.west => const [0, 6],
+      SpawnDirection.east => const [13, 6],
+    };
+  }
+
+  static List<List<int>> _routeFromEdgeToCitadelRing(
+    List<int> entry,
+    SpawnDirection direction,
+    List<int> citadelCell,
+  ) {
+    final goal = switch (direction) {
+      SpawnDirection.north => [citadelCell[0], math.max(0, citadelCell[1] - 1)],
+      SpawnDirection.south => [
+        citadelCell[0],
+        math.min(13, citadelCell[1] + 1),
+      ],
+      SpawnDirection.west => [math.max(0, citadelCell[0] - 1), citadelCell[1]],
+      SpawnDirection.east => [math.min(13, citadelCell[0] + 1), citadelCell[1]],
+    };
+    final route = <List<int>>[];
+    var col = entry[0];
+    var row = entry[1];
+    route.add([col, row]);
+
+    void stepCol() {
+      if (col < goal[0]) {
+        col += 1;
+      } else if (col > goal[0]) {
+        col -= 1;
+      }
+      route.add([col, row]);
+    }
+
+    void stepRow() {
+      if (row < goal[1]) {
+        row += 1;
+      } else if (row > goal[1]) {
+        row -= 1;
+      }
+      route.add([col, row]);
+    }
+
+    if (direction == SpawnDirection.north ||
+        direction == SpawnDirection.south) {
+      while (row != goal[1]) {
+        stepRow();
+      }
+      while (col != goal[0]) {
+        stepCol();
+      }
+    } else {
+      while (col != goal[0]) {
+        stepCol();
+      }
+      while (row != goal[1]) {
+        stepRow();
+      }
+    }
+    return route;
   }
 
   static List<StageObjectiveDefinition> _authoredCitadelObjectives(
@@ -3285,6 +3455,95 @@ class CampaignData {
         label: 'Build at least one Archer Tower',
         towerKindId: 'archer',
       ),
+    ];
+  }
+
+  static List<AssaultCycleDefinition> _fortressAssaultCycles(
+    int stageNumber,
+    List<AssaultCycleDefinition> source,
+  ) {
+    return [
+      for (final cycle in source)
+        AssaultCycleDefinition(
+          number: cycle.number,
+          activeFronts: _frontsForFortressCycle(stageNumber, cycle.number),
+          groups: cycle.groups
+              .where(
+                (group) => _frontsForFortressCycle(
+                  stageNumber,
+                  cycle.number,
+                ).contains(group.front),
+              )
+              .toList(growable: false),
+          recoverySeconds: cycle.recoverySeconds,
+          recoveryGoldBonus: cycle.recoveryGoldBonus,
+          isFinalBreach: cycle.isFinalBreach,
+          activeRouteIds: _routeIdsForStage(stageNumber),
+        ),
+    ];
+  }
+
+  static List<SpawnDirection> _frontsForFortressCycle(
+    int stageNumber,
+    int cycleNumber,
+  ) {
+    if (stageNumber <= 5) {
+      if (stageNumber == 1) {
+        return const [SpawnDirection.north, SpawnDirection.east];
+      }
+      return cycleNumber <= 2
+          ? const [SpawnDirection.north, SpawnDirection.east]
+          : const [
+              SpawnDirection.north,
+              SpawnDirection.east,
+              SpawnDirection.west,
+            ];
+    }
+    if (stageNumber <= 10) {
+      return cycleNumber <= 2
+          ? const [SpawnDirection.north, SpawnDirection.west]
+          : const [
+              SpawnDirection.north,
+              SpawnDirection.west,
+              SpawnDirection.south,
+            ];
+    }
+    if (stageNumber <= 15) {
+      return cycleNumber <= 2
+          ? const [SpawnDirection.south, SpawnDirection.west]
+          : const [
+              SpawnDirection.south,
+              SpawnDirection.west,
+              SpawnDirection.east,
+            ];
+    }
+    if (stageNumber <= 20) {
+      return cycleNumber <= 2
+          ? const [SpawnDirection.south, SpawnDirection.east]
+          : const [
+              SpawnDirection.south,
+              SpawnDirection.east,
+              SpawnDirection.north,
+            ];
+    }
+    return const [
+      SpawnDirection.north,
+      SpawnDirection.south,
+      SpawnDirection.east,
+      SpawnDirection.west,
+    ];
+  }
+
+  static List<String> _routeIdsForStage(int stageNumber) {
+    final routeCount = stageNumber <= 5
+        ? 1
+        : stageNumber <= 15
+        ? 2
+        : 3;
+    return [
+      for (final direction in SpawnDirection.values)
+        for (var index = 1; index <= routeCount; index += 1)
+          '${direction.name}_$index',
     ];
   }
 
@@ -5484,6 +5743,7 @@ class CampaignData {
     return cells.values.toList();
   }
 
+  // ignore: unused_element
   static List<StageObstacleDefinition> _authoredCitadelObstaclesForStage(
     int stageNumber,
   ) {

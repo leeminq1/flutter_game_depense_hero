@@ -10,6 +10,8 @@ enum TileType { path, buildable, blocked, supplyNode, citadel }
 
 enum SpawnDirection { north, south, east, west }
 
+enum BarrierKind { woodFence, stoneWall, reinforcedWall, gate }
+
 enum StageEnvironmentTheme {
   frontierRoad,
   banditCrossroads,
@@ -143,6 +145,75 @@ class StageBuildZoneDefinition {
   final String label;
 }
 
+class BarrierDefinition {
+  const BarrierDefinition({
+    required this.kind,
+    required this.label,
+    required this.cost,
+    required this.hitPoints,
+    required this.color,
+  });
+
+  final BarrierKind kind;
+  final String label;
+  final int cost;
+  final int hitPoints;
+  final Color color;
+
+  int get repairCost => (cost * 0.6).round();
+}
+
+class BarrierCatalog {
+  static const List<BarrierDefinition> buildMenu = [
+    BarrierDefinition(
+      kind: BarrierKind.woodFence,
+      label: '나무 울타리',
+      cost: 15,
+      hitPoints: 80,
+      color: Color(0xFFB98245),
+    ),
+    BarrierDefinition(
+      kind: BarrierKind.stoneWall,
+      label: '돌 성벽',
+      cost: 35,
+      hitPoints: 220,
+      color: Color(0xFF8D98A4),
+    ),
+    BarrierDefinition(
+      kind: BarrierKind.reinforcedWall,
+      label: '강화 성벽',
+      cost: 75,
+      hitPoints: 420,
+      color: Color(0xFFB9C4CF),
+    ),
+    BarrierDefinition(
+      kind: BarrierKind.gate,
+      label: '문',
+      cost: 45,
+      hitPoints: 180,
+      color: Color(0xFFD2A35F),
+    ),
+  ];
+
+  static BarrierDefinition byKind(BarrierKind kind) {
+    return buildMenu.firstWhere((definition) => definition.kind == kind);
+  }
+}
+
+class SpawnRouteDefinition {
+  const SpawnRouteDefinition({
+    required this.id,
+    required this.direction,
+    required this.routeIndex,
+    required this.entryCell,
+  });
+
+  final String id;
+  final SpawnDirection direction;
+  final int routeIndex;
+  final List<int> entryCell;
+}
+
 class AssaultCycleDefinition {
   const AssaultCycleDefinition({
     required this.number,
@@ -151,6 +222,7 @@ class AssaultCycleDefinition {
     this.recoverySeconds = 30,
     this.recoveryGoldBonus = 0,
     this.isFinalBreach = false,
+    this.activeRouteIds = const [],
   });
 
   final int number;
@@ -159,6 +231,7 @@ class AssaultCycleDefinition {
   final double recoverySeconds;
   final int recoveryGoldBonus;
   final bool isFinalBreach;
+  final List<String> activeRouteIds;
 }
 
 class FrontSpawnGroupDefinition {
@@ -167,12 +240,14 @@ class FrontSpawnGroupDefinition {
     required this.enemy,
     required this.count,
     required this.spawnInterval,
+    this.routeId,
   });
 
   final SpawnDirection front;
   final EnemyDefinition enemy;
   final int count;
   final double spawnInterval;
+  final String? routeId;
 }
 
 class StageDefinition {
@@ -202,6 +277,8 @@ class StageDefinition {
     this.obstacles = const [],
     this.supplyNodeCells = const [],
     this.assaultCycles = const [],
+    this.spawnRoutes = const [],
+    this.initialBarrierOptions = const [],
   });
 
   final int number;
@@ -246,6 +323,9 @@ class StageDefinition {
 
   /// Future-facing assault cycle definitions for `Citadel Siege`.
   final List<AssaultCycleDefinition> assaultCycles;
+
+  final List<SpawnRouteDefinition> spawnRoutes;
+  final List<BarrierKind> initialBarrierOptions;
 
   int get startingGold => startingCoins;
   int get citadelHitPoints => citadelHp ?? baseHealth;
@@ -302,10 +382,12 @@ class SpawnGroupDefinition {
     required this.count,
     required this.spawnInterval,
     this.direction,
+    this.routeId,
   });
 
   final EnemyDefinition enemy;
   final int count;
   final double spawnInterval;
   final SpawnDirection? direction;
+  final String? routeId;
 }

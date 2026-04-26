@@ -125,6 +125,8 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-25: Runtime front spawns now enter from the edge aligned to their first route cell instead of a fully randomized edge anchor, preventing single-enemy late groups from lingering offscreen and blocking Cycle completion.
 - 2026-04-25: Cycle reconciliation now treats any enemy with `HP <= 0` as terminal even if an earlier defeat path failed to remove it immediately, preventing a hidden dead enemy from leaving the HUD at `1` after all visible threats are gone.
 - 2026-04-25: Stage clear/fail resolution now flushes pending session state before the terminal-state early return and marks status text dirty immediately, so Flutter overlays switch to the result popup as soon as the citadel falls or the last Cycle resolves.
+- 2026-04-26: Citadel Siege v2 pivots the campaign from authored blocking obstacles to player-built fortress planning: stages now use quadrant-arc citadel positions, each front exposes three spawn entries, barriers block and can be breached, live assault building is disabled, and heroes are chosen before a run then summoned once per stage.
+- 2026-04-26: Follow-up tuning moved Stage 1's citadel to the lower-left corner arc, raised starting Gold for wall planning, lowered early wall/tower costs, split the build bar into Tower/Wall/Hero tabs, and changed heroes to free auto-placement plus one recovery-window revive.
 
 ## Risks
 
