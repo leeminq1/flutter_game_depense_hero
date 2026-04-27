@@ -165,14 +165,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   void _showHintBanner() {
     _hintTimer?.cancel();
-    if (!mounted) {
-      return;
-    }
-    setState(() => _hintBannerVisible = true);
-    _hintTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _hintBannerVisible = false);
-      }
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _hintTimer?.cancel();
+      setState(() => _hintBannerVisible = true);
+      _hintTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _hintBannerVisible = false);
+      });
     });
   }
 
@@ -412,7 +412,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 ),
                               ),
                             if (_towerActionBarVisible &&
-                                session.selectedHero != null)
+                                session.selectedHero != null &&
+                                !session.heroMoveMode)
                               Positioned(
                                 left: 16,
                                 right: 16,
@@ -1438,12 +1439,12 @@ class _BarrierCardSummary extends StatelessWidget {
               const SizedBox(width: 10),
               _SpecMetric(label: 'HP', value: '${definition.hitPoints}'),
               const _SpecDot(),
-              _SpecMetric(label: 'Repair', value: '${definition.repairCost}'),
+              _SpecMetric(label: '수리', value: '${definition.repairCost}'),
             ],
           ),
           const SizedBox(height: 6),
           const Text(
-            'Blocks enemy movement. If every route is sealed, enemies breach it.',
+            '적 이동을 막습니다. 모든 경로가 막히면 적이 성벽을 파괴합니다.',
             style: TextStyle(color: Colors.white60, fontSize: 12),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -1851,7 +1852,7 @@ class _HeroActionBar extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: const Color(0xF2161D26),
         borderRadius: BorderRadius.circular(18),
@@ -1871,31 +1872,41 @@ class _HeroActionBar extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${hero.label} Lv.${hero.level}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${hero.abilityLabel}: ${hero.abilityDescription}',
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 12,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                child: Text(
+                  '${hero.label} Lv.${hero.level}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
                 ),
               ),
+              IconButton(
+                tooltip: '닫기',
+                onPressed: onDeselect,
+                visualDensity: VisualDensity.compact,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0x22EF4E4E),
+                  minimumSize: const Size(40, 40),
+                ),
+                icon: const Icon(Icons.close_rounded, color: Color(0xFFEF4E4E)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${hero.abilityLabel}: ${hero.abilityDescription}',
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 11,
+              height: 1.18,
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
               FilledButton.tonalIcon(
                 onPressed: onMove,
                 icon: const Icon(Icons.open_with_rounded, size: 16),
@@ -1906,15 +1917,6 @@ class _HeroActionBar extends StatelessWidget {
                 onPressed: hero.canUpgrade ? onUpgrade : null,
                 icon: const Icon(Icons.arrow_upward_rounded, size: 16),
                 label: Text('${hero.upgradeCost}'),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: '취소',
-                onPressed: onDeselect,
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0x22EF4E4E),
-                ),
-                icon: const Icon(Icons.close_rounded, color: Color(0xFFEF4E4E)),
               ),
             ],
           ),

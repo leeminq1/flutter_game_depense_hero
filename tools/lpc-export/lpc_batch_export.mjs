@@ -31,10 +31,11 @@ const generatorUrl =
  * The system maps by itemId so key names are arbitrary.
  */
 const buildJsonConfig = (spec) => {
+  const headItem = spec.bodyType === 'female' ? 'heads_human_female' : 'heads_human_male';
   const baseSelections = {
-    body:       { itemId: 'body',            variant: '', recolor: 'light' },
-    head:       { itemId: 'heads_human_male', variant: '', recolor: 'light' },
-    expression: { itemId: 'face_neutral',     variant: '', recolor: 'light' },
+    body:       { itemId: 'body',       variant: '', recolor: 'light' },
+    head:       { itemId: headItem,     variant: '', recolor: 'light' },
+    expression: { itemId: 'face_neutral', variant: '', recolor: 'light' },
   };
 
   const itemSelections = {};

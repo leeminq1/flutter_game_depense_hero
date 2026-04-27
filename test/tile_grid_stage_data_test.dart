@@ -26,6 +26,7 @@ void main() {
       expect(stage.pathsByDirection?.keys.toSet(), allFronts);
       expect(stage.spawnRoutes.length, 12);
       expect(stage.obstacles, isEmpty);
+      expect(stage.decorations, isNotEmpty);
       expect(stage.supplyNodeCells, isEmpty);
       expect(
         tileGrid
@@ -48,6 +49,67 @@ void main() {
         );
         expect(routes.length, 3);
       }
+    }
+  });
+
+  test('early fortress stages expose three valid routes per front', () {
+    for (var stageNumber = 1; stageNumber <= 5; stageNumber += 1) {
+      final stage = CampaignData.stage(stageNumber);
+      final citadelCell = stage.citadelCell!;
+
+      for (final direction in SpawnDirection.values) {
+        final routes = stage.spawnRoutes
+            .where((route) => route.direction == direction)
+            .toList(growable: false);
+
+        expect(routes.length, 3);
+        for (final route in routes) {
+          expect(route.id, '${direction.name}_${route.routeIndex + 1}');
+          expect(_startsOnExpectedEdge(route.entryCell, direction), isTrue);
+
+          final routeCells = _routeFromEdgeToCitadelRing(
+            route.entryCell,
+            direction,
+            citadelCell,
+          );
+          expect(
+            _touchesCitadelRing(routeCells.last, direction, citadelCell),
+            isTrue,
+          );
+        }
+      }
+
+      for (final cycle in stage.assaultCycles) {
+        for (final direction in cycle.activeFronts) {
+          final activeRoutes = cycle.activeRouteIds.where(
+            (routeId) => routeId.startsWith('${direction.name}_'),
+          );
+          expect(activeRoutes.length, 3);
+        }
+      }
+    }
+  });
+
+  test('stage 3 decorations keep the corner citadel readable', () {
+    final stage = CampaignData.stage(3);
+    final citadelCell = stage.citadelCell!;
+    final citadelCenter = (
+      dx: (citadelCell[0] + 0.5) / 14,
+      dy: (citadelCell[1] + 0.5) / 14,
+    );
+
+    for (final decoration in stage.decorations) {
+      final dx = decoration.position.dx - citadelCenter.dx;
+      final dy = decoration.position.dy - citadelCenter.dy;
+      final minDistance = decoration.assetPath.contains('/landmarks/')
+          ? 0.33
+          : 0.23;
+
+      expect(
+        (dx * dx) + (dy * dy),
+        greaterThanOrEqualTo(minDistance * minDistance),
+        reason: '${decoration.assetPath} is too close to the Stage 3 citadel.',
+      );
     }
   });
 
@@ -137,4 +199,69 @@ void main() {
       greaterThanOrEqualTo(archer + barracks + fences + walls),
     );
   });
+}
+
+bool _startsOnExpectedEdge(List<int> cell, SpawnDirection direction) {
+  return switch (direction) {
+    SpawnDirection.north => cell[1] == 0,
+    SpawnDirection.south => cell[1] == 13,
+    SpawnDirection.east => cell[0] == 13,
+    SpawnDirection.west => cell[0] == 0,
+  };
+}
+
+bool _touchesCitadelRing(
+  List<int> cell,
+  SpawnDirection direction,
+  List<int> citadelCell,
+) {
+  final citadelCol = citadelCell[0];
+  final citadelRow = citadelCell[1];
+  return switch (direction) {
+    SpawnDirection.north => cell[0] == citadelCol && cell[1] == citadelRow - 1,
+    SpawnDirection.south => cell[0] == citadelCol && cell[1] == citadelRow + 1,
+    SpawnDirection.east => cell[0] == citadelCol + 1 && cell[1] == citadelRow,
+    SpawnDirection.west => cell[0] == citadelCol - 1 && cell[1] == citadelRow,
+  };
+}
+
+List<List<int>> _routeFromEdgeToCitadelRing(
+  List<int> entry,
+  SpawnDirection direction,
+  List<int> citadelCell,
+) {
+  final goal = switch (direction) {
+    SpawnDirection.north => [citadelCell[0], citadelCell[1] - 1],
+    SpawnDirection.south => [citadelCell[0], citadelCell[1] + 1],
+    SpawnDirection.west => [citadelCell[0] - 1, citadelCell[1]],
+    SpawnDirection.east => [citadelCell[0] + 1, citadelCell[1]],
+  };
+  final routeCells = <List<int>>[];
+  var col = entry[0];
+  var row = entry[1];
+  routeCells.add([col, row]);
+
+  void addStep(int nextCol, int nextRow) {
+    col = nextCol;
+    row = nextRow;
+    routeCells.add([col, row]);
+  }
+
+  if (direction == SpawnDirection.north || direction == SpawnDirection.south) {
+    while (row != goal[1]) {
+      addStep(col, row + (row < goal[1] ? 1 : -1));
+    }
+    while (col != goal[0]) {
+      addStep(col + (col < goal[0] ? 1 : -1), row);
+    }
+  } else {
+    while (col != goal[0]) {
+      addStep(col + (col < goal[0] ? 1 : -1), row);
+    }
+    while (row != goal[1]) {
+      addStep(col, row + (row < goal[1] ? 1 : -1));
+    }
+  }
+
+  return routeCells;
 }

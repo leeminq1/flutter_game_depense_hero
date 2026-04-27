@@ -69,5 +69,115 @@
     "north/walk_03": "C:\\Users\\min21\\Desktop\\flutter_grame\\depense_game\\assets\\sprites\\heroes\\knight\\north\\walk_03.png"
   },
   "attribution": "Universal LPC Spritesheet Character Generator",
-  "url": "https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/"
+  "url": "https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/",
+  "repair": {
+    "source": "current body/head composited under legacy LPC equipment",
+    "legacyRef": "HEAD",
+    "rules": [
+      "preserve role equipment from legacy frames",
+      "preserve visible human body and face readability",
+      "reject fully nude or empty-armor reads"
+    ],
+    "frameStats": {
+      "north/base": {
+        "bbox": [
+          11,
+          13,
+          47,
+          62
+        ],
+        "opaquePixels": 1235,
+        "skinPixels": 62,
+        "equipmentPixels": 812
+      },
+      "north/walk_02": {
+        "bbox": [
+          10,
+          13,
+          47,
+          62
+        ],
+        "opaquePixels": 1261,
+        "skinPixels": 64,
+        "equipmentPixels": 827
+      },
+      "north/walk_03": {
+        "bbox": [
+          11,
+          13,
+          48,
+          62
+        ],
+        "opaquePixels": 1247,
+        "skinPixels": 64,
+        "equipmentPixels": 780
+      },
+      "west/base": {
+        "bbox": [
+          12,
+          14,
+          51,
+          62
+        ],
+        "opaquePixels": 1101,
+        "skinPixels": 60,
+        "equipmentPixels": 602
+      },
+      "west/walk_02": {
+        "bbox": [
+          19,
+          14,
+          49,
+          63
+        ],
+        "opaquePixels": 1009,
+        "skinPixels": 65,
+        "equipmentPixels": 564
+      },
+      "west/walk_03": {
+        "bbox": [
+          4,
+          14,
+          52,
+          62
+        ],
+        "opaquePixels": 1120,
+        "skinPixels": 58,
+        "equipmentPixels": 619
+      },
+      "south/base": {
+        "bbox": [
+          10,
+          13,
+          47,
+          63
+        ],
+        "opaquePixels": 1278,
+        "skinPixels": 70,
+        "equipmentPixels": 637
+      },
+      "south/walk_02": {
+        "bbox": [
+          12,
+          13,
+          48,
+          63
+        ],
+        "opaquePixels": 1216,
+        "skinPixels": 96,
+        "equipmentPixels": 612
+      },
+      "south/walk_03": {
+        "bbox": [
+          9,
+          13,
+          48,
+          63
+        ],
+        "opaquePixels": 1297,
+        "skinPixels": 93,
+        "equipmentPixels": 648
+      }
+    }
+  }
 }

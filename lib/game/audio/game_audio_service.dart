@@ -16,22 +16,22 @@ const _minIntervalByEvent = {
   AudioEvent.uiError: 0.24,
   AudioEvent.towerPlace: 0.18,
   AudioEvent.towerUpgrade: 0.20,
-  AudioEvent.arrowShot: 0.08,
-  AudioEvent.slashHit: 0.12,
-  AudioEvent.armorHit: 0.16,
-  AudioEvent.magicHit: 0.18,
-  AudioEvent.enemyDeathElite: 0.26,
-  AudioEvent.coinGain: 0.32,
+  AudioEvent.arrowShot: 0.22,
+  AudioEvent.slashHit: 0.28,
+  AudioEvent.armorHit: 0.30,
+  AudioEvent.magicHit: 0.32,
+  AudioEvent.enemyDeathElite: 0.45,
+  AudioEvent.coinGain: 0.45,
   AudioEvent.baseDamage: 0.48,
 };
 
 const _maxPendingSfx = 1;
-const _maxQueuedSfx = 6;
+const _maxQueuedSfx = 3;
 const _maxDrainedPerUpdate = 1;
-const _globalQueuedSfxGap = 0.05;
+const _globalQueuedSfxGap = 0.14;
 const _combatBurstWindow = 0.35;
-const _combatBurstThreshold = 8;
-const _combatSilenceDuration = 0.45;
+const _combatBurstThreshold = 4;
+const _combatSilenceDuration = 0.70;
 
 const _combatRouteEvents = {
   AudioEvent.uiClick,
@@ -59,6 +59,13 @@ const _combatHeavyEvents = {
   AudioEvent.enemyDeathElite,
   AudioEvent.coinGain,
   AudioEvent.baseDamage,
+};
+
+const _combatRepeatEvents = {
+  AudioEvent.arrowShot,
+  AudioEvent.slashHit,
+  AudioEvent.armorHit,
+  AudioEvent.magicHit,
 };
 
 const _maxQueuedByEvent = {
@@ -178,6 +185,11 @@ class GameAudioService {
     }
 
     if (_combatRouteEvents.contains(event)) {
+      if (_combatRepeatEvents.contains(event) &&
+          _queuedEvents.keys.any(_combatRepeatEvents.contains)) {
+        return;
+      }
+
       final totalQueued = _queuedEvents.values.fold<int>(
         0,
         (sum, count) => sum + count,

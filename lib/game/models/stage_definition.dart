@@ -188,7 +188,7 @@ class BarrierCatalog {
     ),
     BarrierDefinition(
       kind: BarrierKind.gate,
-      label: '문',
+      label: '성문',
       cost: 45,
       hitPoints: 180,
       color: Color(0xFFD2A35F),

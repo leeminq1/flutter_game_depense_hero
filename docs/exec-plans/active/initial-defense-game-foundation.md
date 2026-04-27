@@ -127,6 +127,7 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-25: Stage clear/fail resolution now flushes pending session state before the terminal-state early return and marks status text dirty immediately, so Flutter overlays switch to the result popup as soon as the citadel falls or the last Cycle resolves.
 - 2026-04-26: Citadel Siege v2 pivots the campaign from authored blocking obstacles to player-built fortress planning: stages now use quadrant-arc citadel positions, each front exposes three spawn entries, barriers block and can be breached, live assault building is disabled, and heroes are chosen before a run then summoned once per stage.
 - 2026-04-26: Follow-up tuning moved Stage 1's citadel to the lower-left corner arc, raised starting Gold for wall planning, lowered early wall/tower costs, split the build bar into Tower/Wall/Hero tabs, and changed heroes to free auto-placement plus one recovery-window revive.
+- 2026-04-27: Citadel Siege QA follow-up localizes barrier selection and breach messaging, shows placement tiles for the Wall tab, keeps all three per-front routes open from Stage 1, and tightens early-stage decoration spacing so Stage 3's citadel remains readable.
 
 ## Risks
 
@@ -199,3 +200,5 @@ Create the first playable vertical slice and the documentation discipline needed
 - Enemy visibility at wave start is now tied to immediate on-path placement rather than waiting for the first movement update, which makes early spawns easier to validate during gameplay smoke tests.
 - Combat audio now uses a stricter queued SFX budget with burst suppression, and hero placement UX now exposes valid slots plus reliable reselection affordances so mobile playtests are less likely to stall on audio spam or hidden controls.
 - The top battle HUD now reports remaining enemies for the active Cycle instead of only currently alive enemies, and recovery states now hold on a manual-ready state until the player starts the next Cycle.
+- Citadel Siege v2 stages now reuse environment props as non-blocking edge set dressing, keeping the central build space readable while avoiding empty green battlefields.
+- Siege enemies now commit to attacking the first player barrier on their assigned route instead of always seeking an alternate route, and repeated combat SFX are more aggressively coalesced for Android stability.

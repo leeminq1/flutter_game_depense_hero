@@ -11,6 +11,8 @@ $specPath       = Join-Path $tempDir 'lpc_hero_specs.json'
 $exportToolDir  = Join-Path $projectRoot 'tools\lpc-export'
 $exportScriptPath = Join-Path $exportToolDir 'lpc_batch_export.mjs'
 $nodeModulesPath  = Join-Path $exportToolDir 'node_modules'
+$repairScriptPath = Join-Path $projectRoot 'tools\repair_hero_sprites.py'
+$validateScriptPath = Join-Path $projectRoot 'tools\validate_hero_assets.py'
 
 $legacyBaseArchivePath = 'standard/walk/down/5.png'
 $legacyZipExports = @(
@@ -60,7 +62,7 @@ $heroSpecs = @(
     )
   },
   @{
-    id = 'elf_archer'
+    id = 'archer'
     bodyType = 'female'
     baseArchivePath = $legacyBaseArchivePath
     zipExports = $legacyZipExports
@@ -71,11 +73,12 @@ $heroSpecs = @(
       @('hat_hood_cloth',            'hood_brown'),
       @('weapon_ranged_bow_normal',  'dark'),
       @('belt_double',               'leather'),
-      @('cape_solid',                'forest')
+      @('cape_solid',                'forest'),
+      @('feet_boots_basic',          'brown')
     )
   },
   @{
-    id = 'flame_mage'
+    id = 'mage'
     bodyType = 'male'
     baseArchivePath = $legacyBaseArchivePath
     zipExports = $legacyZipExports
@@ -89,7 +92,7 @@ $heroSpecs = @(
     )
   },
   @{
-    id = 'cleric'
+    id = 'paladin'
     bodyType = 'male'
     baseArchivePath = $legacyBaseArchivePath
     zipExports = $legacyZipExports
@@ -102,7 +105,7 @@ $heroSpecs = @(
     )
   },
   @{
-    id = 'red_assassin'
+    id = 'ninja'
     bodyType = 'teen'
     baseArchivePath = $legacyBaseArchivePath
     zipExports = $legacyZipExports
@@ -111,7 +114,8 @@ $heroSpecs = @(
       @('hat_hood_cloth',       'hood_black'),
       @('belt_double',          'leather'),
       @('weapon_sword_dagger',  'dagger'),
-      @('cape_solid',           'red')
+      @('cape_solid',           'red'),
+      @('feet_boots_basic',     'brown')
     )
   }
 )
@@ -252,6 +256,16 @@ foreach ($result in $parsed.results) {
     $zipArchive.Dispose()
   }
 }
+
+Write-Host ''
+Write-Host 'Repairing hero body/equipment layer readability...'
+& python $repairScriptPath HEAD 2>&1 | Out-Host
+if ($LASTEXITCODE -ne 0) { throw 'hero sprite repair failed.' }
+
+Write-Host ''
+Write-Host 'Validating repaired hero assets...'
+& python $validateScriptPath 2>&1 | Out-Host
+if ($LASTEXITCODE -ne 0) { throw 'hero asset validation failed.' }
 
 Write-Host ''
 Write-Host 'HERO BATCH COMPLETE'

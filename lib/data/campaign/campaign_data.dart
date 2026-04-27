@@ -2864,6 +2864,170 @@ class CampaignData {
     );
   }
 
+  static List<StageDecorationDefinition> _fortressDecorationsForStage(
+    int stage,
+    List<int> citadelCell,
+    StageEnvironmentTheme theme,
+  ) {
+    final citadelCenter = Offset(
+      (citadelCell[0] + 0.5) / 14,
+      (citadelCell[1] + 0.5) / 14,
+    );
+    final decorations = [
+      ..._decorationsForStage(stage, theme),
+      ..._edgeSetDressingForTheme(theme),
+    ];
+    final selected = <StageDecorationDefinition>[];
+    final usedSlots = <String>{};
+
+    for (final decoration in decorations) {
+      if (!_keepsCitadelReadable(decoration, citadelCenter, stage)) {
+        continue;
+      }
+      final slotKey =
+          '${decoration.assetPath}:${decoration.position.dx.toStringAsFixed(2)}:'
+          '${decoration.position.dy.toStringAsFixed(2)}';
+      if (!usedSlots.add(slotKey)) {
+        continue;
+      }
+      selected.add(decoration);
+      if (selected.length >= 6) {
+        break;
+      }
+    }
+
+    return selected;
+  }
+
+  static bool _keepsCitadelReadable(
+    StageDecorationDefinition decoration,
+    Offset citadelCenter,
+    int stageNumber,
+  ) {
+    final dx = decoration.position.dx - citadelCenter.dx;
+    final dy = decoration.position.dy - citadelCenter.dy;
+    final isLandmark = decoration.assetPath.contains('/landmarks/');
+    final nearEdge =
+        citadelCenter.dx < 0.25 ||
+        citadelCenter.dx > 0.75 ||
+        citadelCenter.dy < 0.25 ||
+        citadelCenter.dy > 0.75;
+    var minDistance = isLandmark ? 0.25 : 0.19;
+    if (stageNumber <= 5 && nearEdge) {
+      minDistance += isLandmark ? 0.08 : 0.04;
+    }
+    return dx * dx + dy * dy >= minDistance * minDistance;
+  }
+
+  static List<StageDecorationDefinition> _edgeSetDressingForTheme(
+    StageEnvironmentTheme theme,
+  ) {
+    switch (theme) {
+      case StageEnvironmentTheme.frontierRoad:
+        return [
+          _dec(
+            'assets/sprites/environment/landmarks/village_gate.png',
+            0.52,
+            0.08,
+            scale: 1.16,
+            opacity: 0.86,
+          ),
+          _dec(
+            'assets/sprites/environment/props/supply_crate.png',
+            0.91,
+            0.58,
+            scale: 0.82,
+            opacity: 0.88,
+          ),
+        ];
+      case StageEnvironmentTheme.banditCrossroads:
+        return [
+          _dec(
+            'assets/sprites/environment/landmarks/bandit_stockade.png',
+            0.53,
+            0.08,
+            scale: 1.14,
+            opacity: 0.86,
+          ),
+          _dec(
+            'assets/sprites/environment/props/broken_barrel.png',
+            0.91,
+            0.58,
+            scale: 0.9,
+            opacity: 0.88,
+          ),
+        ];
+      case StageEnvironmentTheme.graveFields:
+        return [
+          _dec(
+            'assets/sprites/environment/landmarks/mausoleum_gate.png',
+            0.53,
+            0.08,
+            scale: 1.14,
+            opacity: 0.84,
+          ),
+          _dec(
+            'assets/sprites/environment/props/bone_pile.png',
+            0.91,
+            0.58,
+            scale: 0.86,
+            opacity: 0.86,
+          ),
+        ];
+      case StageEnvironmentTheme.cursedChapel:
+        return [
+          _dec(
+            'assets/sprites/environment/landmarks/cursed_chapel_front.png',
+            0.53,
+            0.08,
+            scale: 1.12,
+            opacity: 0.84,
+          ),
+          _dec(
+            'assets/sprites/environment/props/candle_cluster.png',
+            0.91,
+            0.58,
+            scale: 0.86,
+            opacity: 0.86,
+          ),
+        ];
+      case StageEnvironmentTheme.bastionApproach:
+        return [
+          _dec(
+            'assets/sprites/environment/landmarks/bastion_wall_chunk.png',
+            0.53,
+            0.08,
+            scale: 1.16,
+            opacity: 0.84,
+          ),
+          _dec(
+            'assets/sprites/environment/props/chain_post.png',
+            0.91,
+            0.58,
+            scale: 0.92,
+            opacity: 0.86,
+          ),
+        ];
+      case StageEnvironmentTheme.throneMarch:
+        return [
+          _dec(
+            'assets/sprites/environment/landmarks/throne_road_monument.png',
+            0.53,
+            0.08,
+            scale: 1.12,
+            opacity: 0.84,
+          ),
+          _dec(
+            'assets/sprites/environment/props/siege_crate.png',
+            0.91,
+            0.58,
+            scale: 0.88,
+            opacity: 0.86,
+          ),
+        ];
+    }
+  }
+
   static const List<List<List<int>>> _pathTemplates = [
     [
       [7, 9],
@@ -3207,6 +3371,7 @@ class CampaignData {
       _buildAuthoredCitadelAssaultCycles(stageNumber),
     );
     final baseHealth = _baseHealthForStage(stageNumber);
+    final environmentTheme = _environmentThemeForStage(stageNumber);
 
     return StageDefinition(
       number: stageNumber,
@@ -3217,7 +3382,7 @@ class CampaignData {
       baseHealth: baseHealth,
       citadelHp: baseHealth,
       citadelCell: citadelCell,
-      environmentTheme: _environmentThemeForStage(stageNumber),
+      environmentTheme: environmentTheme,
       pathNodes: _normalizedPathNodes(
         legacyPathSequence,
         columns: 14,
@@ -3229,7 +3394,11 @@ class CampaignData {
       ],
       pathClearance: 45.0,
       buildGridSpacing: 12.0,
-      decorations: const [],
+      decorations: _fortressDecorationsForStage(
+        stageNumber,
+        citadelCell,
+        environmentTheme,
+      ),
       objectives: _authoredCitadelObjectives(stageNumber),
       unlockRequirements: _unlockRequirementsForStage(stageNumber),
       tileGrid: tileGrid,
@@ -3535,11 +3704,7 @@ class CampaignData {
   }
 
   static List<String> _routeIdsForStage(int stageNumber) {
-    final routeCount = stageNumber <= 5
-        ? 1
-        : stageNumber <= 15
-        ? 2
-        : 3;
+    const routeCount = 3;
     return [
       for (final direction in SpawnDirection.values)
         for (var index = 1; index <= routeCount; index += 1)
