@@ -128,6 +128,9 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-26: Citadel Siege v2 pivots the campaign from authored blocking obstacles to player-built fortress planning: stages now use quadrant-arc citadel positions, each front exposes three spawn entries, barriers block and can be breached, live assault building is disabled, and heroes are chosen before a run then summoned once per stage.
 - 2026-04-26: Follow-up tuning moved Stage 1's citadel to the lower-left corner arc, raised starting Gold for wall planning, lowered early wall/tower costs, split the build bar into Tower/Wall/Hero tabs, and changed heroes to free auto-placement plus one recovery-window revive.
 - 2026-04-27: Citadel Siege QA follow-up localizes barrier selection and breach messaging, shows placement tiles for the Wall tab, keeps all three per-front routes open from Stage 1, and tightens early-stage decoration spacing so Stage 3's citadel remains readable.
+- 2026-04-29: Runtime maps now render visible muted-brown road tiles from authored route data, and each run now offers `1 of 3` temporary siege modifiers before Cycle 1 and after recovery windows to add replayable tower, barrier, and hero build variation without changing route or stage rules.
+- 2026-04-30: Siege offers now require an explicit dice roll before showing the 3 choices, offer copy is Korean-first, path readability uses subtle trampled-grass/dust marks instead of heavy brown road fills, building placement no longer auto-opens the action popup, and combat now has lightweight hit/death feedback with floating damage and reward text.
+- 2026-04-30: Battle UI terminology is now `WAVE` / `STAGE`, the dice offer appears once at STAGE start instead of before every wave, and enemy movement speed is globally doubled while preserving per-enemy speed differences.
 
 ## Risks
 

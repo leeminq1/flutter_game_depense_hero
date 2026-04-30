@@ -8,15 +8,19 @@ import 'package:depense_game/game/audio/game_audio_service.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
+import 'package:depense_game/game/models/run_offer_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/game_visual_registry.dart';
 import 'package:depense_game/game/rendering/map_texture_planner.dart';
+import 'package:depense_game/game/rendering/road_tile_resolver.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/text.dart';
 import 'package:flutter/material.dart' hide Route;
+
+const double _enemyMoveSpeedMultiplier = 2.0;
 
 class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   double get _tileSize {
@@ -68,6 +72,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   final List<_BeamVisual> _beams = [];
   final List<_PulseVisual> _pulses = [];
   final List<_ImpactVisual> _impacts = [];
+  final List<_FloatingTextVisual> _floatingTexts = [];
 
   int _currentWaveIndex = -1;
   int _spawnedInGroup = 0;
@@ -94,8 +99,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   bool _heroReviveUsed = false;
   int _towersSold = 0;
   final Set<String> _builtTowerKinds = {};
+  final Set<TowerKind> _firstLevelBonusUsed = {};
   List<SpawnDirection> _activeFronts = const [];
   List<SpawnDirection> _nextFronts = const [];
+  int _runOfferSeed = 0;
+  int _runOfferRollIndex = 0;
 
   double _zoom = 1.0;
   double _scaleStart = 1.0;
@@ -109,6 +117,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   bool get _isSiegeMode =>
       stage.assaultCycles.isNotEmpty &&
       (stage.pathsByDirection?.isNotEmpty ?? false);
+
+  RunModifierSet get _runModifiers => sessionController.runModifiers;
 
   @override
   void onScaleStart(ScaleStartInfo info) {
@@ -139,7 +149,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       coins: _coins,
       baseHealth: _baseHealth,
       actNumber: stage.actNumber ?? (((stage.number - 1) ~/ 5) + 1),
-      loopLabel: _isSiegeMode ? 'Cycle' : 'Wave',
+      loopLabel: 'WAVE',
     );
     sessionController.setChosenHero(chosenHeroKind);
     sessionController.setHeroSummonState(summoned: true, available: false);
@@ -149,6 +159,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       hitPoints: 0,
       maxHitPoints: 0,
     );
+    _runOfferSeed =
+        (DateTime.now().microsecondsSinceEpoch ^ identityHashCode(this)) &
+        0x7fffffff;
+    sessionController.setRunOfferSeed(_runOfferSeed);
+    _prepareRunOfferRoll();
     _nextFronts = _nextFrontsForIndex(-1);
     _flushSession();
   }
@@ -268,7 +283,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
     if (!_recoveryActive) {
-      _showStatus('영웅 부활은 Cycle 사이 회복창에서만 가능합니다.');
+      _showStatus('영웅 부활은 WAVE 사이 회복창에서만 가능합니다.');
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
@@ -279,7 +294,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
     if (_heroReviveUsed) {
-      _showStatus('이번 스테이지의 영웅 부활은 이미 사용했습니다.');
+      _showStatus('이번 STAGE의 영웅 부활은 이미 사용했습니다.');
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
@@ -327,6 +342,73 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   void _showSelectedTowerOverlay() {
     _selectedTowerOverlayTimer = 3.0;
+  }
+
+  void _prepareRunOfferRoll() {
+    sessionController.prepareRunOfferRoll();
+    _showStatus('작전 주사위를 굴리세요.');
+  }
+
+  Future<void> rollRunOfferDice() async {
+    if (sessionController.runOfferFlowState != RunOfferFlowState.awaitingRoll) {
+      return;
+    }
+    sessionController.setRunOfferRolling();
+    _showStatus('주사위를 굴리는 중...');
+    audioService.play(AudioEvent.uiSelect);
+    _syncSession();
+
+    await Future<void>.delayed(const Duration(milliseconds: 650));
+    if (sessionController.runOfferFlowState != RunOfferFlowState.rolling ||
+        _stageCleared ||
+        _stageFailed) {
+      return;
+    }
+    _rollRunOffers();
+  }
+
+  void _rollRunOffers() {
+    final unlockedTowers = {
+      for (final tower in TowerCatalog.buildMenu)
+        if (tower.isUnlocked(metaUpgrades)) tower.kind,
+    };
+    final offers = RunOfferGenerator.generate(
+      seed: _runOfferSeed,
+      stageNumber: stage.number,
+      offerIndex: _runOfferRollIndex,
+      unlockedTowers: unlockedTowers,
+      chosenHeroKind: chosenHeroKind,
+    );
+    sessionController.setPendingRunOffers(offers);
+    _showStatus('제안 1개를 선택하세요.');
+  }
+
+  void acceptRunOffer(String offerId) {
+    RunOfferDefinition? offer;
+    for (final candidate in sessionController.pendingRunOffers) {
+      if (candidate.id == offerId) {
+        offer = candidate;
+        break;
+      }
+    }
+    if (offer == null) {
+      _showStatus('이미 사라진 제안입니다.');
+      audioService.play(AudioEvent.uiError);
+      _syncSession();
+      return;
+    }
+
+    sessionController.acceptRunOffer(offer);
+    _runOfferRollIndex += 1;
+    if (_runModifiers.disablesHeroRevive && !_heroReviveUsed) {
+      _heroReviveUsed = true;
+      _syncHeroStatus();
+    }
+    _showStatus('${offer.title} 적용. Seed $_runOfferSeed');
+    audioService.play(AudioEvent.uiConfirm);
+    _syncSelectedTower();
+    _syncSelectedHero();
+    _syncSession();
   }
 
   void _clearSelectedTowerSelection() {
@@ -418,8 +500,71 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     );
   }
 
+  int _towerBuildCost(TowerDefinition definition) {
+    return math.max(
+      1,
+      (definition.cost * _runModifiers.towerCostMultiplier(definition.kind))
+          .round(),
+    );
+  }
+
+  int _barrierBuildCost(BarrierDefinition definition) {
+    return math.max(
+      1,
+      (definition.cost * _runModifiers.barrierCostMultiplier(definition.kind))
+          .round(),
+    );
+  }
+
+  int _barrierHitPoints(BarrierDefinition definition) {
+    return math.max(
+      1,
+      (definition.hitPoints *
+              _runModifiers.barrierHitPointMultiplier(definition.kind))
+          .round(),
+    );
+  }
+
+  int _barrierRepairCost(BarrierDefinition definition) {
+    return math.max(
+      1,
+      (definition.repairCost *
+              _runModifiers.barrierRepairCostMultiplier(definition.kind))
+          .round(),
+    );
+  }
+
+  double _towerCurrentRange(_TowerPlacement tower) {
+    return tower.currentRange *
+        _runModifiers.towerRangeMultiplier(tower.definition.kind);
+  }
+
+  double _towerCurrentDamage(_TowerPlacement tower) {
+    return tower.currentDamage *
+        _runModifiers.towerDamageMultiplier(tower.definition.kind);
+  }
+
+  double _towerCurrentCooldown(_TowerPlacement tower) {
+    return math.max(
+      0.18,
+      tower.currentCooldown *
+          _runModifiers.towerCooldownMultiplier(tower.definition.kind),
+    );
+  }
+
+  double _heroCurrentDamage(_HeroPlacement hero) {
+    return hero.currentDamage *
+        _runModifiers.heroDamageMultiplier(hero.definition.kind);
+  }
+
   void startNextWave() {
     if (_waveActive || _stageCleared || _stageFailed) {
+      return;
+    }
+    if (sessionController.mustResolveRunOffer) {
+      _showStatus('작전 주사위를 굴리고 제안 1개를 선택하세요.');
+      audioService.play(AudioEvent.uiError);
+      _syncSession();
       return;
     }
     if (_recoveryActive) {
@@ -430,7 +575,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (_currentWaveIndex >= stage.waves.length - 1) {
       _statusText = _isSiegeMode
           ? '모든 공세가 이미 종료되었습니다.'
-          : '모든 Wave가 이미 종료되었습니다.';
+          : '모든 WAVE가 이미 종료되었습니다.';
       _syncSession();
       return;
     }
@@ -449,10 +594,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         cycle?.activeFronts ?? _frontsForWave(stage.waves[_currentWaveIndex]);
     _nextFronts = _nextFrontsForIndex(_currentWaveIndex);
     _statusText = _isSiegeMode
-        ? 'Cycle $waveNumber 시작! ${_frontShortLabel(_activeFronts)} 전선이 열립니다.'
+        ? 'WAVE $waveNumber 시작! ${_frontShortLabel(_activeFronts)} 전선이 열립니다.'
         : waveNumber <= 2
-        ? 'Wave $waveNumber 시작! 적 경로를 확인하세요.'
-        : 'Wave $waveNumber 시작!';
+        ? 'WAVE $waveNumber 시작! 적 경로를 확인하세요.'
+        : 'WAVE $waveNumber 시작!';
     for (final tower in _towers.where(
       (tower) => tower.definition.kind == TowerKind.coinMill,
     )) {
@@ -475,11 +620,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   void upgradeSelectedTower() {
     final tower = _selectedTower;
+    late final TowerDefinition definition;
     if (tower == null) {
       _showStatus('업그레이드할 건물이 없습니다.');
       _syncSession();
       return;
     }
+    definition = tower.definition;
     if (!tower.canUpgrade) {
       _showStatus('${tower.definition.label}은(는) 더 이상 업그레이드할 수 없습니다.');
       _syncSession();
@@ -503,10 +650,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     );
     tower.cooldownRemaining = math.min(
       tower.cooldownRemaining,
-      tower.currentCooldown,
+      _towerCurrentCooldown(tower),
     );
     _showStatus('건물을 선택해 업그레이드나 철거가 가능합니다.');
     _showSelectedTowerOverlay();
+    _showStatus('${definition.label} 건설 완료. 다시 탭하면 업그레이드/철거.');
+    _showStatus('${tower.definition.label} 업그레이드 완료.');
     audioService.play(AudioEvent.towerUpgrade);
     _syncSelectedTower();
     _syncSession();
@@ -580,6 +729,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _selectedHeroIndex = null;
     sessionController.setSelectedHero(null);
     sessionController.setHeroMoveMode(false);
+    _syncSession();
+  }
+
+  void clearSelectedTower() {
+    _clearSelectedTowerSelection();
     _syncSession();
   }
 
@@ -667,6 +821,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     _drawGroundTexture(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.background);
+    _drawRoadTiles(canvas);
     _drawPath(canvas);
     _drawObstacles(canvas);
     _drawBarriers(canvas);
@@ -680,6 +835,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawProjectiles(canvas);
     _drawEnemies(canvas);
     _drawImpacts(canvas);
+    _drawFloatingTexts(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.foreground);
   }
 
@@ -720,14 +876,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _selectedHeroIndex = null;
       final barrier = _barriers[barrierIndex];
       final damaged = barrier.hitPoints < barrier.maxHitPoints;
-      if (!_waveActive && damaged && _coins >= barrier.definition.repairCost) {
-        _coins -= barrier.definition.repairCost;
+      if (!_waveActive && damaged && _coins >= barrier.repairCost) {
+        _coins -= barrier.repairCost;
         barrier.hitPoints = barrier.maxHitPoints;
         _showStatus('${barrier.definition.label} 수리 완료.');
         audioService.play(AudioEvent.towerUpgrade);
       } else if (!_waveActive && damaged) {
         _showStatus(
-          '${barrier.definition.label} 수리에 ${barrier.definition.repairCost} 골드가 필요합니다.',
+          '${barrier.definition.label} 수리에 ${barrier.repairCost} 골드가 필요합니다.',
         );
       } else {
         _showStatus('${barrier.definition.label} 선택됨.');
@@ -793,26 +949,48 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _syncSession();
       return;
     }
-    if (_coins < definition.cost) {
+    final buildCost = _towerBuildCost(definition);
+    if (_coins < buildCost) {
       _showStatus('${definition.label} 건설에 필요한 코인이 부족합니다.');
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
     }
 
-    _coins -= definition.cost;
-    _towers.add(
-      _TowerPlacement(definition: definition, position: snapTarget.clone())
-        ..economyIncomeBonus = metaUpgrades.coinMillIncomeBonus,
+    _coins -= buildCost;
+    final alreadyBuiltKind = _towers.any(
+      (tower) => tower.definition.kind == definition.kind,
     );
+    final levelBonus =
+        alreadyBuiltKind || _firstLevelBonusUsed.contains(selection)
+        ? 0
+        : _runModifiers.firstTowerLevelBonus(selection);
+    final initialLevel = (1 + levelBonus).clamp(1, 3);
+    if (levelBonus > 0) {
+      _firstLevelBonusUsed.add(selection);
+    }
+    _towers.add(
+      _TowerPlacement(
+        definition: definition,
+        position: snapTarget.clone(),
+        initialLevel: initialLevel,
+        totalSpent: buildCost,
+      )..economyIncomeBonus = metaUpgrades.coinMillIncomeBonus,
+    );
+    if (initialLevel > _maxTowerLevel) {
+      _maxTowerLevel = initialLevel;
+    }
     _towersBuilt += 1;
     _builtTowerKinds.add(definition.kind.name);
-    _selectedTowerIndex = _towers.length - 1;
     sessionController.setSelectedBuildable(null);
+    _clearSelectedTowerSelection();
+    _showStatus('${definition.label} 건설 완료. 다시 탭하면 업그레이드/철거.');
+    _spawnImpact(snapTarget, definition.color, 18, 0.18);
     _showStatus('건물을 선택해 업그레이드나 철거가 가능합니다.');
     _showSelectedTowerOverlay();
     audioService.play(AudioEvent.towerPlace);
     _syncSelectedTower();
+    _showStatus('${definition.label} 건설 완료. 다시 탭하면 업그레이드/철거.');
     _syncSession();
   }
 
@@ -888,16 +1066,22 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _syncSession();
       return;
     }
-    if (_coins < definition.cost) {
+    final buildCost = _barrierBuildCost(definition);
+    if (_coins < buildCost) {
       _showStatus('${definition.label} 배치에 ${definition.cost} 골드가 필요합니다.');
       audioService.play(AudioEvent.uiError);
       _syncSession();
       return;
     }
 
-    _coins -= definition.cost;
+    _coins -= buildCost;
     _barriers.add(
-      _BarrierPlacement(definition: definition, position: snapTarget.clone()),
+      _BarrierPlacement(
+        definition: definition,
+        position: snapTarget.clone(),
+        maxHitPoints: _barrierHitPoints(definition).toDouble(),
+        repairCost: _barrierRepairCost(definition),
+      ),
     );
     sessionController.setSelectedBarrierBuildable(null);
     _selectedBarrierIndex = _barriers.length - 1;
@@ -1181,6 +1365,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final burnDamage = enemy.tickBurn(dt);
     if (burnDamage > 0) {
       enemy.hitPoints -= burnDamage;
+      _recordEnemyDamage(
+        enemy,
+        burnDamage,
+        const Color(0xFFFFA04D),
+        showNumber: burnDamage >= 2,
+      );
       if (_resolveEnemyDefeatIfNeeded(enemy)) {
         return 0;
       }
@@ -1296,7 +1486,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
       _showStatus(
         _heroReviveUsed
-            ? '영웅이 쓰러졌습니다. 이번 스테이지에서는 더 부활할 수 없습니다.'
+            ? '영웅이 쓰러졌습니다. 이번 STAGE에서는 더 부활할 수 없습니다.'
             : '영웅이 쓰러졌습니다. 회복창에서 한 번 부활할 수 있습니다.',
       );
       sessionController.setHeroSummonState(
@@ -1355,7 +1545,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       final length = direction.length;
       if (length > 0) {
         direction.scale(1 / length);
-        enemy.position.addScaled(direction, enemy.definition.speed * dt * 0.72);
+        enemy.position.addScaled(
+          direction,
+          enemy.definition.speed * _enemyMoveSpeedMultiplier * dt * 0.72,
+        );
         enemy.currentDirection = _directionFromDelta(direction);
         enemy.distanceToCitadel = enemy.position.distanceTo(_citadelCenter);
       }
@@ -1429,14 +1622,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _fireArcherTower(_TowerPlacement tower) {
-    final target = _pickTarget(tower.position, tower.currentRange);
+    final target = _pickTarget(tower.position, _towerCurrentRange(tower));
     if (target == null) {
       return;
     }
 
-    tower.cooldownRemaining = tower.currentCooldown;
+    tower.cooldownRemaining = _towerCurrentCooldown(tower);
     tower.shotCounter += 1;
-    var damage = tower.currentDamage * metaUpgrades.archerDamageMultiplier;
+    var damage =
+        _towerCurrentDamage(tower) * metaUpgrades.archerDamageMultiplier;
     final criticalVolley = tower.shotCounter % 3 == 0;
     if (criticalVolley) {
       damage *= 1.8;
@@ -1486,13 +1680,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _fireBarracksTower(_TowerPlacement tower) {
-    final target = _pickTarget(tower.position, tower.currentRange);
+    final target = _pickTarget(tower.position, _towerCurrentRange(tower));
     if (target == null) {
       return;
     }
 
-    tower.cooldownRemaining = tower.currentCooldown;
-    final damage = tower.currentDamage * metaUpgrades.barracksDamageMultiplier;
+    tower.cooldownRemaining = _towerCurrentCooldown(tower);
+    final damage =
+        _towerCurrentDamage(tower) * metaUpgrades.barracksDamageMultiplier;
     _applyTowerDamage(
       tower: tower,
       target: target,
@@ -1538,13 +1733,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _fireMageTower(_TowerPlacement tower) {
-    final target = _pickTarget(tower.position, tower.currentRange);
+    final target = _pickTarget(tower.position, _towerCurrentRange(tower));
     if (target == null) {
       return;
     }
 
-    tower.cooldownRemaining = tower.currentCooldown;
-    final baseDamage = tower.currentDamage * metaUpgrades.mageDamageMultiplier;
+    tower.cooldownRemaining = _towerCurrentCooldown(tower);
+    final baseDamage =
+        _towerCurrentDamage(tower) * metaUpgrades.mageDamageMultiplier;
     final tunedBaseDamage = tower.branchId == 'rune'
         ? baseDamage * 1.18
         : baseDamage;
@@ -1601,18 +1797,19 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final enemiesInRange = _enemies
         .where(
           (enemy) =>
-              tower.position.distanceTo(enemy.position) <= tower.currentRange,
+              tower.position.distanceTo(enemy.position) <=
+              _towerCurrentRange(tower),
         )
         .toList();
     if (enemiesInRange.isEmpty) {
       return;
     }
 
-    tower.cooldownRemaining = tower.currentCooldown;
+    tower.cooldownRemaining = _towerCurrentCooldown(tower);
     _spawnPulse(
       center: tower.position,
       color: tower.definition.color,
-      maxRadius: tower.currentRange * 0.82,
+      maxRadius: _towerCurrentRange(tower) * 0.82,
       lifetime: 0.34,
       strokeWidth: 3,
     );
@@ -1632,7 +1829,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         tower: tower,
         target: enemy,
         damage:
-            tower.currentDamage *
+            _towerCurrentDamage(tower) *
             frostDamageMultiplier *
             ((tower.branchId == 'shatter' && alreadySlowed) ? 1.45 : 1),
         damageType: _DamageType.magic,
@@ -1647,14 +1844,18 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _fireBallistaTower(_TowerPlacement tower) {
-    final target = _pickBallistaTarget(tower.position, tower.currentRange);
+    final target = _pickBallistaTarget(
+      tower.position,
+      _towerCurrentRange(tower),
+    );
     if (target == null) {
       return;
     }
 
-    tower.cooldownRemaining = tower.currentCooldown;
+    tower.cooldownRemaining = _towerCurrentCooldown(tower);
     var damage =
-        tower.currentDamage * (1.55 + (tower.branchId == 'siege' ? 0.22 : 0));
+        _towerCurrentDamage(tower) *
+        (1.55 + (tower.branchId == 'siege' ? 0.22 : 0));
     if (target.definition.kind == EnemyKind.corruptedKnight ||
         target.definition.kind == EnemyKind.shieldInfantry ||
         target.definition.kind == EnemyKind.bastionOverlord) {
@@ -1698,12 +1899,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _fireEmberkeepTower(_TowerPlacement tower) {
-    final target = _pickClusterTarget(tower.position, tower.currentRange);
+    final target = _pickClusterTarget(
+      tower.position,
+      _towerCurrentRange(tower),
+    );
     if (target == null) {
       return;
     }
 
-    tower.cooldownRemaining = tower.currentCooldown;
+    tower.cooldownRemaining = _towerCurrentCooldown(tower);
     final splashRadius = tower.branchId == 'inferno' ? 58.0 : 46.0;
     final burnDuration = tower.branchId == 'cinder' ? 4.8 : 3.4;
     final burnDps =
@@ -1719,7 +1923,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _applyTowerDamage(
         tower: tower,
         target: enemy,
-        damage: tower.currentDamage * (isPrimaryTarget ? 1.0 : 0.7),
+        damage: _towerCurrentDamage(tower) * (isPrimaryTarget ? 1.0 : 0.7),
         damageType: _DamageType.magic,
       );
       _applyBurn(enemy, dps: burnDps, duration: burnDuration);
@@ -1760,6 +1964,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       damageType: damageType,
     );
     target.hitPoints -= adjustedDamage;
+    _recordEnemyDamage(
+      target,
+      adjustedDamage,
+      damageType == _DamageType.magic
+          ? tower.definition.color
+          : const Color(0xFFFFF1CC),
+    );
     _spawnImpact(
       target.position,
       damageType == _DamageType.magic
@@ -1834,6 +2045,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     _coins += target.definition.rewardCoins;
+    _spawnFloatingText(
+      target.position + Vector2(0, -16),
+      '+${target.definition.rewardCoins}',
+      const Color(0xFFE4C67A),
+    );
     if (target.definition.kind == EnemyKind.corruptedKnight ||
         target.definition.kind == EnemyKind.graveGuard ||
         target.definition.kind == EnemyKind.warlock ||
@@ -1846,6 +2062,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _consumeRemainingEnemy('defeat');
     _enemies.remove(target);
     _spawnImpact(target.position, const Color(0x88FFD27A), 22, 0.24);
+    _spawnImpact(target.position, const Color(0x66FFFFFF), 14, 0.18);
     return true;
   }
 
@@ -2476,6 +2693,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         _impacts.removeAt(index);
       }
     }
+    for (var index = _floatingTexts.length - 1; index >= 0; index -= 1) {
+      final text = _floatingTexts[index];
+      text.age += dt;
+      if (text.age >= text.lifetime) {
+        _floatingTexts.removeAt(index);
+      }
+    }
   }
 
   void _checkWaveResolution() {
@@ -2502,7 +2726,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _nextFronts = const [];
       _statusText = _isSiegeMode
           ? 'Siege clear! 모든 공세를 막아냈습니다.'
-          : '스테이지 클리어! 다음 전장으로 진격하세요.';
+          : 'STAGE 클리어! 다음 전장으로 진격하세요.';
       audioService.play(AudioEvent.stageClear);
       _syncSession();
       return;
@@ -2514,9 +2738,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _recoveryTimer = finishedCycle?.recoverySeconds ?? 30;
       _activeFronts = const [];
       _nextFronts = _nextFrontsForIndex(_currentWaveIndex);
-      _statusText = 'Cycle ${_currentWaveIndex + 1} 방어 성공! 정비 후 다음 공세를 준비하세요.';
+      _statusText = 'WAVE ${_currentWaveIndex + 1} 방어 성공! 다음 WAVE를 준비하세요.';
     } else {
-      _statusText = 'Wave ${_currentWaveIndex + 1} 방어 성공! 다음 Wave를 준비하세요.';
+      _statusText = 'WAVE ${_currentWaveIndex + 1} 방어 성공! 다음 WAVE를 준비하세요.';
     }
     audioService.play(AudioEvent.waveClear);
     _syncSession();
@@ -3225,6 +3449,141 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return path;
   }
 
+  void _drawRoadTiles(Canvas canvas) {
+    final tileGrid = stage.tileGrid;
+    if (tileGrid == null || tileGrid.isEmpty) {
+      return;
+    }
+    final roadCells = _roadCellSet();
+    if (roadCells.isEmpty) {
+      return;
+    }
+    final activeCells = _roadCellSetForFronts(_activeFronts);
+    final nextCells = _roadCellSetForFronts(_nextFronts);
+
+    void drawRouteWash(Path path, Color color, double alpha) {
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color.withValues(alpha: alpha)
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = _tileSize * 0.50,
+      );
+    }
+
+    for (final entry in _pathRenderPaths.entries) {
+      final isActive = _activeFronts.contains(entry.key);
+      final isNext = !isActive && _nextFronts.contains(entry.key);
+      if (isActive || isNext) {
+        drawRouteWash(
+          entry.value,
+          isActive ? const Color(0xFFFFD27A) : const Color(0xFFB5DAFF),
+          isActive ? 0.12 : 0.07,
+        );
+      }
+    }
+
+    for (final key in roadCells) {
+      final parts = key.split(':');
+      if (parts.length != 2) {
+        continue;
+      }
+      final col = int.tryParse(parts[0]);
+      final row = int.tryParse(parts[1]);
+      if (col == null || row == null) {
+        continue;
+      }
+      if (row < 0 ||
+          row >= tileGrid.length ||
+          col < 0 ||
+          col >= tileGrid[row].length) {
+        continue;
+      }
+      final dst = Rect.fromLTWH(
+        _gridOrigin.x + (col * _tileSize),
+        _gridOrigin.y + (row * _tileSize),
+        _tileSize,
+        _tileSize,
+      );
+      final isActive = activeCells.contains(key);
+      final isNext = !isActive && nextCells.contains(key);
+      final baseAlpha = isActive ? 0.18 : (isNext ? 0.13 : 0.085);
+      final center = dst.center;
+      final markRect = Rect.fromCenter(
+        center: center,
+        width: _tileSize * 0.58,
+        height: _tileSize * 0.42,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(markRect, Radius.circular(_tileSize * 0.18)),
+        Paint()..color = const Color(0xFF8B6A3C).withValues(alpha: baseAlpha),
+      );
+
+      final seed = (col * 37) + (row * 61);
+      for (var i = 0; i < 2; i += 1) {
+        final dx = (((seed + (i * 17)) % 17) - 8) / 17 * _tileSize * 0.28;
+        final dy = (((seed + (i * 23)) % 19) - 9) / 19 * _tileSize * 0.22;
+        canvas.drawCircle(
+          Offset(center.dx + dx, center.dy + dy),
+          _tileSize * (0.035 + (i * 0.012)),
+          Paint()..color = const Color(0xFFC6A064).withValues(alpha: baseAlpha),
+        );
+      }
+    }
+  }
+
+  Set<String> _roadCellSet() {
+    final cells = <String>{};
+    if (stage.spawnRoutes.isNotEmpty) {
+      for (final route in stage.spawnRoutes) {
+        for (final cell in _routeCellsForSpawnRoute(route)) {
+          cells.add(RoadTileResolver.key(cell[0], cell[1]));
+        }
+      }
+      return cells;
+    }
+    final pathsByDirection =
+        stage.pathsByDirection ?? const <SpawnDirection, List<List<int>>>{};
+    for (final route in pathsByDirection.values) {
+      for (final cell in route) {
+        cells.add(RoadTileResolver.key(cell[0], cell[1]));
+      }
+    }
+    return cells;
+  }
+
+  Set<String> _roadCellSetForFronts(List<SpawnDirection> fronts) {
+    if (fronts.isEmpty) {
+      return const {};
+    }
+    final frontSet = fronts.toSet();
+    final cells = <String>{};
+    if (stage.spawnRoutes.isNotEmpty) {
+      for (final route in stage.spawnRoutes) {
+        if (!frontSet.contains(route.direction)) {
+          continue;
+        }
+        for (final cell in _routeCellsForSpawnRoute(route)) {
+          cells.add(RoadTileResolver.key(cell[0], cell[1]));
+        }
+      }
+      return cells;
+    }
+    final pathsByDirection =
+        stage.pathsByDirection ?? const <SpawnDirection, List<List<int>>>{};
+    for (final entry in pathsByDirection.entries) {
+      if (!frontSet.contains(entry.key)) {
+        continue;
+      }
+      for (final cell in entry.value) {
+        cells.add(RoadTileResolver.key(cell[0], cell[1]));
+      }
+    }
+    return cells;
+  }
+
   void _drawPath(Canvas canvas) {
     if (_pathPoints.isEmpty && _pathRenderPaths.isEmpty) {
       return;
@@ -3593,13 +3952,21 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       HeroKind.mage => _DamageType.magic,
       _ => _DamageType.physical,
     };
-    final baseDamage = hero.currentDamage * _heroMetaDamageMultiplier(hero);
+    final baseDamage =
+        _heroCurrentDamage(hero) * _heroMetaDamageMultiplier(hero);
     final adjustedDamage = _adjustDamageForEnemy(
       target: target,
       damage: baseDamage,
       damageType: damageType,
     );
     target.hitPoints -= adjustedDamage;
+    _recordEnemyDamage(
+      target,
+      adjustedDamage,
+      damageType == _DamageType.magic
+          ? hero.definition.color
+          : const Color(0xFFFFF1CC),
+    );
 
     switch (hero.definition.kind) {
       case HeroKind.mage:
@@ -3624,6 +3991,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
               damageType: _DamageType.magic,
             );
             splash.hitPoints -= splashDamage;
+            _recordEnemyDamage(splash, splashDamage, hero.definition.color);
             _spawnImpact(splash.position, hero.definition.color, 16, 0.14);
             _resolveEnemyDefeatIfNeeded(splash);
           }
@@ -3645,6 +4013,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
             target.hitPoints / target.definition.hitPoints <=
                 (0.28 + (metaUpgrades.frostFocusLevel * 0.01))) {
           target.hitPoints -= target.definition.hitPoints * 0.18;
+          _recordEnemyDamage(
+            target,
+            target.definition.hitPoints * 0.18,
+            const Color(0xFFFFD1D6),
+          );
           target.staggerTimer = math.max(target.staggerTimer, 0.14);
           _spawnImpact(target.position, const Color(0xFFFFD1D6), 26, 0.18);
         }
@@ -4228,6 +4601,19 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         width: visual.baseSize,
         height: visual.baseSize,
       );
+      if (_isFastEnemy(enemy.definition.kind)) {
+        final trailStep = _directionOffset(enemy.currentDirection);
+        for (var i = 1; i <= 2; i += 1) {
+          canvas.drawCircle(
+            (enemy.position - (trailStep * (i * 7))).toOffset(),
+            visual.baseSize * (0.22 - (i * 0.04)),
+            Paint()
+              ..color = visual.primaryColor.withValues(
+                alpha: 0.16 - (i * 0.05),
+              ),
+          );
+        }
+      }
       if (sprite != null) {
         _drawSprite(
           canvas,
@@ -4246,6 +4632,24 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           fillColor: visual.primaryColor,
           accentColor: visual.accentColor,
         );
+      }
+      if (enemy.hitFlashTimer > 0) {
+        final flash = (enemy.hitFlashTimer / 0.14).clamp(0.0, 1.0);
+        canvas.drawCircle(
+          enemy.position.toOffset(),
+          visual.baseSize * 0.34,
+          Paint()..color = Colors.white.withValues(alpha: flash * 0.24),
+        );
+        if (_isArmoredEnemy(enemy.definition.kind)) {
+          canvas.drawCircle(
+            enemy.position.toOffset(),
+            visual.baseSize * 0.42,
+            Paint()
+              ..color = const Color(0xFFA7C5FF).withValues(alpha: flash * 0.50)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.4,
+          );
+        }
       }
 
       if (enemy.definition.kind == EnemyKind.shieldInfantry) {
@@ -4408,6 +4812,28 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
+  bool _isFastEnemy(EnemyKind kind) {
+    return kind == EnemyKind.scout ||
+        kind == EnemyKind.raider ||
+        kind == EnemyKind.wolfScout;
+  }
+
+  bool _isArmoredEnemy(EnemyKind kind) {
+    return kind == EnemyKind.shieldInfantry ||
+        kind == EnemyKind.corruptedKnight ||
+        kind == EnemyKind.graveGuard ||
+        kind == EnemyKind.bastionOverlord;
+  }
+
+  Vector2 _directionOffset(SpawnDirection direction) {
+    return switch (direction) {
+      SpawnDirection.north => Vector2(0, -1),
+      SpawnDirection.south => Vector2(0, 1),
+      SpawnDirection.east => Vector2(1, 0),
+      SpawnDirection.west => Vector2(-1, 0),
+    };
+  }
+
   void _drawPulses(Canvas canvas) {
     for (final pulse in _pulses) {
       final t = (pulse.age / pulse.lifetime).clamp(0.0, 1.0);
@@ -4432,6 +4858,32 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           ..color = impact.color.withValues(alpha: (1 - t) * 0.7)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.5,
+      );
+    }
+  }
+
+  void _drawFloatingTexts(Canvas canvas) {
+    for (final text in _floatingTexts) {
+      final t = (text.age / text.lifetime).clamp(0.0, 1.0);
+      final position = text.origin + Vector2(0, -18 * t);
+      final painter = TextPainter(
+        text: TextSpan(
+          text: text.text,
+          style: TextStyle(
+            color: text.color.withValues(alpha: (1 - t).clamp(0.0, 1.0)),
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            shadows: const [Shadow(color: Color(0xAA000000), blurRadius: 3)],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      painter.paint(
+        canvas,
+        Offset(
+          position.x - (painter.width / 2),
+          position.y - (painter.height / 2),
+        ),
       );
     }
   }
@@ -4501,6 +4953,46 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         center: center.clone(),
         color: color,
         maxRadius: maxRadius,
+        lifetime: lifetime,
+      ),
+    );
+  }
+
+  void _recordEnemyDamage(
+    _Enemy enemy,
+    double damage,
+    Color color, {
+    bool showNumber = true,
+  }) {
+    if (damage <= 0) {
+      return;
+    }
+    enemy.hitFlashTimer = math.max(enemy.hitFlashTimer, 0.14);
+    enemy.lastDamageTaken = damage;
+    if (showNumber && damage >= 3 && _floatingTexts.length < 48) {
+      _spawnFloatingText(
+        enemy.position + Vector2(0, -18),
+        damage.round().toString(),
+        color,
+        lifetime: 0.52,
+      );
+    }
+  }
+
+  void _spawnFloatingText(
+    Vector2 origin,
+    String text,
+    Color color, {
+    double lifetime = 0.62,
+  }) {
+    if (_floatingTexts.length >= 64) {
+      _floatingTexts.removeAt(0);
+    }
+    _floatingTexts.add(
+      _FloatingTextVisual(
+        origin: origin.clone(),
+        text: text,
+        color: color,
         lifetime: lifetime,
       ),
     );
@@ -4744,7 +5236,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       builtTowerKinds: _builtTowerKinds,
       statusText: _statusText,
       actNumber: stage.actNumber ?? (((stage.number - 1) ~/ 5) + 1),
-      loopLabel: _isSiegeMode ? 'Cycle' : 'Wave',
+      loopLabel: 'WAVE',
       activeFronts: _activeFronts.map((front) => _frontLabel([front])).toList(),
       nextFronts: _nextFronts.map((front) => _frontLabel([front])).toList(),
       recoverySecondsRemaining: _recoveryTimer,
@@ -4822,13 +5314,19 @@ class _HeroPlacement {
 }
 
 class _TowerPlacement {
-  _TowerPlacement({required this.definition, required this.position})
-    : totalSpent = definition.cost,
-      hitPoints = 120 + (definition.cost * 0.65);
+  _TowerPlacement({
+    required this.definition,
+    required this.position,
+    this.initialLevel = 1,
+    int? totalSpent,
+  }) : level = initialLevel,
+       totalSpent = totalSpent ?? definition.cost,
+       hitPoints = 120 + (definition.cost * 0.65) + ((initialLevel - 1) * 55);
 
   final TowerDefinition definition;
   final Vector2 position;
-  int level = 1;
+  final int initialLevel;
+  int level;
   int totalSpent;
   double hitPoints;
   double cooldownRemaining = 0;
@@ -4915,14 +5413,18 @@ class _TowerPlacement {
 }
 
 class _BarrierPlacement {
-  _BarrierPlacement({required this.definition, required this.position})
-    : hitPoints = definition.hitPoints.toDouble();
+  _BarrierPlacement({
+    required this.definition,
+    required this.position,
+    required this.maxHitPoints,
+    required this.repairCost,
+  }) : hitPoints = maxHitPoints;
 
   final BarrierDefinition definition;
   final Vector2 position;
+  final double maxHitPoints;
+  final int repairCost;
   double hitPoints;
-
-  double get maxHitPoints => definition.hitPoints.toDouble();
 }
 
 class _Enemy {
@@ -4995,6 +5497,8 @@ class _Enemy {
   double towerAttackCooldown = 0;
   double towerAttackVisualTimer = 0;
   double heroMarkedTimer = 0;
+  double hitFlashTimer = 0;
+  double lastDamageTaken = 0;
 
   // Animation
   int animFrame = 0;
@@ -5084,6 +5588,9 @@ class _Enemy {
     if (heroMarkedTimer > 0) {
       heroMarkedTimer -= dt;
     }
+    if (hitFlashTimer > 0) {
+      hitFlashTimer -= dt;
+    }
   }
 
   double tickBurn(double dt) {
@@ -5108,6 +5615,7 @@ class _Enemy {
     final staggerMultiplier = staggerTimer > 0 ? 0.15 : 1.0;
     var remainingDistance =
         definition.speed *
+        _enemyMoveSpeedMultiplier *
         slowMultiplier *
         hasteMultiplier *
         staggerMultiplier *
@@ -5226,6 +5734,21 @@ class _ImpactVisual {
   final Vector2 center;
   final Color color;
   final double maxRadius;
+  final double lifetime;
+  double age = 0;
+}
+
+class _FloatingTextVisual {
+  _FloatingTextVisual({
+    required this.origin,
+    required this.text,
+    required this.color,
+    required this.lifetime,
+  });
+
+  final Vector2 origin;
+  final String text;
+  final Color color;
   final double lifetime;
   double age = 0;
 }

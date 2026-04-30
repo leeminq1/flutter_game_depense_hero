@@ -1,7 +1,10 @@
 import 'package:depense_game/game/models/hero_definition.dart';
+import 'package:depense_game/game/models/run_offer_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:flutter/foundation.dart';
+
+enum RunOfferFlowState { awaitingRoll, rolling, awaitingChoice, applied }
 
 class TowerBranchChoiceDetails {
   const TowerBranchChoiceDetails({
@@ -114,6 +117,10 @@ class GameSessionController extends ChangeNotifier {
   double recoverySecondsRemaining = 0;
   bool recoveryActive = false;
   String battleState = 'prep';
+  int runOfferSeed = 0;
+  RunOfferFlowState runOfferFlowState = RunOfferFlowState.applied;
+  List<RunOfferDefinition> pendingRunOffers = const [];
+  List<RunOfferDefinition> activeRunOffers = const [];
 
   int _remainingEnemies = 0;
   double _speedMultiplier = 1.0;
@@ -163,6 +170,10 @@ class GameSessionController extends ChangeNotifier {
     recoverySecondsRemaining = 0;
     recoveryActive = false;
     battleState = 'prep';
+    runOfferSeed = 0;
+    runOfferFlowState = RunOfferFlowState.applied;
+    pendingRunOffers = const [];
+    activeRunOffers = const [];
     _speedMultiplier = 1.0;
     _remainingEnemies = 0;
     stageCleared = false;
@@ -171,6 +182,64 @@ class GameSessionController extends ChangeNotifier {
     currentWave = 0;
     _selectionVersion = 0;
     statusText = '아래 카드를 탭해서 건물을 배치하세요.';
+    notifyListeners();
+  }
+
+  RunModifierSet get runModifiers => RunModifierSet(activeRunOffers);
+
+  bool get hasPendingRunOffer =>
+      runOfferFlowState == RunOfferFlowState.awaitingChoice &&
+      pendingRunOffers.isNotEmpty;
+
+  bool get mustResolveRunOffer =>
+      runOfferFlowState != RunOfferFlowState.applied;
+
+  void setRunOfferSeed(int seed) {
+    if (runOfferSeed == seed) {
+      return;
+    }
+    runOfferSeed = seed;
+    notifyListeners();
+  }
+
+  void prepareRunOfferRoll() {
+    if (runOfferFlowState == RunOfferFlowState.awaitingRoll &&
+        pendingRunOffers.isEmpty) {
+      return;
+    }
+    runOfferFlowState = RunOfferFlowState.awaitingRoll;
+    pendingRunOffers = const [];
+    notifyListeners();
+  }
+
+  void setRunOfferRolling() {
+    if (runOfferFlowState == RunOfferFlowState.rolling) {
+      return;
+    }
+    runOfferFlowState = RunOfferFlowState.rolling;
+    pendingRunOffers = const [];
+    notifyListeners();
+  }
+
+  void setPendingRunOffers(List<RunOfferDefinition> offers) {
+    final nextOffers = List<RunOfferDefinition>.unmodifiable(offers);
+    if (_offerListsEqual(pendingRunOffers, nextOffers) &&
+        runOfferFlowState == RunOfferFlowState.awaitingChoice) {
+      return;
+    }
+    pendingRunOffers = nextOffers;
+    runOfferFlowState = RunOfferFlowState.awaitingChoice;
+    notifyListeners();
+  }
+
+  void acceptRunOffer(RunOfferDefinition offer) {
+    final nextActive = List<RunOfferDefinition>.unmodifiable([
+      ...activeRunOffers,
+      offer,
+    ]);
+    activeRunOffers = nextActive;
+    pendingRunOffers = const [];
+    runOfferFlowState = RunOfferFlowState.applied;
     notifyListeners();
   }
 
@@ -471,5 +540,20 @@ class GameSessionController extends ChangeNotifier {
         a.abilityLabel == b.abilityLabel &&
         a.abilityDescription == b.abilityDescription &&
         a.canUpgrade == b.canUpgrade;
+  }
+
+  bool _offerListsEqual(
+    List<RunOfferDefinition> a,
+    List<RunOfferDefinition> b,
+  ) {
+    if (a.length != b.length) {
+      return false;
+    }
+    for (var i = 0; i < a.length; i += 1) {
+      if (a[i].id != b[i].id) {
+        return false;
+      }
+    }
+    return true;
   }
 }

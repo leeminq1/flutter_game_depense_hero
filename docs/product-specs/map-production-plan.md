@@ -152,14 +152,23 @@ Future-facing option:
 
 ## Telegraph Rules
 
-Before a cycle begins, active fronts must be visible.
+Before a wave begins, active fronts must be visible.
 
 Telegraph methods:
 
 - front-edge glow
 - path tint pulse
+- subtle trampled-grass, dust, and footprint marks over authored route cells
 - HUD front icons
-- next-cycle preview panel
+- next-wave preview panel
+
+Path-readability rule:
+
+- route marks are a visual readability layer only
+- they must use existing `spawnRoutes` / `pathsByDirection` route data
+- they must not change build legality, enemy routing, citadel position, or stage objectives
+- active and next fronts may add only a low-opacity tint over those marks
+- full brown road-tile fills should be avoided unless the art pass makes them read as intentional terrain rather than a dirty grid
 
 ## Camera Rules
 
@@ -196,7 +205,7 @@ Rules:
 
 - prefer handcrafted obstacle layouts over unrestricted random generation
 - vary castle placement only through approved patterns
-- vary front pressure through authored cycle order
+- vary front pressure through authored wave order
 - keep map identity tied to stage learning goals, not only to enemy stat scaling
 
 Working companion docs:

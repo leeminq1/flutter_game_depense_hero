@@ -20,26 +20,27 @@ The intended emotional arc is:
 
 One playable battle is one `Siege`.
 
-One siege uses this flow:
+One stage uses this flow:
 
 1. `Preparation Phase`
    - battlefield preview
-   - active-front preview for cycle 1
+   - active-front preview for Wave 1
+   - one stage-level dice offer roll
   - initial wall, gate, and tower planning with the chosen hero already defending beside the citadel
-2. `Assault Cycle`
+2. `Wave`
    - one or more fronts activate
    - enemies spawn in groups assigned to specific fronts
    - enemies may breach player-built barriers if all routes are sealed
 3. `Recovery Window`
-   - short controlled pause between cycles
-   - cycle reward payout
+   - short controlled pause between waves
+   - wave reward payout
    - telegraph of the next active fronts
    - normal-cost rebuilding and barrier repair
 4. `Escalation`
    - more simultaneous fronts
    - more elite and support overlap
 5. `Final Breach`
-   - final cycle of the siege
+   - final wave of the stage
    - may be a synchronized four-front assault or a boss-led siege
 6. `Result`
    - siege clear or defeat
@@ -50,7 +51,7 @@ One siege uses this flow:
 
 Siege clear:
 
-- all assault cycles are cleared
+- all waves are cleared
 - all spawned enemies are resolved
 - the citadel is still alive
 
@@ -120,11 +121,30 @@ Candidate commands:
 
 These exist to save a collapsing front, not to replace tower planning.
 
-## Assault Cycle Counts
+## Run Offer Rule
+
+Each stage run presents one light roguelike dice-offer choice before Wave 1.
+
+Rules:
+
+- the player first taps `Roll` to reveal the offer set
+- the player must choose exactly `1 of 3` offers before starting Wave 1
+- offers last only for the current stage run
+- retrying a stage creates a fresh offer seed and new offer sequence
+- offers may modify tower cost, tower range, tower damage, tower cooldown, barrier cost, barrier HP, barrier repair cost, first-build tower level, or chosen-hero damage
+- offers must not randomize enemy paths, citadel position, stage objectives, or front activation order
+
+Design purpose:
+
+- create replayable build variation without replacing the tower / wall / hero build tabs
+- keep debugging feasible by recording a run seed in session state
+- make the system feel like a deliberate dice roll while preserving the Citadel Siege fortress-planning identity
+
+## Wave Counts
 
 Baseline per act:
 
-| Act | Cycles Per Siege | Max Simultaneous Fronts |
+| Act | Waves Per Stage | Max Simultaneous Fronts |
 | --- | --- | --- |
 | 1 | 3-4 | 2 |
 | 2 | 4 | 3 |
@@ -141,12 +161,12 @@ Default recovery window length:
 
 Player-facing early-start rule:
 
-- the player may manually start the next cycle immediately once all enemies from the current cycle are resolved
+- the player may manually start the next wave immediately once all enemies from the current wave are resolved
 - debug and QA tools may still `skip recovery` immediately
 
 Recovery window responsibilities:
 
-- payout cycle reward
+- payout wave reward
 - preview next active fronts
 - allow normal-cost building and upgrading
 - let the player reposition mentally before the next push
@@ -155,11 +175,12 @@ Recovery window responsibilities:
 
 The redesign must preserve these readability rules:
 
-- active fronts are telegraphed before the cycle starts
+- active fronts are telegraphed before the wave starts
 - front identity is color-coded and spatially obvious
 - enemy supports must remain readable in crowded four-front scenes
 - citadel damage events must be unmistakable
 - kill rewards should visibly flow back to the citadel automatically
+- enemy hits and deaths should use lightweight flashes, impact rings, and reward text before adding heavier animation assets
 
 ## First-Playable Acceptance
 
