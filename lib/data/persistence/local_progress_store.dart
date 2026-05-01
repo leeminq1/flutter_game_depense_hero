@@ -1,4 +1,6 @@
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
+import 'dart:math' as math;
+
 import 'package:depense_game/data/persistence/game_collection_models.dart';
 import 'package:depense_game/data/persistence/progress_store.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
@@ -235,7 +237,8 @@ class LocalProgressStore implements ProgressStore {
         .stageNumberEqualTo(stageNumber)
         .findFirst();
     final previousStars = existingRecord?.stars ?? 0;
-    final isFirstClear = existingRecord?.firstClearedAt == null;
+    final isCleared = starsAwarded > 0;
+    final isFirstClear = isCleared && existingRecord?.firstClearedAt == null;
     final newStarsEarned = (starsAwarded - previousStars).clamp(0, 3);
     final stageBandRewardMultiplier = switch (stageNumber) {
       >= 6 && <= 10 => 1.12,
@@ -276,11 +279,26 @@ class LocalProgressStore implements ProgressStore {
       final record =
           existingRecord ?? (StageProgressRecord()..stageNumber = stageNumber);
       record.unlocked = true;
-      record.stars = starsAwarded > 0 ? starsAwarded : record.stars;
-      record.firstClearedAt ??= DateTime.now();
-      record.lastClearedAt = DateTime.now();
+      record.stars = starsAwarded > 0
+          ? math.max(starsAwarded, record.stars)
+          : record.stars;
+      if (isCleared) {
+        record.firstClearedAt ??= DateTime.now();
+        record.lastClearedAt = DateTime.now();
+      }
       totalStars = record.stars;
       await isar.stageProgressRecords.put(record);
+
+      if (isCleared && stageNumber < totalStages) {
+        final nextRecord =
+            await isar.stageProgressRecords
+                .filter()
+                .stageNumberEqualTo(stageNumber + 1)
+                .findFirst() ??
+            (StageProgressRecord()..stageNumber = stageNumber + 1);
+        nextRecord.unlocked = true;
+        await isar.stageProgressRecords.put(nextRecord);
+      }
     });
 
     int? unlockedNextStage;
@@ -492,6 +510,10 @@ class LocalProgressStore implements ProgressStore {
     required List<MetaUpgradeSnapshot> metaUpgrades,
   }) {
     if (stage.number == 1) {
+      return const _UnlockCheck(unlocked: true, lockReason: null);
+    }
+    final existingRecord = byStage[stage.number];
+    if (existingRecord?.unlocked == true) {
       return const _UnlockCheck(unlocked: true, lockReason: null);
     }
 

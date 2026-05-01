@@ -23,7 +23,7 @@ Required work:
 
 Exit criteria:
 
-- one siege can resolve with north and west fronts
+- one Stage can resolve with authored north and east fronts without spawning from the citadel quadrant
 
 ## Milestone 2: Battlefield Conversion
 
@@ -36,7 +36,7 @@ Required work:
 
 Exit criteria:
 
-- Siege 1-3 run on the new battlefield
+- Stage 1-3 run on the new battlefield without random dice offers
 
 ## Milestone 3: Art And Rendering Bridge
 
@@ -51,11 +51,12 @@ Exit criteria:
 
 - at least one enemy family renders correctly in all directions
 
-## Milestone 4: Act 1 Playable
+## Milestone 4: Stage 1-5 Fun Validation
 
 Required work:
 
-- Siege 1-5 authored
+- Stage 1-5 authored around fortress-design lessons
+- Stage 4 design-card dice implemented, then repeated on the `Stage 4, 7, 10...` cadence
 - onboarding prompts implemented
 - recovery windows and rewards functioning
 - persistence updated for new result flow
@@ -63,9 +64,10 @@ Required work:
 
 Exit criteria:
 
-- a full Act 1 can be played and cleared
+- Stage 1-5 can be played and cleared
 - a failed run still returns valid persistent progress
 - the run is playable without Command Charges
+- player-facing UI uses Stage/Wave terminology
 
 ## Milestone 5: Web QA Harness
 
@@ -74,7 +76,7 @@ Required work:
 - make Flutter Web run cleanly through `web-server`
 - add a web-safe persistence path or debug-only in-memory store for browser QA
 - add a QA overlay path for automation
-- expose readable state text for cycle, fronts, gold, citadel HP, and selected buildable
+- expose readable state text for wave, fronts, gold, citadel HP, and selected buildable
 - capture the required portrait-phone and portrait-tablet screenshots
 
 Exit criteria:
@@ -94,7 +96,7 @@ Required work:
 
 Exit criteria:
 
-- Siege 30 final breach completes
+- Stage 30 final breach completes
 
 ## Required Verification
 

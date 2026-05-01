@@ -42,6 +42,8 @@ class RunOfferDefinition {
     required this.id,
     required this.title,
     required this.description,
+    required this.effectLine,
+    required this.operationLine,
     required this.rarity,
     required this.modifiers,
   });
@@ -49,6 +51,8 @@ class RunOfferDefinition {
   final String id;
   final String title;
   final String description;
+  final String effectLine;
+  final String operationLine;
   final RunOfferRarity rarity;
   final List<RunModifier> modifiers;
 }
@@ -190,9 +194,11 @@ class RunOfferGenerator {
 
   static List<RunOfferDefinition> _pool(HeroKind chosenHeroKind) => [
     const RunOfferDefinition(
-      id: 'archer_range_15',
-      title: '장궁 훈련',
-      description: '이번 STAGE 동안 궁수 사거리 +15%',
+      id: 'archer_wall_line',
+      title: '성벽 뒤 궁수 라인',
+      description: '성벽으로 늦춘 적을 궁수 사거리 안에서 오래 처리합니다.',
+      effectLine: '궁수 사거리 +15%',
+      operationLine: '성벽 뒤 궁수 라인',
       rarity: RunOfferRarity.common,
       modifiers: [
         RunModifier(
@@ -202,23 +208,27 @@ class RunOfferGenerator {
         ),
       ],
     ),
-    const RunOfferDefinition(
-      id: 'stone_wall_cost_20',
-      title: '석공 할인',
-      description: '이번 STAGE 동안 돌 성벽 비용 -20%',
+    RunOfferDefinition(
+      id: 'hero_guard_anchor_${chosenHeroKind.name}',
+      title: '영웅 방어 거점',
+      description: '영웅을 성벽 뒤나 교차로에 세워 누수를 더 빠르게 정리합니다.',
+      effectLine: '선택 영웅 피해 +15%',
+      operationLine: '영웅 중심 방어 위치',
       rarity: RunOfferRarity.common,
       modifiers: [
         RunModifier(
-          type: RunModifierType.barrierCostMultiplier,
-          barrierKind: BarrierKind.stoneWall,
-          multiplier: 0.80,
+          type: RunModifierType.heroDamageMultiplier,
+          heroKind: chosenHeroKind,
+          multiplier: 1.15,
         ),
       ],
     ),
     const RunOfferDefinition(
       id: 'mage_first_level',
-      title: '준비된 오벨리스크',
-      description: '처음 짓는 마법사 탑이 Lv.2로 시작',
+      title: '교차로 오벨리스크',
+      description: '교차로 근처 첫 마법사 탑으로 장갑 적을 빨리 녹입니다.',
+      effectLine: '첫 마법사 탑 Lv.2',
+      operationLine: '교차로 마법사',
       rarity: RunOfferRarity.rare,
       modifiers: [
         RunModifier(
@@ -228,42 +238,26 @@ class RunOfferGenerator {
         ),
       ],
     ),
-    RunOfferDefinition(
-      id: 'hero_damage_no_revive_${chosenHeroKind.name}',
-      title: '영웅의 각오',
-      description: '영웅 피해량 +20%, 대신 부활 불가',
-      rarity: RunOfferRarity.rare,
-      modifiers: [
-        RunModifier(
-          type: RunModifierType.heroDamageMultiplier,
-          heroKind: chosenHeroKind,
-          multiplier: 1.20,
-        ),
-        const RunModifier(type: RunModifierType.disableHeroRevive),
-      ],
-    ),
     const RunOfferDefinition(
-      id: 'gate_hp_repair_trade',
-      title: '두꺼운 성문',
-      description: '성문 HP +40%, 수리 비용 +15%',
-      rarity: RunOfferRarity.rare,
+      id: 'wall_hp_network',
+      title: '버티는 성벽망',
+      description: '얇은 성벽 라인도 더 오래 버텨 타워 사거리를 살립니다.',
+      effectLine: '모든 성벽 HP +20%',
+      operationLine: '두꺼운 성벽 라인',
+      rarity: RunOfferRarity.common,
       modifiers: [
         RunModifier(
           type: RunModifierType.barrierHitPointMultiplier,
-          barrierKind: BarrierKind.gate,
-          multiplier: 1.40,
-        ),
-        RunModifier(
-          type: RunModifierType.barrierRepairCostMultiplier,
-          barrierKind: BarrierKind.gate,
-          multiplier: 1.15,
+          multiplier: 1.20,
         ),
       ],
     ),
     const RunOfferDefinition(
-      id: 'barracks_damage_15',
-      title: '숙련 경비대',
-      description: '이번 STAGE 동안 병영 피해량 +15%',
+      id: 'barracks_gate_hold',
+      title: '게이트 경비대',
+      description: '병영을 성문 근처에 세워 빠른 적을 붙잡는 작전입니다.',
+      effectLine: '병영 피해 +15%',
+      operationLine: '게이트 병영 홀드',
       rarity: RunOfferRarity.common,
       modifiers: [
         RunModifier(
@@ -274,54 +268,17 @@ class RunOfferGenerator {
       ],
     ),
     const RunOfferDefinition(
-      id: 'frost_cooldown_10',
-      title: '냉기 집중',
-      description: '이번 STAGE 동안 서리 제단 공격 속도 +10%',
+      id: 'frost_chokepoint',
+      title: '서리 교차로',
+      description: '서리 제단을 적이 겹치는 길목에 두면 전선이 안정됩니다.',
+      effectLine: '서리 제단 공격속도 +12%',
+      operationLine: '서리 길목 제어',
       rarity: RunOfferRarity.common,
       modifiers: [
         RunModifier(
           type: RunModifierType.towerCooldownMultiplier,
           towerKind: TowerKind.frostShrine,
-          multiplier: 0.90,
-        ),
-      ],
-    ),
-    const RunOfferDefinition(
-      id: 'reinforced_wall_hp_25',
-      title: '철제 보강',
-      description: '이번 STAGE 동안 보강 성벽 HP +25%',
-      rarity: RunOfferRarity.common,
-      modifiers: [
-        RunModifier(
-          type: RunModifierType.barrierHitPointMultiplier,
-          barrierKind: BarrierKind.reinforcedWall,
-          multiplier: 1.25,
-        ),
-      ],
-    ),
-    const RunOfferDefinition(
-      id: 'ballista_damage_18',
-      title: '공성 화살',
-      description: '이번 STAGE 동안 발리스타 피해량 +18%',
-      rarity: RunOfferRarity.rare,
-      modifiers: [
-        RunModifier(
-          type: RunModifierType.towerDamageMultiplier,
-          towerKind: TowerKind.ballista,
-          multiplier: 1.18,
-        ),
-      ],
-    ),
-    const RunOfferDefinition(
-      id: 'emberkeep_cost_15',
-      title: '불씨 보급',
-      description: '이번 STAGE 동안 화염 보루 비용 -15%',
-      rarity: RunOfferRarity.common,
-      modifiers: [
-        RunModifier(
-          type: RunModifierType.towerCostMultiplier,
-          towerKind: TowerKind.emberkeep,
-          multiplier: 0.85,
+          multiplier: 0.88,
         ),
       ],
     ),

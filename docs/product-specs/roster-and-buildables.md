@@ -29,7 +29,13 @@ The fortress-builder layer adds four barrier buildables:
 
 Heroes are chosen before a run begins. The selected hero persists across next-stage flow, but retry/new-run flows ask the player to choose again.
 
-During a siege, the chosen hero is placed automatically beside the citadel for free. If the hero dies, the `Hero` tab exposes one free revive during a recovery window; after that revive is used, the hero is unavailable for the rest of the stage.
+During a Stage, the chosen hero is placed automatically beside the citadel for free. If the hero dies, the `Hero` tab exposes one free revive during Wave or recovery play; after that revive is used, the hero is unavailable for the rest of the Stage.
+
+Hero defense-position rules:
+
+- the player may change the hero defense position during preparation and recovery only
+- during Wave play, the hero automatically attacks within its guard area and returns to the defense position
+- hero auras are local to nearby defenses so hero placement supports fortress design instead of becoming a global stat choice
 
 | Hero | Unlock Stage | Primary Job |
 | --- | --- | --- |
@@ -40,6 +46,16 @@ During a siege, the chosen hero is placed automatically beside the citadel for f
 | Paladin | Stage 20 | expensive frontline anchor and elite duelist |
 
 All five heroes are available for selection from the beginning. Stage unlocks no longer gate hero choice.
+
+First local-aura targets:
+
+| Hero | Local Aura Direction |
+| --- | --- |
+| Knight | nearby walls take less damage or gain effective HP |
+| Archer | nearby Archer Towers gain a small range bonus |
+| Mage | nearby Frost Shrines / Mage Obelisks improve control duration |
+| Ninja | nearby towers deal bonus damage to fast rerouting enemies |
+| Paladin | nearby barracks defenders and the hero take less attrition |
 
 ## Buildable Jobs In Citadel Siege
 

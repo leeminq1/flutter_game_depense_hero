@@ -11,7 +11,7 @@ Do not jump directly to a fully abstract `FrontDefinition` engine.
 First bridge:
 
 - keep the current codebase understandable
-- add the minimum new contracts needed for multi-front sieges
+- add the minimum new contracts needed for multi-front Stages
 
 ## Required Enums
 
@@ -27,7 +27,7 @@ enum TileType {
 }
 ```
 
-## Required Siege Contracts
+## Required Stage/Wave Contracts
 
 ```dart
 class AssaultCycleDefinition {
@@ -49,10 +49,10 @@ class FrontSpawnGroupDefinition {
 
 ## Siege Definition Bridge
 
-Recommended first-pass siege shape:
+Recommended first-pass shape keeps the player-facing `StageDefinition` name:
 
 ```dart
-class SiegeDefinition {
+class StageDefinition {
   final int number;
   final int actNumber;
   final String title;
@@ -63,32 +63,32 @@ class SiegeDefinition {
   final Map<SpawnDirection, List<List<int>>> pathsByDirection;
   final List<List<int>> supplyNodeCells;
   final List<AssaultCycleDefinition> assaultCycles;
-  final List<SiegeObjectiveDefinition> objectives;
+  final List<StageObjectiveDefinition> objectives;
 }
 ```
 
 Current implementation note:
 
-- the file may still be named `stage_definition.dart` during migration
-- the public type naming target is `SiegeDefinition`
+- `stage_definition.dart` remains the canonical runtime model
+- `SiegeDefinition` may remain only as a compatibility alias while docs/UI use Stage/Wave
 
 ## Runtime Scaling Formulas
 
 These formulas are required rules, not optional tuning ideas.
 
 ```dart
-final hpMultiplier = 1 + ((siegeNumber - 1) * 0.11);
+final hpMultiplier = 1 + ((stageNumber - 1) * 0.11);
 final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.04);
-final killRewardMultiplier = 1 + ((siegeNumber - 1) * 0.05);
+final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.05);
 ```
 
 Rules:
 
-- HP scales by siege number
+- HP scales by stage number
 - move speed scales by act number only
-- kill rewards scale by siege number
+- kill rewards scale by stage number
 - `citadelDamage` does not scale in MVP
-- authored siege data stores base enemy composition and the runtime applies the derived multipliers
+- authored Stage data stores base enemy composition and the runtime applies the derived multipliers
 
 ## Runtime Movement Rule
 

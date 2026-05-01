@@ -16,6 +16,7 @@ class GameVisualRegistry {
 
   ui.Image? _grassTile;
   ui.Image? _grassTile2;
+  ui.Image? _buildableGroundTile;
   ui.Image? _pathFill;
   ui.Image? _pathStraightHorizontal;
   ui.Image? _pathStraightVertical;
@@ -30,6 +31,7 @@ class GameVisualRegistry {
 
   ui.Image? get grassTile => _grassTile;
   ui.Image? get grassTile2 => _grassTile2;
+  ui.Image? get buildableGroundTile => _buildableGroundTile;
   ui.Image? get pathFill => _pathFill;
   ui.Image? get pathStraightHorizontal => _pathStraightHorizontal;
   ui.Image? get pathStraightVertical => _pathStraightVertical;
@@ -167,6 +169,7 @@ class GameVisualRegistry {
 
     const grassPath = 'assets/sprites/tiles/grass.png';
     const grass2Path = 'assets/sprites/tiles/grass2.png';
+    const buildableGroundPath = 'assets/sprites/tiles/buildable_ground.png';
     const pathFillPath = 'assets/sprites/tiles/path_fill.png';
     const pathStraightHorizontalPath =
         'assets/sprites/tiles/path_straight_horizontal.png';
@@ -186,6 +189,9 @@ class GameVisualRegistry {
     }
     if (assetKeys.contains(grass2Path)) {
       _grassTile2 = await _loadImage(grass2Path);
+    }
+    if (assetKeys.contains(buildableGroundPath)) {
+      _buildableGroundTile = await _loadImage(buildableGroundPath);
     }
     if (assetKeys.contains(pathFillPath)) {
       _pathFill = await _loadImage(pathFillPath);

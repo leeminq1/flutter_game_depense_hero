@@ -4,7 +4,7 @@
 
 The project now targets `Citadel Siege`.
 
-This is a siege-based, multi-front fortress-defense game where enemies attack a player-shaped `Citadel` defense from `north`, `south`, `east`, and `west`. The player builds walls, gates, towers, and one chosen hero around the citadel, stabilizes multiple fronts, survives a fixed number of assault cycles, and clears a siege.
+This is a stage-based, multi-front fortress-defense game where enemies attack a player-shaped `Citadel` defense from `north`, `south`, `east`, and `west`. The player builds walls, gates, towers, and one chosen hero around the citadel, stabilizes multiple fronts, survives a fixed number of waves, and clears a stage.
 
 This replaces the old single-lane, right-to-left stage fantasy.
 
@@ -18,19 +18,27 @@ The intended emotional arc is:
 
 ## Session Structure
 
-One playable battle is one `Siege`.
+One playable battle is one `Stage`.
+
+Player-facing terms:
+
+- `Stage`: one combat map, shown as `STAGE 1`
+- `Wave`: one enemy assault inside a Stage, shown as `WAVE 1/3`
+- `Act`: an internal campaign chapter of five Stages; do not emphasize it in the battle UI
 
 One stage uses this flow:
 
 1. `Preparation Phase`
    - battlefield preview
    - active-front preview for Wave 1
-   - one stage-level dice offer roll
-  - initial wall, gate, and tower planning with the chosen hero already defending beside the citadel
+   - Stage 1-3: no random dice offer; show a fixed learning operation
+   - Stage 4 and every three stages after that: one design-card dice offer roll
+   - initial wall, gate, and tower planning with the chosen hero already defending beside the citadel
 2. `Wave`
    - one or more fronts activate
    - enemies spawn in groups assigned to specific fronts
    - enemies may breach player-built barriers if all routes are sealed
+   - the chosen hero automatically guards near its assigned defense position and engages enemies within `3.2` tiles
 3. `Recovery Window`
    - short controlled pause between waves
    - wave reward payout
@@ -47,15 +55,15 @@ One stage uses this flow:
    - persistent reward summary
    - next action surfaced clearly
 
-## Siege Clear And Fail Rules
+## Stage Clear And Fail Rules
 
-Siege clear:
+Stage clear:
 
 - all waves are cleared
 - all spawned enemies are resolved
 - the citadel is still alive
 
-Siege fail:
+Stage fail:
 
 - citadel HP reaches `0`
 
@@ -105,12 +113,12 @@ This turns combat into a test of the fortress plan instead of finger-speed spam.
 
 ## Tactical Resource Rule
 
-`Command Charges` are part of the final product direction, but they are not required for the first working prototype or the `Act 1 Playable` milestone.
+`Command Charges` are part of the future product direction, but they are held out of the Stage 1-5 fun validation pass.
 
 Implementation timing:
 
-- prototype and Act 1 playable: no Command Charges required
-- Milestone 6: Command Charges become mandatory
+- Stage 1-5 validation: no Command Charges
+- Stage 6+ candidate: test `quick repair` first before adding broader tactical buttons
 
 Candidate commands:
 
@@ -123,22 +131,60 @@ These exist to save a collapsing front, not to replace tower planning.
 
 ## Run Offer Rule
 
-Each stage run presents one light roguelike dice-offer choice before Wave 1.
+Stage 4 and every three stages after that present one light roguelike design-card choice before Wave 1. Stage 1-3 use fixed learning operations instead.
 
 Rules:
 
 - the player first taps `Roll` to reveal the offer set
 - the player must choose exactly `1 of 3` offers before starting Wave 1
-- offers last only for the current stage run
+- offers last only for the current stage run in the MVP
+- design-card choice cadence is `Stage 4, 7, 10...` so the player is not asked to pick a card every stage
 - retrying a stage creates a fresh offer seed and new offer sequence
-- offers may modify tower cost, tower range, tower damage, tower cooldown, barrier cost, barrier HP, barrier repair cost, first-build tower level, or chosen-hero damage
+- the first validation pool is limited to six design cards: archer wall line, hero guard anchor, mage crossroad, wall HP network, barracks gate hold, and frost chokepoint
+- offers may modify tower range, tower damage, tower cooldown, barrier HP, first-build tower level, or chosen-hero damage
+- offers must be positive, numeric effects with a short visible `effectLine`
+- offers must also expose an `operationLine` such as `성벽 뒤 궁수 라인`
+- tradeoff effects such as losing hero revive or increasing repair cost are out of scope for the first playable
 - offers must not randomize enemy paths, citadel position, stage objectives, or front activation order
 
 Design purpose:
 
 - create replayable build variation without replacing the tower / wall / hero build tabs
 - keep debugging feasible by recording a run seed in session state
-- make the system feel like a deliberate dice roll while preserving the Citadel Siege fortress-planning identity
+- keep the run seed internal; player-facing banners show the selected operation and numeric effect only
+- make the system feel like a deliberate dice roll that changes fortress planning, not a generic stat buff lottery
+
+## Stage 1-5 Fun Validation
+
+Stage 1-5 exist to prove that fortress design is fun before adding more randomness.
+
+| Stage | Player-facing lesson | Randomness |
+| --- | --- | --- |
+| 1 | 성벽으로 늦추기 | none |
+| 2 | 타워 사거리 겹치기 | none |
+| 3 | 영웅 방어 위치 | none |
+| 4 | 첫 설계 카드 | design-card dice |
+| 5 | 초반 종합 시험 | none; continue fortress validation |
+
+Rules:
+
+- Stage 1-5 share a fixed lower-left citadel position and authored route language
+- Stage 1 uses the north front only so wall slowdown is readable
+- Stage 2-5 introduce the east front, but avoid west/south same-quadrant spawns near the citadel
+- buildable ground is a rectangular authored area near the citadel, rendered with a distinct terrain tile
+- failure hints are stage-specific templates, not complex automatic analysis yet
+
+## Hero Guard Rule
+
+The selected hero is a semi-autonomous defender, not a fully manual action character.
+
+- auto placement creates the initial defense position beside the citadel
+- choosing `방어 위치` sets a new defense position and moves the hero there
+- during an active Wave, the hero only chases and attacks enemies inside `3.2` tiles of that defense position
+- during an active Wave, the player cannot change the hero defense position
+- when no valid target remains, the hero returns to the defense position
+- hero auras should be local to the hero's defense area, not global stage passives
+- current MVP attack readability uses procedural lunge, slash, projectile trail, and hit effects on top of the existing walk sprites
 
 ## Wave Counts
 

@@ -80,6 +80,24 @@ class SelectedHeroDetails {
   final bool canUpgrade;
 }
 
+class SelectedBarrierDetails {
+  const SelectedBarrierDetails({
+    required this.kind,
+    required this.label,
+    required this.hitPoints,
+    required this.maxHitPoints,
+    required this.sellValue,
+    required this.shortDescription,
+  });
+
+  final BarrierKind kind;
+  final String label;
+  final double hitPoints;
+  final double maxHitPoints;
+  final int sellValue;
+  final String shortDescription;
+}
+
 class GameSessionController extends ChangeNotifier {
   int stageNumber = 1;
   int totalStages = 30;
@@ -109,6 +127,7 @@ class GameSessionController extends ChangeNotifier {
   double chosenHeroMaxHitPoints = 0;
   SelectedTowerDetails? selectedTower;
   SelectedHeroDetails? selectedHero;
+  SelectedBarrierDetails? selectedBarrier;
   bool heroMoveMode = false;
   Set<String> builtTowerKinds = const {};
   String statusText = '아래 카드를 탭해서 건물을 배치하세요.';
@@ -155,6 +174,7 @@ class GameSessionController extends ChangeNotifier {
     builtTowerKinds = const {};
     selectedTower = null;
     selectedHero = null;
+    selectedBarrier = null;
     heroMoveMode = false;
     selectedBuildable = null;
     selectedBarrierBuildable = null;
@@ -255,7 +275,8 @@ class GameSessionController extends ChangeNotifier {
             (selectedHeroBuildable != null ||
                 selectedBarrierBuildable != null ||
                 selectedTower != null ||
-                selectedHero != null));
+                selectedHero != null ||
+                selectedBarrier != null));
     if (!changed) {
       return;
     }
@@ -266,6 +287,7 @@ class GameSessionController extends ChangeNotifier {
       selectedBarrierBuildable = null;
       selectedTower = null;
       selectedHero = null;
+      selectedBarrier = null;
     }
     notifyListeners();
   }
@@ -277,7 +299,8 @@ class GameSessionController extends ChangeNotifier {
             (selectedBuildable != null ||
                 selectedHeroBuildable != null ||
                 selectedTower != null ||
-                selectedHero != null));
+                selectedHero != null ||
+                selectedBarrier != null));
     if (!changed) {
       return;
     }
@@ -288,6 +311,7 @@ class GameSessionController extends ChangeNotifier {
       selectedHeroBuildable = null;
       selectedTower = null;
       selectedHero = null;
+      selectedBarrier = null;
     }
     notifyListeners();
   }
@@ -299,7 +323,8 @@ class GameSessionController extends ChangeNotifier {
             (selectedBuildable != null ||
                 selectedBarrierBuildable != null ||
                 selectedTower != null ||
-                selectedHero != null));
+                selectedHero != null ||
+                selectedBarrier != null));
     if (!changed) {
       return;
     }
@@ -310,6 +335,7 @@ class GameSessionController extends ChangeNotifier {
       selectedBarrierBuildable = null;
       selectedTower = null;
       selectedHero = null;
+      selectedBarrier = null;
     }
     notifyListeners();
   }
@@ -321,7 +347,8 @@ class GameSessionController extends ChangeNotifier {
             (selectedBuildable != null ||
                 selectedBarrierBuildable != null ||
                 selectedHeroBuildable != null ||
-                selectedHero != null));
+                selectedHero != null ||
+                selectedBarrier != null));
     if (!changed) {
       return;
     }
@@ -332,6 +359,7 @@ class GameSessionController extends ChangeNotifier {
       selectedBarrierBuildable = null;
       selectedHeroBuildable = null;
       selectedHero = null;
+      selectedBarrier = null;
     }
     notifyListeners();
   }
@@ -343,7 +371,8 @@ class GameSessionController extends ChangeNotifier {
             (selectedBuildable != null ||
                 selectedBarrierBuildable != null ||
                 selectedHeroBuildable != null ||
-                selectedTower != null));
+                selectedTower != null ||
+                selectedBarrier != null));
     if (!changed) {
       return;
     }
@@ -354,6 +383,31 @@ class GameSessionController extends ChangeNotifier {
       selectedBarrierBuildable = null;
       selectedHeroBuildable = null;
       selectedTower = null;
+      selectedBarrier = null;
+    }
+    notifyListeners();
+  }
+
+  void setSelectedBarrier(SelectedBarrierDetails? details) {
+    final changed =
+        !_barrierDetailsEqual(selectedBarrier, details) ||
+        (details != null &&
+            (selectedBuildable != null ||
+                selectedBarrierBuildable != null ||
+                selectedHeroBuildable != null ||
+                selectedTower != null ||
+                selectedHero != null));
+    if (!changed) {
+      return;
+    }
+
+    selectedBarrier = details;
+    if (details != null) {
+      selectedBuildable = null;
+      selectedBarrierBuildable = null;
+      selectedHeroBuildable = null;
+      selectedTower = null;
+      selectedHero = null;
     }
     notifyListeners();
   }
@@ -540,6 +594,24 @@ class GameSessionController extends ChangeNotifier {
         a.abilityLabel == b.abilityLabel &&
         a.abilityDescription == b.abilityDescription &&
         a.canUpgrade == b.canUpgrade;
+  }
+
+  bool _barrierDetailsEqual(
+    SelectedBarrierDetails? a,
+    SelectedBarrierDetails? b,
+  ) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a == null || b == null) {
+      return false;
+    }
+    return a.kind == b.kind &&
+        a.label == b.label &&
+        a.hitPoints == b.hitPoints &&
+        a.maxHitPoints == b.maxHitPoints &&
+        a.sellValue == b.sellValue &&
+        a.shortDescription == b.shortDescription;
   }
 
   bool _offerListsEqual(

@@ -1,3 +1,19 @@
+## Current Art Direction Pass
+
+Use the existing Kenney 2D asset folders as the first map-readability pass before generating new art:
+
+- `kenney_tower-defense-top-down`: primary source for readable ground tiles, route marks, blocked edges, and simple top-down battlefield language.
+- `kenney_tower-defense`: secondary source for chunky tower-defense landmarks and icon-like props.
+- `kenney_tiny-dungeon`: secondary source for wall/gate/interior fragments only when fantasy detail is needed.
+
+Map composition target:
+
+- keep the battlefield clean enough that walls, towers, enemies, and hero guard anchors read first
+- use authored build cells near the citadel, route bends, and fallback pockets instead of exposing the full grass field
+- mark active routes with subtle path wear, dust, arrows, or edge glow rather than filling the board with heavy roads
+- make the citadel a strong first-read landmark, then frame it with an inner ring and outer ring of buildable cells
+- use AI-generated bitmap assets only for missing hero/monster/set-piece needs after the existing Kenney and LPC assets fail the readability test
+
 # 맵 시각 가이드
 
 이 문서는 `말로만 읽는 맵 설계`가 아니라, 구조를 빠르게 이해할 수 있게 돕는 시각 가이드다.

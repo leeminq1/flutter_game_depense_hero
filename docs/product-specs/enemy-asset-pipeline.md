@@ -79,6 +79,21 @@ Directional frame mapping:
 
 - runtime mirror from `west`
 
+## Attack Animation Policy
+
+Current MVP combat readability comes from procedural runtime motion layered over the existing directional walk frames:
+
+- melee heroes and enemies use short lunge, slash-arc, strike-line, and hit-flash effects
+- archers use fast projectile trails
+- magic attackers use beams and burst rings
+- no new LPC attack PNGs are required for this gameplay pass
+
+Next LPC animation expansion:
+
+- extract `slash`, `thrust`, `shoot`, and `spellcast` frames only after the procedural motion pass is validated on device
+- keep the same per-unit folder and metadata discipline when attack frames are added
+- document the exact split-ZIP source paths beside the existing walk frame mapping
+
 ## LPC Workflow
 
 Required workflow:

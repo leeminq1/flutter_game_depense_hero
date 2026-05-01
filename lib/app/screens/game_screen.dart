@@ -50,6 +50,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   String _lastStatusText = '';
   String? _lastSelectedTowerSignature;
   String? _lastSelectedHeroSignature;
+  String? _lastSelectedBarrierSignature;
   bool _isBackgroundPaused = false;
   int? _immediateStarsAwarded;
 
@@ -152,6 +153,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       _lastStatusText = '';
       _lastSelectedTowerSignature = null;
       _lastSelectedHeroSignature = null;
+      _lastSelectedBarrierSignature = null;
       _game = DefensePrototypeGame(
         stage: stage,
         sessionController: _sessionController,
@@ -219,6 +221,18 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     ].join(':');
   }
 
+  String? _selectedBarrierSignature(SelectedBarrierDetails? barrier) {
+    if (barrier == null) {
+      return null;
+    }
+    return [
+      barrier.kind.name,
+      barrier.hitPoints.round().toString(),
+      barrier.maxHitPoints.round().toString(),
+      barrier.sellValue.toString(),
+    ].join(':');
+  }
+
   void _handleTransientHud() {
     final statusText = _sessionController.statusText;
     if (statusText.isNotEmpty && statusText != _lastStatusText) {
@@ -230,6 +244,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     final heroSignature = _selectedHeroSignature(
       _sessionController.selectedHero,
     );
+    final barrierSignature = _selectedBarrierSignature(
+      _sessionController.selectedBarrier,
+    );
     final currentVersion = _sessionController.selectionVersion;
     final userTapped = currentVersion != _lastSelectionVersion;
     if (userTapped) {
@@ -239,7 +256,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     final sameSelection =
         signature == _lastSelectedTowerSignature &&
-        heroSignature == _lastSelectedHeroSignature;
+        heroSignature == _lastSelectedHeroSignature &&
+        barrierSignature == _lastSelectedBarrierSignature;
     if (sameSelection &&
         (_towerActionBarVisible || _actionBarWasShownForCurrentSelection)) {
       return;
@@ -247,7 +265,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     _lastSelectedTowerSignature = signature;
     _lastSelectedHeroSignature = heroSignature;
-    if (signature == null && heroSignature == null) {
+    _lastSelectedBarrierSignature = barrierSignature;
+    if (signature == null &&
+        heroSignature == null &&
+        barrierSignature == null) {
       _towerActionBarTimer?.cancel();
       _actionBarWasShownForCurrentSelection = false;
       if (mounted && _towerActionBarVisible) {
@@ -416,6 +437,19 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 ),
                               ),
                             if (_towerActionBarVisible &&
+                                session.selectedBarrier != null)
+                              Positioned(
+                                left: 16,
+                                right: 16,
+                                bottom: 16,
+                                child: _BarrierActionBar(
+                                  sessionController: session,
+                                  canSell: !session.waveInProgress,
+                                  onSell: game.sellSelectedBarrier,
+                                  onClose: game.clearSelectedBarrier,
+                                ),
+                              ),
+                            if (_towerActionBarVisible &&
                                 session.selectedHero != null &&
                                 !session.heroMoveMode)
                               Positioned(
@@ -424,6 +458,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 bottom: 16,
                                 child: _HeroActionBar(
                                   sessionController: session,
+                                  canMove: !session.waveInProgress,
                                   onMove: game.enterHeroMoveMode,
                                   onUpgrade: game.upgradeSelectedHero,
                                   onDeselect: game.clearSelectedHero,
@@ -718,6 +753,26 @@ class _RunOfferCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
+                    Text(
+                      offer.effectLine,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 12,
+                        height: 1.15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '작전: ${offer.operationLine}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        height: 1.15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
                     Text(
                       offer.description,
                       style: const TextStyle(
@@ -1182,12 +1237,12 @@ class _BuildBar extends StatefulWidget {
   State<_BuildBar> createState() => _BuildBarState();
 }
 
-enum _BuildTab { towers, barriers, hero }
+enum _BuildTab { barriers, towers, hero }
 
 class _BuildBarState extends State<_BuildBar> {
   TowerKind? _specKind;
   BarrierKind? _specBarrierKind;
-  _BuildTab _activeTab = _BuildTab.towers;
+  _BuildTab _activeTab = _BuildTab.barriers;
 
   @override
   void initState() {
@@ -1304,10 +1359,7 @@ class _BuildBarState extends State<_BuildBar> {
         : null;
     final specHero = _activeTab == _BuildTab.hero ? chosenHero : null;
     final canBuild = !widget.waveInProgress;
-    final canReviveHero =
-        canBuild &&
-        widget.sessionController.recoveryActive &&
-        widget.sessionController.heroReviveAvailable;
+    final canReviveHero = widget.sessionController.heroReviveAvailable;
 
     return Container(
       decoration: const BoxDecoration(
@@ -1429,14 +1481,14 @@ class _BuildTabSelector extends StatelessWidget {
       ),
       segments: const [
         ButtonSegment(
-          value: _BuildTab.towers,
-          icon: Icon(Icons.account_balance_rounded, size: 16),
-          label: Text('타워'),
-        ),
-        ButtonSegment(
           value: _BuildTab.barriers,
           icon: Icon(Icons.fence_rounded, size: 16),
           label: Text('성벽'),
+        ),
+        ButtonSegment(
+          value: _BuildTab.towers,
+          icon: Icon(Icons.account_balance_rounded, size: 16),
+          label: Text('타워'),
         ),
         ButtonSegment(
           value: _BuildTab.hero,
@@ -1630,7 +1682,7 @@ class _HeroCardSummary extends StatelessWidget {
     final status = sessionController.chosenHeroAlive
         ? '전장 배치됨 HP $hp/$maxHp'
         : sessionController.heroReviveAvailable
-        ? '사망 - 회복창에서 1회 무료 부활 가능'
+        ? '사망 - 전투 중에도 1회 무료 부활 가능'
         : '부활 사용 완료';
     return Container(
       width: double.infinity,
@@ -2143,15 +2195,123 @@ class _TowerActionBar extends StatelessWidget {
   }
 }
 
+class _BarrierActionBar extends StatelessWidget {
+  const _BarrierActionBar({
+    required this.sessionController,
+    required this.canSell,
+    required this.onSell,
+    required this.onClose,
+  });
+
+  final GameSessionController sessionController;
+  final bool canSell;
+  final VoidCallback onSell;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final barrier = sessionController.selectedBarrier;
+    if (barrier == null) {
+      return const SizedBox.shrink();
+    }
+
+    final healthText =
+        '${barrier.hitPoints.ceil()}/${barrier.maxHitPoints.round()}';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xF2161D26),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: 12,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      barrier.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '내구도 $healthText',
+                      style: const TextStyle(
+                        color: Color(0xFFE4C67A),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: '철거',
+                onPressed: canSell ? onSell : null,
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0x22EF4E4E),
+                ),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFFEF4E4E),
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: '닫기',
+                onPressed: onClose,
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.close_rounded, color: Colors.white70),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            barrier.shortDescription,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            canSell ? '회수 ${barrier.sellValue} 골드' : 'WAVE 중에는 철거할 수 없습니다.',
+            style: const TextStyle(color: Colors.white54, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _HeroActionBar extends StatelessWidget {
   const _HeroActionBar({
     required this.sessionController,
+    required this.canMove,
     required this.onMove,
     required this.onUpgrade,
     required this.onDeselect,
   });
 
   final GameSessionController sessionController;
+  final bool canMove;
   final VoidCallback onMove;
   final VoidCallback onUpgrade;
   final VoidCallback onDeselect;
@@ -2220,9 +2380,9 @@ class _HeroActionBar extends StatelessWidget {
           Row(
             children: [
               FilledButton.tonalIcon(
-                onPressed: onMove,
-                icon: const Icon(Icons.open_with_rounded, size: 16),
-                label: const Text('이동'),
+                onPressed: canMove ? onMove : null,
+                icon: const Icon(Icons.flag_rounded, size: 16),
+                label: const Text('방어 위치'),
               ),
               const SizedBox(width: 8),
               FilledButton.tonalIcon(
@@ -2328,6 +2488,17 @@ class _ResultOverlay extends StatelessWidget {
                 value:
                     '${sessionController.baseHealth}/${sessionController.maxBaseHealth}',
               ),
+            ] else ...[
+              Text(
+                _failureHintForStage(stage.stageNumber),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  height: 1.35,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
             const SizedBox(height: 24),
             if (cleared && hasNextStage)
@@ -2354,6 +2525,17 @@ class _ResultOverlay extends StatelessWidget {
       ),
     );
   }
+}
+
+String _failureHintForStage(int stageNumber) {
+  return switch (stageNumber) {
+    1 => '성벽으로 북쪽 적을 늦추고 궁수 사거리 안에서 처리하세요.',
+    2 => '한쪽에만 몰아짓지 말고 북쪽과 동쪽 타워 사거리를 겹치세요.',
+    3 => '영웅 방어 위치를 성벽 뒤로 옮기고 장갑 적에는 마법 화력을 준비하세요.',
+    4 => '선택한 설계 카드의 작전 방향에 맞춰 성벽과 타워를 다시 배치하세요.',
+    5 => '성벽, 타워 조합, 영웅 방어 위치를 모두 나눠 준비하세요.',
+    _ => '방어선이 무너진 전선을 확인하고 회복 시간에 성벽과 화력을 보강하세요.',
+  };
 }
 
 class _PauseOverlay extends StatelessWidget {

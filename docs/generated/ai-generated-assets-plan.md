@@ -181,6 +181,13 @@ Rules:
 - `south/walk_02 -> standard/walk/down/3.png`
 - `south/walk_03 -> standard/walk/down/7.png`
 
+### Attack Animation Policy
+
+- current MVP attacks are procedural runtime effects over the walk frames
+- melee uses lunge, slash arc, strike line, and hit flash
+- ranged uses projectile trails or magic burst rings
+- future LPC attack extraction should add `slash`, `thrust`, `shoot`, and `spellcast` frames only after this runtime pass is validated
+
 ### Production Rules
 
 - use `lpc-character-generator` for enemy generation

@@ -1,5 +1,6 @@
 import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
+import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -178,6 +179,31 @@ void main() {
           economyBreakEvenSeconds: 90,
         ),
       );
+
+      expect(notifications, 1);
+    });
+
+    test('selecting the same barrier details twice does not notify again', () {
+      final controller = GameSessionController();
+      var notifications = 0;
+
+      controller.addListener(() {
+        notifications += 1;
+      });
+
+      const details = SelectedBarrierDetails(
+        kind: BarrierKind.stoneWall,
+        label: '돌 성벽',
+        hitPoints: 160,
+        maxHitPoints: 220,
+        sellValue: 25,
+        shortDescription: '적을 붙잡아 타워 공격 시간을 벌어줍니다.',
+      );
+
+      controller.setSelectedBarrier(details);
+      expect(notifications, 1);
+
+      controller.setSelectedBarrier(details);
 
       expect(notifications, 1);
     });

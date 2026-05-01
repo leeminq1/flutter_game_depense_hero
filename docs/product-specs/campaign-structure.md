@@ -2,19 +2,19 @@
 
 ## Campaign Shape
 
-The campaign remains a `30-stage` progression path, but stages are now called `Sieges`.
+The campaign remains a `30-stage` progression path. `Stage` and `Wave` are the player-facing terms; `Act` is a five-Stage campaign chapter used for long-term pacing.
 
 Final structure:
 
-- `30 Sieges`
+- `30 Stages`
 - `6 Acts`
-- `5 Sieges per Act`
+- `5 Stages per Act`
 
-This preserves the content volume and progression value of the current project while fully changing how battles play.
+This preserves the content volume and progression value while keeping battle UI terminology simple.
 
 ## Act Summary
 
-| Act | Name | Siege Range | Learning Goal | Main Pressure |
+| Act | Name | Stage Range | Learning Goal | Main Pressure |
 | --- | --- | --- | --- | --- |
 | 1 | Forest Approaches | 1-5 | Learn citadel defense and two-front stabilization | Bandit speed and basic armored checks |
 | 2 | Crossroads War | 6-10 | Learn three-front prioritization and support denial | Bandits plus early cult support |
@@ -33,15 +33,15 @@ Intent:
 - teach that the player cannot solve every problem with one-lane logic
 - introduce the first safe `economy vs defense` tradeoff
 
-Recommended siege rhythm:
+Recommended Stage rhythm:
 
-| Siege | Cycle Count | Active Front Pattern | Special Learning Goal | Final Breach |
+| Stage | Wave Count | Active Front Pattern | Special Learning Goal | Final Breach |
 | --- | --- | --- | --- | --- |
-| 1 | 3 | North only | first clean tutorial siege | single-front breach |
-| 2 | 3 | North -> North+West | first split attention | two-front breach |
-| 3 | 4 | North + West + East | first armor check | three-front test |
-| 4 | 4 | light four-front preview | first real full-board read | forgiving four-front breach |
-| 5 | 4 | all fronts online | first act climax | Banner Captain four-front breach |
+| 1 | 3 | North only | 성벽으로 늦추기 | north-lane breach |
+| 2 | 4 | North -> North+East | 타워 사거리 겹치기 | two-front breach |
+| 3 | 4 | North -> North+East | 영웅 방어 위치와 첫 장갑 체크 | two-front armor test |
+| 4 | 4 | North+East | first design-card Stage | two-front design test |
+| 5 | 4 | North -> North+East | early fortress-design exam | Banner Captain two-front breach |
 
 ### Act 2: Crossroads War
 

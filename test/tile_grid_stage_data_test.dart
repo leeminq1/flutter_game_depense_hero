@@ -115,11 +115,11 @@ void main() {
 
   test('stages follow the v2 citadel position arc', () {
     const expectedCells = {
-      1: [1, 12],
-      2: [2, 12],
+      1: [2, 11],
+      2: [2, 11],
       3: [2, 11],
-      4: [3, 10],
-      5: [4, 9],
+      4: [2, 11],
+      5: [2, 11],
       6: [12, 12],
       7: [11, 12],
       8: [11, 11],
@@ -199,6 +199,39 @@ void main() {
       greaterThanOrEqualTo(archer + barracks + fences + walls),
     );
   });
+
+  test('stage 1 to 5 teach fortress design before full randomness', () {
+    expect(_frontPattern(CampaignData.stage(1)), [
+      ['north'],
+      ['north'],
+      ['north'],
+    ]);
+    expect(_frontPattern(CampaignData.stage(2)), [
+      ['north'],
+      ['north', 'east'],
+      ['north', 'east'],
+      ['north', 'east'],
+    ]);
+    expect(_frontPattern(CampaignData.stage(3)), [
+      ['north'],
+      ['north', 'east'],
+      ['north', 'east'],
+      ['north', 'east'],
+    ]);
+    for (var stageNumber = 1; stageNumber <= 5; stageNumber += 1) {
+      for (final fronts in _frontPattern(CampaignData.stage(stageNumber))) {
+        expect(fronts, isNot(contains('west')));
+        expect(fronts, isNot(contains('south')));
+      }
+    }
+  });
+}
+
+List<List<String>> _frontPattern(StageDefinition stage) {
+  return [
+    for (final cycle in stage.assaultCycles)
+      [for (final front in cycle.activeFronts) front.name],
+  ];
 }
 
 bool _startsOnExpectedEdge(List<int> cell, SpawnDirection direction) {

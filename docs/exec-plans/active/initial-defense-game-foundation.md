@@ -131,6 +131,7 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-04-29: Runtime maps now render visible muted-brown road tiles from authored route data, and each run now offers `1 of 3` temporary siege modifiers before Cycle 1 and after recovery windows to add replayable tower, barrier, and hero build variation without changing route or stage rules.
 - 2026-04-30: Siege offers now require an explicit dice roll before showing the 3 choices, offer copy is Korean-first, path readability uses subtle trampled-grass/dust marks instead of heavy brown road fills, building placement no longer auto-opens the action popup, and combat now has lightweight hit/death feedback with floating damage and reward text.
 - 2026-04-30: Battle UI terminology is now `WAVE` / `STAGE`, the dice offer appears once at STAGE start instead of before every wave, and enemy movement speed is globally doubled while preserving per-enemy speed differences.
+- 2026-05-01: Gameplay direction narrowed around fortress-design payoff: hero defense position is locked during active Waves, design-card dice appears on a 3-Stage cadence starting at Stage 4, early build cells should be authored near the citadel/routes instead of exposing the whole grass field, and fast-enemy rerouting is reserved for Stage 4+.
 
 ## Risks
 

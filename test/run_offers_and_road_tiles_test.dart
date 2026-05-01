@@ -89,11 +89,24 @@ void main() {
         offers.map((offer) => offer.id),
         repeated.map((offer) => offer.id),
       );
+      expect(offers.map((offer) => offer.effectLine), everyElement(isNotEmpty));
       expect(
         offers
             .expand((offer) => offer.modifiers)
             .map((modifier) => modifier.towerKind),
         isNot(contains(TowerKind.ballista)),
+      );
+      expect(
+        offers
+            .expand((offer) => offer.modifiers)
+            .map((modifier) => modifier.type),
+        isNot(contains(RunModifierType.disableHeroRevive)),
+      );
+      expect(
+        offers
+            .expand((offer) => offer.modifiers)
+            .map((modifier) => modifier.type),
+        isNot(contains(RunModifierType.barrierRepairCostMultiplier)),
       );
     });
 
@@ -105,6 +118,8 @@ void main() {
           id: 'test_archer',
           title: 'Test Archer',
           description: 'Archer range +15%.',
+          effectLine: 'Archer range +15%',
+          operationLine: 'Archer wall line',
           rarity: RunOfferRarity.common,
           modifiers: [
             RunModifier(
@@ -155,5 +170,90 @@ void main() {
         );
       },
     );
+
+    test('generator only returns positive numeric first-playable effects', () {
+      const unlockedTowers = {
+        TowerKind.archer,
+        TowerKind.guardBarracks,
+        TowerKind.mageObelisk,
+        TowerKind.frostShrine,
+        TowerKind.coinMill,
+        TowerKind.ballista,
+        TowerKind.emberkeep,
+      };
+      const forbiddenTypes = {
+        RunModifierType.disableHeroRevive,
+        RunModifierType.barrierRepairCostMultiplier,
+      };
+
+      for (var seed = 1; seed <= 12; seed += 1) {
+        final offers = RunOfferGenerator.generate(
+          seed: seed,
+          stageNumber: 1,
+          offerIndex: 0,
+          unlockedTowers: unlockedTowers,
+          chosenHeroKind: HeroKind.knight,
+        );
+
+        expect(offers, hasLength(3));
+        expect(
+          offers.map((offer) => offer.effectLine),
+          everyElement(isNotEmpty),
+        );
+        expect(
+          offers.map((offer) => offer.operationLine),
+          everyElement(isNotEmpty),
+        );
+        expect(
+          offers
+              .expand((offer) => offer.modifiers)
+              .map((modifier) => modifier.type),
+          isNot(anyElement(isIn(forbiddenTypes))),
+        );
+      }
+    });
+
+    test('generator uses the first design-card pool', () {
+      const unlockedTowers = {
+        TowerKind.archer,
+        TowerKind.guardBarracks,
+        TowerKind.mageObelisk,
+        TowerKind.frostShrine,
+        TowerKind.coinMill,
+        TowerKind.ballista,
+        TowerKind.emberkeep,
+      };
+      const designCardIds = {
+        'archer_wall_line',
+        'hero_guard_anchor_knight',
+        'mage_first_level',
+        'wall_hp_network',
+        'barracks_gate_hold',
+        'frost_chokepoint',
+      };
+
+      final seenIds = <String>{};
+      for (var seed = 1; seed <= 24; seed += 1) {
+        final offers = RunOfferGenerator.generate(
+          seed: seed,
+          stageNumber: 4,
+          offerIndex: 0,
+          unlockedTowers: unlockedTowers,
+          chosenHeroKind: HeroKind.knight,
+        );
+        seenIds.addAll(offers.map((offer) => offer.id));
+        expect(offers, hasLength(3));
+        expect(
+          offers.map((offer) => offer.id),
+          everyElement(isIn(designCardIds)),
+        );
+        expect(
+          offers.map((offer) => offer.operationLine),
+          everyElement(isNotEmpty),
+        );
+      }
+
+      expect(seenIds, designCardIds);
+    });
   });
 }

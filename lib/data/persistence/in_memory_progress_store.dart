@@ -1,4 +1,6 @@
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
+import 'dart:math' as math;
+
 import 'package:depense_game/data/persistence/progress_store.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
 import 'package:depense_game/data/persistence/siege_reward_formulas.dart';
@@ -232,7 +234,8 @@ class InMemoryProgressStore implements ProgressStore {
     _profile.siegeTokens += tokensEarned;
     _profile.accountLevel = 1 + (_profile.totalXp ~/ 150);
 
-    final record = existingRecord ??
+    final record =
+        existingRecord ??
         _StageRecordSnapshot(
           stageNumber: stageNumber,
           unlocked: true,
@@ -240,11 +243,25 @@ class InMemoryProgressStore implements ProgressStore {
         );
     final updatedRecord = record.copyWith(
       unlocked: true,
-      stars: starsAwarded > 0 ? starsAwarded : record.stars,
-      firstClearedAt: record.firstClearedAt ?? DateTime.now(),
-      lastClearedAt: DateTime.now(),
+      stars: starsAwarded > 0
+          ? math.max(starsAwarded, record.stars)
+          : record.stars,
+      firstClearedAt: isCleared
+          ? record.firstClearedAt ?? DateTime.now()
+          : record.firstClearedAt,
+      lastClearedAt: isCleared ? DateTime.now() : record.lastClearedAt,
     );
     _stageRecords[stageNumber] = updatedRecord;
+    if (isCleared && stageNumber < totalStages) {
+      final existingNext = _stageRecords[stageNumber + 1];
+      _stageRecords[stageNumber + 1] =
+          existingNext?.copyWith(unlocked: true) ??
+          _StageRecordSnapshot(
+            stageNumber: stageNumber + 1,
+            unlocked: true,
+            stars: 0,
+          );
+    }
 
     int? unlockedNextStage;
     if (stageNumber < totalStages) {

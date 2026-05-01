@@ -1341,7 +1341,9 @@ class CampaignData {
     required int stageNumber,
     required double intensity,
   }) {
-    final hpMultiplier = 1 + ((stageNumber - 1) * 0.18);
+    final earlyFortressHpMultiplier = stageNumber <= 5 ? 1.18 : 1.0;
+    final hpMultiplier =
+        (1 + ((stageNumber - 1) * 0.18)) * earlyFortressHpMultiplier;
     final actNumber = ((stageNumber - 1) ~/ 5) + 1;
     final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.06);
     final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.03);
@@ -3431,11 +3433,11 @@ class CampaignData {
 
   static List<int> _fortressCitadelCellForStage(int stageNumber) {
     const cells = {
-      1: [1, 12],
-      2: [2, 12],
+      1: [2, 11],
+      2: [2, 11],
       3: [2, 11],
-      4: [3, 10],
-      5: [4, 9],
+      4: [2, 11],
+      5: [2, 11],
       6: [12, 12],
       7: [11, 12],
       8: [11, 11],
@@ -3657,16 +3659,22 @@ class CampaignData {
     int cycleNumber,
   ) {
     if (stageNumber <= 5) {
-      if (stageNumber == 1) {
-        return const [SpawnDirection.north, SpawnDirection.east];
-      }
-      return cycleNumber <= 2
-          ? const [SpawnDirection.north, SpawnDirection.east]
-          : const [
-              SpawnDirection.north,
-              SpawnDirection.east,
-              SpawnDirection.west,
-            ];
+      return switch (stageNumber) {
+        1 => const [SpawnDirection.north],
+        2 =>
+          cycleNumber == 1
+              ? const [SpawnDirection.north]
+              : const [SpawnDirection.north, SpawnDirection.east],
+        3 =>
+          cycleNumber == 1
+              ? const [SpawnDirection.north]
+              : const [SpawnDirection.north, SpawnDirection.east],
+        4 => const [SpawnDirection.north, SpawnDirection.east],
+        _ =>
+          cycleNumber == 1
+              ? const [SpawnDirection.north]
+              : const [SpawnDirection.north, SpawnDirection.east],
+      };
     }
     if (stageNumber <= 10) {
       return cycleNumber <= 2
@@ -5720,10 +5728,10 @@ class CampaignData {
 
   static String _authoredCitadelTitle(int stageNumber) {
     const titles = [
-      'Stage 1 - 사방 방어 입문',
-      'Stage 2 - 동쪽 압박 강화',
-      'Stage 3 - 첫 중장갑 체크',
-      'Stage 4 - 성 주변 재정비',
+      'Stage 1 - 성벽으로 늦추기',
+      'Stage 2 - 타워 사거리 겹치기',
+      'Stage 3 - 영웅 방어 위치',
+      'Stage 4 - 첫 설계 카드',
       'Stage 5 - 초반 종합 시험',
       'Stage 6 - 우상단 첫 변형',
       'Stage 7 - 동측 성문 압박',
@@ -5776,11 +5784,11 @@ class CampaignData {
 
   static String _authoredCitadelDescription(int stageNumber) {
     const descriptions = [
-      '첫 Stage부터 사방에서 적이 들어옵니다. 장애물 우회를 읽고 중앙 성을 지키세요.',
-      'Stage 2부터 4 Cycle로 전환됩니다. 동쪽 빠른 적과 사방 압박을 함께 처리하세요.',
-      '방패 보병이 본격적으로 등장합니다. 단일 화력만으로 버티기 어렵습니다.',
-      '성 주변 공간을 재정비하는 Stage입니다. 바깥 성벽을 이용해 후퇴 사선을 만드세요.',
-      '초반 구간 종합 시험입니다. 빠른 적, 중장갑, 사방 분산을 모두 처리해야 합니다.',
+      '북쪽 적을 성벽으로 늦추고 궁수 사거리 안으로 끌어오는 첫 설계 퍼즐입니다.',
+      '북쪽과 동쪽 압박을 한 킬존에 묶어 타워 사거리를 겹치는 법을 배웁니다.',
+      '영웅 방어 위치를 성벽 뒤 교차로에 두고 소량의 장갑 적을 붙잡는 Stage입니다.',
+      '첫 설계 카드가 열립니다. 선택한 작전에 맞춰 같은 맵의 방어망을 다르게 짜보세요.',
+      '성벽, 타워 조합, 영웅 방어 위치를 모두 쓰는 초반 종합 시험입니다.',
       '성이 우상단으로 이동합니다. 하단 넓은 공간을 쓰고 북동 압박을 막으세요.',
       '성이 조금 더 오른쪽에 놓입니다. 동쪽 짧은 압박과 남쪽 우회를 동시에 봅니다.',
       '성이 북동쪽으로 올라갑니다. 북쪽과 동쪽 접근이 빨라져 선제 배치가 중요합니다.',
