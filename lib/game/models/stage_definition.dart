@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:depense_game/game/models/enemy_definition.dart';
@@ -9,6 +10,29 @@ import 'package:depense_game/game/models/enemy_definition.dart';
 enum TileType { path, buildable, blocked, supplyNode, citadel }
 
 enum SpawnDirection { north, south, east, west }
+
+List<int>? citadelGateCellForDirection(
+  List<int>? citadelCell,
+  SpawnDirection direction, {
+  int columns = 14,
+  int rows = 14,
+}) {
+  if (citadelCell == null || citadelCell.length < 2) {
+    return null;
+  }
+  final citadelCol = citadelCell[0];
+  final citadelRow = citadelCell[1];
+  final gate = switch (direction) {
+    SpawnDirection.north => [citadelCol, citadelRow - 1],
+    SpawnDirection.south => [citadelCol, citadelRow + 1],
+    SpawnDirection.west => [citadelCol - 1, citadelRow],
+    SpawnDirection.east => [citadelCol + 1, citadelRow],
+  };
+  return [
+    gate[0].clamp(0, math.max(0, columns - 1)).toInt(),
+    gate[1].clamp(0, math.max(0, rows - 1)).toInt(),
+  ];
+}
 
 enum BarrierKind { woodFence, stoneWall, reinforcedWall, gate }
 
@@ -223,6 +247,7 @@ class AssaultCycleDefinition {
     this.recoveryGoldBonus = 0,
     this.isFinalBreach = false,
     this.activeRouteIds = const [],
+    this.variants = const [],
   });
 
   final int number;
@@ -232,6 +257,7 @@ class AssaultCycleDefinition {
   final int recoveryGoldBonus;
   final bool isFinalBreach;
   final List<String> activeRouteIds;
+  final List<WaveVariantDefinition> variants;
 }
 
 class FrontSpawnGroupDefinition {
@@ -248,6 +274,36 @@ class FrontSpawnGroupDefinition {
   final int count;
   final double spawnInterval;
   final String? routeId;
+}
+
+class WaveVariantDefinition {
+  const WaveVariantDefinition({
+    required this.id,
+    required this.label,
+    required this.threatTags,
+    required this.groups,
+  });
+
+  final String id;
+  final String label;
+  final List<String> threatTags;
+  final List<FrontSpawnGroupDefinition> groups;
+}
+
+class WaveVariantSelector {
+  static int indexFor({
+    required int seed,
+    required int stageNumber,
+    required int waveIndex,
+    required int cycleNumber,
+    required int variantCount,
+  }) {
+    if (variantCount <= 0) {
+      return -1;
+    }
+    final hash = Object.hash(seed, stageNumber, waveIndex, cycleNumber);
+    return (hash & 0x7fffffff) % variantCount;
+  }
 }
 
 class StageDefinition {

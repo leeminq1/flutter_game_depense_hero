@@ -910,58 +910,7 @@ class CampaignData {
   }
 
   static int _baseHealthForStage(int stageNumber) {
-    if (stageNumber <= 5) {
-      return switch (stageNumber) {
-        1 => 24,
-        2 => 23,
-        3 => 22,
-        4 => 21,
-        _ => 20,
-      };
-    }
-    if (stageNumber <= 10) {
-      return switch (stageNumber) {
-        6 => 19,
-        7 => 18,
-        8 => 18,
-        9 => 17,
-        _ => 17,
-      };
-    }
-    if (stageNumber <= 15) {
-      return switch (stageNumber) {
-        11 => 16,
-        12 => 16,
-        13 => 15,
-        14 => 15,
-        _ => 14,
-      };
-    }
-    if (stageNumber <= 20) {
-      return switch (stageNumber) {
-        16 => 14,
-        17 => 13,
-        18 => 13,
-        19 => 12,
-        _ => 12,
-      };
-    }
-    if (stageNumber <= 25) {
-      return switch (stageNumber) {
-        21 => 11,
-        22 => 11,
-        23 => 10,
-        24 => 10,
-        _ => 9,
-      };
-    }
-    return switch (stageNumber) {
-      26 => 9,
-      27 => 9,
-      28 => 8,
-      29 => 8,
-      _ => 10,
-    };
+    return 3;
   }
 
   static WaveDefinition _buildEarlyGameWave({
@@ -1341,9 +1290,13 @@ class CampaignData {
     required int stageNumber,
     required double intensity,
   }) {
-    final earlyFortressHpMultiplier = stageNumber <= 5 ? 1.18 : 1.0;
+    final durabilityMultiplier = stageNumber <= 5
+        ? 1.75
+        : stageNumber <= 15
+        ? 1.55
+        : 1.40;
     final hpMultiplier =
-        (1 + ((stageNumber - 1) * 0.18)) * earlyFortressHpMultiplier;
+        (1 + ((stageNumber - 1) * 0.18)) * durabilityMultiplier;
     final actNumber = ((stageNumber - 1) ~/ 5) + 1;
     final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.06);
     final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.03);
@@ -3433,11 +3386,11 @@ class CampaignData {
 
   static List<int> _fortressCitadelCellForStage(int stageNumber) {
     const cells = {
-      1: [2, 11],
-      2: [2, 11],
-      3: [2, 11],
-      4: [2, 11],
-      5: [2, 11],
+      1: [1, 12],
+      2: [1, 12],
+      3: [1, 12],
+      4: [1, 12],
+      5: [1, 12],
       6: [12, 12],
       7: [11, 12],
       8: [11, 11],
@@ -3603,13 +3556,7 @@ class CampaignData {
   static List<StageObjectiveDefinition> _authoredCitadelObjectives(
     int stageNumber,
   ) {
-    final keepThreshold = switch (stageNumber) {
-      1 => 34,
-      2 => 32,
-      3 => 30,
-      4 => 28,
-      _ => 26,
-    };
+    final keepThreshold = stageNumber <= 5 ? 2 : 1;
 
     return [
       const StageObjectiveDefinition(
@@ -3633,6 +3580,21 @@ class CampaignData {
     int stageNumber,
     List<AssaultCycleDefinition> source,
   ) {
+    if (stageNumber <= 5) {
+      return [
+        for (final cycle in _earlyFortressAssaultCycles(stageNumber))
+          AssaultCycleDefinition(
+            number: cycle.number,
+            activeFronts: cycle.activeFronts,
+            groups: cycle.groups,
+            recoverySeconds: cycle.recoverySeconds,
+            recoveryGoldBonus: cycle.recoveryGoldBonus,
+            isFinalBreach: cycle.isFinalBreach,
+            activeRouteIds: _routeIdsForStage(stageNumber),
+            variants: cycle.variants,
+          ),
+      ];
+    }
     return [
       for (final cycle in source)
         AssaultCycleDefinition(
@@ -3650,8 +3612,642 @@ class CampaignData {
           recoveryGoldBonus: cycle.recoveryGoldBonus,
           isFinalBreach: cycle.isFinalBreach,
           activeRouteIds: _routeIdsForStage(stageNumber),
+          variants: cycle.variants,
         ),
     ];
+  }
+
+  static List<AssaultCycleDefinition> _earlyFortressAssaultCycles(
+    int stageNumber,
+  ) {
+    FrontSpawnGroupDefinition spawn(
+      SpawnDirection front,
+      EnemyKind kind,
+      int count, {
+      required double interval,
+      double intensity = 1.0,
+    }) {
+      return FrontSpawnGroupDefinition(
+        front: front,
+        enemy: enemyForKind(
+          kind,
+          stageNumber: stageNumber,
+          intensity: intensity,
+        ),
+        count: count,
+        spawnInterval: interval,
+      );
+    }
+
+    WaveVariantDefinition variant(
+      String id,
+      String label,
+      List<String> tags,
+      List<FrontSpawnGroupDefinition> groups,
+    ) {
+      return WaveVariantDefinition(
+        id: id,
+        label: label,
+        threatTags: tags,
+        groups: groups,
+      );
+    }
+
+    final northOnly = const [SpawnDirection.north];
+    final northEast = const [SpawnDirection.north, SpawnDirection.east];
+
+    switch (stageNumber) {
+      case 1:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: northOnly,
+            recoveryGoldBonus: 40,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 5, interval: 0.86),
+              spawn(SpawnDirection.north, EnemyKind.scout, 3, interval: 0.78),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: northOnly,
+            recoveryGoldBonus: 45,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 6, interval: 0.82),
+              spawn(SpawnDirection.north, EnemyKind.scout, 4, interval: 0.76),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: northOnly,
+            recoveryGoldBonus: 50,
+            isFinalBreach: true,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 6, interval: 0.8),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.34,
+              ),
+              spawn(SpawnDirection.north, EnemyKind.scout, 4, interval: 0.74),
+            ],
+          ),
+        ];
+      case 2:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: northOnly,
+            recoveryGoldBonus: 40,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 6, interval: 0.82),
+              spawn(SpawnDirection.north, EnemyKind.scout, 4, interval: 0.74),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: northEast,
+            recoveryGoldBonus: 45,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 5, interval: 0.82),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                4,
+                interval: 0.72,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.cultAdept,
+                1,
+                interval: 1.55,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: northEast,
+            recoveryGoldBonus: 50,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 6, interval: 0.8),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                5,
+                interval: 0.72,
+              ),
+              spawn(SpawnDirection.east, EnemyKind.cultAdept, 2, interval: 1.5),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: northEast,
+            recoveryGoldBonus: 54,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                3,
+                interval: 1.22,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                6,
+                interval: 0.72,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.cultAdept,
+                2,
+                interval: 1.48,
+              ),
+            ],
+          ),
+        ];
+      case 3:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: northOnly,
+            recoveryGoldBonus: 45,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 5, interval: 0.82),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                4,
+                interval: 0.95,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                2,
+                interval: 1.25,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: northEast,
+            recoveryGoldBonus: 50,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                6,
+                interval: 0.92,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.boneArcher,
+                4,
+                interval: 0.86,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                4,
+                interval: 0.72,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: northEast,
+            recoveryGoldBonus: 55,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.skeleton, 6, interval: 0.9),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.boneArcher,
+                5,
+                interval: 0.84,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                3,
+                interval: 1.18,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: northEast,
+            recoveryGoldBonus: 60,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                4,
+                interval: 1.15,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.boneArcher,
+                5,
+                interval: 0.82,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                5,
+                interval: 0.72,
+              ),
+            ],
+          ),
+        ];
+      case 4:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: northEast,
+            recoveryGoldBonus: 45,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 6, interval: 0.8),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                5,
+                interval: 0.72,
+              ),
+              spawn(SpawnDirection.north, EnemyKind.skeleton, 4, interval: 0.9),
+            ],
+            variants: [
+              variant(
+                'fast',
+                '빠른 압박',
+                ['빠른 압박'],
+                [
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.scout,
+                    6,
+                    interval: 0.72,
+                  ),
+                  spawn(
+                    SpawnDirection.east,
+                    EnemyKind.wolfScout,
+                    6,
+                    interval: 0.72,
+                  ),
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.raider,
+                    4,
+                    interval: 0.82,
+                  ),
+                ],
+              ),
+              variant(
+                'breaker',
+                '성벽 파괴',
+                ['성벽 파괴'],
+                [
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.shieldInfantry,
+                    4,
+                    interval: 1.18,
+                  ),
+                  spawn(
+                    SpawnDirection.east,
+                    EnemyKind.raider,
+                    6,
+                    interval: 0.82,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: northEast,
+            recoveryGoldBonus: 50,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                7,
+                interval: 0.88,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.boneArcher,
+                5,
+                interval: 0.82,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.cultAdept,
+                2,
+                interval: 1.45,
+              ),
+            ],
+            variants: [
+              variant(
+                'support',
+                '지원몹',
+                ['지원몹'],
+                [
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.cultAdept,
+                    3,
+                    interval: 1.4,
+                  ),
+                  spawn(
+                    SpawnDirection.east,
+                    EnemyKind.boneArcher,
+                    6,
+                    interval: 0.82,
+                  ),
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.skeleton,
+                    5,
+                    interval: 0.88,
+                  ),
+                ],
+              ),
+              variant(
+                'mixed',
+                '혼합 압박',
+                ['빠른 압박', '혼합 압박'],
+                [
+                  spawn(
+                    SpawnDirection.east,
+                    EnemyKind.wolfScout,
+                    6,
+                    interval: 0.72,
+                  ),
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.raider,
+                    7,
+                    interval: 0.8,
+                  ),
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.skeleton,
+                    4,
+                    interval: 0.9,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: northEast,
+            recoveryGoldBonus: 55,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.graveGuard,
+                2,
+                interval: 1.6,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.boneArcher,
+                6,
+                interval: 0.82,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                3,
+                interval: 1.15,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: northEast,
+            recoveryGoldBonus: 60,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.graveGuard,
+                3,
+                interval: 1.55,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                6,
+                interval: 0.72,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.cultAdept,
+                2,
+                interval: 1.42,
+              ),
+            ],
+          ),
+        ];
+      case 5:
+        return [
+          AssaultCycleDefinition(
+            number: 1,
+            activeFronts: northOnly,
+            recoveryGoldBonus: 50,
+            groups: [
+              spawn(SpawnDirection.north, EnemyKind.raider, 6, interval: 0.8),
+              spawn(SpawnDirection.north, EnemyKind.scout, 5, interval: 0.72),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                5,
+                interval: 0.88,
+              ),
+            ],
+            variants: [
+              variant(
+                'fast',
+                '빠른 압박',
+                ['빠른 압박'],
+                [
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.scout,
+                    7,
+                    interval: 0.72,
+                  ),
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.wolfScout,
+                    6,
+                    interval: 0.72,
+                  ),
+                ],
+              ),
+              variant(
+                'breakers',
+                '성벽 파괴',
+                ['성벽 파괴'],
+                [
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.shieldInfantry,
+                    4,
+                    interval: 1.16,
+                  ),
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.raider,
+                    6,
+                    interval: 0.8,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 2,
+            activeFronts: northEast,
+            recoveryGoldBonus: 55,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.boneArcher,
+                6,
+                interval: 0.82,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                6,
+                interval: 0.72,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.cultAdept,
+                2,
+                interval: 1.42,
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 3,
+            activeFronts: northEast,
+            recoveryGoldBonus: 60,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.graveGuard,
+                2,
+                interval: 1.55,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.boneArcher,
+                6,
+                interval: 0.82,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.skeleton,
+                6,
+                interval: 0.88,
+              ),
+            ],
+            variants: [
+              variant(
+                'support',
+                '지원몹',
+                ['지원몹', '혼합 압박'],
+                [
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.cultAdept,
+                    3,
+                    interval: 1.38,
+                  ),
+                  spawn(
+                    SpawnDirection.east,
+                    EnemyKind.boneArcher,
+                    7,
+                    interval: 0.82,
+                  ),
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.raider,
+                    6,
+                    interval: 0.8,
+                  ),
+                ],
+              ),
+              variant(
+                'heavy',
+                '성벽 파괴',
+                ['성벽 파괴'],
+                [
+                  spawn(
+                    SpawnDirection.north,
+                    EnemyKind.graveGuard,
+                    3,
+                    interval: 1.5,
+                  ),
+                  spawn(
+                    SpawnDirection.east,
+                    EnemyKind.shieldInfantry,
+                    4,
+                    interval: 1.12,
+                  ),
+                  spawn(
+                    SpawnDirection.east,
+                    EnemyKind.wolfScout,
+                    4,
+                    interval: 0.72,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          AssaultCycleDefinition(
+            number: 4,
+            activeFronts: northEast,
+            recoveryGoldBonus: 65,
+            isFinalBreach: true,
+            groups: [
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.graveGuard,
+                3,
+                interval: 1.45,
+              ),
+              spawn(
+                SpawnDirection.north,
+                EnemyKind.shieldInfantry,
+                4,
+                interval: 1.08,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.wolfScout,
+                7,
+                interval: 0.72,
+              ),
+              spawn(
+                SpawnDirection.east,
+                EnemyKind.cultAdept,
+                2,
+                interval: 1.38,
+              ),
+            ],
+          ),
+        ];
+      default:
+        return const [];
+    }
   }
 
   static List<SpawnDirection> _frontsForFortressCycle(

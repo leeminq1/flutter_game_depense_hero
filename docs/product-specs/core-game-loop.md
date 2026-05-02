@@ -168,11 +168,22 @@ Stage 1-5 exist to prove that fortress design is fun before adding more randomne
 
 Rules:
 
-- Stage 1-5 share a fixed lower-left citadel position and authored route language
+- Stage 1-5 share a fixed lower-left corner citadel position at `[1,12]` and authored route language
 - Stage 1 uses the north front only so wall slowdown is readable
 - Stage 2-5 introduce the east front, but avoid west/south same-quadrant spawns near the citadel
 - buildable ground is a rectangular authored area near the citadel, rendered with a distinct terrain tile
+- Stage 1-5 use the early role set: Raider, Scout, Wolf Scout, Shield Infantry, Skeleton, Bone Archer, Cult Adept, and Grave Guard
+- Stage 4+ may choose a seeded Wave variant, but the next Wave threat tags are shown before combat
 - failure hints are stage-specific templates, not complex automatic analysis yet
+
+## Monster / Wall / Tower Rules
+
+- Citadel HP is fixed at `3`; each normal leak deals `1` damage, so three leaks defeat the Stage.
+- Fast enemies hit the wall ahead with low structure damage.
+- Medium enemies hit the wall ahead with medium structure damage.
+- Heavy enemies hit the wall ahead with high structure damage and are the clearest wall-breaker role.
+- Towers never block movement. Enemies can pass through tower cells and deal contact damage while moving.
+- Tower damage is intentionally lower than the earlier prototype so walls create the time needed for kill zones.
 
 ## Hero Guard Rule
 
@@ -225,6 +236,8 @@ The redesign must preserve these readability rules:
 - front identity is color-coded and spatially obvious
 - enemy supports must remain readable in crowded four-front scenes
 - citadel damage events must be unmistakable
+- citadel leaks resolve at the visible front-facing gate cell, not at a hidden sprite center
+- the active or next gate threshold remains subtly visible during preparation, combat, and recovery
 - kill rewards should visibly flow back to the citadel automatically
 - enemy hits and deaths should use lightweight flashes, impact rings, and reward text before adding heavier animation assets
 

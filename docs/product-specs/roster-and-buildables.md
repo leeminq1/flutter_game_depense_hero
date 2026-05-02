@@ -139,8 +139,10 @@ Use these telegraph colors consistently:
 
 Rule:
 
-- when an enemy reaches the citadel, it deals its fixed `Citadel Damage` value directly
-- MVP does not multiply citadel damage by siege scaling formulas
+- when an enemy reaches the citadel, it deals `1` leak damage in the current fortress-design pass
+- `Citadel Damage` remains a legacy combat-pressure stat for enemy attacks and UI flavor, not the leak amount
+- enemies also carry wall pressure and tower contact damage so walls, towers, and enemy roles interact directly
+- all enemies attack a wall directly in front of them, but fast, medium, and heavy enemies apply different structure damage
 
 ## Cross-Front Mixing Rule
 

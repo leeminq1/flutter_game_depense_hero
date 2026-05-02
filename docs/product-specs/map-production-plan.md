@@ -84,7 +84,7 @@ Each direction owns three fixed spawn entries:
 
 ## Canonical Stage 1 Example
 
-This is the older centered baseline `14 x 14` authored example. Current validation runtime keeps the same grid and route-entry rules, but Stage 1-5 share the fixed citadel cell `[2,11]` so players can learn fortress design before map-position variance returns later.
+This is the older centered baseline `14 x 14` authored example. Current validation runtime keeps the same grid and route-entry rules, but Stage 1-5 share the fixed citadel cell `[1,12]` so players can learn fortress design before map-position variance returns later.
 
 Legend:
 
@@ -146,7 +146,7 @@ Rules:
 - if every route is blocked, enemies attack the nearest barrier until a path opens
 - early stages should expose only authored build cells near the citadel, route bends, and fallback pockets; do not make the whole grass field buildable
 - wall placement is a fortress-design choice, not freeform map drawing
-- Stage 1-3 enemies mostly stop and break barriers, while Stage 4+ can introduce fast enemies that take short reroutes when a local detour is obvious
+- Stage 1-5 enemies stop and attack the wall in front of them; map-route variety should come from authored lanes, not hidden enemy reroutes
 
 Future-facing option:
 

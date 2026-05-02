@@ -7,6 +7,7 @@ import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
 import 'package:depense_game/game/core/depense_game.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
+import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/run_offer_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
@@ -311,6 +312,17 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _showStageBriefing() async {
+    final stage = CampaignData.stage(_stageNumber);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => _StageBriefingDialog(
+        stage: stage,
+        sessionController: _sessionController,
+      ),
+    );
+  }
+
   Future<void> _handleSessionChanged() async {
     final game = _game;
     if (game == null) {
@@ -398,6 +410,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       _TopHud(
                         sessionController: session,
                         onBack: () => _showExitDialog(context),
+                        onStageInfo: _showStageBriefing,
                         onTogglePause: game.togglePaused,
                       ),
                       Expanded(
@@ -918,17 +931,19 @@ class _TopHud extends StatelessWidget {
   const _TopHud({
     required this.sessionController,
     required this.onBack,
+    required this.onStageInfo,
     required this.onTogglePause,
   });
 
   final GameSessionController sessionController;
   final VoidCallback onBack;
+  final VoidCallback onStageInfo;
   final VoidCallback onTogglePause;
 
   @override
   Widget build(BuildContext context) {
     final isCompact = MediaQuery.sizeOf(context).width <= 420;
-    final statsRow = Wrap(
+    final statWrap = Wrap(
       alignment: WrapAlignment.end,
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 6,
@@ -955,9 +970,18 @@ class _TopHud extends StatelessWidget {
         _HudChip(
           icon: Icons.account_balance_rounded,
           color: const Color(0xFF7BC6FF),
-          label: 'STAGE ${sessionController.stageNumber}',
+          label: 'STAGE ${sessionController.stageNumber} 정보',
+          trailingIcon: Icons.info_outline_rounded,
+          onTap: onStageInfo,
         ),
       ],
+    );
+
+    final statsRow = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      reverse: true,
+      physics: const BouncingScrollPhysics(),
+      child: statWrap,
     );
 
     return Container(
@@ -1021,6 +1045,383 @@ class _TopHud extends StatelessWidget {
   }
 }
 
+class _StageBriefingDialog extends StatelessWidget {
+  const _StageBriefingDialog({
+    required this.stage,
+    required this.sessionController,
+  });
+
+  final StageDefinition stage;
+  final GameSessionController sessionController;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxWaveIndex = math.max(0, stage.assaultCycles.length - 1);
+    final waveIndex = sessionController.currentWave
+        .clamp(0, maxWaveIndex)
+        .toInt();
+    final currentCycle = stage.assaultCycles.isEmpty
+        ? null
+        : stage.assaultCycles[waveIndex];
+    final stageEnemies = _stageEnemyKinds(stage).take(8).toList();
+    final nextWaveEnemies = currentCycle == null
+        ? const <EnemyKind>[]
+        : _cycleEnemyKinds(currentCycle).take(5).toList();
+    final width = math.min(MediaQuery.sizeOf(context).width - 32, 420.0);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(16),
+      child: Container(
+        width: width,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xF2161D26),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0x334FC9FF)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.34),
+              blurRadius: 24,
+              offset: const Offset(0, 14),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 10, 8),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.account_balance_rounded,
+                    color: Color(0xFF7BC6FF),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'STAGE ${stage.number} 브리핑',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '성벽으로 붙잡고, 타워가 처리할 시간을 만드세요.',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.62),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '닫기',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _BriefingSection(
+                      title: '이번 목표',
+                      child: Text(
+                        _stageDefenseTip(stage.number),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          height: 1.35,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _BriefingSection(
+                      title:
+                          '다음 WAVE ${math.min(sessionController.currentWave + 1, sessionController.totalWaves)}',
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (currentCycle != null)
+                            for (final front in currentCycle.activeFronts)
+                              _BriefingChip(_frontBriefLabel(front)),
+                          for (final kind in nextWaveEnemies)
+                            _BriefingChip(_enemyBriefLabel(kind)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _BriefingSection(
+                      title: '등장 적과 성벽 대응',
+                      child: Column(
+                        children: [
+                          for (final kind in stageEnemies)
+                            _EnemyBriefRow(kind: kind),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const _BriefingSection(
+                      title: '성벽 규칙',
+                      child: Text(
+                        '적 앞에 성벽이 있으면 모든 적이 성벽을 먼저 공격합니다. 빠른 적은 약하게, 중형은 꽤 세게, 중장갑 적은 강하게 성벽과 타워를 깎습니다. 타워는 길을 막지 못하므로 성벽 앞뒤로 배치해야 오래 버팁니다.',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          height: 1.35,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BriefingSection extends StatelessWidget {
+  const _BriefingSection({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFFE4C67A),
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _BriefingChip extends StatelessWidget {
+  const _BriefingChip(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0x223DD6A6),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0x663DD6A6)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _EnemyBriefRow extends StatelessWidget {
+  const _EnemyBriefRow({required this.kind});
+
+  final EnemyKind kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final structureDamage = EnemyDefinition.defaultStructureDamageFor(kind);
+    final towerDamage = EnemyDefinition.defaultTowerContactDamageFor(kind);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white10),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.asset(
+              'assets/sprites/enemies/${_enemyAssetFolder(kind)}/south/base.png',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.groups_rounded,
+                color: Colors.white54,
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _enemyBriefLabel(kind),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_enemyWallRole(kind)} · 성벽 피해 $structureDamage · 타워 피해 $towerDamage',
+                  style: const TextStyle(
+                    color: Colors.white60,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+List<EnemyKind> _stageEnemyKinds(StageDefinition stage) {
+  final kinds = <EnemyKind>{};
+  for (final cycle in stage.assaultCycles) {
+    kinds.addAll(_cycleEnemyKinds(cycle));
+  }
+  return kinds.toList();
+}
+
+List<EnemyKind> _cycleEnemyKinds(AssaultCycleDefinition cycle) {
+  final kinds = <EnemyKind>{};
+  for (final group in cycle.groups) {
+    kinds.add(group.enemy.kind);
+  }
+  for (final variant in cycle.variants) {
+    for (final group in variant.groups) {
+      kinds.add(group.enemy.kind);
+    }
+  }
+  return kinds.toList();
+}
+
+String _stageDefenseTip(int stageNumber) {
+  return switch (stageNumber) {
+    1 =>
+      '성 가까운 길목에 성벽을 먼저 놓고, 궁수/병영이 같은 적을 오래 때리게 만드세요. 성 HP는 3이라 세 마리만 새도 패배합니다.',
+    2 => '북쪽과 동쪽을 따로 막기보다 한 지점에서 사거리가 겹치게 만드세요. 타워만 앞에 두면 적이 때리고 지나갑니다.',
+    3 => '영웅은 조작 캐릭터가 아니라 움직이는 방어 거점입니다. Wave 전 성벽 뒤나 교차로에 방어 위치를 잡으세요.',
+    4 => '설계 카드 방향에 맞춰 성벽과 첫 타워 위치를 정하세요. 예고된 적 조합을 보고 어느 길을 먼저 늦출지 결정합니다.',
+    5 => '초반 종합 시험입니다. 빠른 적, 중형 압박, 중장갑 성벽 파괴를 모두 보며 성벽과 화력을 나누세요.',
+    _ => '먼저 새는 길을 성벽으로 붙잡고, 타워가 안전하게 오래 공격할 공간을 만드세요.',
+  };
+}
+
+String _frontBriefLabel(SpawnDirection front) {
+  return switch (front) {
+    SpawnDirection.north => '북쪽 전선',
+    SpawnDirection.south => '남쪽 전선',
+    SpawnDirection.east => '동쪽 전선',
+    SpawnDirection.west => '서쪽 전선',
+  };
+}
+
+String _enemyBriefLabel(EnemyKind kind) {
+  return switch (kind) {
+    EnemyKind.raider => '습격병',
+    EnemyKind.scout => '정찰병',
+    EnemyKind.bannerCaptain => '깃발 대장',
+    EnemyKind.wolfScout => '늑대 척후병',
+    EnemyKind.shieldInfantry => '방패 보병',
+    EnemyKind.cultAdept => '컬트 신도',
+    EnemyKind.skeleton => '해골병',
+    EnemyKind.boneArcher => '뼈 궁수',
+    EnemyKind.graveGuard => '묘지 수호병',
+    EnemyKind.plagueBearer => '역병 운반자',
+    EnemyKind.corruptedKnight => '타락 기사',
+    EnemyKind.hexSniper => '마력 저격수',
+    EnemyKind.warlock => '흑마법사',
+    EnemyKind.bastionPriest => '요새 사제',
+    EnemyKind.bastionOverlord => '요새 군주',
+  };
+}
+
+String _enemyWallRole(EnemyKind kind) {
+  return switch (EnemyDefinition.defaultWallBehaviorFor(kind)) {
+    EnemyWallBehavior.rerouteFirst => '빠르지만 성벽 피해 낮음',
+    EnemyWallBehavior.mixedBreaker => '성벽 피해 중간',
+    EnemyWallBehavior.forceBreaker => '성벽 파괴 특화',
+  };
+}
+
+String _enemyAssetFolder(EnemyKind kind) {
+  return switch (kind) {
+    EnemyKind.raider => 'raider',
+    EnemyKind.scout => 'scout',
+    EnemyKind.bannerCaptain => 'banner_captain',
+    EnemyKind.wolfScout => 'wolf_scout',
+    EnemyKind.shieldInfantry => 'shield_infantry',
+    EnemyKind.cultAdept => 'cult_adept',
+    EnemyKind.skeleton => 'skeleton',
+    EnemyKind.boneArcher => 'bone_archer',
+    EnemyKind.graveGuard => 'grave_guard',
+    EnemyKind.plagueBearer => 'plague_bearer',
+    EnemyKind.corruptedKnight => 'corrupted_knight',
+    EnemyKind.hexSniper => 'hex_sniper',
+    EnemyKind.warlock => 'warlock',
+    EnemyKind.bastionPriest => 'bastion_priest',
+    EnemyKind.bastionOverlord => 'bastion_overlord',
+  };
+}
+
 class _HudIconButton extends StatelessWidget {
   const _HudIconButton({required this.icon, required this.onPressed});
 
@@ -1054,20 +1455,31 @@ class _HudChip extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.label,
+    this.trailingIcon,
+    this.onTap,
   });
 
   final IconData icon;
   final Color color;
   final String label;
+  final IconData? trailingIcon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final displayLabel = label.startsWith('STAGE ')
+        ? label.split(' ').take(2).join(' ')
+        : label;
+    final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.2),
+        color: onTap == null
+            ? Colors.black.withValues(alpha: 0.2)
+            : color.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(
+          color: onTap == null ? Colors.white12 : color.withValues(alpha: 0.5),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1075,14 +1487,29 @@ class _HudChip extends StatelessWidget {
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 6),
           Text(
-            label,
+            displayLabel,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (trailingIcon != null) ...[
+            const SizedBox(width: 4),
+            Icon(trailingIcon, size: 14, color: Colors.white70),
+          ],
         ],
+      ),
+    );
+    if (onTap == null) {
+      return content;
+    }
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: content,
       ),
     );
   }

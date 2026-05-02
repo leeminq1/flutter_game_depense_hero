@@ -77,7 +77,8 @@ Current implementation note:
 These formulas are required rules, not optional tuning ideas.
 
 ```dart
-final hpMultiplier = 1 + ((stageNumber - 1) * 0.11);
+final durabilityMultiplier = stageNumber <= 5 ? 1.75 : stageNumber <= 15 ? 1.55 : 1.40;
+final hpMultiplier = (1 + ((stageNumber - 1) * 0.18)) * durabilityMultiplier;
 final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.04);
 final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.05);
 ```
@@ -87,7 +88,9 @@ Rules:
 - HP scales by stage number
 - move speed scales by act number only
 - kill rewards scale by stage number
-- `citadelDamage` does not scale in MVP
+- `citadelLeakDamage` is fixed at `1` for normal enemies
+- `citadelDamage` remains available for combat flavor and enemy attack pressure, but does not decide leak damage
+- enemies expose `wallBehavior`, `wallBreakChance`, `structureDamage`, and `towerContactDamage`
 - authored Stage data stores base enemy composition and the runtime applies the derived multipliers
 
 ## Runtime Movement Rule

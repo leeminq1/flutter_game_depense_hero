@@ -1,4 +1,5 @@
 import 'package:depense_game/data/campaign/campaign_data.dart';
+import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
@@ -90,6 +91,40 @@ void main() {
     }
   });
 
+  test('stage 1 citadel gate cells align with the visible leak threshold', () {
+    final citadelCell = CampaignData.stage(1).citadelCell;
+
+    expect(
+      citadelGateCellForDirection(citadelCell, SpawnDirection.north),
+      orderedEquals([1, 11]),
+    );
+    expect(
+      citadelGateCellForDirection(citadelCell, SpawnDirection.south),
+      orderedEquals([1, 13]),
+    );
+    expect(
+      citadelGateCellForDirection(citadelCell, SpawnDirection.west),
+      orderedEquals([0, 12]),
+    );
+    expect(
+      citadelGateCellForDirection(citadelCell, SpawnDirection.east),
+      orderedEquals([2, 12]),
+    );
+  });
+
+  test('citadel gate helper clamps to the battlefield edge', () {
+    const cornerCitadel = [0, 0];
+
+    expect(
+      citadelGateCellForDirection(cornerCitadel, SpawnDirection.north),
+      orderedEquals([0, 0]),
+    );
+    expect(
+      citadelGateCellForDirection(cornerCitadel, SpawnDirection.west),
+      orderedEquals([0, 0]),
+    );
+  });
+
   test('stage 3 decorations keep the corner citadel readable', () {
     final stage = CampaignData.stage(3);
     final citadelCell = stage.citadelCell!;
@@ -115,11 +150,11 @@ void main() {
 
   test('stages follow the v2 citadel position arc', () {
     const expectedCells = {
-      1: [2, 11],
-      2: [2, 11],
-      3: [2, 11],
-      4: [2, 11],
-      5: [2, 11],
+      1: [1, 12],
+      2: [1, 12],
+      3: [1, 12],
+      4: [1, 12],
+      5: [1, 12],
       6: [12, 12],
       7: [11, 12],
       8: [11, 11],
@@ -185,6 +220,64 @@ void main() {
     expect(coinMill.economyInterval, 4.5);
   });
 
+  test('citadel health uses the three-leak rule', () {
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
+      final stage = CampaignData.stage(stageNumber);
+
+      expect(stage.baseHealth, 3);
+      expect(stage.citadelHitPoints, 3);
+    }
+  });
+
+  test('enemy combat profiles expose wall and tower interaction rules', () {
+    const fast = {
+      EnemyKind.scout,
+      EnemyKind.wolfScout,
+      EnemyKind.boneArcher,
+      EnemyKind.hexSniper,
+    };
+    const heavy = {
+      EnemyKind.shieldInfantry,
+      EnemyKind.graveGuard,
+      EnemyKind.corruptedKnight,
+      EnemyKind.bastionOverlord,
+    };
+
+    for (final kind in EnemyKind.values) {
+      final enemy = CampaignData.enemyForKind(
+        kind,
+        stageNumber: 5,
+        intensity: 1,
+      );
+
+      expect(enemy.citadelLeakDamage, 1);
+      expect(enemy.baseStructureDamage, greaterThan(0));
+      expect(enemy.baseTowerContactDamage, greaterThan(0));
+      if (fast.contains(kind)) {
+        expect(enemy.wallBehavior, EnemyWallBehavior.rerouteFirst);
+        expect(enemy.wallBreakChance, 0);
+        expect(enemy.baseStructureDamage, 7);
+      } else if (heavy.contains(kind)) {
+        expect(enemy.wallBehavior, EnemyWallBehavior.forceBreaker);
+        expect(enemy.wallBreakChance, 1);
+        final expectedStructureDamage = switch (kind) {
+          EnemyKind.bastionOverlord => 50,
+          EnemyKind.corruptedKnight || EnemyKind.graveGuard => 36,
+          _ => 29,
+        };
+        expect(enemy.baseStructureDamage, expectedStructureDamage);
+      } else {
+        expect(enemy.wallBehavior, EnemyWallBehavior.mixedBreaker);
+        expect(enemy.wallBreakChance, 0.7);
+        expect(enemy.baseStructureDamage, 20);
+      }
+    }
+  });
+
   test('stage 1 budget supports the recommended learning build', () {
     final archer = TowerCatalog.byKind(TowerKind.archer).cost;
     final barracks = TowerCatalog.byKind(TowerKind.guardBarracks).cost;
@@ -225,6 +318,66 @@ void main() {
       }
     }
   });
+
+  test('stage 1 to 5 introduce the intended early enemy roles', () {
+    expect(
+      _enemyKinds(CampaignData.stage(1)),
+      containsAll([
+        EnemyKind.raider,
+        EnemyKind.scout,
+        EnemyKind.shieldInfantry,
+      ]),
+    );
+    expect(
+      _enemyKinds(CampaignData.stage(2)),
+      containsAll([EnemyKind.wolfScout, EnemyKind.cultAdept]),
+    );
+    expect(
+      _enemyKinds(CampaignData.stage(3)),
+      containsAll([EnemyKind.skeleton, EnemyKind.boneArcher]),
+    );
+    expect(_enemyKinds(CampaignData.stage(4)), contains(EnemyKind.graveGuard));
+    expect(
+      _enemyKinds(CampaignData.stage(5)),
+      containsAll([
+        EnemyKind.raider,
+        EnemyKind.scout,
+        EnemyKind.wolfScout,
+        EnemyKind.shieldInfantry,
+        EnemyKind.skeleton,
+        EnemyKind.boneArcher,
+        EnemyKind.cultAdept,
+        EnemyKind.graveGuard,
+      ]),
+    );
+  });
+
+  test('wave variants are previewable and seed deterministic', () {
+    final stage = CampaignData.stage(4);
+    final variants = stage.assaultCycles.expand((cycle) => cycle.variants);
+
+    expect(variants, isNotEmpty);
+    expect(
+      variants.expand((variant) => variant.threatTags),
+      containsAll(['빠른 압박', '성벽 파괴']),
+    );
+    expect(
+      WaveVariantSelector.indexFor(
+        seed: 1514,
+        stageNumber: 4,
+        waveIndex: 0,
+        cycleNumber: 1,
+        variantCount: 2,
+      ),
+      WaveVariantSelector.indexFor(
+        seed: 1514,
+        stageNumber: 4,
+        waveIndex: 0,
+        cycleNumber: 1,
+        variantCount: 2,
+      ),
+    );
+  });
 }
 
 List<List<String>> _frontPattern(StageDefinition stage) {
@@ -232,6 +385,16 @@ List<List<String>> _frontPattern(StageDefinition stage) {
     for (final cycle in stage.assaultCycles)
       [for (final front in cycle.activeFronts) front.name],
   ];
+}
+
+Set<EnemyKind> _enemyKinds(StageDefinition stage) {
+  return {
+    for (final cycle in stage.assaultCycles)
+      for (final group in cycle.groups) group.enemy.kind,
+    for (final cycle in stage.assaultCycles)
+      for (final variant in cycle.variants)
+        for (final group in variant.groups) group.enemy.kind,
+  };
 }
 
 bool _startsOnExpectedEdge(List<int> cell, SpawnDirection direction) {

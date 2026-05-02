@@ -30,6 +30,18 @@ Visual implications:
 - support enemies need staff, lantern, spell glow, or ritual signifiers
 - elites need stronger headpiece, armor trim, and color separation
 
+## Wall Interaction Roles
+
+The current fortress-design pass groups enemies by how they treat walls and towers:
+
+| Role | Enemies | Wall Behavior | Tower Contact |
+| --- | --- | --- | --- |
+| Fast pressure | Scout, Wolf Scout, Bone Archer, Hex Sniper | always hits the wall ahead, low structure damage | low chip damage while passing |
+| Mixed breaker | Raider, Skeleton, Cult Adept, Banner Captain, Plague Bearer, Warlock, Bastion Priest | always hits the wall ahead, medium structure damage | medium contact damage |
+| Force breaker | Shield Infantry, Grave Guard, Corrupted Knight, Bastion Overlord | always break the wall ahead | high contact damage |
+
+All normal leaks currently deal `1` citadel damage; the citadel has `3` HP. This keeps failure readable and makes wall placement matter immediately.
+
 ## Roster Detail
 
 ### Raider

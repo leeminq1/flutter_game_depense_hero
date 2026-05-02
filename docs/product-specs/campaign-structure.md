@@ -32,6 +32,8 @@ Intent:
 - teach the citadel-centered layout
 - teach that the player cannot solve every problem with one-lane logic
 - introduce the first safe `economy vs defense` tradeoff
+- prove that walls are required because towers no longer erase enemies before contact
+- keep enemy randomness previewed through Wave threat tags instead of hidden spawns
 
 Recommended Stage rhythm:
 

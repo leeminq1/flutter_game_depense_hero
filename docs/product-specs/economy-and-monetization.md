@@ -98,18 +98,15 @@ The new mode needs more opening currency than the old single-lane layout because
 | 21-25 | 420 |
 | 26-30 | 450 |
 
-## Citadel HP Curve
+## Citadel HP Rule
 
-The citadel starts with more health than the old single-lane base because pressure arrives from more than one direction.
+The citadel uses a strict leak-count rule instead of a large health pool.
 
-| Act | Citadel HP |
-| --- | --- |
-| 1 | 40 |
-| 2 | 36 |
-| 3 | 32 |
-| 4 | 28 |
-| 5 | 24 |
-| 6 | 20 |
+| Campaign Range | Citadel HP | Leak Damage |
+| --- | --- | --- |
+| All Stages | 3 | 1 per normal enemy |
+
+This makes defense failures readable: three enemies reaching the citadel defeats the Stage.
 
 ## Kill Reward Rule
 
