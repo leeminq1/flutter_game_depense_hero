@@ -1,6 +1,7 @@
 import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/run_offer_definition.dart';
+import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/road_tile_resolver.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -52,6 +53,15 @@ void main() {
         ),
         RoadTileKind.fill,
       );
+    });
+  });
+
+  group('BarrierCatalog', () {
+    test('uses lowered early fortress planning costs', () {
+      expect(BarrierCatalog.byKind(BarrierKind.woodFence).cost, 5);
+      expect(BarrierCatalog.byKind(BarrierKind.stoneWall).cost, 15);
+      expect(BarrierCatalog.byKind(BarrierKind.reinforcedWall).cost, 35);
+      expect(BarrierCatalog.byKind(BarrierKind.gate).cost, 20);
     });
   });
 

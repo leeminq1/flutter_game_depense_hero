@@ -5,6 +5,22 @@ allprojects {
     }
 }
 
+val androidCompileSdkVersion = 36
+
+private fun setAndroidCompileSdk(android: Any, compileSdk: Int) {
+    val intType = Integer.TYPE
+    val methodNames = listOf("compileSdkVersion", "setCompileSdkVersion", "setCompileSdk")
+
+    for (methodName in methodNames) {
+        try {
+            android.javaClass.getMethod(methodName, intType).invoke(android, compileSdk)
+            return
+        } catch (e: Exception) {
+            // Try the next Android Gradle Plugin API shape.
+        }
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
@@ -25,9 +41,10 @@ tasks.register<Delete>("clean") {
 
 subprojects {
     val project = this
-    val fixNamespace: (Project) -> Unit = { p ->
+    val fixIsarAndroidConfig: (Project) -> Unit = { p ->
         if (p.name == "isar_flutter_libs") {
             p.extensions.findByName("android")?.let { android ->
+                setAndroidCompileSdk(android, androidCompileSdkVersion)
                 try {
                     android.javaClass.getMethod("setNamespace", String::class.java).invoke(android, "dev.isar.isar_flutter_libs")
                 } catch (e: Exception) {
@@ -38,8 +55,8 @@ subprojects {
     }
 
     if (project.state.executed) {
-        fixNamespace(project)
+        fixIsarAndroidConfig(project)
     } else {
-        project.afterEvaluate { fixNamespace(this) }
+        project.afterEvaluate { fixIsarAndroidConfig(this) }
     }
 }

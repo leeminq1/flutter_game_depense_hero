@@ -75,6 +75,7 @@ Stage fail:
 - enemies always route toward the citadel
 - the playable battlefield is the full green combat field between the HUD and the build bar
 - player-built barriers define most blocked cells; empty grass cells remain buildable
+- visible route marks are muted brown only on actual authored front route cells; non-route grass should stay green so the player can read where enemies really enter
 
 ### Route Rule
 
@@ -193,6 +194,7 @@ The selected hero is a semi-autonomous defender, not a fully manual action chara
 - choosing `방어 위치` sets a new defense position and moves the hero there
 - during an active Wave, the hero only chases and attacks enemies inside `3.2` tiles of that defense position
 - during an active Wave, the player cannot change the hero defense position
+- enemies treat a living hero standing ahead of them on the citadel approach as a blocker target and attack the hero before continuing, even though the hero does not alter pathfinding like a wall
 - when no valid target remains, the hero returns to the defense position
 - hero auras should be local to the hero's defense area, not global stage passives
 - current MVP attack readability uses procedural lunge, slash, projectile trail, and hit effects on top of the existing walk sprites

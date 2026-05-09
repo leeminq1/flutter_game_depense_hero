@@ -131,10 +131,19 @@ Recommended baseline bonus set:
 
 | Condition | Bonus |
 | --- | --- |
-| Cycle completed | +40 to +80 gold depending on act |
+| Cycle completed | +80 to +160 gold depending on act after the current early-fun doubling pass |
 | No leak during cycle | +20 gold |
 | Citadel at full HP after cycle | +15 gold |
 | Fast clear | +10 gold |
+
+Early fortress build-cost targets:
+
+| Buildable | Current Cost |
+| --- | --- |
+| Wood Fence | 5 |
+| Stone Wall | 15 |
+| Reinforced Wall | 35 |
+| Gate | 20 |
 
 ## Coin Mill And Supply Nodes
 

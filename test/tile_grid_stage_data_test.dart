@@ -200,9 +200,9 @@ void main() {
   });
 
   test('barriers and heroes expose the v2 build metadata', () {
-    expect(BarrierCatalog.byKind(BarrierKind.woodFence).cost, 15);
+    expect(BarrierCatalog.byKind(BarrierKind.woodFence).cost, 5);
     expect(BarrierCatalog.byKind(BarrierKind.stoneWall).hitPoints, 220);
-    expect(BarrierCatalog.byKind(BarrierKind.reinforcedWall).repairCost, 45);
+    expect(BarrierCatalog.byKind(BarrierKind.reinforcedWall).cost, 35);
     expect(BarrierCatalog.byKind(BarrierKind.gate).hitPoints, 180);
 
     for (final hero in HeroCatalog.buildMenu) {

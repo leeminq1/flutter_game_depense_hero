@@ -36,6 +36,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   DefensePrototypeGame? _game;
   CampaignOverview? _overview;
   StageCompletionResult? _completionResult;
+  Future<StageCompletionResult?>? _terminalProgressSave;
   late int _stageNumber;
   int _gameEpoch = 0;
   bool _isEvaluating = false;
@@ -54,6 +55,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   String? _lastSelectedBarrierSignature;
   bool _isBackgroundPaused = false;
   int? _immediateStarsAwarded;
+  bool _stageOneBriefingShown = false;
 
   @override
   void initState() {
@@ -146,6 +148,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       _activeMetaUpgrades = resolvedMeta;
       _stageNumber = stageNumber;
       _completionResult = null;
+      _terminalProgressSave = null;
       _immediateStarsAwarded = null;
       _isEvaluating = false;
       _gameEpoch += 1;
@@ -166,6 +169,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _hintTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) setState(() => _hintBannerVisible = false);
     });
+    if (stageNumber == 1 && !_stageOneBriefingShown) {
+      _stageOneBriefingShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _stageNumber == 1) {
+          _showStageBriefing();
+        }
+      });
+    }
   }
 
   void _showHintBanner() {
@@ -331,37 +342,113 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     _handleTransientHud();
 
-    if ((_sessionController.stageCleared || _sessionController.stageFailed) &&
-        !_isEvaluating &&
-        _completionResult == null) {
-      _isEvaluating = true;
-      final evaluation = game.evaluateCurrentRun();
-
-      if (mounted) {
-        setState(() => _immediateStarsAwarded = evaluation.starsAwarded);
-      }
-
-      try {
-        final result = await widget.bootstrap.progressStore
-            .recordStageCompletion(
-              stageNumber: _sessionController.stageNumber,
-              evaluation: evaluation,
-              totalStages: CampaignData.totalStages,
-            );
-
-        await _refreshOverview();
-
-        if (!mounted) {
-          return;
-        }
-
-        setState(() {
-          _completionResult = result;
-        });
-      } catch (_) {
-        // DB 저장 실패해도 별 표시는 유지됨
-      }
+    if (_sessionController.stageCleared || _sessionController.stageFailed) {
+      await _recordTerminalProgressIfNeeded();
     }
+  }
+
+  Future<StageCompletionResult?> _recordTerminalProgressIfNeeded() {
+    final existingResult = _completionResult;
+    if (existingResult != null) {
+      return Future.value(existingResult);
+    }
+    if (!_sessionController.stageCleared && !_sessionController.stageFailed) {
+      return Future.value(null);
+    }
+    final pendingSave = _terminalProgressSave;
+    if (pendingSave != null) {
+      return pendingSave;
+    }
+    final game = _game;
+    if (game == null) {
+      return Future.value(null);
+    }
+
+    final save = _recordTerminalProgress(game);
+    _terminalProgressSave = save;
+    save.whenComplete(() {
+      if (identical(_terminalProgressSave, save)) {
+        _terminalProgressSave = null;
+      }
+    });
+    return save;
+  }
+
+  Future<StageCompletionResult?> _recordTerminalProgress(
+    DefensePrototypeGame game,
+  ) async {
+    final evaluation = game.evaluateCurrentRun();
+    if (mounted) {
+      setState(() {
+        _isEvaluating = true;
+        _immediateStarsAwarded = evaluation.starsAwarded;
+      });
+    } else {
+      _isEvaluating = true;
+      _immediateStarsAwarded = evaluation.starsAwarded;
+    }
+
+    try {
+      final result = await widget.bootstrap.progressStore.recordStageCompletion(
+        stageNumber: _sessionController.stageNumber,
+        evaluation: evaluation,
+        totalStages: CampaignData.totalStages,
+      );
+
+      await _refreshOverview();
+
+      if (!mounted) {
+        return result;
+      }
+
+      setState(() {
+        _completionResult = result;
+      });
+      return result;
+    } catch (error) {
+      debugPrint('Failed to save stage completion: $error');
+      if (mounted) {
+        setState(() => _isEvaluating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('진행 저장에 실패했습니다. 네트워크/저장소 상태를 확인한 뒤 다시 시도해주세요.'),
+          ),
+        );
+      } else {
+        _isEvaluating = false;
+      }
+      return null;
+    }
+  }
+
+  Future<bool> _ensureTerminalProgressSaved() async {
+    if (!_sessionController.stageCleared && !_sessionController.stageFailed) {
+      return true;
+    }
+    final result = await _recordTerminalProgressIfNeeded();
+    return result != null;
+  }
+
+  Future<void> _retryStageFromResult() async {
+    if (!await _ensureTerminalProgressSaved()) {
+      return;
+    }
+    await _chooseHero(force: true);
+    await _loadStage(_stageNumber);
+  }
+
+  Future<void> _goToNextStageFromResult() async {
+    if (!await _ensureTerminalProgressSaved()) {
+      return;
+    }
+    await _loadStage((_stageNumber + 1).clamp(1, CampaignData.totalStages));
+  }
+
+  Future<void> _returnToCampFromResult() async {
+    if (!await _ensureTerminalProgressSaved()) {
+      return;
+    }
+    widget.onExitToCamp();
   }
 
   @override
@@ -534,14 +621,11 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         immediateStarsAwarded: _immediateStarsAwarded,
                         stage: currentStage,
                         hasNextStage: _stageNumber < CampaignData.totalStages,
-                        onRetry: () async {
-                          await _chooseHero(force: true);
-                          await _loadStage(_stageNumber);
-                        },
-                        onNextStage: () => _loadStage(
-                          (_stageNumber + 1).clamp(1, CampaignData.totalStages),
-                        ),
-                        onReturnToCamp: widget.onExitToCamp,
+                        isSavingProgress:
+                            _isEvaluating && _completionResult == null,
+                        onRetry: _retryStageFromResult,
+                        onNextStage: _goToNextStageFromResult,
+                        onReturnToCamp: _returnToCampFromResult,
                       ),
                     ),
                 ],
@@ -1158,6 +1242,14 @@ class _StageBriefingDialog extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     _BriefingSection(
+                      title: '추천 배치 예시',
+                      child: _StageBriefingPreview(
+                        stage: stage,
+                        cycle: currentCycle,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _BriefingSection(
                       title:
                           '다음 WAVE ${math.min(sessionController.currentWave + 1, sessionController.totalWaves)}',
                       child: Wrap(
@@ -1186,7 +1278,7 @@ class _StageBriefingDialog extends StatelessWidget {
                     const _BriefingSection(
                       title: '성벽 규칙',
                       child: Text(
-                        '적 앞에 성벽이 있으면 모든 적이 성벽을 먼저 공격합니다. 빠른 적은 약하게, 중형은 꽤 세게, 중장갑 적은 강하게 성벽과 타워를 깎습니다. 타워는 길을 막지 못하므로 성벽 앞뒤로 배치해야 오래 버팁니다.',
+                        '적은 자신이 들어오는 길 위의 첫 성벽을 먼저 공격합니다. 빠른 적은 약하게, 중형 적은 꾸준히, 중장갑 적은 강하게 성벽과 타워를 압박합니다. 타워는 길을 막지 못하므로 성벽 뒤쪽에 배치해야 오래 버팁니다.',
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 13,
@@ -1264,6 +1356,286 @@ class _BriefingChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _StageBriefingPreview extends StatelessWidget {
+  const _StageBriefingPreview({required this.stage, required this.cycle});
+
+  final StageDefinition stage;
+  final AssaultCycleDefinition? cycle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          'assets/stage_previews/stage_1_briefing.png',
+          height: 220,
+          width: 220,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => SizedBox(
+            height: 220,
+            width: 220,
+            child: CustomPaint(
+              painter: _StageBriefingPreviewPainter(stage, cycle),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StageBriefingPreviewPainter extends CustomPainter {
+  const _StageBriefingPreviewPainter(this.stage, this.cycle);
+
+  final StageDefinition stage;
+  final AssaultCycleDefinition? cycle;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final tileGrid = stage.tileGrid;
+    if (tileGrid == null || tileGrid.isEmpty) {
+      return;
+    }
+    final rows = tileGrid.length;
+    final cols = tileGrid.first.length;
+    final cellSize = math.min(size.width / cols, size.height / rows);
+    final boardWidth = cellSize * cols;
+    final boardHeight = cellSize * rows;
+    final origin = Offset(
+      (size.width - boardWidth) / 2,
+      (size.height - boardHeight) / 2,
+    );
+
+    Rect rectFor(int col, int row, [double inset = 1]) {
+      return Rect.fromLTWH(
+        origin.dx + (col * cellSize) + inset,
+        origin.dy + (row * cellSize) + inset,
+        cellSize - (inset * 2),
+        cellSize - (inset * 2),
+      );
+    }
+
+    final bg = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(12),
+    );
+    canvas.drawRRect(bg, Paint()..color = const Color(0xFF1BCB76));
+
+    final buildPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.10)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    for (var row = 0; row < rows; row += 1) {
+      for (var col = 0; col < cols; col += 1) {
+        if (tileGrid[row][col] != TileType.buildable) {
+          continue;
+        }
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            rectFor(col, row, 2),
+            const Radius.circular(4),
+          ),
+          buildPaint,
+        );
+      }
+    }
+
+    final fronts =
+        cycle?.activeFronts ??
+        stage.pathsByDirection?.keys ??
+        const <SpawnDirection>[];
+    final roadCells = <String>{};
+    final routeCells = <List<int>>[];
+    for (final route in stage.spawnRoutes) {
+      if (!fronts.contains(route.direction)) {
+        continue;
+      }
+      final cells = _previewRouteCells(stage, route);
+      routeCells.addAll(cells);
+      for (final cell in cells) {
+        roadCells.add('${cell[0]}:${cell[1]}');
+      }
+    }
+    if (roadCells.isEmpty) {
+      final pathsByDirection =
+          stage.pathsByDirection ?? const <SpawnDirection, List<List<int>>>{};
+      for (final front in fronts) {
+        for (final cell in pathsByDirection[front] ?? const <List<int>>[]) {
+          routeCells.add(cell);
+          roadCells.add('${cell[0]}:${cell[1]}');
+        }
+      }
+    }
+
+    final roadPaint = Paint()
+      ..color = const Color(0xFF8B6A3C).withValues(alpha: 0.46);
+    for (final key in roadCells) {
+      final parts = key.split(':');
+      if (parts.length != 2) {
+        continue;
+      }
+      final col = int.tryParse(parts[0]);
+      final row = int.tryParse(parts[1]);
+      if (col == null || row == null) {
+        continue;
+      }
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rectFor(col, row, 3), const Radius.circular(4)),
+        roadPaint,
+      );
+    }
+
+    final citadelCell = stage.citadelCell;
+    if (citadelCell != null && citadelCell.length >= 2) {
+      final citadelRect = rectFor(citadelCell[0], citadelCell[1], 1.5);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(citadelRect, const Radius.circular(5)),
+        Paint()..color = const Color(0xFF2D7FDB),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          citadelRect.deflate(2),
+          const Radius.circular(4),
+        ),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.55)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4,
+      );
+
+      final heroCell = [
+        math.min(cols - 1, citadelCell[0] + 1),
+        math.max(0, citadelCell[1] - 1),
+      ];
+      if (tileGrid[heroCell[1]][heroCell[0]] == TileType.buildable) {
+        canvas.drawCircle(
+          rectFor(heroCell[0], heroCell[1]).center,
+          cellSize * 0.34,
+          Paint()..color = const Color(0xFFE9D27A),
+        );
+        canvas.drawCircle(
+          rectFor(heroCell[0], heroCell[1]).center,
+          cellSize * 0.20,
+          Paint()..color = const Color(0xFF376BE8),
+        );
+      }
+    }
+
+    final wallPaint = Paint()..color = const Color(0xFF9B7650);
+    final wallStroke = Paint()
+      ..color = Colors.black.withValues(alpha: 0.22)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    final suggestedWalls = _previewWallCells(stage, fronts, routeCells);
+    for (final cell in suggestedWalls) {
+      final rect = rectFor(cell[0], cell[1], 3.5);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
+        wallPaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
+        wallStroke,
+      );
+    }
+  }
+
+  static List<List<int>> _previewRouteCells(
+    StageDefinition stage,
+    SpawnRouteDefinition route,
+  ) {
+    final citadelCell = stage.citadelCell;
+    if (citadelCell == null || citadelCell.length < 2) {
+      return stage.pathsByDirection?[route.direction] ?? const [];
+    }
+    final goal = citadelGateCellForDirection(
+      citadelCell,
+      route.direction,
+      columns: 14,
+      rows: 14,
+    );
+    if (goal == null) {
+      return const [];
+    }
+    final routeCells = <List<int>>[];
+    var col = route.entryCell[0];
+    var row = route.entryCell[1];
+    routeCells.add([col, row]);
+    void addStep(int nextCol, int nextRow) {
+      col = nextCol;
+      row = nextRow;
+      routeCells.add([col, row]);
+    }
+
+    if (route.direction == SpawnDirection.north ||
+        route.direction == SpawnDirection.south) {
+      while (row != goal[1]) {
+        addStep(col, row + (row < goal[1] ? 1 : -1));
+      }
+      while (col != goal[0]) {
+        addStep(col + (col < goal[0] ? 1 : -1), row);
+      }
+    } else {
+      while (col != goal[0]) {
+        addStep(col + (col < goal[0] ? 1 : -1), row);
+      }
+      while (row != goal[1]) {
+        addStep(col, row + (row < goal[1] ? 1 : -1));
+      }
+    }
+    return routeCells;
+  }
+
+  static List<List<int>> _previewWallCells(
+    StageDefinition stage,
+    Iterable<SpawnDirection> fronts,
+    List<List<int>> routeCells,
+  ) {
+    final citadelCell = stage.citadelCell;
+    final tileGrid = stage.tileGrid;
+    if (citadelCell == null || citadelCell.length < 2 || tileGrid == null) {
+      return const [];
+    }
+    final rows = tileGrid.length;
+    final cols = tileGrid.first.length;
+    final walls = <String, List<int>>{};
+    for (final front in fronts) {
+      final gate = citadelGateCellForDirection(
+        citadelCell,
+        front,
+        columns: cols,
+        rows: rows,
+      );
+      if (gate == null) {
+        continue;
+      }
+      for (final cell in routeCells.reversed) {
+        if ((cell[0] - gate[0]).abs() + (cell[1] - gate[1]).abs() > 3) {
+          continue;
+        }
+        if (cell[1] < 0 ||
+            cell[1] >= rows ||
+            cell[0] < 0 ||
+            cell[0] >= cols ||
+            tileGrid[cell[1]][cell[0]] == TileType.citadel) {
+          continue;
+        }
+        walls['${cell[0]}:${cell[1]}'] = cell;
+        if (walls.length >= 3) {
+          return walls.values.toList();
+        }
+      }
+    }
+    return walls.values.toList();
+  }
+
+  @override
+  bool shouldRepaint(covariant _StageBriefingPreviewPainter oldDelegate) {
+    return oldDelegate.stage != stage || oldDelegate.cycle != cycle;
   }
 }
 
@@ -2179,10 +2551,6 @@ class _BarrierCardSummary extends StatelessWidget {
         (definition.hitPoints *
                 modifiers.barrierHitPointMultiplier(definition.kind))
             .round();
-    final repairCost =
-        (definition.repairCost *
-                modifiers.barrierRepairCostMultiplier(definition.kind))
-            .round();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -2206,8 +2574,6 @@ class _BarrierCardSummary extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               _SpecMetric(label: 'HP', value: '$hitPoints'),
-              const _SpecDot(),
-              _SpecMetric(label: '수리', value: '$repairCost'),
             ],
           ),
           const SizedBox(height: 6),
@@ -2832,6 +3198,7 @@ class _ResultOverlay extends StatelessWidget {
     required this.immediateStarsAwarded,
     required this.stage,
     required this.hasNextStage,
+    required this.isSavingProgress,
     required this.onRetry,
     required this.onNextStage,
     required this.onReturnToCamp,
@@ -2842,6 +3209,7 @@ class _ResultOverlay extends StatelessWidget {
   final int? immediateStarsAwarded;
   final StageProgressSnapshot stage;
   final bool hasNextStage;
+  final bool isSavingProgress;
   final VoidCallback onRetry;
   final VoidCallback onNextStage;
   final VoidCallback onReturnToCamp;
@@ -2927,24 +3295,28 @@ class _ResultOverlay extends StatelessWidget {
                 ),
               ),
             ],
+            if (isSavingProgress) ...[
+              const SizedBox(height: 16),
+              const LinearProgressIndicator(minHeight: 3),
+            ],
             const SizedBox(height: 24),
             if (cleared && hasNextStage)
               _LargeButton(
                 label: '다음 STAGE',
                 color: const Color(0xFF98D67C),
-                onPressed: onNextStage,
+                onPressed: isSavingProgress ? null : onNextStage,
               ),
             if (cleared && hasNextStage) const SizedBox(height: 12),
             _LargeButton(
               label: '다시 도전',
               color: const Color(0xFF486581),
-              onPressed: onRetry,
+              onPressed: isSavingProgress ? null : onRetry,
             ),
             const SizedBox(height: 12),
             _LargeButton(
               label: '캠프로 돌아가기',
               color: Colors.transparent,
-              onPressed: onReturnToCamp,
+              onPressed: isSavingProgress ? null : onReturnToCamp,
               isOutline: true,
             ),
           ],
@@ -3073,11 +3445,12 @@ class _LargeButton extends StatelessWidget {
 
   final String label;
   final Color color;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isOutline;
 
   @override
   Widget build(BuildContext context) {
+    final disabled = onPressed == null;
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(16),
@@ -3085,7 +3458,11 @@ class _LargeButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isOutline ? Colors.transparent : color,
+          color: disabled
+              ? Colors.white10
+              : isOutline
+              ? Colors.transparent
+              : color,
           borderRadius: BorderRadius.circular(16),
           border: isOutline ? Border.all(color: Colors.white24) : null,
         ),
@@ -3093,7 +3470,11 @@ class _LargeButton extends StatelessWidget {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isOutline ? Colors.white70 : Colors.black87,
+            color: disabled
+                ? Colors.white38
+                : isOutline
+                ? Colors.white70
+                : Colors.black87,
             fontWeight: FontWeight.w900,
             fontSize: 16,
           ),

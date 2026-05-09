@@ -22,6 +22,7 @@ Stage 1 should teach:
 - towers can be placed before combat
 - gold is gained from kills automatically
 - recovery window follows the first Wave
+- on the first Stage 1 entry, the stage briefing opens automatically before the player has to discover the Stage info button
 
 Recommended constraints:
 
@@ -78,6 +79,7 @@ The first playable should surface short tutorial prompts for:
 - recovery timer
 - hero defense position
 - Stage 4 design-card operation line
+- Stage 1 briefing should include a compact tactical diagram showing citadel, active route, suggested wall cells, and the starting hero position
 
 ## Failure Messaging Rule
 
