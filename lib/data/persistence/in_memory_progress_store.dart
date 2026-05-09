@@ -2,6 +2,7 @@ import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'dart:math' as math;
 
 import 'package:depense_game/data/persistence/progress_store.dart';
+import 'package:depense_game/data/persistence/progression_dev_flags.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
 import 'package:depense_game/data/persistence/siege_reward_formulas.dart';
 import 'package:depense_game/data/persistence/store_models.dart';
@@ -400,6 +401,9 @@ class InMemoryProgressStore implements ProgressStore {
     required int totalStars,
     required List<MetaUpgradeSnapshot> metaUpgrades,
   }) {
+    if (kUnlockAllCampaignStagesForDevelopment) {
+      return const _UnlockCheck(unlocked: true, lockReason: null);
+    }
     if (stage.number == 1) {
       return const _UnlockCheck(unlocked: true, lockReason: null);
     }

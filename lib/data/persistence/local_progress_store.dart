@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:depense_game/data/persistence/game_collection_models.dart';
 import 'package:depense_game/data/persistence/progress_store.dart';
+import 'package:depense_game/data/persistence/progression_dev_flags.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
 import 'package:depense_game/data/persistence/store_models.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
@@ -511,6 +512,9 @@ class LocalProgressStore implements ProgressStore {
     required int totalStars,
     required List<MetaUpgradeSnapshot> metaUpgrades,
   }) {
+    if (kUnlockAllCampaignStagesForDevelopment) {
+      return const _UnlockCheck(unlocked: true, lockReason: null);
+    }
     if (stage.number == 1) {
       return const _UnlockCheck(unlocked: true, lockReason: null);
     }

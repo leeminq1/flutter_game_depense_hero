@@ -1371,7 +1371,7 @@ class _StageBriefingPreview extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.asset(
-          'assets/stage_previews/stage_1_briefing.png',
+          'assets/stage_previews/stage_briefing.png',
           height: 220,
           width: 220,
           fit: BoxFit.cover,

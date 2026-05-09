@@ -134,6 +134,7 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-05-01: Gameplay direction narrowed around fortress-design payoff: hero defense position is locked during active Waves, design-card dice appears on a 3-Stage cadence starting at Stage 4, early build cells should be authored near the citadel/routes instead of exposing the whole grass field, and fast-enemy rerouting is reserved for Stage 4+.
 - 2026-05-09: Gameplay readability pass now paints muted brown route marks only on actual enemy route cells, auto-opens the Stage 1 briefing with a compact tactical diagram, lets enemies treat a forward hero as a blocker target, lowers barrier costs to early-fortress validation values, removes the unused repair metric from barrier cards, and doubles Wave-clear recovery gold.
 - 2026-05-09: Playtest follow-up strengthened road readability from subtle dirt marks into full brown road tiles, aligned enemy movement to authored visible road cells instead of free-grid shortest paths, and replaced the Stage briefing diagram with a fixed Stage 1 tactical preview image.
+- 2026-05-09: Campaign content review now temporarily unlocks all 30 stages through `kUnlockAllCampaignStagesForDevelopment`; this is documented in `docs/product-specs/campaign-structure.md` and must be set back to `false` before public release so authored unlock progression returns.
 
 ## Risks
 

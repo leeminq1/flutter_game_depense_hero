@@ -1,6 +1,7 @@
 import 'package:depense_game/data/persistence/game_collection_models.dart';
 import 'package:depense_game/data/persistence/in_memory_progress_store.dart';
 import 'package:depense_game/data/persistence/local_progress_store.dart';
+import 'package:depense_game/data/persistence/progression_dev_flags.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,49 +12,46 @@ void main() {
     expect(stageRecordStarsForTest(incompleteRecord), 0);
   });
 
-  test(
-    'stage clears unlock the next stage and failures do not downgrade stars',
-    () async {
-      final store = await InMemoryProgressStore.open();
+  test('development build exposes all stages for content review', () async {
+    final store = await InMemoryProgressStore.open();
+    final overview = await store.loadCampaignOverview(totalStages: 30);
 
-      await store.recordStageCompletion(
-        stageNumber: 1,
-        evaluation: const StageEvaluationResult(
-          starsAwarded: 0,
-          objectiveResults: [],
-        ),
-        totalStages: 30,
-      );
-
-      var overview = await store.loadCampaignOverview(totalStages: 30);
-      expect(overview.stages[0].stars, 0);
+    expect(overview.stages, hasLength(30));
+    if (kUnlockAllCampaignStagesForDevelopment) {
+      expect(overview.stages.every((stage) => stage.unlocked), isTrue);
+    } else {
+      expect(overview.stages.first.unlocked, isTrue);
       expect(overview.stages[1].unlocked, isFalse);
+    }
+  });
 
-      await store.recordStageCompletion(
-        stageNumber: 1,
-        evaluation: const StageEvaluationResult(
-          starsAwarded: 2,
-          objectiveResults: [],
-        ),
-        totalStages: 30,
-      );
+  test('stage failures do not downgrade stars', () async {
+    final store = await InMemoryProgressStore.open();
 
-      overview = await store.loadCampaignOverview(totalStages: 30);
-      expect(overview.stages[0].stars, 2);
-      expect(overview.stages[1].unlocked, isTrue);
+    await store.recordStageCompletion(
+      stageNumber: 1,
+      evaluation: const StageEvaluationResult(
+        starsAwarded: 2,
+        objectiveResults: [],
+      ),
+      totalStages: 30,
+    );
 
-      await store.recordStageCompletion(
-        stageNumber: 1,
-        evaluation: const StageEvaluationResult(
-          starsAwarded: 1,
-          objectiveResults: [],
-        ),
-        totalStages: 30,
-      );
+    var overview = await store.loadCampaignOverview(totalStages: 30);
+    expect(overview.stages[0].stars, 2);
+    expect(overview.stages[1].unlocked, isTrue);
 
-      overview = await store.loadCampaignOverview(totalStages: 30);
-      expect(overview.stages[0].stars, 2);
-      expect(overview.stages[1].unlocked, isTrue);
-    },
-  );
+    await store.recordStageCompletion(
+      stageNumber: 1,
+      evaluation: const StageEvaluationResult(
+        starsAwarded: 1,
+        objectiveResults: [],
+      ),
+      totalStages: 30,
+    );
+
+    overview = await store.loadCampaignOverview(totalStages: 30);
+    expect(overview.stages[0].stars, 2);
+    expect(overview.stages[1].unlocked, isTrue);
+  });
 }
