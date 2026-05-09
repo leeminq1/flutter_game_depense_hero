@@ -27,6 +27,9 @@ Current working assumptions:
 - Keep this file short. Do not turn it into the knowledge base.
 - Treat `docs/` as the system of record.
 - Prefer updating an existing spec or plan over inventing undocumented behavior.
+- Prefer Serena's project and symbolic tools for codebase understanding.
+- Do not look for `graphify-out/` as a default preflight step.
+- Do not use `graphify-project-awareness` or any graphify skill unless the user explicitly asks for graphify by name.
 - For feature work, record intent first, then code, then verification notes.
 - For larger tasks, update the active exec plan with progress, decisions, and risks.
 - If gameplay and performance goals conflict, protect frame pacing first.

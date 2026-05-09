@@ -203,7 +203,9 @@ void main() {
     expect(BarrierCatalog.byKind(BarrierKind.woodFence).cost, 5);
     expect(BarrierCatalog.byKind(BarrierKind.stoneWall).hitPoints, 220);
     expect(BarrierCatalog.byKind(BarrierKind.reinforcedWall).cost, 35);
-    expect(BarrierCatalog.byKind(BarrierKind.gate).hitPoints, 180);
+    final fortressWall = BarrierCatalog.byKind(BarrierKind.fortressWall);
+    expect(fortressWall.cost, 55);
+    expect(fortressWall.hitPoints, 720);
 
     for (final hero in HeroCatalog.buildMenu) {
       expect(hero.isUnlockedForStage(1), isTrue);

@@ -1,3 +1,4 @@
+import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/run_offer_definition.dart';
@@ -54,6 +55,36 @@ void main() {
         RoadTileKind.fill,
       );
     });
+
+    test('stage 1 authored roads resolve to connected tile variants', () {
+      final stage = CampaignData.stage(1);
+      final cells = <String>{};
+      for (final route in stage.spawnRoutes) {
+        for (final cell in _routeFromEdgeToCitadelRing(
+          route.entryCell,
+          route.direction,
+          stage.citadelCell!,
+        )) {
+          cells.add(RoadTileResolver.key(cell[0], cell[1]));
+        }
+      }
+
+      final kinds = <RoadTileKind>{};
+      for (final key in cells) {
+        final parts = key.split(':');
+        kinds.add(
+          RoadTileResolver.resolve(
+            col: int.parse(parts[0]),
+            row: int.parse(parts[1]),
+            roadCells: cells,
+          ),
+        );
+      }
+
+      expect(kinds, contains(RoadTileKind.straightVertical));
+      expect(kinds, contains(RoadTileKind.straightHorizontal));
+      expect(kinds.difference({RoadTileKind.fill}), isNotEmpty);
+    });
   });
 
   group('BarrierCatalog', () {
@@ -61,7 +92,10 @@ void main() {
       expect(BarrierCatalog.byKind(BarrierKind.woodFence).cost, 5);
       expect(BarrierCatalog.byKind(BarrierKind.stoneWall).cost, 15);
       expect(BarrierCatalog.byKind(BarrierKind.reinforcedWall).cost, 35);
-      expect(BarrierCatalog.byKind(BarrierKind.gate).cost, 20);
+      final fortressWall = BarrierCatalog.byKind(BarrierKind.fortressWall);
+      expect(fortressWall.cost, 55);
+      expect(fortressWall.hitPoints, 720);
+      expect(fortressWall.label, '요새 성벽');
     });
   });
 
@@ -238,7 +272,7 @@ void main() {
         'hero_guard_anchor_knight',
         'mage_first_level',
         'wall_hp_network',
-        'barracks_gate_hold',
+        'barracks_fortress_hold',
         'frost_chokepoint',
       };
 
@@ -266,4 +300,45 @@ void main() {
       expect(seenIds, designCardIds);
     });
   });
+}
+
+List<List<int>> _routeFromEdgeToCitadelRing(
+  List<int> entry,
+  SpawnDirection direction,
+  List<int> citadelCell,
+) {
+  final goal = switch (direction) {
+    SpawnDirection.north => [citadelCell[0], citadelCell[1] - 1],
+    SpawnDirection.south => [citadelCell[0], citadelCell[1] + 1],
+    SpawnDirection.west => [citadelCell[0] - 1, citadelCell[1]],
+    SpawnDirection.east => [citadelCell[0] + 1, citadelCell[1]],
+  };
+  final routeCells = <List<int>>[];
+  var col = entry[0];
+  var row = entry[1];
+  routeCells.add([col, row]);
+
+  void addStep(int nextCol, int nextRow) {
+    col = nextCol;
+    row = nextRow;
+    routeCells.add([col, row]);
+  }
+
+  if (direction == SpawnDirection.north || direction == SpawnDirection.south) {
+    while (row != goal[1]) {
+      addStep(col, row + (row < goal[1] ? 1 : -1));
+    }
+    while (col != goal[0]) {
+      addStep(col + (col < goal[0] ? 1 : -1), row);
+    }
+  } else {
+    while (col != goal[0]) {
+      addStep(col + (col < goal[0] ? 1 : -1), row);
+    }
+    while (row != goal[1]) {
+      addStep(col, row + (row < goal[1] ? 1 : -1));
+    }
+  }
+
+  return routeCells;
 }

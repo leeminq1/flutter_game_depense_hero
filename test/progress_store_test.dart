@@ -1,8 +1,16 @@
+import 'package:depense_game/data/persistence/game_collection_models.dart';
 import 'package:depense_game/data/persistence/in_memory_progress_store.dart';
+import 'package:depense_game/data/persistence/local_progress_store.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('local progress treats incomplete stage records as zero stars', () {
+    final incompleteRecord = StageProgressRecord()..stageNumber = 1;
+
+    expect(stageRecordStarsForTest(incompleteRecord), 0);
+  });
+
   test(
     'stage clears unlock the next stage and failures do not downgrade stars',
     () async {

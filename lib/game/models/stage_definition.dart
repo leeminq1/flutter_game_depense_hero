@@ -34,7 +34,7 @@ List<int>? citadelGateCellForDirection(
   ];
 }
 
-enum BarrierKind { woodFence, stoneWall, reinforcedWall, gate }
+enum BarrierKind { woodFence, stoneWall, reinforcedWall, fortressWall }
 
 enum StageEnvironmentTheme {
   frontierRoad,
@@ -211,11 +211,11 @@ class BarrierCatalog {
       color: Color(0xFFB9C4CF),
     ),
     BarrierDefinition(
-      kind: BarrierKind.gate,
-      label: '성문',
-      cost: 20,
-      hitPoints: 180,
-      color: Color(0xFFD2A35F),
+      kind: BarrierKind.fortressWall,
+      label: '요새 성벽',
+      cost: 55,
+      hitPoints: 720,
+      color: Color(0xFF7F8A96),
     ),
   ];
 

@@ -20,10 +20,10 @@ The fortress-builder layer adds four barrier buildables:
 
 | Barrier | Cost | HP | Primary Job |
 | --- | --- | --- | --- |
-| Wood Fence | 15 | 80 | cheap early routing and disposable delay |
-| Stone Wall | 35 | 220 | main wall line |
-| Reinforced Wall | 75 | 420 | late durable breach buffer |
-| Gate | 45 | 180 | enemy blocker that keeps hero movement readable |
+| Wood Fence | 5 | 80 | cheap early routing and disposable delay |
+| Stone Wall | 15 | 220 | main wall line |
+| Reinforced Wall | 35 | 420 | mid durable breach buffer |
+| Fortress Wall | 55 | 720 | high-HP pure wall for critical choke points |
 
 ## Hero Roster V1
 

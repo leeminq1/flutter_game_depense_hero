@@ -13,7 +13,6 @@ import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/game_visual_registry.dart';
 import 'package:depense_game/game/rendering/map_texture_planner.dart';
-import 'package:depense_game/game/rendering/road_tile_resolver.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -22,7 +21,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Route;
 
 const double _enemyMoveSpeedMultiplier = 2.0;
-const int _waveClearGoldMultiplier = 2;
 
 class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   static const bool _combatDebugLogsEnabled = true;
@@ -927,7 +925,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawGroundTexture(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.background);
     _drawRoadTiles(canvas);
-    _drawBuildableGround(canvas);
     _drawObstacles(canvas);
     _drawBarriers(canvas);
     _drawFrontTelegraphs(canvas);
@@ -2014,12 +2011,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (_heroes.isEmpty) {
       return null;
     }
-    final toCitadel = _citadelCenter - enemy.position;
-    final citadelDistance = toCitadel.length;
-    if (citadelDistance <= 0) {
+    final path = _pathForEnemy(enemy);
+    if (path.length < 2) {
       return null;
     }
-    final forward = toCitadel / citadelDistance;
+    final enemyProjection = _nearestPathProjection(enemy.position, path);
     var bestIndex = -1;
     var bestScore = double.infinity;
 
@@ -2028,25 +2024,21 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       if (hero.hitPoints <= 0) {
         continue;
       }
-      final toHero = hero.position - enemy.position;
-      final heroDistance = toHero.length;
-      if (heroDistance <= 0 ||
-          heroDistance > citadelDistance + (_tileSize * 0.5)) {
+      final heroProjection = _nearestPathProjection(hero.position, path);
+      if (heroProjection.distance > _tileSize * 0.46) {
         continue;
       }
-      final aheadAmount = toHero.dot(forward);
-      if (aheadAmount < -_tileSize * 0.15) {
+      final progressDelta = heroProjection.progress - enemyProjection.progress;
+      if (progressDelta < -_tileSize * 0.18 ||
+          progressDelta > _tileSize * 1.20) {
         continue;
       }
-      final laneDistance = _distanceToSegment(
-        hero.position,
-        enemy.position,
-        _citadelCenter,
-      );
-      if (laneDistance > _tileSize * 0.95) {
+      final heroDistance = hero.position.distanceTo(enemy.position);
+      if (heroDistance <= 0 || heroDistance > _tileSize * 1.10) {
         continue;
       }
-      final score = heroDistance + (laneDistance * 1.4);
+      final score =
+          progressDelta.abs() + (heroProjection.distance * 2.0) + heroDistance;
       if (score < bestScore) {
         bestScore = score;
         bestIndex = i;
@@ -2056,7 +2048,38 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return bestIndex < 0 ? null : bestIndex;
   }
 
-  bool _updateEnemyHeroBlockAttack(_Enemy enemy, double dt) {
+  ({double distance, double progress}) _nearestPathProjection(
+    Vector2 point,
+    List<Vector2> path,
+  ) {
+    var bestDistance = double.infinity;
+    var bestProgress = 0.0;
+    var traversed = 0.0;
+
+    for (var i = 0; i < path.length - 1; i += 1) {
+      final start = path[i];
+      final end = path[i + 1];
+      final segment = end - start;
+      final lengthSquared = segment.dot(segment);
+      if (lengthSquared <= 0) {
+        continue;
+      }
+      final segmentLength = math.sqrt(lengthSquared);
+      final toPoint = point - start;
+      final t = (toPoint.dot(segment) / lengthSquared).clamp(0.0, 1.0);
+      final closest = start + (segment * t);
+      final distance = point.distanceTo(closest);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestProgress = traversed + (segmentLength * t);
+      }
+      traversed += segmentLength;
+    }
+
+    return (distance: bestDistance, progress: bestProgress);
+  }
+
+  bool _updateEnemyHeroBlockAttack(_Enemy enemy, double _) {
     final targetIndex = _heroIndexBlockingEnemy(enemy);
     if (targetIndex == null) {
       return false;
@@ -2065,18 +2088,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final distance = hero.position.distanceTo(enemy.position);
     final attackRange = _tileSize * 0.72;
     if (distance > attackRange) {
-      final direction = hero.position - enemy.position;
-      final length = direction.length;
-      if (length > 0) {
-        direction.scale(1 / length);
-        enemy.position.addScaled(
-          direction,
-          enemy.definition.speed * _enemyMoveSpeedMultiplier * dt * 0.72,
-        );
-        enemy.currentDirection = _directionFromDelta(direction);
-        enemy.distanceToCitadel = enemy.position.distanceTo(_citadelCenter);
-      }
-      return true;
+      return false;
     }
 
     if (enemy.towerAttackCooldown > 0) {
@@ -3463,8 +3475,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _recoveryTimer = finishedCycle?.recoverySeconds ?? 30;
       _activeFronts = const [];
       _nextFronts = _nextFrontsForIndex(_currentWaveIndex);
-      final recoveryPayout =
-          (finishedCycle?.recoveryGoldBonus ?? 0) * _waveClearGoldMultiplier;
+      final recoveryPayout = finishedCycle?.recoveryGoldBonus ?? 0;
       if (recoveryPayout > 0) {
         _coins += recoveryPayout;
         _spawnFloatingText(
@@ -3494,10 +3505,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         authored.isNotEmpty) {
       return {
         for (final entry in authored.entries)
-          entry.key: _vectorPathFromCells(
-            _resolvedRouteCellsForDirection(entry.key),
-            direction: entry.key,
-          ),
+          entry.key: _vectorPathFromCells(entry.value, direction: entry.key),
       };
     }
 
@@ -3635,21 +3643,17 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       routeId: enemy.routeId,
       afterPosition: preservePosition ? enemy.position : null,
     );
-    final forwardBarrierCell = routeBarrierCell == null
-        ? _nearestForwardBarrierCell(enemy)
-        : null;
-    final firstBarrierCell = routeBarrierCell ?? forwardBarrierCell;
-    if (firstBarrierCell != null) {
+    if (routeBarrierCell != null) {
       _logEnemyEvent(
         'TARGET_BARRIER',
         enemy,
-        'source=${routeBarrierCell != null ? 'route' : 'forward'} '
-            'cell=${_formatCell(firstBarrierCell)} preserve=$preservePosition '
+        'source=route '
+            'cell=${_formatCell(routeBarrierCell)} preserve=$preservePosition '
             'wallBehavior=${enemy.definition.wallBehavior.name}',
       );
       _assignBreachPathForEnemy(
         enemy,
-        firstBarrierCell,
+        routeBarrierCell,
         preservePosition: preservePosition,
       );
       return;
@@ -3771,53 +3775,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return null;
   }
 
-  (int, int)? _nearestForwardBarrierCell(_Enemy enemy) {
-    if (_barriers.isEmpty) {
-      return null;
-    }
-    final toCitadel = _citadelCenter - enemy.position;
-    final citadelDistance = toCitadel.length;
-    if (citadelDistance <= 0) {
-      return null;
-    }
-    final forward = toCitadel / citadelDistance;
-    var bestIndex = -1;
-    var bestScore = double.infinity;
-
-    for (var i = 0; i < _barriers.length; i += 1) {
-      final barrier = _barriers[i];
-      final toBarrier = barrier.position - enemy.position;
-      final barrierDistance = toBarrier.length;
-      if (barrierDistance <= 0 ||
-          barrierDistance > citadelDistance + _tileSize) {
-        continue;
-      }
-      final aheadAmount = toBarrier.dot(forward);
-      if (aheadAmount < -_tileSize * 0.15) {
-        continue;
-      }
-      final laneDistance = _distanceToSegment(
-        barrier.position,
-        enemy.position,
-        _citadelCenter,
-      );
-      if (laneDistance > _tileSize * 0.82) {
-        continue;
-      }
-      final score = barrierDistance + (laneDistance * 1.8);
-      if (score < bestScore) {
-        bestScore = score;
-        bestIndex = i;
-      }
-    }
-
-    if (bestIndex < 0) {
-      return null;
-    }
-    final cell = _cellForWorldPosition(_barriers[bestIndex].position);
-    return cell == null ? null : (cell.$1, cell.$2);
-  }
-
   List<Vector2> _approachPathToBarrierCell(
     SpawnDirection dir,
     (int, int) barrierCell, {
@@ -3866,148 +3823,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
     }
     return null;
-  }
-
-  List<List<int>> _resolvedRouteCellsForDirection(
-    SpawnDirection dir, {
-    String? routeId,
-    bool includeBarrierCells = false,
-  }) {
-    final routeEntry = _spawnRouteById(routeId);
-    final List<List<int>>? authored = routeEntry == null
-        ? (stage.pathsByDirection?[dir])
-        : _routeCellsForSpawnRoute(routeEntry);
-    final tileGrid = stage.tileGrid;
-    if (authored == null ||
-        authored.isEmpty ||
-        tileGrid == null ||
-        tileGrid.isEmpty) {
-      return const [];
-    }
-
-    final resolved = _findGridRoute(
-      authored.first,
-      authored.last,
-      dir,
-      includeBarrierCells: includeBarrierCells,
-    );
-    return resolved;
-  }
-
-  List<List<int>> _findGridRoute(
-    List<int> start,
-    List<int> goal,
-    SpawnDirection dir, {
-    bool includeBarrierCells = false,
-  }) {
-    final tileGrid = stage.tileGrid;
-    if (tileGrid == null || tileGrid.isEmpty) {
-      return const [];
-    }
-
-    final frontier = <List<int>>[start];
-    final visited = <String>{_gridCellKey(start[0], start[1])};
-    final cameFrom = <String, String>{};
-    var head = 0;
-
-    while (head < frontier.length) {
-      final current = frontier[head];
-      head += 1;
-      if (current[0] == goal[0] && current[1] == goal[1]) {
-        return _reconstructGridPath(start, goal, cameFrom);
-      }
-
-      for (final delta in _neighborOrderForFront(dir)) {
-        final nextCol = current[0] + delta.$1;
-        final nextRow = current[1] + delta.$2;
-        if (nextRow < 0 ||
-            nextRow >= tileGrid.length ||
-            nextCol < 0 ||
-            nextCol >= tileGrid[nextRow].length) {
-          continue;
-        }
-
-        final nextKey = _gridCellKey(nextCol, nextRow);
-        if (visited.contains(nextKey)) {
-          continue;
-        }
-
-        final isGoal = nextCol == goal[0] && nextRow == goal[1];
-        if (!isGoal &&
-            _isBlockedForPathing(
-              nextCol,
-              nextRow,
-              includeBarrierCells: includeBarrierCells,
-            )) {
-          continue;
-        }
-
-        visited.add(nextKey);
-        cameFrom[nextKey] = _gridCellKey(current[0], current[1]);
-        frontier.add([nextCol, nextRow]);
-      }
-    }
-
-    return const [];
-  }
-
-  List<List<int>> _reconstructGridPath(
-    List<int> start,
-    List<int> goal,
-    Map<String, String> cameFrom,
-  ) {
-    final route = <List<int>>[goal];
-    var currentKey = _gridCellKey(goal[0], goal[1]);
-
-    while (currentKey != _gridCellKey(start[0], start[1])) {
-      final previousKey = cameFrom[currentKey];
-      if (previousKey == null) {
-        return const [];
-      }
-      final parts = previousKey.split(':');
-      route.add([int.parse(parts[0]), int.parse(parts[1])]);
-      currentKey = previousKey;
-    }
-
-    return route.reversed.toList();
-  }
-
-  bool _isBlockedForPathing(
-    int col,
-    int row, {
-    bool includeBarrierCells = false,
-  }) {
-    final tileGrid = stage.tileGrid;
-    if (tileGrid == null ||
-        row < 0 ||
-        row >= tileGrid.length ||
-        col < 0 ||
-        col >= tileGrid[row].length) {
-      return true;
-    }
-
-    final tile = tileGrid[row][col];
-    if (tile == TileType.citadel || _hasObstacleAtCell(col, row)) {
-      return true;
-    }
-
-    if (!includeBarrierCells) {
-      return false;
-    }
-
-    return _barriers.any((barrier) {
-      final cell = _cellForWorldPosition(barrier.position);
-      return cell != null && cell.$1 == col && cell.$2 == row;
-    });
-  }
-
-  List<(int, int)> _neighborOrderForFront(SpawnDirection dir) {
-    return switch (dir) {
-      SpawnDirection.north => const [(0, 1), (-1, 0), (1, 0), (0, -1)],
-      SpawnDirection.south => const [(0, -1), (-1, 0), (1, 0), (0, 1)],
-      SpawnDirection.east => const [(-1, 0), (0, -1), (0, 1), (1, 0)],
-      SpawnDirection.west => const [(1, 0), (0, -1), (0, 1), (-1, 0)],
-    };
   }
 
   List<List<int>> _routeCellsForSpawnRoute(SpawnRouteDefinition route) {
@@ -4152,19 +3967,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     };
   }
 
-  String _gridCellKey(int col, int row) => '$col:$row';
-
-  bool _hasObstacleAtCell(int col, int row) {
-    for (final obstacle in stage.obstacles) {
-      for (final cell in obstacle.occupiedCells) {
-        if (cell[0] == col && cell[1] == row) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   List<Vector2> _randomEdgePathToCitadel(SpawnDirection dir) {
     final tileGrid = stage.tileGrid;
     if (tileGrid == null || tileGrid.isEmpty) {
@@ -4238,155 +4040,90 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (tileGrid == null || tileGrid.isEmpty) {
       return;
     }
-    final allRoadCells = _roadCellSet();
-    if (allRoadCells.isEmpty) {
-      return;
-    }
-    final activeCells = _roadCellSetForFronts(_activeFronts);
-    final nextCells = _roadCellSetForFronts(_nextFronts);
-
-    for (final key in allRoadCells) {
-      final parts = key.split(':');
-      if (parts.length != 2) {
-        continue;
-      }
-      final col = int.tryParse(parts[0]);
-      final row = int.tryParse(parts[1]);
-      if (col == null || row == null) {
-        continue;
-      }
-      if (row < 0 ||
-          row >= tileGrid.length ||
-          col < 0 ||
-          col >= tileGrid[row].length) {
-        continue;
-      }
-      final dst = Rect.fromLTWH(
-        _gridOrigin.x + (col * _tileSize),
-        _gridOrigin.y + (row * _tileSize),
-        _tileSize,
-        _tileSize,
-      );
-      final isActive = activeCells.contains(key);
-      final isNext = !isActive && nextCells.contains(key);
-      final baseAlpha = isActive ? 0.68 : (isNext ? 0.56 : 0.48);
-      final roadRect = dst.deflate(_tileSize * 0.07);
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(roadRect, Radius.circular(_tileSize * 0.14)),
-        Paint()..color = const Color(0xFF6F5135).withValues(alpha: baseAlpha),
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          roadRect.deflate(_tileSize * 0.05),
-          Radius.circular(_tileSize * 0.10),
-        ),
-        Paint()
-          ..color = const Color(0xFF9B7650).withValues(alpha: baseAlpha * 0.42)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2,
-      );
-
-      final seed = (col * 37) + (row * 61);
-      for (var i = 0; i < 2; i += 1) {
-        final dx = (((seed + (i * 17)) % 17) - 8) / 17 * _tileSize * 0.28;
-        final dy = (((seed + (i * 23)) % 19) - 9) / 19 * _tileSize * 0.22;
-        canvas.drawCircle(
-          Offset(dst.center.dx + dx, dst.center.dy + dy),
-          _tileSize * (0.035 + (i * 0.012)),
-          Paint()
-            ..color = const Color(
-              0xFFC6A064,
-            ).withValues(alpha: baseAlpha * 0.56),
-        );
-      }
-    }
-  }
-
-  Set<String> _roadCellSet() {
-    final cells = <String>{};
-    if (stage.spawnRoutes.isNotEmpty) {
-      for (final route in stage.spawnRoutes) {
-        for (final cell in _routeCellsForSpawnRoute(route)) {
-          cells.add(RoadTileResolver.key(cell[0], cell[1]));
-        }
-      }
-      return cells;
-    }
-    final pathsByDirection =
-        stage.pathsByDirection ?? const <SpawnDirection, List<List<int>>>{};
-    for (final route in pathsByDirection.values) {
-      for (final cell in route) {
-        cells.add(RoadTileResolver.key(cell[0], cell[1]));
-      }
-    }
-    return cells;
-  }
-
-  Set<String> _roadCellSetForFronts(List<SpawnDirection> fronts) {
-    if (fronts.isEmpty) {
-      return const {};
-    }
-    final frontSet = fronts.toSet();
-    final cells = <String>{};
-    if (stage.spawnRoutes.isNotEmpty) {
-      for (final route in stage.spawnRoutes) {
-        if (!frontSet.contains(route.direction)) {
-          continue;
-        }
-        for (final cell in _routeCellsForSpawnRoute(route)) {
-          cells.add(RoadTileResolver.key(cell[0], cell[1]));
-        }
-      }
-      return cells;
-    }
-    final pathsByDirection =
-        stage.pathsByDirection ?? const <SpawnDirection, List<List<int>>>{};
-    for (final entry in pathsByDirection.entries) {
-      if (!frontSet.contains(entry.key)) {
-        continue;
-      }
-      for (final cell in entry.value) {
-        cells.add(RoadTileResolver.key(cell[0], cell[1]));
-      }
-    }
-    return cells;
-  }
-
-  void _drawBuildableGround(Canvas canvas) {
-    final positions = _buildableGroundPositions();
-    if (positions.isEmpty) {
+    final roadPaths = _visibleRoadPaths();
+    if (roadPaths.isEmpty) {
       return;
     }
 
-    final tile = _visualRegistry.buildableGroundTile;
-    final fillPaint = Paint()
+    final isAssaultRoute = _waveActive && _currentWaveIndex >= 0;
+    final roadPaint = Paint()
       ..color = const Color(
-        0xFF68D38A,
-      ).withValues(alpha: tile == null ? 0.13 : 0.06)
-      ..style = PaintingStyle.fill;
-    final edgePaint = Paint()
-      ..color = const Color(0xFFE4C67A).withValues(alpha: 0.14)
+        0xFFB99663,
+      ).withValues(alpha: isAssaultRoute ? 0.82 : 0.70)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.9;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = _tileSize * 0.58;
+    final dustPaint = Paint()
+      ..color = const Color(
+        0xFFE0C284,
+      ).withValues(alpha: isAssaultRoute ? 0.10 : 0.07)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = _tileSize * 0.20;
 
-    for (final cell in positions) {
-      final rect = Rect.fromCenter(
-        center: cell.toOffset(),
-        width: _tileSize - 2,
-        height: _tileSize - 2,
-      );
-      if (tile != null) {
-        canvas.drawImageRect(
-          tile,
-          Rect.fromLTWH(0, 0, tile.width.toDouble(), tile.height.toDouble()),
-          rect,
-          Paint()..color = Colors.white.withValues(alpha: 0.48),
-        );
+    for (final points in roadPaths) {
+      if (points.length < 2) {
+        continue;
       }
-      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(4));
-      canvas.drawRRect(rrect, fillPaint);
-      canvas.drawRRect(rrect, edgePaint);
+      final path = Path()..moveTo(points.first.x, points.first.y);
+      for (var i = 1; i < points.length; i += 1) {
+        path.lineTo(points[i].x, points[i].y);
+      }
+      canvas.drawPath(path, roadPaint);
+      canvas.drawPath(path, dustPaint);
     }
+  }
+
+  List<List<Vector2>> _visibleRoadPaths() {
+    if (_stageCleared || _stageFailed) {
+      return const [];
+    }
+    final visibleWaveIndex = _waveActive && _currentWaveIndex >= 0
+        ? _currentWaveIndex
+        : _currentWaveIndex + 1;
+    if (visibleWaveIndex < 0 || visibleWaveIndex >= stage.waves.length) {
+      return const [];
+    }
+    return _roadPathsForWaveIndex(visibleWaveIndex);
+  }
+
+  List<List<Vector2>> _roadPathsForWaveIndex(int waveIndex) {
+    final cycle = _assaultCycleForIndex(waveIndex);
+    final wave = _waveForIndex(waveIndex);
+    final cycleRouteIds = cycle?.activeRouteIds.toSet() ?? const <String>{};
+    final groupRouteIds = wave.groups
+        .map((group) => group.routeId)
+        .whereType<String>()
+        .toSet();
+    final routeIds = cycleRouteIds.isNotEmpty ? cycleRouteIds : groupRouteIds;
+
+    if (stage.spawnRoutes.isNotEmpty) {
+      final fronts =
+          cycle?.activeFronts.toSet() ?? _frontsForWave(wave).toSet();
+      return stage.spawnRoutes
+          .where(
+            (route) =>
+                fronts.contains(route.direction) &&
+                (routeIds.isEmpty || routeIds.contains(route.id)),
+          )
+          .map(
+            (route) =>
+                _routeCellsForSpawnRoute(route).map(_cellCenter).toList(),
+          )
+          .where((path) => path.length >= 2)
+          .toList(growable: false);
+    }
+
+    final pathsByDirection =
+        stage.pathsByDirection ?? const <SpawnDirection, List<List<int>>>{};
+    final fronts = cycle?.activeFronts.toSet() ?? _frontsForWave(wave).toSet();
+    return pathsByDirection.entries
+        .where((entry) => fronts.contains(entry.key))
+        .map((entry) => entry.value.map(_cellCenter).toList())
+        .where((path) => path.length >= 2)
+        .toList(growable: false);
   }
 
   void _drawSlots(Canvas canvas) {
@@ -4456,12 +4193,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     for (var i = 0; i < _barriers.length; i += 1) {
       final barrier = _barriers[i];
       final center = barrier.position.toOffset();
-      final isGate = barrier.definition.kind == BarrierKind.gate;
+      final isFortressWall =
+          barrier.definition.kind == BarrierKind.fortressWall;
       final isSelected = i == _selectedBarrierIndex;
       final rect = Rect.fromCenter(
         center: center,
-        width: _tileSize * 0.78,
-        height: _tileSize * 0.78,
+        width: _tileSize * (isFortressWall ? 0.86 : 0.78),
+        height: _tileSize * (isFortressWall ? 0.86 : 0.78),
       );
       canvas.drawRRect(
         RRect.fromRectAndRadius(rect, const Radius.circular(6)),
@@ -4473,9 +4211,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       canvas.drawRRect(
         RRect.fromRectAndRadius(rect.deflate(3), const Radius.circular(4)),
         Paint()
-          ..color = Colors.black.withValues(alpha: isGate ? 0.20 : 0.10)
+          ..color = Colors.black.withValues(alpha: isFortressWall ? 0.24 : 0.10)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = isGate ? 3 : 2,
+          ..strokeWidth = isFortressWall ? 3 : 2,
       );
       final hpRatio = (barrier.hitPoints / barrier.maxHitPoints).clamp(
         0.0,
@@ -4693,31 +4431,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
     }
     return cells;
-  }
-
-  List<Vector2> _buildableGroundPositions() {
-    final cells = <Vector2>[];
-    final tileGrid = stage.tileGrid;
-    if (tileGrid != null && tileGrid.isNotEmpty) {
-      for (var row = 0; row < tileGrid.length; row += 1) {
-        for (var col = 0; col < tileGrid[row].length; col += 1) {
-          if (tileGrid[row][col] != TileType.buildable) {
-            continue;
-          }
-          if (!_isAllowedBuildCell(row: row, col: col)) {
-            continue;
-          }
-          cells.add(
-            Vector2(
-              _gridOrigin.x + (col * _tileSize) + (_tileSize / 2),
-              _gridOrigin.y + (row * _tileSize) + (_tileSize / 2),
-            ),
-          );
-        }
-      }
-      return cells;
-    }
-    return _buildGridPositions();
   }
 
   bool _isAllowedBuildCell({required int row, required int col}) {

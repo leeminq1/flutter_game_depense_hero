@@ -164,7 +164,7 @@ class LocalProgressStore implements ProgressStore {
     final metaUpgrades = await _loadMetaUpgrades();
     final totalStars = allRecords.fold<int>(
       0,
-      (sum, record) => sum + record.stars,
+      (sum, record) => sum + stageRecordStarsForTest(record),
     );
 
     final stages = List<StageProgressSnapshot>.generate(totalStages, (index) {
@@ -180,8 +180,8 @@ class LocalProgressStore implements ProgressStore {
       return StageProgressSnapshot(
         stageNumber: stageNumber,
         unlocked: unlockCheck.unlocked,
-        stars: record?.stars ?? 0,
-        cleared: (record?.stars ?? 0) > 0,
+        stars: stageRecordStarsForTest(record),
+        cleared: stageRecordStarsForTest(record) > 0,
         description: definition.description,
         objectives: definition.objectives
             .map((objective) => objective.label)
@@ -205,7 +205,7 @@ class LocalProgressStore implements ProgressStore {
     final hasMeaningfulProgress =
         profile.totalXp > 0 ||
         profile.softCurrency > 0 ||
-        allRecords.any((r) => r.stars > 0) ||
+        allRecords.any((r) => stageRecordStarsForTest(r) > 0) ||
         metaUpgrades.any((u) => u.level > 0);
 
     return CampaignOverview(
@@ -236,7 +236,7 @@ class LocalProgressStore implements ProgressStore {
         .filter()
         .stageNumberEqualTo(stageNumber)
         .findFirst();
-    final previousStars = existingRecord?.stars ?? 0;
+    final previousStars = stageRecordStarsForTest(existingRecord);
     final isCleared = starsAwarded > 0;
     final isFirstClear = isCleared && existingRecord?.firstClearedAt == null;
     final newStarsEarned = (starsAwarded - previousStars).clamp(0, 3);
@@ -279,9 +279,10 @@ class LocalProgressStore implements ProgressStore {
       final record =
           existingRecord ?? (StageProgressRecord()..stageNumber = stageNumber);
       record.unlocked = true;
+      final recordStars = stageRecordStarsForTest(record);
       record.stars = starsAwarded > 0
-          ? math.max(starsAwarded, record.stars)
-          : record.stars;
+          ? math.max(starsAwarded, recordStars)
+          : recordStars;
       if (isCleared) {
         record.firstClearedAt ??= DateTime.now();
         record.lastClearedAt = DateTime.now();
@@ -297,6 +298,7 @@ class LocalProgressStore implements ProgressStore {
                 .findFirst() ??
             (StageProgressRecord()..stageNumber = stageNumber + 1);
         nextRecord.unlocked = true;
+        nextRecord.stars = stageRecordStarsForTest(nextRecord);
         await isar.stageProgressRecords.put(nextRecord);
       }
     });
@@ -309,7 +311,7 @@ class LocalProgressStore implements ProgressStore {
       };
       final totalAccumulatedStars = allRecords.fold<int>(
         0,
-        (sum, record) => sum + record.stars,
+        (sum, record) => sum + stageRecordStarsForTest(record),
       );
       final metaUpgrades = await _loadMetaUpgrades();
       final nextStage = CampaignData.stage(stageNumber + 1);
@@ -513,7 +515,7 @@ class LocalProgressStore implements ProgressStore {
       return const _UnlockCheck(unlocked: true, lockReason: null);
     }
     final existingRecord = byStage[stage.number];
-    if (existingRecord?.unlocked == true) {
+    if (_stageRecordUnlocked(existingRecord)) {
       return const _UnlockCheck(unlocked: true, lockReason: null);
     }
 
@@ -526,7 +528,7 @@ class LocalProgressStore implements ProgressStore {
         case StageUnlockRequirementType.previousStageStars:
           final stageNumber = requirement.stageNumber ?? (stage.number - 1);
           final threshold = requirement.threshold ?? 1;
-          final stars = byStage[stageNumber]?.stars ?? 0;
+          final stars = stageRecordStarsForTest(byStage[stageNumber]);
           if (stars < threshold) {
             return _UnlockCheck(unlocked: false, lockReason: requirement.label);
           }
@@ -546,6 +548,38 @@ class LocalProgressStore implements ProgressStore {
 
     return const _UnlockCheck(unlocked: true, lockReason: null);
   }
+}
+
+int stageRecordStarsForTest(StageProgressRecord? record) {
+  if (record == null) {
+    return 0;
+  }
+  try {
+    return record.stars;
+  } catch (error) {
+    if (_isLateInitializationError(error)) {
+      return 0;
+    }
+    rethrow;
+  }
+}
+
+bool _stageRecordUnlocked(StageProgressRecord? record) {
+  if (record == null) {
+    return false;
+  }
+  try {
+    return record.unlocked;
+  } catch (error) {
+    if (_isLateInitializationError(error)) {
+      return false;
+    }
+    rethrow;
+  }
+}
+
+bool _isLateInitializationError(Object error) {
+  return error.toString().startsWith('LateInitializationError');
 }
 
 class _UnlockCheck {

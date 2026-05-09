@@ -2786,7 +2786,7 @@ class _BarrierBuildCard extends StatelessWidget {
       BarrierKind.woodFence => Icons.fence_rounded,
       BarrierKind.stoneWall => Icons.grid_view_rounded,
       BarrierKind.reinforcedWall => Icons.account_balance_rounded,
-      BarrierKind.gate => Icons.door_front_door_rounded,
+      BarrierKind.fortressWall => Icons.shield_rounded,
     };
   }
 }

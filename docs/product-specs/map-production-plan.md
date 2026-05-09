@@ -141,9 +141,10 @@ Current v2 maps should rely on player-built barriers first.
 Rules:
 
 - authored blocking obstacles are removed from the main campaign pass
-- walls, fences, and gates block enemy routing
+- walls, fences, and fortress walls block enemy routing
 - towers never block enemy routing
-- if every route is blocked, enemies attack the nearest barrier until a path opens
+- enemies only target barriers on their assigned authored route; they must not peel toward a nearest off-route barrier
+- if the assigned route is blocked, enemies attack the first barrier on that route until a path opens
 - early stages should expose only authored build cells near the citadel, route bends, and fallback pockets; do not make the whole grass field buildable
 - wall placement is a fortress-design choice, not freeform map drawing
 - Stage 1-5 enemies stop and attack the wall in front of them; map-route variety should come from authored lanes, not hidden enemy reroutes
@@ -171,7 +172,7 @@ Path-readability rule:
 - they must use existing `spawnRoutes` / `pathsByDirection` route data
 - they must not change build legality, enemy routing, citadel position, or stage objectives
 - active and next fronts may add only a low-opacity tint over those marks
-- full brown road-tile fills should be avoided unless the art pass makes them read as intentional terrain rather than a dirty grid
+- road visuals should draw only the current/next authored enemy routes as a narrow continuous lane; do not show the full stage route network or buildable-zone shading during normal play
 
 ## Camera Rules
 

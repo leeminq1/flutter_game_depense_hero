@@ -253,11 +253,11 @@ class RunOfferGenerator {
       ],
     ),
     const RunOfferDefinition(
-      id: 'barracks_gate_hold',
-      title: '게이트 경비대',
-      description: '병영을 성문 근처에 세워 빠른 적을 붙잡는 작전입니다.',
+      id: 'barracks_fortress_hold',
+      title: '요새 경비대',
+      description: '병영이 두꺼운 성벽 뒤에서 빠른 적을 붙잡는 작전입니다.',
       effectLine: '병영 피해 +15%',
-      operationLine: '게이트 병영 홀드',
+      operationLine: '요새 병영 대응',
       rarity: RunOfferRarity.common,
       modifiers: [
         RunModifier(
