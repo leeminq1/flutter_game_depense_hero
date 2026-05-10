@@ -942,6 +942,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawSpawnCue(canvas);
     _drawCitadel(canvas);
     _drawSlots(canvas);
+    _drawSelectionRanges(canvas);
     _drawPulses(canvas);
     _drawTowers(canvas);
     _drawHeroes(canvas);
@@ -1041,7 +1042,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     if (snapTarget == null) {
-      sessionController.setSelectedBuildable(null);
       _showStatus('유효한 빈 타일을 터치해 건물을 배치하세요.');
       _syncSession();
       return;
@@ -1089,15 +1089,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
     _towersBuilt += 1;
     _builtTowerKinds.add(definition.kind.name);
-    sessionController.setSelectedBuildable(null);
     _clearSelectedTowerSelection();
-    _showStatus('${definition.label} 건설 완료. 다시 탭하면 업그레이드/철거.');
     _spawnImpact(snapTarget, definition.color, 18, 0.18);
-    _showStatus('건물을 선택해 업그레이드나 철거가 가능합니다.');
-    _showSelectedTowerOverlay();
     audioService.play(AudioEvent.towerPlace);
-    _syncSelectedTower();
-    _showStatus('${definition.label} 건설 완료. 다시 탭하면 업그레이드/철거.');
+    _showStatus('${definition.label} 건설 완료. 빈 타일을 탭하면 계속 배치합니다.');
     _syncSession();
   }
 
@@ -1192,10 +1187,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         repairCost: _barrierRepairCost(definition),
       ),
     );
-    sessionController.setSelectedBarrierBuildable(null);
     _selectedBarrierIndex = null;
     sessionController.setSelectedBarrier(null);
-    _showStatus('${definition.label} 배치 완료. 적은 앞 성벽을 먼저 공격합니다.');
+    _showStatus('${definition.label} 배치 완료. 빈 타일을 탭하면 계속 배치합니다.');
     audioService.play(AudioEvent.towerPlace);
     _rerouteEnemies();
     _syncSession();
@@ -1964,7 +1958,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     final hero = _heroes[targetIndex];
-    final damage = math.max(5.0, enemy.currentBaseDamage * 6.0);
+    final damage = _enemyHeroContactDamage(enemy);
     final hitPointsBefore = hero.hitPoints;
     hero.hitPoints -= damage;
     _logEnemyEvent(
@@ -2101,7 +2095,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return true;
     }
 
-    final damage = math.max(5.0, enemy.currentBaseDamage * 6.0);
+    final damage = _enemyHeroContactDamage(enemy);
     final hitPointsBefore = hero.hitPoints;
     hero.hitPoints -= damage;
     _logEnemyEvent(
@@ -2309,6 +2303,21 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       multiplier = math.min(multiplier, aura.clamp(0.72, 0.82));
     }
     return multiplier;
+  }
+
+  double _enemyHeroContactDamage(_Enemy enemy) {
+    final multiplier = switch (stage.number) {
+      <= 5 => 0.70,
+      <= 10 => 0.78,
+      <= 15 => 0.84,
+      <= 20 => 0.90,
+      <= 25 => 0.95,
+      _ => 1.0,
+    };
+    return math.max(
+      5.0 * multiplier,
+      enemy.currentBaseDamage * 6.0 * multiplier,
+    );
   }
 
   void _fireTower(_TowerPlacement tower) {
@@ -4890,6 +4899,55 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final t = (ap.dot(ab) / lenSq).clamp(0.0, 1.0);
     final closest = a + (ab * t);
     return p.distanceTo(closest);
+  }
+
+  void _drawSelectionRanges(Canvas canvas) {
+    final tower = _selectedTower;
+    if (tower != null) {
+      _drawRangeCircle(
+        canvas,
+        center: tower.position,
+        radius: _towerCurrentRange(tower),
+        color: tower.definition.color,
+      );
+    }
+
+    final hero = _selectedHero;
+    if (hero != null) {
+      _drawRangeCircle(
+        canvas,
+        center: hero.position,
+        radius: hero.currentRange,
+        color: hero.definition.color,
+      );
+    }
+  }
+
+  void _drawRangeCircle(
+    Canvas canvas, {
+    required Vector2 center,
+    required double radius,
+    required Color color,
+  }) {
+    if (radius <= 0) {
+      return;
+    }
+    final offset = center.toOffset();
+    canvas.drawCircle(
+      offset,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.10)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      offset,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.58)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
   }
 
   void _drawTowers(Canvas canvas) {

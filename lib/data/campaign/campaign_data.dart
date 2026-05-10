@@ -901,16 +901,65 @@ class CampaignData {
   }
 
   static int _startingCoinsForStage(int stageNumber) {
-    if (stageNumber <= 5) return 300;
-    if (stageNumber <= 10) return 330;
-    if (stageNumber <= 15) return 360;
-    if (stageNumber <= 20) return 390;
-    if (stageNumber <= 25) return 420;
-    return 450;
+    if (stageNumber <= 5) return 300 + ((stageNumber - 1) * 20);
+    if (stageNumber <= 10) return 410 + ((stageNumber - 6) * 20);
+    if (stageNumber <= 15) return 520 + ((stageNumber - 11) * 24);
+    if (stageNumber <= 20) return 650 + ((stageNumber - 16) * 28);
+    if (stageNumber <= 25) return 800 + ((stageNumber - 21) * 32);
+    return 970 + ((stageNumber - 26) * 36);
   }
 
   static int _baseHealthForStage(int stageNumber) {
     return 3;
+  }
+
+  static double _enemyHpBalanceMultiplier(int stageNumber) {
+    if (stageNumber <= 5) return 0.50;
+    if (stageNumber <= 10) return 0.62;
+    if (stageNumber <= 15) return 0.72;
+    if (stageNumber <= 20) return 0.82;
+    if (stageNumber <= 25) return 0.92;
+    return 1.0;
+  }
+
+  static double _enemyContactDamageMultiplier(int stageNumber) {
+    if (stageNumber <= 5) return 0.70;
+    if (stageNumber <= 10) return 0.78;
+    if (stageNumber <= 15) return 0.84;
+    if (stageNumber <= 20) return 0.90;
+    if (stageNumber <= 25) return 0.95;
+    return 1.0;
+  }
+
+  static int _scaledStructureDamageFor(EnemyKind kind, double multiplier) {
+    final damage = EnemyDefinition.defaultStructureDamageFor(kind);
+    return (damage * multiplier).round().clamp(1, damage);
+  }
+
+  static int _scaledTowerContactDamageFor(EnemyKind kind, double multiplier) {
+    final damage = EnemyDefinition.defaultTowerContactDamageFor(kind);
+    return (damage * multiplier).round().clamp(1, damage);
+  }
+
+  static int _recoveryGoldBonusForStage(int stageNumber, int cycleNumber) {
+    final actNumber = ((stageNumber - 1) ~/ 5) + 1;
+    final base = switch (actNumber) {
+      1 => 70,
+      2 => 90,
+      3 => 115,
+      4 => 145,
+      5 => 180,
+      _ => 220,
+    };
+    final perCycle = switch (actNumber) {
+      1 => 15,
+      2 => 18,
+      3 => 22,
+      4 => 26,
+      5 => 30,
+      _ => 35,
+    };
+    return base + (perCycle * cycleNumber);
   }
 
   static WaveDefinition _buildEarlyGameWave({
@@ -1296,10 +1345,21 @@ class CampaignData {
         ? 1.55
         : 1.40;
     final hpMultiplier =
-        (1 + ((stageNumber - 1) * 0.18)) * durabilityMultiplier;
+        (1 + ((stageNumber - 1) * 0.18)) *
+        durabilityMultiplier *
+        _enemyHpBalanceMultiplier(stageNumber);
     final actNumber = ((stageNumber - 1) ~/ 5) + 1;
     final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.06);
     final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.03);
+    final contactDamageMultiplier = _enemyContactDamageMultiplier(stageNumber);
+    final structureDamage = _scaledStructureDamageFor(
+      kind,
+      contactDamageMultiplier,
+    );
+    final towerContactDamage = _scaledTowerContactDamageFor(
+      kind,
+      contactDamageMultiplier,
+    );
 
     switch (kind) {
       case EnemyKind.raider:
@@ -1315,6 +1375,8 @@ class CampaignData {
           ),
           citadelDamage: 1,
           color: const Color(0xFFB85C38),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.scout:
         return EnemyDefinition(
@@ -1329,6 +1391,8 @@ class CampaignData {
           ),
           citadelDamage: 1,
           color: const Color(0xFFD89C45),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.bannerCaptain:
         return EnemyDefinition(
@@ -1344,6 +1408,8 @@ class CampaignData {
           ),
           citadelDamage: 2,
           color: const Color(0xFF9E523C),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.wolfScout:
         return EnemyDefinition(
@@ -1359,6 +1425,8 @@ class CampaignData {
           ),
           citadelDamage: 1,
           color: const Color(0xFF8B7A57),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.shieldInfantry:
         return EnemyDefinition(
@@ -1373,6 +1441,8 @@ class CampaignData {
           ),
           citadelDamage: 2,
           color: const Color(0xFF7D8EA3),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.cultAdept:
         return EnemyDefinition(
@@ -1387,6 +1457,8 @@ class CampaignData {
           ),
           citadelDamage: 2,
           color: const Color(0xFF6E4EAA),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.skeleton:
         return EnemyDefinition(
@@ -1401,6 +1473,8 @@ class CampaignData {
           ),
           citadelDamage: 1,
           color: const Color(0xFFBDB9AA),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.boneArcher:
         return EnemyDefinition(
@@ -1416,6 +1490,8 @@ class CampaignData {
           ),
           citadelDamage: 1,
           color: const Color(0xFFC8C1AF),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.graveGuard:
         return EnemyDefinition(
@@ -1431,6 +1507,8 @@ class CampaignData {
           ),
           citadelDamage: 3,
           color: const Color(0xFF63705F),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.plagueBearer:
         return EnemyDefinition(
@@ -1446,6 +1524,8 @@ class CampaignData {
           ),
           citadelDamage: 2,
           color: const Color(0xFF5E7152),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.corruptedKnight:
         return EnemyDefinition(
@@ -1461,6 +1541,8 @@ class CampaignData {
           ),
           citadelDamage: 4,
           color: const Color(0xFF7A5151),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.hexSniper:
         return EnemyDefinition(
@@ -1476,6 +1558,8 @@ class CampaignData {
           ),
           citadelDamage: 2,
           color: const Color(0xFF5C4B73),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.warlock:
         return EnemyDefinition(
@@ -1491,6 +1575,8 @@ class CampaignData {
           ),
           citadelDamage: 3,
           color: const Color(0xFF5E3E88),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.bastionPriest:
         return EnemyDefinition(
@@ -1506,6 +1592,8 @@ class CampaignData {
           ),
           citadelDamage: 3,
           color: const Color(0xFF8A7A5E),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
       case EnemyKind.bastionOverlord:
         return EnemyDefinition(
@@ -1521,6 +1609,8 @@ class CampaignData {
           ),
           citadelDamage: 10,
           color: const Color(0xFF8C3F34),
+          structureDamage: structureDamage,
+          towerContactDamage: towerContactDamage,
         );
     }
   }
@@ -3607,7 +3697,10 @@ class CampaignData {
             activeFronts: cycle.activeFronts,
             groups: cycle.groups,
             recoverySeconds: cycle.recoverySeconds,
-            recoveryGoldBonus: cycle.recoveryGoldBonus,
+            recoveryGoldBonus: _recoveryGoldBonusForStage(
+              stageNumber,
+              cycle.number,
+            ),
             isFinalBreach: cycle.isFinalBreach,
             activeRouteIds: _routeIdsForStage(stageNumber),
             variants: cycle.variants,
@@ -3628,7 +3721,10 @@ class CampaignData {
               )
               .toList(growable: false),
           recoverySeconds: cycle.recoverySeconds,
-          recoveryGoldBonus: cycle.recoveryGoldBonus,
+          recoveryGoldBonus: _recoveryGoldBonusForStage(
+            stageNumber,
+            cycle.number,
+          ),
           isFinalBreach: cycle.isFinalBreach,
           activeRouteIds: _routeIdsForStage(stageNumber),
           variants: cycle.variants,
@@ -6223,6 +6319,124 @@ class CampaignData {
           ),
         ];
       default:
+        if (stageNumber <= 10) {
+          return [
+            AssaultCycleDefinition(
+              number: 1,
+              activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+              groups: [
+                spawn(
+                  SpawnDirection.north,
+                  EnemyKind.raider,
+                  4,
+                  interval: 0.88,
+                ),
+                spawn(
+                  SpawnDirection.west,
+                  EnemyKind.wolfScout,
+                  3,
+                  interval: 0.82,
+                ),
+              ],
+            ),
+            AssaultCycleDefinition(
+              number: 2,
+              activeFronts: const [SpawnDirection.north, SpawnDirection.west],
+              groups: [
+                spawn(
+                  SpawnDirection.north,
+                  EnemyKind.raider,
+                  4,
+                  interval: 0.86,
+                ),
+                spawn(
+                  SpawnDirection.west,
+                  EnemyKind.wolfScout,
+                  4,
+                  interval: 0.80,
+                ),
+                spawn(
+                  SpawnDirection.north,
+                  EnemyKind.shieldInfantry,
+                  2,
+                  interval: 1.16,
+                ),
+              ],
+            ),
+            AssaultCycleDefinition(
+              number: 3,
+              activeFronts: const [
+                SpawnDirection.north,
+                SpawnDirection.west,
+                SpawnDirection.south,
+              ],
+              groups: [
+                spawn(
+                  SpawnDirection.north,
+                  EnemyKind.raider,
+                  5,
+                  interval: 0.84,
+                ),
+                spawn(
+                  SpawnDirection.west,
+                  EnemyKind.wolfScout,
+                  4,
+                  interval: 0.78,
+                ),
+                spawn(
+                  SpawnDirection.south,
+                  EnemyKind.shieldInfantry,
+                  2,
+                  interval: 1.12,
+                ),
+                spawn(
+                  SpawnDirection.west,
+                  EnemyKind.cultAdept,
+                  1,
+                  interval: 2.05,
+                ),
+              ],
+            ),
+            AssaultCycleDefinition(
+              number: 4,
+              activeFronts: const [
+                SpawnDirection.north,
+                SpawnDirection.west,
+                SpawnDirection.south,
+              ],
+              isFinalBreach: true,
+              groups: [
+                spawn(
+                  SpawnDirection.north,
+                  EnemyKind.raider,
+                  5,
+                  interval: 0.82,
+                  intensity: 1.06,
+                ),
+                spawn(
+                  SpawnDirection.west,
+                  EnemyKind.wolfScout,
+                  4,
+                  interval: 0.76,
+                  intensity: 1.04,
+                ),
+                spawn(
+                  SpawnDirection.south,
+                  EnemyKind.shieldInfantry,
+                  3,
+                  interval: 1.08,
+                  intensity: 1.04,
+                ),
+                spawn(
+                  SpawnDirection.south,
+                  EnemyKind.bannerCaptain,
+                  1,
+                  interval: 2.15,
+                ),
+              ],
+            ),
+          ];
+        }
         final common = stageNumber >= 26
             ? EnemyKind.corruptedKnight
             : stageNumber >= 21

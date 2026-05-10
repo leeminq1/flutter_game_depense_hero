@@ -36,3 +36,11 @@
 - Stage 16~30이 fallback 맵으로 돌아가지 않아야 한다.
 - 몬스터가 타워를 파괴하는 장면이 실전에서 가끔 발생해야 한다.
 - 코인밀은 플레이어가 손익분기 시간을 UI에서 이해할 수 있어야 한다.
+
+# 2026-05-10 UI and Difficulty Follow-up
+
+- Build cards now stay active after a successful tower or wall placement, so players can place multiple copies without reselecting the card. The mode ends when the same card is tapped again or when `WAVE` starts.
+- Selecting an existing tower or hero should show a translucent range circle using that unit's current runtime range. Non-combat economy buildings with `range == 0` do not draw a range circle.
+- Stage 1-5 enemy HP is reduced to 50% of the previous curve, and enemy contact damage against walls, towers, and heroes is reduced to 70%. Citadel leak damage remains fixed at 1.
+- Stage 6-30 now use a smoother HP/contact-damage ramp: HP balance `0.62 / 0.72 / 0.82 / 0.92 / 1.00` by five-stage band, contact damage `0.78 / 0.84 / 0.90 / 0.95 / 1.00`.
+- Starting Gold and recovery Gold now rise gradually by stage/act so later stages can ask for more planning without forcing early-stage grind.

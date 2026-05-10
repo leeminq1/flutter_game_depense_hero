@@ -91,12 +91,12 @@ The new mode needs more opening currency than the old single-lane layout because
 
 | Stage Range | Starting Gold |
 | --- | --- |
-| 1-5 | 300 |
-| 6-10 | 330 |
-| 11-15 | 360 |
-| 16-20 | 390 |
-| 21-25 | 420 |
-| 26-30 | 450 |
+| 1-5 | Stage 1 starts at 300, +20 per Stage |
+| 6-10 | Stage 6 starts at 410, +20 per Stage |
+| 11-15 | Stage 11 starts at 520, +24 per Stage |
+| 16-20 | Stage 16 starts at 650, +28 per Stage |
+| 21-25 | Stage 21 starts at 800, +32 per Stage |
+| 26-30 | Stage 26 starts at 970, +36 per Stage |
 
 ## Citadel HP Rule
 
@@ -131,7 +131,7 @@ Recommended baseline bonus set:
 
 | Condition | Bonus |
 | --- | --- |
-| Cycle completed | +80 to +160 gold depending on act after the current early-fun doubling pass |
+| Cycle completed | Act-scaled: Act 1 `70 + 15/cycle`, Act 2 `90 + 18/cycle`, Act 3 `115 + 22/cycle`, Act 4 `145 + 26/cycle`, Act 5 `180 + 30/cycle`, Act 6 `220 + 35/cycle` |
 | No leak during cycle | +20 gold |
 | Citadel at full HP after cycle | +15 gold |
 | Fast clear | +10 gold |

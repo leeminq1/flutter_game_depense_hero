@@ -6,6 +6,41 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('GameSessionController', () {
+    test(
+      'buildable selection can be cleared after the same card is tapped',
+      () {
+        final controller = GameSessionController();
+        var notifications = 0;
+
+        controller.addListener(() {
+          notifications += 1;
+        });
+
+        controller.setSelectedBuildable(TowerKind.archer);
+        expect(controller.selectedBuildable, TowerKind.archer);
+
+        controller.setSelectedBuildable(null);
+        expect(controller.selectedBuildable, isNull);
+        expect(notifications, 2);
+      },
+    );
+
+    test('barrier selection can be cleared after the same card is tapped', () {
+      final controller = GameSessionController();
+      var notifications = 0;
+
+      controller.addListener(() {
+        notifications += 1;
+      });
+
+      controller.setSelectedBarrierBuildable(BarrierKind.stoneWall);
+      expect(controller.selectedBarrierBuildable, BarrierKind.stoneWall);
+
+      controller.setSelectedBarrierBuildable(null);
+      expect(controller.selectedBarrierBuildable, isNull);
+      expect(notifications, 2);
+    });
+
     test('updateRuntime only notifies when runtime values actually change', () {
       final controller = GameSessionController();
       var notifications = 0;

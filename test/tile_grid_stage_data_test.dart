@@ -362,11 +362,17 @@ void main() {
 
   test('starting gold reflects the wall-building economy brackets', () {
     expect(CampaignData.stage(1).startingCoins, 300);
-    expect(CampaignData.stage(6).startingCoins, 330);
-    expect(CampaignData.stage(11).startingCoins, 360);
-    expect(CampaignData.stage(16).startingCoins, 390);
-    expect(CampaignData.stage(21).startingCoins, 420);
-    expect(CampaignData.stage(26).startingCoins, 450);
+    expect(CampaignData.stage(5).startingCoins, 380);
+    expect(CampaignData.stage(6).startingCoins, 410);
+    expect(CampaignData.stage(10).startingCoins, 490);
+    expect(CampaignData.stage(11).startingCoins, 520);
+    expect(CampaignData.stage(15).startingCoins, 616);
+    expect(CampaignData.stage(16).startingCoins, 650);
+    expect(CampaignData.stage(20).startingCoins, 762);
+    expect(CampaignData.stage(21).startingCoins, 800);
+    expect(CampaignData.stage(25).startingCoins, 928);
+    expect(CampaignData.stage(26).startingCoins, 970);
+    expect(CampaignData.stage(30).startingCoins, 1114);
   });
 
   test('barriers and heroes expose the v2 build metadata', () {
@@ -432,21 +438,52 @@ void main() {
       if (fast.contains(kind)) {
         expect(enemy.wallBehavior, EnemyWallBehavior.rerouteFirst);
         expect(enemy.wallBreakChance, 0);
-        expect(enemy.baseStructureDamage, 7);
+        expect(enemy.baseStructureDamage, 5);
+        expect(enemy.baseTowerContactDamage, 6);
       } else if (heavy.contains(kind)) {
         expect(enemy.wallBehavior, EnemyWallBehavior.forceBreaker);
         expect(enemy.wallBreakChance, 1);
         final expectedStructureDamage = switch (kind) {
-          EnemyKind.bastionOverlord => 50,
-          EnemyKind.corruptedKnight || EnemyKind.graveGuard => 36,
+          EnemyKind.bastionOverlord => 35,
+          EnemyKind.corruptedKnight || EnemyKind.graveGuard => 25,
+          _ => 20,
+        };
+        final expectedTowerDamage = switch (kind) {
+          EnemyKind.bastionOverlord => 63,
+          EnemyKind.corruptedKnight || EnemyKind.graveGuard => 41,
           _ => 29,
         };
         expect(enemy.baseStructureDamage, expectedStructureDamage);
+        expect(enemy.baseTowerContactDamage, expectedTowerDamage);
       } else {
         expect(enemy.wallBehavior, EnemyWallBehavior.mixedBreaker);
         expect(enemy.wallBreakChance, 0.7);
-        expect(enemy.baseStructureDamage, 20);
+        expect(enemy.baseStructureDamage, 14);
+        expect(enemy.baseTowerContactDamage, 15);
       }
+    }
+  });
+
+  test('enemy hp balance multipliers ease early stages then ramp smoothly', () {
+    final expectations = {
+      1: _expectedRaiderHp(stageNumber: 1, hpBalance: 0.50),
+      5: _expectedRaiderHp(stageNumber: 5, hpBalance: 0.50),
+      6: _expectedRaiderHp(stageNumber: 6, hpBalance: 0.62),
+      11: _expectedRaiderHp(stageNumber: 11, hpBalance: 0.72),
+      16: _expectedRaiderHp(stageNumber: 16, hpBalance: 0.82),
+      21: _expectedRaiderHp(stageNumber: 21, hpBalance: 0.92),
+      26: _expectedRaiderHp(stageNumber: 26, hpBalance: 1.00),
+    };
+
+    for (final entry in expectations.entries) {
+      expect(
+        CampaignData.enemyForKind(
+          EnemyKind.raider,
+          stageNumber: entry.key,
+          intensity: 1,
+        ).hitPoints,
+        entry.value,
+      );
     }
   });
 
@@ -534,6 +571,21 @@ void main() {
     );
   });
 
+  test('stage 7 to 10 add smoother midgame enemy roles', () {
+    for (var stageNumber = 7; stageNumber <= 10; stageNumber += 1) {
+      expect(
+        _enemyKinds(CampaignData.stage(stageNumber)),
+        containsAll([
+          EnemyKind.raider,
+          EnemyKind.wolfScout,
+          EnemyKind.shieldInfantry,
+          EnemyKind.cultAdept,
+          EnemyKind.bannerCaptain,
+        ]),
+      );
+    }
+  });
+
   test('wave variants are previewable and seed deterministic', () {
     final stage = CampaignData.stage(4);
     final variants = stage.assaultCycles.expand((cycle) => cycle.variants);
@@ -577,6 +629,17 @@ Set<EnemyKind> _enemyKinds(StageDefinition stage) {
       for (final variant in cycle.variants)
         for (final group in variant.groups) group.enemy.kind,
   };
+}
+
+int _expectedRaiderHp({required int stageNumber, required double hpBalance}) {
+  final durabilityMultiplier = stageNumber <= 5
+      ? 1.75
+      : stageNumber <= 15
+      ? 1.55
+      : 1.40;
+  final hpMultiplier =
+      (1 + ((stageNumber - 1) * 0.18)) * durabilityMultiplier * hpBalance;
+  return (57 * hpMultiplier).round();
 }
 
 bool _startsOnExpectedEdge(List<int> cell, SpawnDirection direction) {
