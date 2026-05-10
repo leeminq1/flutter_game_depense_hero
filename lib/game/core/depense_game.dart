@@ -3323,9 +3323,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final enemy = _Enemy.fromDefinition(
       definition,
       spawnDirection: summoner.spawnDirection,
+      routeId: summoner.routeId,
     );
     enemy.debugId = _nextEnemyDebugId++;
     final summonPath = _pathForEnemy(summoner);
+    enemy.customPath = summonPath;
+    enemy.breachTargetCell = summoner.breachTargetCell;
     final summonSegmentProgress = (summoner.segmentProgress - 0.08).clamp(
       0.0,
       1.0,
@@ -3843,6 +3846,47 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       barrierCell[0],
       barrierCell[1],
     ), routeId: route.id);
+  }
+
+  @visibleForTesting
+  ({String? routeId, Vector2 position, Vector2 expectedPosition})
+  debugSummonedEnemyPlacementForRoute(SpawnRouteDefinition route) {
+    final definition = CampaignData.enemyForKind(
+      EnemyKind.boneArcher,
+      stageNumber: stage.number,
+      intensity: 1,
+    );
+    final summoner = _Enemy.fromDefinition(
+      definition,
+      spawnDirection: route.direction,
+      routeId: route.id,
+    );
+    summoner.customPath = debugSpawnPathForRoute(route);
+    summoner.segmentIndex = math.max(0, summoner.customPath!.length - 3);
+    summoner.segmentProgress = 0.5;
+    _placeEnemyOnPath(summoner);
+
+    final beforeCount = _enemies.length;
+    _spawnSummonedEnemy(summoner: summoner, kind: EnemyKind.skeleton);
+    final spawned = _enemies.removeLast();
+    _remainingEnemiesInCycle = math.max(0, _remainingEnemiesInCycle - 1);
+    assert(_enemies.length == beforeCount);
+
+    final spawnedPath = _pathForEnemy(spawned);
+    final expectedSegmentIndex = spawned.segmentIndex
+        .clamp(0, math.max(0, spawnedPath.length - 2))
+        .toInt();
+    final expectedStart = spawnedPath[expectedSegmentIndex];
+    final expectedEnd = spawnedPath[expectedSegmentIndex + 1];
+    final expectedPosition =
+        expectedStart +
+        ((expectedEnd - expectedStart) * spawned.segmentProgress);
+
+    return (
+      routeId: spawned.routeId,
+      position: spawned.position.clone(),
+      expectedPosition: expectedPosition,
+    );
   }
 
   @visibleForTesting

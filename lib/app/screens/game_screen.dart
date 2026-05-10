@@ -484,8 +484,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   String _rewardedRetryMessageFor(RewardedRetryAdResult result) {
     return switch (result) {
-      RewardedRetryAdResult.dismissedWithoutReward =>
-        '보상 조건을 채우지 않아 골드가 지급되지 않았습니다.',
       RewardedRetryAdResult.loadFailed => '광고를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
       RewardedRetryAdResult.showFailed => '광고를 표시하지 못했습니다. 잠시 후 다시 시도해주세요.',
       RewardedRetryAdResult.unsupportedPlatform =>
@@ -3383,7 +3381,7 @@ class _ResultOverlay extends StatelessWidget {
               _LargeButton(
                 label: isShowingRewardedRetryAd
                     ? '광고 준비 중...'
-                    : '광고 보고 +200골드 재도전',
+                    : '광고 닫고 +200골드 재도전',
                 color: const Color(0xFFE4C67A),
                 onPressed: isSavingProgress || isShowingRewardedRetryAd
                     ? null
@@ -3393,7 +3391,7 @@ class _ResultOverlay extends StatelessWidget {
               Text(
                 rewardedRetryBonus > 0
                     ? '현재 광고 재도전 보너스 +$rewardedRetryBonus골드'
-                    : '보상 조건 달성 시 이 STAGE 재도전 골드 +200',
+                    : '광고를 닫으면 이 STAGE 재도전 골드 +200',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white54,

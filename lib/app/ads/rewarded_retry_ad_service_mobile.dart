@@ -6,13 +6,13 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'rewarded_retry_ad_service.dart';
 
-const String _androidTestRewardedInterstitialAdUnitId =
-    'ca-app-pub-3940256099942544/5354046379';
-const String _androidProductionRewardedInterstitialAdUnitId =
-    'ca-app-pub-9991463854626958/4197833714';
+const String _androidTestInterstitialAdUnitId =
+    'ca-app-pub-3940256099942544/1033173712';
+const String _androidProductionInterstitialAdUnitId =
+    'ca-app-pub-9991463854626958/6582278304';
 
 class MobileRewardedRetryAdService implements RewardedRetryAdService {
-  RewardedInterstitialAd? _ad;
+  InterstitialAd? _ad;
   bool _isInitialized = false;
   bool _isLoading = false;
 
@@ -20,9 +20,9 @@ class MobileRewardedRetryAdService implements RewardedRetryAdService {
 
   String get _adUnitId {
     if (!kReleaseMode) {
-      return _androidTestRewardedInterstitialAdUnitId;
+      return _androidTestInterstitialAdUnitId;
     }
-    return _androidProductionRewardedInterstitialAdUnitId;
+    return _androidProductionInterstitialAdUnitId;
   }
 
   @override
@@ -42,10 +42,10 @@ class MobileRewardedRetryAdService implements RewardedRetryAdService {
     }
     _isLoading = true;
     final completer = Completer<void>();
-    await RewardedInterstitialAd.load(
+    await InterstitialAd.load(
       adUnitId: _adUnitId,
       request: const AdRequest(),
-      rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
+      adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _ad = ad;
           _isLoading = false;
@@ -81,7 +81,6 @@ class MobileRewardedRetryAdService implements RewardedRetryAdService {
     }
 
     _ad = null;
-    var earnedReward = false;
     final completer = Completer<RewardedRetryAdResult>();
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
@@ -89,11 +88,7 @@ class MobileRewardedRetryAdService implements RewardedRetryAdService {
         ad.dispose();
         unawaited(preload());
         if (!completer.isCompleted) {
-          completer.complete(
-            earnedReward
-                ? RewardedRetryAdResult.rewarded
-                : RewardedRetryAdResult.dismissedWithoutReward,
-          );
+          completer.complete(RewardedRetryAdResult.rewarded);
         }
       },
       onAdFailedToShowFullScreenContent: (ad, _) {
@@ -106,11 +101,7 @@ class MobileRewardedRetryAdService implements RewardedRetryAdService {
     );
 
     try {
-      await ad.show(
-        onUserEarnedReward: (ad, reward) {
-          earnedReward = true;
-        },
-      );
+      await ad.show();
     } catch (_) {
       ad.dispose();
       unawaited(preload());

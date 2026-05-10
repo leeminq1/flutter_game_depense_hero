@@ -257,6 +257,31 @@ void main() {
     }
   });
 
+  test('summoned skeletons inherit their summoner route', () {
+    final stage = CampaignData.stage(3);
+    final game = DefensePrototypeGame(
+      stage: stage,
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+
+    game.onGameResize(Vector2(728, 728));
+
+    for (final route in stage.spawnRoutes) {
+      final placement = game.debugSummonedEnemyPlacementForRoute(route);
+
+      expect(placement.routeId, route.id);
+      expect(
+        placement.position.distanceTo(placement.expectedPosition),
+        lessThan(0.001),
+        reason:
+            'Summoned skeleton on ${route.id} should stay on the summoner path',
+      );
+    }
+  });
+
   test('citadel gate helper clamps to the battlefield edge', () {
     const cornerCitadel = [0, 0];
 

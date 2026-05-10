@@ -4,7 +4,6 @@ import 'rewarded_retry_ad_service_stub.dart'
 
 enum RewardedRetryAdResult {
   rewarded,
-  dismissedWithoutReward,
   loadFailed,
   showFailed,
   unsupportedPlatform,
