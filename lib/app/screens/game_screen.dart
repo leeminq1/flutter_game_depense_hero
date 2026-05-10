@@ -585,7 +585,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                               Positioned(
                                 top: 126,
                                 right: 8,
-                                width: 184,
+                                width: 232,
                                 child: _TowerActionBar(
                                   sessionController: session,
                                   onUpgrade: game.upgradeSelectedTower,
@@ -598,7 +598,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                               Positioned(
                                 top: 126,
                                 right: 8,
-                                width: 184,
+                                width: 232,
                                 child: _BarrierActionBar(
                                   sessionController: session,
                                   canSell: !session.waveInProgress,
@@ -612,7 +612,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                               Positioned(
                                 top: 126,
                                 right: 8,
-                                width: 184,
+                                width: 232,
                                 child: _HeroActionBar(
                                   sessionController: session,
                                   canMove: !session.waveInProgress,
@@ -686,8 +686,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         onReturnToCamp: _returnToCampFromResult,
                         isShowingRewardedRetryAd: _isShowingRewardedRetryAd,
                         rewardedRetryStatusText: _rewardedRetryStatusText,
-                        rewardedRetryBonus: _rewardedRetryBonusTracker
-                            .bonusForStage(_stageNumber),
                       ),
                     ),
                 ],
@@ -2951,75 +2949,34 @@ class _TowerActionBar extends StatelessWidget {
 
     final subtitle = tower.branchLabel ?? tower.shortDescription;
 
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xE8141B24),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  tower.label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              _MiniActionButton(
-                tooltip: '업그레이드',
-                onPressed: tower.canUpgrade ? onUpgrade : null,
-                width: 52,
-                child: Text(
-                  '↑ ${tower.upgradeCost}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
-              const SizedBox(width: 4),
-              _MiniActionButton(
-                tooltip: '철거',
-                onPressed: onSell,
-                backgroundColor: const Color(0x24EF4E4E),
-                child: const Icon(
-                  Icons.delete_outline_rounded,
-                  size: 18,
-                  color: Color(0xFFEF4E4E),
-                ),
-              ),
-              const SizedBox(width: 4),
-              _MiniActionButton(
-                tooltip: '닫기',
-                onPressed: onClose,
-                child: const Icon(Icons.close_rounded, size: 18),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Text(
-            subtitle,
-            style: const TextStyle(color: Colors.white60, fontSize: 11),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+    return _SelectionActionPanel(
+      title: tower.label,
+      subtitle: subtitle,
+      actions: [
+        _PanelActionButton(
+          tooltip: '업그레이드',
+          label: '업그레이드',
+          value: '${tower.upgradeCost}',
+          width: 88,
+          icon: Icons.arrow_upward_rounded,
+          onPressed: tower.canUpgrade ? onUpgrade : null,
+        ),
+        _PanelActionButton(
+          tooltip: '철거',
+          label: '철거',
+          width: 56,
+          icon: Icons.delete_outline_rounded,
+          onPressed: onSell,
+          danger: true,
+        ),
+        _PanelActionButton(
+          tooltip: '취소',
+          label: '취소',
+          width: 56,
+          icon: Icons.close_rounded,
+          onPressed: onClose,
+        ),
+      ],
     );
   }
 }
@@ -3047,69 +3004,26 @@ class _BarrierActionBar extends StatelessWidget {
     final healthText =
         '${barrier.hitPoints.ceil()}/${barrier.maxHitPoints.round()}';
 
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xE8141B24),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  barrier.label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              _MiniActionButton(
-                tooltip: '철거',
-                onPressed: canSell ? onSell : null,
-                backgroundColor: const Color(0x24EF4E4E),
-                child: const Icon(
-                  Icons.delete_outline_rounded,
-                  size: 18,
-                  color: Color(0xFFEF4E4E),
-                ),
-              ),
-              const SizedBox(width: 4),
-              _MiniActionButton(
-                tooltip: '닫기',
-                onPressed: onClose,
-                child: const Icon(Icons.close_rounded, size: 18),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Text(
-            '내구도 $healthText',
-            style: const TextStyle(
-              color: Color(0xFFE4C67A),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+    return _SelectionActionPanel(
+      title: barrier.label,
+      subtitle: '내구도 $healthText',
+      actions: [
+        _PanelActionButton(
+          tooltip: '철거',
+          label: '철거',
+          width: 72,
+          icon: Icons.delete_outline_rounded,
+          onPressed: canSell ? onSell : null,
+          danger: true,
+        ),
+        _PanelActionButton(
+          tooltip: '취소',
+          label: '취소',
+          width: 56,
+          icon: Icons.close_rounded,
+          onPressed: onClose,
+        ),
+      ],
     );
   }
 }
@@ -3136,6 +3050,51 @@ class _HeroActionBar extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    return _SelectionActionPanel(
+      title: '${hero.label} Lv.${hero.level}',
+      subtitle: hero.abilityLabel,
+      actions: [
+        _PanelActionButton(
+          tooltip: '이동',
+          label: '이동',
+          width: 56,
+          icon: Icons.flag_rounded,
+          onPressed: canMove ? onMove : null,
+        ),
+        _PanelActionButton(
+          tooltip: '업그레이드',
+          label: '업그레이드',
+          value: '${hero.upgradeCost}',
+          width: 88,
+          icon: Icons.arrow_upward_rounded,
+          onPressed: hero.canUpgrade ? onUpgrade : null,
+        ),
+        _PanelActionButton(
+          tooltip: '취소',
+          label: '취소',
+          width: 56,
+          icon: Icons.close_rounded,
+          onPressed: onDeselect,
+          danger: true,
+        ),
+      ],
+    );
+  }
+}
+
+class _SelectionActionPanel extends StatelessWidget {
+  const _SelectionActionPanel({
+    required this.title,
+    required this.subtitle,
+    required this.actions,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -3154,78 +3113,63 @@ class _HeroActionBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${hero.label} Lv.${hero.level}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              _MiniActionButton(
-                tooltip: '방어 위치',
-                onPressed: canMove ? onMove : null,
-                child: const Icon(Icons.flag_rounded, size: 18),
-              ),
-              const SizedBox(width: 4),
-              _MiniActionButton(
-                tooltip: '업그레이드',
-                onPressed: hero.canUpgrade ? onUpgrade : null,
-                width: 52,
-                child: Text(
-                  '↑ ${hero.upgradeCost}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
-              const SizedBox(width: 4),
-              _MiniActionButton(
-                tooltip: '닫기',
-                onPressed: onDeselect,
-                backgroundColor: const Color(0x24EF4E4E),
-                child: const Icon(
-                  Icons.close_rounded,
-                  size: 18,
-                  color: Color(0xFFEF4E4E),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
           Text(
-            hero.abilityLabel,
-            style: const TextStyle(color: Colors.white60, fontSize: 11),
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              height: 1.15,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 11,
+              height: 1.2,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Wrap(spacing: 6, runSpacing: 6, children: actions),
         ],
       ),
     );
   }
 }
 
-class _MiniActionButton extends StatelessWidget {
-  const _MiniActionButton({
+class _PanelActionButton extends StatelessWidget {
+  const _PanelActionButton({
     required this.tooltip,
     required this.onPressed,
-    required this.child,
-    this.backgroundColor = const Color(0x2AFFFFFF),
-    this.width = 34,
+    required this.label,
+    required this.icon,
+    required this.width,
+    this.value,
+    this.danger = false,
   });
 
   final String tooltip;
   final VoidCallback? onPressed;
-  final Widget child;
-  final Color backgroundColor;
+  final String label;
+  final String? value;
+  final IconData icon;
   final double width;
+  final bool danger;
 
   @override
   Widget build(BuildContext context) {
+    final foregroundColor = danger ? const Color(0xFFFF6B6B) : Colors.white;
+    final backgroundColor = danger
+        ? const Color(0x24EF4E4E)
+        : const Color(0x2AFFFFFF);
+    final text = value == null ? label : '$label $value';
+
     return Tooltip(
       message: tooltip,
       child: SizedBox(
@@ -3237,7 +3181,7 @@ class _MiniActionButton extends StatelessWidget {
             padding: EdgeInsets.zero,
             minimumSize: const Size(34, 34),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            foregroundColor: Colors.white,
+            foregroundColor: foregroundColor,
             backgroundColor: backgroundColor,
             disabledForegroundColor: Colors.white24,
             disabledBackgroundColor: const Color(0x14FFFFFF),
@@ -3245,7 +3189,27 @@ class _MiniActionButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          child: Center(child: child),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 15, color: foregroundColor),
+                  const SizedBox(width: 3),
+                  Text(
+                    text,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -3266,7 +3230,6 @@ class _ResultOverlay extends StatelessWidget {
     required this.onReturnToCamp,
     required this.isShowingRewardedRetryAd,
     required this.rewardedRetryStatusText,
-    required this.rewardedRetryBonus,
   });
 
   final GameSessionController sessionController;
@@ -3281,7 +3244,6 @@ class _ResultOverlay extends StatelessWidget {
   final VoidCallback onReturnToCamp;
   final bool isShowingRewardedRetryAd;
   final String? rewardedRetryStatusText;
-  final int rewardedRetryBonus;
 
   @override
   Widget build(BuildContext context) {
@@ -3385,19 +3347,6 @@ class _ResultOverlay extends StatelessWidget {
                 onPressed: isSavingProgress || isShowingRewardedRetryAd
                     ? null
                     : onRewardedRetry,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                rewardedRetryBonus > 0
-                    ? '현재 광고 재도전 보너스 +$rewardedRetryBonus골드'
-                    : '광고를 닫으면 이 STAGE 재도전 골드 +200',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                  height: 1.25,
-                  fontWeight: FontWeight.w700,
-                ),
               ),
               if (rewardedRetryStatusText != null &&
                   rewardedRetryStatusText!.isNotEmpty) ...[

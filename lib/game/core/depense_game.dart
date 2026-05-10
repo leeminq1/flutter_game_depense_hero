@@ -4973,16 +4973,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       offset,
       radius,
       Paint()
-        ..color = color.withValues(alpha: 0.10)
+        ..color = color.withValues(alpha: 0.14)
         ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(
       offset,
       radius,
       Paint()
-        ..color = color.withValues(alpha: 0.58)
+        ..color = color.withValues(alpha: 0.92)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
+        ..strokeWidth = 3.2,
     );
   }
 
