@@ -589,8 +589,40 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   double _towerCurrentRange(_TowerPlacement tower) {
-    return tower.currentRange *
+    final levelRange = 1 + ((tower.level - 1) * 0.07);
+    final branchRange = switch (tower.branchId) {
+      'ranger' => 1.18,
+      'sentinel' => 1.12,
+      'glacier' => 1.15,
+      'siege' => 1.10,
+      _ => 1.0,
+    };
+    return _towerBaseRange(tower.definition.kind) *
+        levelRange *
+        branchRange *
         _runModifiers.towerRangeMultiplier(tower.definition.kind);
+  }
+
+  double _towerBaseRange(TowerKind kind) {
+    return switch (kind) {
+      TowerKind.coinMill => 0,
+      TowerKind.guardBarracks => _tileSize * 1.05,
+      TowerKind.archer ||
+      TowerKind.frostShrine ||
+      TowerKind.ballista ||
+      TowerKind.emberkeep => _tileSize * 1.55,
+      TowerKind.mageObelisk => _tileSize * 2.55,
+    };
+  }
+
+  double _heroCurrentRange(_HeroPlacement hero) {
+    final levelRange = 1 + ((hero.level - 1) * 0.07);
+    final baseRange = switch (hero.definition.kind) {
+      HeroKind.knight || HeroKind.ninja || HeroKind.paladin => _tileSize * 1.05,
+      HeroKind.archer => _tileSize * 1.55,
+      HeroKind.mage => _tileSize * 2.55,
+    };
+    return baseRange * levelRange;
   }
 
   double _towerCurrentDamage(_TowerPlacement tower) {
@@ -2296,7 +2328,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       if (hero.definition.kind != HeroKind.knight) {
         continue;
       }
-      if (hero.position.distanceTo(towerPosition) > hero.currentRange) {
+      if (hero.position.distanceTo(towerPosition) > _heroCurrentRange(hero)) {
         continue;
       }
       final aura = 0.82 - (metaUpgrades.guardDrillLevel * 0.015);
@@ -4654,7 +4686,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
       final target = _pickHeroGuardTarget(hero);
       if (target != null &&
-          hero.position.distanceTo(target.position) <= hero.currentRange) {
+          hero.position.distanceTo(target.position) <=
+              _heroCurrentRange(hero)) {
         _fireHero(hero, target);
       }
     }
@@ -4664,7 +4697,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final target = _pickHeroGuardTarget(hero);
     if (target != null) {
       final distance = hero.position.distanceTo(target.position);
-      final stopDistance = math.max(_tileSize * 0.48, hero.currentRange * 0.78);
+      final stopDistance = math.max(
+        _tileSize * 0.48,
+        _heroCurrentRange(hero) * 0.78,
+      );
       if (distance > stopDistance) {
         _moveHeroToward(hero, target.position, dt, stopDistance: stopDistance);
       }
@@ -4738,7 +4774,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _TowerPlacement? target;
     var lowestRatio = 1.0;
     for (final tower in _towers) {
-      if (tower.position.distanceTo(hero.position) > hero.currentRange) {
+      if (tower.position.distanceTo(hero.position) > _heroCurrentRange(hero)) {
         continue;
       }
       final ratio = (tower.hitPoints / tower.maxHitPoints).clamp(0.0, 1.0);
@@ -4908,7 +4944,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         canvas,
         center: tower.position,
         radius: _towerCurrentRange(tower),
-        color: tower.definition.color,
+        color: const Color(0xFFE4C67A),
       );
     }
 
@@ -4917,8 +4953,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _drawRangeCircle(
         canvas,
         center: hero.position,
-        radius: hero.currentRange,
-        color: hero.definition.color,
+        radius: _heroCurrentRange(hero),
+        color: const Color(0xFFE4C67A),
       );
     }
   }

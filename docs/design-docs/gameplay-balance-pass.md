@@ -44,3 +44,4 @@
 - Stage 1-5 enemy HP is reduced to 50% of the previous curve, and enemy contact damage against walls, towers, and heroes is reduced to 70%. Citadel leak damage remains fixed at 1.
 - Stage 6-30 now use a smoother HP/contact-damage ramp: HP balance `0.62 / 0.72 / 0.82 / 0.92 / 1.00` by five-stage band, contact damage `0.78 / 0.84 / 0.90 / 0.95 / 1.00`.
 - Starting Gold and recovery Gold now rise gradually by stage/act so later stages can ask for more planning without forcing early-stage grind.
+- A follow-up readability pass changed range rings to yellow, reduced selected-unit action panels to a compact upper-right overlay, and tightened combat ranges to grid-sized coverage: barracks/melee heroes about `2x2`, archer/frost/ballista/emberkeep/ranged heroes about `3x3`, and mage about `5x5`.

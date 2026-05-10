@@ -512,6 +512,22 @@ void main() {
     expect(TowerCatalog.byKind(TowerKind.emberkeep).cost, 80);
   });
 
+  test('tower and hero range labels use compact grid coverage values', () {
+    expect(TowerCatalog.byKind(TowerKind.guardBarracks).range, 2);
+    expect(TowerCatalog.byKind(TowerKind.archer).range, 3);
+    expect(TowerCatalog.byKind(TowerKind.frostShrine).range, 3);
+    expect(TowerCatalog.byKind(TowerKind.ballista).range, 3);
+    expect(TowerCatalog.byKind(TowerKind.emberkeep).range, 3);
+    expect(TowerCatalog.byKind(TowerKind.mageObelisk).range, 5);
+    expect(TowerCatalog.byKind(TowerKind.coinMill).range, 0);
+
+    expect(HeroCatalog.byKind(HeroKind.knight).range, 2);
+    expect(HeroCatalog.byKind(HeroKind.ninja).range, 2);
+    expect(HeroCatalog.byKind(HeroKind.paladin).range, 2);
+    expect(HeroCatalog.byKind(HeroKind.archer).range, 3);
+    expect(HeroCatalog.byKind(HeroKind.mage).range, 5);
+  });
+
   test('stage 1 to 5 teach fortress design before full randomness', () {
     expect(_frontPattern(CampaignData.stage(1)), [
       ['north'],
