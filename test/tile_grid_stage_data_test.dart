@@ -1,11 +1,19 @@
 import 'package:depense_game/data/campaign/campaign_data.dart';
+import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
+import 'package:depense_game/game/audio/audio_settings_controller.dart';
+import 'package:depense_game/game/audio/game_audio_service.dart';
+import 'package:depense_game/game/core/depense_game.dart';
+import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
+import 'package:flame/game.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('campaign stages use the fortress-builder battlefield contract', () {
     const allFronts = {
       SpawnDirection.north,
@@ -152,6 +160,50 @@ void main() {
       citadelGateCellForDirection(citadelCell, SpawnDirection.east),
       orderedEquals([2, 12]),
     );
+  });
+
+  test('runtime spawn routes stop at gate cells', () {
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
+      final stage = CampaignData.stage(stageNumber);
+      final game = DefensePrototypeGame(
+        stage: stage,
+        sessionController: GameSessionController(),
+        audioService: GameAudioService(AudioSettingsController()),
+        metaUpgrades: const ResolvedMetaUpgrades(),
+        chosenHeroKind: HeroKind.knight,
+      );
+
+      game.onGameResize(Vector2(728, 728));
+
+      for (final route in stage.spawnRoutes) {
+        final path = game.debugSpawnPathForRoute(route);
+        final gateCell = citadelGateCellForDirection(
+          stage.citadelCell,
+          route.direction,
+        )!;
+        final gateCenter = Vector2(
+          (gateCell[0] * 52) + 26,
+          (gateCell[1] * 52) + 26,
+        );
+
+        expect(
+          path.last.distanceTo(gateCenter),
+          lessThan(0.001),
+          reason: 'Stage $stageNumber route ${route.id} should end at gate',
+        );
+        expect(
+          path.last.distanceTo(game.debugCitadelCenter()),
+          greaterThan(20),
+          reason:
+              'Stage $stageNumber route ${route.id} should not add '
+              'a hidden segment into citadel',
+        );
+      }
+    }
   });
 
   test('citadel gate helper clamps to the battlefield edge', () {

@@ -1544,10 +1544,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (!_enemyTouchesCitadel(enemy)) {
       return false;
     }
-    if (enemy.reachedGoal) {
-      return true;
+    if (_isSiegeMode && _hasBlockingCitadelBarrier(enemy)) {
+      return false;
     }
-    return !_hasBlockingCitadelBarrier(enemy);
+    return enemy.reachedGoal || !_hasBlockingCitadelBarrier(enemy);
   }
 
   bool _enemyTouchesCitadel(_Enemy enemy) {
@@ -1557,11 +1557,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     if (_isSiegeMode && gateCell != null) {
       if (_cellMatches(enemyCell, gateCell.$1, gateCell.$2)) {
-        return true;
-      }
-      if (citadelCell != null &&
-          citadelCell.length >= 2 &&
-          _cellMatches(enemyCell, citadelCell[0], citadelCell[1])) {
         return true;
       }
       final gateCenter = _citadelGateCenterForDirection(enemy.spawnDirection);
@@ -3745,6 +3740,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         authoredCells,
         direction: dir,
         randomizeEdgeAnchor: false,
+        appendCitadelCenter: false,
       );
     }
     if (_barriers.isNotEmpty) {
@@ -3810,6 +3806,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       cells,
       direction: dir,
       randomizeEdgeAnchor: false,
+      appendCitadelCenter: false,
     );
   }
 
@@ -3823,6 +3820,19 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
     return stage.pathsByDirection?[dir] ?? const [];
   }
+
+  @visibleForTesting
+  List<Vector2> debugSpawnPathForRoute(SpawnRouteDefinition route) {
+    return _vectorPathFromCells(
+      _routeCellsForSpawnRoute(route),
+      direction: route.direction,
+      randomizeEdgeAnchor: false,
+      appendCitadelCenter: false,
+    );
+  }
+
+  @visibleForTesting
+  Vector2 debugCitadelCenter() => _citadelCenter.clone();
 
   SpawnRouteDefinition? _spawnRouteById(String? routeId) {
     if (routeId == null) {
@@ -3905,6 +3915,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     List<List<int>> cells, {
     required SpawnDirection direction,
     bool randomizeEdgeAnchor = false,
+    bool appendCitadelCenter = true,
   }) {
     if (cells.isEmpty) {
       return const [];
@@ -3922,7 +3933,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           _gridOrigin.y + (cell[1] * _tileSize) + (_tileSize / 2),
         ),
     ];
-    if (points.last.distanceTo(citadelCenter) > 1) {
+    if (appendCitadelCenter && points.last.distanceTo(citadelCenter) > 1) {
       points.add(citadelCenter);
     }
     return points;
