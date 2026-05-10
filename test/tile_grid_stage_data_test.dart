@@ -91,6 +91,48 @@ void main() {
     }
   });
 
+  test('static object footprints do not overlap build slots', () {
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
+      final stage = CampaignData.stage(stageNumber);
+      final buildSlotCells = {
+        for (final slot in stage.buildSlots)
+          ((slot.dx * 13).round(), (slot.dy * 13).round()),
+      };
+      final occupied = <(int, int)>{};
+
+      for (final cell in stageCitadelFootprintCells(stage.citadelCell)) {
+        expect(
+          buildSlotCells.contains(cell),
+          isFalse,
+          reason:
+              'Stage $stageNumber build slot should not cover citadel $cell',
+        );
+        occupied.add(cell);
+      }
+
+      for (final decoration in stage.decorations) {
+        final footprint = stageDecorationFootprintCells(decoration);
+        for (final cell in footprint) {
+          expect(
+            occupied.add(cell),
+            isTrue,
+            reason: 'Stage $stageNumber decoration footprint overlaps $cell',
+          );
+          expect(
+            buildSlotCells.contains(cell),
+            isFalse,
+            reason:
+                'Stage $stageNumber build slot should not cover decoration $cell',
+          );
+        }
+      }
+    }
+  });
+
   test('stage 1 citadel gate cells align with the visible leak threshold', () {
     final citadelCell = CampaignData.stage(1).citadelCell;
 

@@ -535,6 +535,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (tileGrid[row][col] != TileType.buildable) {
       return false;
     }
+    if (_isStaticObjectCell(col, row)) {
+      return false;
+    }
     final center = _cellCenter(cell);
     return !_isTooCloseToTower(center);
   }
@@ -1024,7 +1027,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     // Snap to nearest valid grid cell within 42px
     Vector2? snapTarget;
     var bestDist = 42.0;
-    for (final cell in _buildGridPositions(selection: selection)) {
+    for (final cell in _buildGridPositions()) {
       final d = cell.distanceTo(position);
       if (d < bestDist) {
         bestDist = d;
@@ -4161,7 +4164,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       ..color = ringColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    for (final cell in _buildGridPositions(selection: selection)) {
+    for (final cell in _buildGridPositions()) {
       final rect = Rect.fromCenter(
         center: cell.toOffset(),
         width: _tileSize - 6,
@@ -4401,7 +4404,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  List<Vector2> _buildGridPositions({TowerKind? selection}) {
+  List<Vector2> _buildGridPositions() {
     final cells = <Vector2>[];
     final tileGrid = stage.tileGrid;
     if (tileGrid != null && tileGrid.isNotEmpty) {
@@ -4409,6 +4412,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         for (var col = 0; col < tileGrid[row].length; col += 1) {
           final tileType = tileGrid[row][col];
           if (tileType != TileType.buildable) {
+            continue;
+          }
+          if (_isStaticObjectCell(col, row)) {
             continue;
           }
           final pos = Vector2(
@@ -4434,6 +4440,79 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
     }
     return cells;
+  }
+
+  bool _isStaticObjectCell(int col, int row) {
+    if (_citadelCenter != Vector2.zero() &&
+        _visualRectOverlapsBuildCell(
+          center: _citadelCenter.toOffset(),
+          visualSize: _tileSize * 2.0,
+          col: col,
+          row: row,
+        )) {
+      return true;
+    }
+    for (final obstacle in stage.obstacles) {
+      for (final cell in obstacle.occupiedCells) {
+        if (cell.length >= 2 && cell[0] == col && cell[1] == row) {
+          return true;
+        }
+      }
+      if (_visualRectOverlapsBuildCell(
+        center: _obstacleCenter(obstacle),
+        visualSize: _environmentSpriteSize(obstacle.assetPath, obstacle.scale),
+        col: col,
+        row: row,
+      )) {
+        return true;
+      }
+    }
+    for (final decoration in stage.decorations) {
+      final center = Offset(
+        decoration.position.dx * size.x,
+        decoration.position.dy * size.y,
+      );
+      if (_visualRectOverlapsBuildCell(
+        center: center,
+        visualSize: _environmentSpriteSize(
+          decoration.assetPath,
+          decoration.scale,
+        ),
+        col: col,
+        row: row,
+      )) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  double _environmentSpriteSize(String assetPath, double scale) {
+    final isLandmark = assetPath.contains('/landmarks/');
+    final baseSize = isLandmark ? 86.0 : 44.0;
+    return baseSize * scale;
+  }
+
+  bool _visualRectOverlapsBuildCell({
+    required Offset center,
+    required double visualSize,
+    required int col,
+    required int row,
+  }) {
+    final visualRect = Rect.fromCenter(
+      center: center,
+      width: visualSize,
+      height: visualSize,
+    ).inflate(2);
+    final slotRect = Rect.fromCenter(
+      center: Offset(
+        _gridOrigin.x + (col * _tileSize) + (_tileSize / 2),
+        _gridOrigin.y + (row * _tileSize) + (_tileSize / 2),
+      ),
+      width: _tileSize - 6,
+      height: _tileSize - 6,
+    );
+    return visualRect.overlaps(slotRect);
   }
 
   bool _isTooCloseToPath(Vector2 pos) {

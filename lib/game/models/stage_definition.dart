@@ -145,6 +145,85 @@ class StageDecorationDefinition {
   final StageDecorationLayer layer;
 }
 
+Set<(int, int)> stageDecorationFootprintCells(
+  StageDecorationDefinition decoration, {
+  int columns = 14,
+  int rows = 14,
+  double tileSize = 44.0,
+}) {
+  if (columns <= 0 || rows <= 0) {
+    return const {};
+  }
+  final isLandmark = decoration.assetPath.contains('/landmarks/');
+  final baseSize = isLandmark ? 86.0 : 44.0;
+  final minSpan = isLandmark ? 2.0 : 1.0;
+  final visualSpan = math.max(
+    minSpan,
+    (baseSize * decoration.scale) / math.max(1.0, tileSize),
+  );
+  return stageVisualFootprintCells(
+    centerCol: decoration.position.dx * columns,
+    centerRow: decoration.position.dy * rows,
+    spanCols: visualSpan,
+    spanRows: visualSpan,
+    columns: columns,
+    rows: rows,
+  );
+}
+
+Set<(int, int)> stageCitadelFootprintCells(
+  List<int>? citadelCell, {
+  int columns = 14,
+  int rows = 14,
+  double visualSpanCells = 2.0,
+}) {
+  if (citadelCell == null ||
+      citadelCell.length < 2 ||
+      columns <= 0 ||
+      rows <= 0) {
+    return const {};
+  }
+  return stageVisualFootprintCells(
+    centerCol: citadelCell[0] + 0.5,
+    centerRow: citadelCell[1] + 0.5,
+    spanCols: visualSpanCells,
+    spanRows: visualSpanCells,
+    columns: columns,
+    rows: rows,
+  );
+}
+
+Set<(int, int)> stageVisualFootprintCells({
+  required double centerCol,
+  required double centerRow,
+  required double spanCols,
+  required double spanRows,
+  required int columns,
+  required int rows,
+}) {
+  if (columns <= 0 || rows <= 0 || spanCols <= 0 || spanRows <= 0) {
+    return const {};
+  }
+  final minCol = centerCol - (spanCols / 2);
+  final maxCol = centerCol + (spanCols / 2);
+  final minRow = centerRow - (spanRows / 2);
+  final maxRow = centerRow + (spanRows / 2);
+  final cells = <(int, int)>{};
+  for (var row = 0; row < rows; row += 1) {
+    final rowOverlaps = row < maxRow && row + 1 > minRow;
+    if (!rowOverlaps) {
+      continue;
+    }
+    for (var col = 0; col < columns; col += 1) {
+      final colOverlaps = col < maxCol && col + 1 > minCol;
+      if (colOverlaps) {
+        cells.add((col, row));
+      }
+    }
+  }
+  return cells;
+}
+
 class StageObstacleDefinition {
   const StageObstacleDefinition({
     required this.assetPath,
