@@ -286,13 +286,23 @@ void main() {
     final fences = BarrierCatalog.byKind(BarrierKind.woodFence).cost * 4;
     final walls = BarrierCatalog.byKind(BarrierKind.stoneWall).cost * 2;
 
-    expect(archer, 50);
-    expect(barracks, 65);
+    expect(archer, 35);
+    expect(barracks, 45);
     expect(archer + barracks + fences + walls, lessThanOrEqualTo(245));
     expect(
       CampaignData.stage(1).startingCoins,
       greaterThanOrEqualTo(archer + barracks + fences + walls),
     );
+  });
+
+  test('tower build costs use the development affordability pass', () {
+    expect(TowerCatalog.byKind(TowerKind.archer).cost, 35);
+    expect(TowerCatalog.byKind(TowerKind.guardBarracks).cost, 45);
+    expect(TowerCatalog.byKind(TowerKind.mageObelisk).cost, 65);
+    expect(TowerCatalog.byKind(TowerKind.frostShrine).cost, 55);
+    expect(TowerCatalog.byKind(TowerKind.coinMill).cost, 65);
+    expect(TowerCatalog.byKind(TowerKind.ballista).cost, 85);
+    expect(TowerCatalog.byKind(TowerKind.emberkeep).cost, 80);
   });
 
   test('stage 1 to 5 teach fortress design before full randomness', () {

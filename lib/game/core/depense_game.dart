@@ -630,6 +630,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _clearSelectedHeroSelection();
     _clearSelectedTowerSelection();
     _clearSelectedBarrierSelection();
+    sessionController.setSelectedBuildable(null);
+    sessionController.setSelectedBarrierBuildable(null);
+    sessionController.setSelectedHeroBuildable(null);
     sessionController.setHeroMoveMode(false);
     _currentSpawnGroupIndex = 0;
     _spawnedInGroup = 0;
@@ -4127,6 +4130,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawSlots(Canvas canvas) {
+    if (_waveActive) {
+      return;
+    }
     final isHeroMove = sessionController.heroMoveMode;
     final isHeroPlacement = sessionController.selectedHeroBuildable != null;
     final isBarrierPlacement =
@@ -4405,9 +4411,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           if (tileType != TileType.buildable) {
             continue;
           }
-          if (!_isAllowedBuildCell(row: row, col: col)) {
-            continue;
-          }
           final pos = Vector2(
             _gridOrigin.x + (col * _tileSize) + (_tileSize / 2),
             _gridOrigin.y + (row * _tileSize) + (_tileSize / 2),
@@ -4431,21 +4434,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
     }
     return cells;
-  }
-
-  bool _isAllowedBuildCell({required int row, required int col}) {
-    if (stage.number > 5) {
-      return true;
-    }
-
-    final citadelCell = stage.citadelCell;
-    if (citadelCell == null || citadelCell.length < 2) {
-      return true;
-    }
-
-    final dx = col - citadelCell[0];
-    final dy = row - citadelCell[1];
-    return dx >= -4 && dx <= 5 && dy >= -5 && dy <= 3;
   }
 
   bool _isTooCloseToPath(Vector2 pos) {
