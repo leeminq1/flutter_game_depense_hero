@@ -2182,6 +2182,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         return false;
       }
     } else {
+      if (_isSiegeMode) {
+        return false;
+      }
       for (var i = 0; i < _barriers.length; i += 1) {
         final distance = _barriers[i].position.distanceTo(enemy.position);
         if (distance < bestDistance) {
@@ -3794,10 +3797,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     final cells = <List<int>>[];
     for (final cell in routeCells) {
+      cells.add(cell);
       if (cell[0] == barrierCell.$1 && cell[1] == barrierCell.$2) {
         break;
       }
-      cells.add(cell);
     }
     if (cells.isEmpty) {
       cells.add(routeCells.first);
@@ -3829,6 +3832,17 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       randomizeEdgeAnchor: false,
       appendCitadelCenter: false,
     );
+  }
+
+  @visibleForTesting
+  List<Vector2> debugBarrierApproachPathForRoute(
+    SpawnRouteDefinition route,
+    List<int> barrierCell,
+  ) {
+    return _approachPathToBarrierCell(route.direction, (
+      barrierCell[0],
+      barrierCell[1],
+    ), routeId: route.id);
   }
 
   @visibleForTesting

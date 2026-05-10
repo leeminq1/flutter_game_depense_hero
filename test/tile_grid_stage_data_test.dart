@@ -206,6 +206,57 @@ void main() {
     }
   });
 
+  test('runtime barrier approach paths stay on assigned routes', () {
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
+      final stage = CampaignData.stage(stageNumber);
+      final game = DefensePrototypeGame(
+        stage: stage,
+        sessionController: GameSessionController(),
+        audioService: GameAudioService(AudioSettingsController()),
+        metaUpgrades: const ResolvedMetaUpgrades(),
+        chosenHeroKind: HeroKind.knight,
+      );
+
+      game.onGameResize(Vector2(728, 728));
+
+      for (final route in stage.spawnRoutes) {
+        final routeCells = _routeFromEdgeToCitadelRing(
+          route.entryCell,
+          route.direction,
+          stage.citadelCell!,
+        );
+        final barrierCell = routeCells[routeCells.length ~/ 2];
+        final approachPath = game.debugBarrierApproachPathForRoute(
+          route,
+          barrierCell,
+        );
+        final barrierCenter = Vector2(
+          (barrierCell[0] * 52) + 26,
+          (barrierCell[1] * 52) + 26,
+        );
+
+        expect(
+          approachPath.last.distanceTo(barrierCenter),
+          lessThan(0.001),
+          reason:
+              'Stage $stageNumber route ${route.id} should approach '
+              'the barrier on its assigned route',
+        );
+        expect(
+          approachPath.last.distanceTo(game.debugCitadelCenter()),
+          greaterThan(20),
+          reason:
+              'Stage $stageNumber route ${route.id} should not approach '
+              'a barrier through the citadel center',
+        );
+      }
+    }
+  });
+
   test('citadel gate helper clamps to the battlefield edge', () {
     const cornerCitadel = [0, 0];
 
