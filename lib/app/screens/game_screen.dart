@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:depense_game/app/ads/rewarded_retry_ad_service.dart';
+import 'package:depense_game/app/ads/rewarded_retry_bonus_tracker.dart';
 import 'package:depense_game/app/bootstrap/app_bootstrap.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
@@ -56,6 +58,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   bool _isBackgroundPaused = false;
   int? _immediateStarsAwarded;
   bool _stageOneBriefingShown = false;
+  final RewardedRetryBonusTracker _rewardedRetryBonusTracker =
+      RewardedRetryBonusTracker();
+  bool _isShowingRewardedRetryAd = false;
+  String? _rewardedRetryStatusText;
 
   @override
   void initState() {
@@ -127,7 +133,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     setState(() => _overview = overview);
   }
 
-  Future<void> _loadStage(int stageNumber) async {
+  Future<void> _loadStage(
+    int stageNumber, {
+    int rewardedRetryStartingCoinBonus = 0,
+  }) async {
     final overview =
         _overview ??
         await widget.bootstrap.progressStore.loadCampaignOverview(
@@ -151,6 +160,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       _terminalProgressSave = null;
       _immediateStarsAwarded = null;
       _isEvaluating = false;
+      _isShowingRewardedRetryAd = false;
+      _rewardedRetryStatusText = null;
       _gameEpoch += 1;
       _hintBannerVisible = true;
       _towerActionBarVisible = false;
@@ -164,6 +175,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         audioService: widget.bootstrap.audioService,
         metaUpgrades: resolvedMeta,
         chosenHeroKind: _chosenHeroKind ?? HeroKind.knight,
+        startingCoinBonus: rewardedRetryStartingCoinBonus,
       );
     });
     _hintTimer = Timer(const Duration(seconds: 3), () {
@@ -437,10 +449,56 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     await _loadStage(_stageNumber);
   }
 
+  Future<void> _retryStageWithRewardedAd() async {
+    if (_isShowingRewardedRetryAd) {
+      return;
+    }
+    if (!await _ensureTerminalProgressSaved()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _isShowingRewardedRetryAd = true;
+      _rewardedRetryStatusText = null;
+    });
+
+    final result = await widget.bootstrap.rewardedRetryAdService.show();
+    if (!mounted) {
+      return;
+    }
+
+    if (result != RewardedRetryAdResult.rewarded) {
+      setState(() {
+        _isShowingRewardedRetryAd = false;
+        _rewardedRetryStatusText = _rewardedRetryMessageFor(result);
+      });
+      return;
+    }
+
+    final bonus = _rewardedRetryBonusTracker.addRewardForStage(_stageNumber);
+    await _chooseHero(force: true);
+    await _loadStage(_stageNumber, rewardedRetryStartingCoinBonus: bonus);
+  }
+
+  String _rewardedRetryMessageFor(RewardedRetryAdResult result) {
+    return switch (result) {
+      RewardedRetryAdResult.dismissedWithoutReward =>
+        '보상 조건을 채우지 않아 골드가 지급되지 않았습니다.',
+      RewardedRetryAdResult.loadFailed => '광고를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
+      RewardedRetryAdResult.showFailed => '광고를 표시하지 못했습니다. 잠시 후 다시 시도해주세요.',
+      RewardedRetryAdResult.unsupportedPlatform =>
+        '이 플랫폼에서는 광고 재도전을 사용할 수 없습니다.',
+      RewardedRetryAdResult.rewarded => '',
+    };
+  }
+
   Future<void> _goToNextStageFromResult() async {
     if (!await _ensureTerminalProgressSaved()) {
       return;
     }
+    _rewardedRetryBonusTracker.reset();
     await _loadStage((_stageNumber + 1).clamp(1, CampaignData.totalStages));
   }
 
@@ -448,6 +506,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     if (!await _ensureTerminalProgressSaved()) {
       return;
     }
+    _rewardedRetryBonusTracker.reset();
     widget.onExitToCamp();
   }
 
@@ -624,8 +683,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         isSavingProgress:
                             _isEvaluating && _completionResult == null,
                         onRetry: _retryStageFromResult,
+                        onRewardedRetry: _retryStageWithRewardedAd,
                         onNextStage: _goToNextStageFromResult,
                         onReturnToCamp: _returnToCampFromResult,
+                        isShowingRewardedRetryAd: _isShowingRewardedRetryAd,
+                        rewardedRetryStatusText: _rewardedRetryStatusText,
+                        rewardedRetryBonus: _rewardedRetryBonusTracker
+                            .bonusForStage(_stageNumber),
                       ),
                     ),
                 ],
@@ -3200,8 +3264,12 @@ class _ResultOverlay extends StatelessWidget {
     required this.hasNextStage,
     required this.isSavingProgress,
     required this.onRetry,
+    required this.onRewardedRetry,
     required this.onNextStage,
     required this.onReturnToCamp,
+    required this.isShowingRewardedRetryAd,
+    required this.rewardedRetryStatusText,
+    required this.rewardedRetryBonus,
   });
 
   final GameSessionController sessionController;
@@ -3211,8 +3279,12 @@ class _ResultOverlay extends StatelessWidget {
   final bool hasNextStage;
   final bool isSavingProgress;
   final VoidCallback onRetry;
+  final VoidCallback onRewardedRetry;
   final VoidCallback onNextStage;
   final VoidCallback onReturnToCamp;
+  final bool isShowingRewardedRetryAd;
+  final String? rewardedRetryStatusText;
+  final int rewardedRetryBonus;
 
   @override
   Widget build(BuildContext context) {
@@ -3307,6 +3379,45 @@ class _ResultOverlay extends StatelessWidget {
                 onPressed: isSavingProgress ? null : onNextStage,
               ),
             if (cleared && hasNextStage) const SizedBox(height: 12),
+            if (!cleared) ...[
+              _LargeButton(
+                label: isShowingRewardedRetryAd
+                    ? '광고 준비 중...'
+                    : '광고 보고 +200골드 재도전',
+                color: const Color(0xFFE4C67A),
+                onPressed: isSavingProgress || isShowingRewardedRetryAd
+                    ? null
+                    : onRewardedRetry,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                rewardedRetryBonus > 0
+                    ? '현재 광고 재도전 보너스 +$rewardedRetryBonus골드'
+                    : '보상 조건 달성 시 이 STAGE 재도전 골드 +200',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                  height: 1.25,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (rewardedRetryStatusText != null &&
+                  rewardedRetryStatusText!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  rewardedRetryStatusText!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFE4C67A),
+                    fontSize: 12,
+                    height: 1.25,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+            ],
             _LargeButton(
               label: '다시 도전',
               color: const Color(0xFF486581),

@@ -41,6 +41,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     required this.audioService,
     required this.metaUpgrades,
     required this.chosenHeroKind,
+    this.startingCoinBonus = 0,
   });
 
   final StageDefinition stage;
@@ -48,6 +49,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   final GameAudioService audioService;
   final ResolvedMetaUpgrades metaUpgrades;
   final HeroKind chosenHeroKind;
+  final int startingCoinBonus;
 
   final TextPaint _labelPaint = TextPaint(
     style: const TextStyle(
@@ -145,7 +147,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   Future<void> onLoad() async {
     await super.onLoad();
     await _visualRegistry.warmUp();
-    _coins = stage.startingCoins + metaUpgrades.bonusStartingCoins;
+    _coins =
+        stage.startingCoins +
+        metaUpgrades.bonusStartingCoins +
+        startingCoinBonus;
     _baseHealth = stage.citadelHitPoints;
     _pathPoints = [Vector2.zero(), Vector2.all(1)];
     _mapTexturePlan = MapTexturePlan.empty;

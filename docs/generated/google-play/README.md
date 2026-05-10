@@ -1,27 +1,70 @@
-﻿# Google Play Graphic Assets
+# Google Play Submission Assets
 
-Generated on 2026-05-09 for `PIXEL GUARD:WAVE`.
+Updated on 2026-05-10 for `PIXEL GUARD:WAVE`.
 
-## Recommended Current-Game Pixel Set
+## App Identity
 
-This set is closest to the current in-game look. The feature graphic uses the real gameplay screenshot on the right, with only blocky pixel treatment and the title panel on the left. It intentionally avoids premium fantasy key art.
+```text
+App name: PIXEL GUARD:WAVE
+Package name: com.min21.pixelguardwave
+Default language: Korean - ko-KR
+Track: Closed testing
+```
 
-- `feature-graphic-1024x500-recommended.png` - recommended feature graphic for upload, copied from the tighter real-game crop.
-- `feature-graphic-1024x500-gameplay-pixel-v5.png` - same recommended feature graphic source version.
-- `phone-screenshot-01-1080x1920-ingame-pixel.png` - Wall/choke-point gameplay screenshot.
-- `phone-screenshot-02-1080x1920-ingame-pixel.png` - Stage briefing/tutorial screenshot.
-- `phone-screenshot-03-1080x1920-ingame-pixel.png` - Hero blocker/combat screenshot.
-- `phone-screenshot-04-1080x1920-ingame-pixel.png` - Tower-combo wave screenshot.
-- `phone-screenshot-05-1080x1920-ingame-pixel.png` - Camp hub/stage progression screenshot.
+## Copy/Paste Docs
 
-## Alternate Drafts
+Google Play Console input docs live in:
 
-- `feature-graphic-1024x500-gameplay-pixel-v2.png` through `v4.png` are crop experiments.
-- `*-pixel.png` files are the more polished pixel-store treatment.
-- Files without `-pixel` are the earlier glossy draft and are kept only for comparison.
+```text
+docs/generated/google-play/docs/
+```
+
+Start with:
+
+```text
+docs/generated/google-play/docs/00-google-play-entry-index.md
+```
+
+## Polished Phone Screenshots
+
+Generated screenshots live in:
+
+```text
+docs/generated/google-play/screenshots/
+```
+
+Files:
+
+- `phone-screenshot-01-title.png`
+- `phone-screenshot-02-camp.png`
+- `phone-screenshot-03-hero.png`
+- `phone-screenshot-04-briefing.png`
+- `phone-screenshot-05-battle.png`
+
+Each output is `1080x2640` and preserves the raw screenshot dimensions.
+
+To regenerate:
+
+```powershell
+python docs\generated\google-play\source\render_store_screenshots.py
+```
+
+## Privacy Policy Site
+
+GitHub Pages source files:
+
+- `docs/privacy-policy/index.html`
+- `docs/privacy-policy/privacy-policy.md`
+- `docs/.nojekyll`
+
+Play Console URL after GitHub Pages is enabled from branch `main`, folder `/docs`:
+
+```text
+https://leeminq1.github.io/flutter_game_depense_hero/privacy-policy/
+```
 
 ## Store Notes
 
-- Feature graphic follows Google Play 1024x500 JPEG/24-bit PNG no-alpha requirement.
-- Phone screenshots are 1080x1920, 9:16, PNG without alpha, based on real gameplay screenshots.
-- App title used: `PIXEL GUARD:WAVE`.
+- Feature graphic requirement: 1024x500 JPEG or 24-bit PNG with no alpha.
+- Phone screenshots must be JPEG or 24-bit PNG with no alpha.
+- Current phone screenshots are 1080x2640 PNG without alpha.
