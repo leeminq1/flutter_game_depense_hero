@@ -45,6 +45,11 @@ Acceptance:
   existing level filenames for archer, barracks, mage, frost, and coin mill
   towers. The sheet background was removed locally so the final `64x64` PNGs
   keep transparent corners and do not carry the white checker backdrop.
+- The `1.0.10+11` barracks defender refresh was produced from the
+  AI-generated sheet archived at
+  `docs/generated/barracks-defender-imagegen-sheet-20260511.png`, then
+  chroma-keyed into the existing `48x48` defender filenames. Runtime defender
+  draw sizes were reduced so summoned barracks units read smaller than towers.
 
 ### Barrier Sprites
 

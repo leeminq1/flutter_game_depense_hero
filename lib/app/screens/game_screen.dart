@@ -3106,7 +3106,7 @@ class _SelectionActionPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: const Color(0xE8141B24),
+        color: const Color(0xB8141B24),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white12),
         boxShadow: [
@@ -3362,7 +3362,7 @@ class _ResultOverlay extends StatelessWidget {
               _LargeButton(
                 label: isShowingRewardedRetryAd
                     ? '광고 준비 중...'
-                    : '광고 닫고 +200골드 재도전',
+                    : '이걸 광고 보고 +200 골드 재도전',
                 color: const Color(0xFFE4C67A),
                 onPressed: isSavingProgress || isShowingRewardedRetryAd
                     ? null

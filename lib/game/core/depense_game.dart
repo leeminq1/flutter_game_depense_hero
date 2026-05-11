@@ -16,7 +16,6 @@ import 'package:depense_game/game/rendering/map_texture_planner.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
-import 'package:flame/text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Route;
 
@@ -51,13 +50,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   final HeroKind chosenHeroKind;
   final int startingCoinBonus;
 
-  final TextPaint _labelPaint = TextPaint(
-    style: const TextStyle(
-      color: Color(0xFFF7F3E8),
-      fontSize: 14,
-      fontWeight: FontWeight.w700,
-    ),
-  );
   final GameVisualRegistry _visualRegistry = GameVisualRegistry();
 
   late List<Vector2> _pathPoints;
@@ -4622,7 +4614,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (_citadelCenter != Vector2.zero() &&
         _visualRectOverlapsBuildCell(
           center: _citadelCenter.toOffset(),
-          visualSize: _tileSize * 2.0,
+          visualSize: _tileSize,
           col: col,
           row: row,
         )) {
@@ -5058,7 +5050,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       );
       final center = tower.position.toOffset();
       final isSelected = i == _selectedTowerIndex;
-      final towerRenderSize = _tileSize * 0.82;
+      final towerRenderSize = _tileSize * 1.12;
       final selectionRadius = _tileSize * (isSelected ? 0.46 : 0.40);
       canvas.drawCircle(
         center,
@@ -5116,13 +5108,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           Paint()..color = const Color(0xFFFF8A65),
         );
       }
-      if (tower.level > 1) {
-        _labelPaint.render(
-          canvas,
-          'L${tower.level}',
-          Vector2(center.dx - 8, center.dy + 12),
-        );
-      }
     }
   }
 
@@ -5178,11 +5163,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           accentColor: visual.accentColor,
         );
       }
-      _labelPaint.render(
-        canvas,
-        'H${hero.level}',
-        Vector2(center.dx - 9, center.dy + 14),
-      );
       final hpRatio = (hero.hitPoints / hero.maxHitPoints).clamp(0.0, 1.0);
       if (hpRatio < 0.98) {
         final barRect = Rect.fromLTWH(
@@ -5505,9 +5485,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       ],
     };
     final size = switch (tower.level) {
-      1 => 22.0,
-      2 => 25.0,
-      _ => 27.0,
+      1 => 17.0,
+      2 => 18.5,
+      _ => 20.0,
     };
 
     for (var index = 0; index < offsets.length; index += 1) {
