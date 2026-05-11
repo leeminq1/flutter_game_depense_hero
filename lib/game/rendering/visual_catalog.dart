@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
+import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 
 enum VisualTokenShape {
@@ -181,6 +182,45 @@ class BarracksDefenderVisualCatalog {
     }
     return '$_basePath/barracks_defender_t$tier.png';
   }
+}
+
+class BarrierVisualCatalog {
+  static const String _basePath = 'assets/sprites/barriers';
+
+  static List<String> assetPaths() {
+    return BarrierKind.values.map(assetPath).toList(growable: false);
+  }
+
+  static String assetPath(BarrierKind kind) {
+    return switch (kind) {
+      BarrierKind.woodFence => '$_basePath/wood_fence.png',
+      BarrierKind.stoneWall => '$_basePath/stone_wall.png',
+      BarrierKind.reinforcedWall => '$_basePath/reinforced_wall.png',
+      BarrierKind.fortressWall => '$_basePath/fortress_wall.png',
+    };
+  }
+}
+
+class EffectVisualCatalog {
+  static const arrowProjectile = 'arrow_projectile';
+  static const siegeBoltProjectile = 'siege_bolt_projectile';
+  static const arcaneBoltProjectile = 'arcane_bolt_projectile';
+  static const frostImpact = 'frost_impact';
+  static const flameImpact = 'flame_impact';
+
+  static const String _basePath = 'assets/sprites/effects';
+
+  static const Map<String, String> _assetPaths = {
+    arrowProjectile: '$_basePath/arrow_projectile.png',
+    siegeBoltProjectile: '$_basePath/siege_bolt_projectile.png',
+    arcaneBoltProjectile: '$_basePath/arcane_bolt_projectile.png',
+    frostImpact: '$_basePath/frost_impact.png',
+    flameImpact: '$_basePath/flame_impact.png',
+  };
+
+  static Iterable<String> get ids => _assetPaths.keys;
+
+  static String assetPath(String id) => _assetPaths[id] ?? '';
 }
 
 class EnemyVisualCatalog {

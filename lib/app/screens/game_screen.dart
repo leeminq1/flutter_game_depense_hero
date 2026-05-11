@@ -583,9 +583,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                             if (_towerActionBarVisible &&
                                 session.selectedTower != null)
                               Positioned(
-                                top: 126,
+                                top: 96,
                                 right: 8,
-                                width: 176,
+                                width: 136,
                                 child: _TowerActionBar(
                                   sessionController: session,
                                   onUpgrade: game.upgradeSelectedTower,
@@ -596,9 +596,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                             if (_towerActionBarVisible &&
                                 session.selectedBarrier != null)
                               Positioned(
-                                top: 126,
+                                top: 96,
                                 right: 8,
-                                width: 176,
+                                width: 128,
                                 child: _BarrierActionBar(
                                   sessionController: session,
                                   canSell: !session.waveInProgress,
@@ -610,9 +610,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 session.selectedHero != null &&
                                 !session.heroMoveMode)
                               Positioned(
-                                top: 126,
+                                top: 96,
                                 right: 8,
-                                width: 176,
+                                width: 148,
                                 child: _HeroActionBar(
                                   sessionController: session,
                                   canMove: !session.waveInProgress,
@@ -2953,24 +2953,24 @@ class _TowerActionBar extends StatelessWidget {
     return _SelectionActionPanel(
       title: '${tower.label} Lv.${tower.level}',
       subtitle: subtitle,
+      trailing: _PanelActionButton(
+        tooltip: '업그레이드',
+        value: '${tower.upgradeCost}',
+        width: 30,
+        icon: Icons.arrow_upward_rounded,
+        onPressed: tower.canUpgrade ? onUpgrade : null,
+      ),
       actions: [
         _PanelActionButton(
-          tooltip: '업그레이드',
-          value: '${tower.upgradeCost}',
-          width: 34,
-          icon: Icons.arrow_upward_rounded,
-          onPressed: tower.canUpgrade ? onUpgrade : null,
-        ),
-        _PanelActionButton(
           tooltip: '철거',
-          width: 34,
+          width: 30,
           icon: Icons.delete_outline_rounded,
           onPressed: onSell,
           danger: true,
         ),
         _PanelActionButton(
           tooltip: '취소',
-          width: 34,
+          width: 30,
           icon: Icons.close_rounded,
           onPressed: onClose,
           danger: true,
@@ -3009,14 +3009,14 @@ class _BarrierActionBar extends StatelessWidget {
       actions: [
         _PanelActionButton(
           tooltip: '철거',
-          width: 34,
+          width: 30,
           icon: Icons.delete_outline_rounded,
           onPressed: canSell ? onSell : null,
           danger: true,
         ),
         _PanelActionButton(
           tooltip: '취소',
-          width: 34,
+          width: 30,
           icon: Icons.close_rounded,
           onPressed: onClose,
           danger: true,
@@ -3051,24 +3051,24 @@ class _HeroActionBar extends StatelessWidget {
     return _SelectionActionPanel(
       title: '${hero.label} Lv.${hero.level}',
       subtitle: hero.abilityLabel,
+      trailing: _PanelActionButton(
+        tooltip: '업그레이드',
+        value: '${hero.upgradeCost}',
+        width: 30,
+        icon: Icons.arrow_upward_rounded,
+        onPressed: hero.canUpgrade ? onUpgrade : null,
+      ),
       actions: [
         _PanelActionButton(
           tooltip: '이동',
-          width: 64,
+          width: 54,
           icon: Icons.flag_rounded,
           onPressed: canMove ? onMove : null,
           label: '이동',
         ),
         _PanelActionButton(
-          tooltip: '업그레이드',
-          value: '${hero.upgradeCost}',
-          width: 34,
-          icon: Icons.arrow_upward_rounded,
-          onPressed: hero.canUpgrade ? onUpgrade : null,
-        ),
-        _PanelActionButton(
           tooltip: '취소',
-          width: 34,
+          width: 30,
           icon: Icons.close_rounded,
           onPressed: onDeselect,
           danger: true,
@@ -3093,25 +3093,27 @@ class _SelectionActionPanel extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.actions,
+    this.trailing,
   });
 
   final String title;
   final String subtitle;
   final List<Widget> actions;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: const Color(0xE8141B24),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
+            blurRadius: 8,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -3119,30 +3121,38 @@ class _SelectionActionPanel extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              height: 1.15,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    height: 1.15,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (trailing != null) ...[const SizedBox(width: 5), trailing!],
+            ],
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 1),
           Text(
             subtitle,
             style: const TextStyle(
               color: Colors.white60,
-              fontSize: 11,
-              height: 1.2,
+              fontSize: 10,
+              height: 1.12,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 8),
-          Wrap(spacing: 6, runSpacing: 6, children: actions),
+          const SizedBox(height: 5),
+          Wrap(spacing: 5, runSpacing: 5, children: actions),
         ],
       ),
     );
@@ -3184,19 +3194,19 @@ class _PanelActionButton extends StatelessWidget {
         label: semanticsLabel,
         child: SizedBox(
           width: width,
-          height: 34,
+          height: 30,
           child: TextButton(
             onPressed: onPressed,
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
-              minimumSize: const Size(34, 34),
+              minimumSize: const Size(30, 30),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               foregroundColor: foregroundColor,
               backgroundColor: backgroundColor,
               disabledForegroundColor: Colors.white24,
               disabledBackgroundColor: const Color(0x14FFFFFF),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: FittedBox(
@@ -3204,14 +3214,14 @@ class _PanelActionButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, size: 16, color: foregroundColor),
+                  Icon(icon, size: 15, color: foregroundColor),
                   if (visibleLabel != null) ...[
                     const SizedBox(width: 3),
                     Text(
                       visibleLabel,
                       maxLines: 1,
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
                     ),

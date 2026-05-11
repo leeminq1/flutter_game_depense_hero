@@ -606,12 +606,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   double _towerBaseRange(TowerKind kind) {
     return switch (kind) {
       TowerKind.coinMill => 0,
-      TowerKind.guardBarracks => _tileSize * 1.05,
+      TowerKind.guardBarracks => _tileSize * 1.55,
       TowerKind.archer ||
       TowerKind.frostShrine ||
       TowerKind.ballista ||
-      TowerKind.emberkeep => _tileSize * 1.55,
-      TowerKind.mageObelisk => _tileSize * 2.55,
+      TowerKind.emberkeep => _tileSize * 2.05,
+      TowerKind.mageObelisk => _tileSize * 3.05,
     };
   }
 
@@ -623,6 +623,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       HeroKind.mage => _tileSize * 2.55,
     };
     return baseRange * levelRange;
+  }
+
+  double _heroGuardRadius(_HeroPlacement hero) {
+    return _tileSize * 3.2;
+  }
+
+  double _heroSelectionRange(_HeroPlacement hero) {
+    return math.max(_heroCurrentRange(hero), _heroGuardRadius(hero));
   }
 
   double _towerCurrentDamage(_TowerPlacement tower) {
@@ -2407,6 +2415,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       color: tower.definition.color,
       lifetime: 0.16,
       radius: criticalVolley ? 4.2 : 3.2,
+      effectId: EffectVisualCatalog.arrowProjectile,
     );
 
     if (criticalVolley) {
@@ -2428,6 +2437,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           color: tower.definition.color.withValues(alpha: 0.85),
           lifetime: 0.16,
           radius: 3.0,
+          effectId: EffectVisualCatalog.arrowProjectile,
         );
       }
     }
@@ -2513,6 +2523,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       lifetime: 0.15,
       strokeWidth: 3.5,
     );
+    _spawnImpact(
+      target.position,
+      tower.definition.color,
+      22,
+      0.20,
+      effectId: EffectVisualCatalog.arcaneBoltProjectile,
+    );
 
     final maxChains = tower.branchId == 'storm' ? 3 : 2;
     final chained = _enemies
@@ -2568,6 +2585,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       maxRadius: _towerCurrentRange(tower) * 0.82,
       lifetime: 0.34,
       strokeWidth: 3,
+    );
+    _spawnImpact(
+      tower.position,
+      tower.definition.color,
+      24,
+      0.24,
+      effectId: EffectVisualCatalog.frostImpact,
     );
     final slowBase =
         (tower.definition.slowFactor ?? 0.55) -
@@ -2630,8 +2654,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       color: tower.definition.color,
       lifetime: 0.20,
       radius: 5.2,
+      effectId: EffectVisualCatalog.siegeBoltProjectile,
     );
-    _spawnImpact(target.position, tower.definition.color, 32, 0.24);
+    _spawnImpact(
+      target.position,
+      tower.definition.color,
+      32,
+      0.24,
+      effectId: EffectVisualCatalog.siegeBoltProjectile,
+    );
 
     final pinDuration = 0.42 + (tower.branchId == 'harpoon' ? 0.28 : 0.12);
     target.staggerTimer = math.max(target.staggerTimer, pinDuration);
@@ -2692,7 +2723,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       lifetime: 0.30,
       strokeWidth: 4,
     );
-    _spawnImpact(target.position, tower.definition.color, 28, 0.28);
+    _spawnImpact(
+      target.position,
+      tower.definition.color,
+      28,
+      0.28,
+      effectId: EffectVisualCatalog.flameImpact,
+    );
     audioService.play(tower.definition.attackEvent);
   }
 
@@ -4320,25 +4357,49 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       final isFortressWall =
           barrier.definition.kind == BarrierKind.fortressWall;
       final isSelected = i == _selectedBarrierIndex;
-      final rect = Rect.fromCenter(
-        center: center,
-        width: _tileSize * (isFortressWall ? 0.86 : 0.78),
-        height: _tileSize * (isFortressWall ? 0.86 : 0.78),
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(6)),
-        Paint()
-          ..color = barrier.definition.color.withValues(
-            alpha: isSelected ? 0.98 : 0.88,
-          ),
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect.deflate(3), const Radius.circular(4)),
-        Paint()
-          ..color = Colors.black.withValues(alpha: isFortressWall ? 0.24 : 0.10)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = isFortressWall ? 3 : 2,
-      );
+      final sprite = _visualRegistry.barrierSprite(barrier.definition.kind);
+      if (sprite != null) {
+        _drawSprite(
+          canvas,
+          sprite,
+          center: center,
+          size: _tileSize * (isFortressWall ? 0.98 : 0.90),
+          fallbackTint: barrier.definition.color,
+          opacity: isSelected ? 1 : 0.94,
+        );
+      } else {
+        final rect = Rect.fromCenter(
+          center: center,
+          width: _tileSize * (isFortressWall ? 0.86 : 0.78),
+          height: _tileSize * (isFortressWall ? 0.86 : 0.78),
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(rect, const Radius.circular(6)),
+          Paint()
+            ..color = barrier.definition.color.withValues(
+              alpha: isSelected ? 0.98 : 0.88,
+            ),
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(rect.deflate(3), const Radius.circular(4)),
+          Paint()
+            ..color = Colors.black.withValues(
+              alpha: isFortressWall ? 0.24 : 0.10,
+            )
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = isFortressWall ? 3 : 2,
+        );
+      }
+      if (isSelected) {
+        canvas.drawCircle(
+          center,
+          _tileSize * 0.47,
+          Paint()
+            ..color = const Color(0xFFE4C67A).withValues(alpha: 0.78)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2,
+        );
+      }
       final hpRatio = (barrier.hitPoints / barrier.maxHitPoints).clamp(
         0.0,
         1.0,
@@ -4743,7 +4804,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (!_waveActive) {
       return null;
     }
-    final guardRadius = _tileSize * 3.2;
+    final guardRadius = _heroGuardRadius(hero);
     _Enemy? target;
     var bestDistance = double.infinity;
     for (final enemy in _enemies) {
@@ -4953,7 +5014,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _drawRangeCircle(
         canvas,
         center: hero.position,
-        radius: _heroCurrentRange(hero),
+        radius: _heroSelectionRange(hero),
         color: const Color(0xFFE4C67A),
       );
     }
@@ -5498,11 +5559,27 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           ..strokeWidth = projectile.radius * 1.25
           ..strokeCap = StrokeCap.round,
       );
-      canvas.drawCircle(
-        position.toOffset(),
-        projectile.radius,
-        Paint()..color = projectile.color.withValues(alpha: 1 - (t * 0.3)),
-      );
+      final sprite = projectile.effectId == null
+          ? null
+          : _visualRegistry.effectSprite(projectile.effectId!);
+      if (sprite != null) {
+        _drawOrientedSpriteRect(
+          canvas,
+          sprite,
+          center: position.toOffset(),
+          width: 22 + (projectile.radius * 4.4),
+          height: 8 + projectile.radius,
+          angle: math.atan2(travel.y, travel.x),
+          opacity: 1 - (t * 0.22),
+          tintColor: projectile.color,
+        );
+      } else {
+        canvas.drawCircle(
+          position.toOffset(),
+          projectile.radius,
+          Paint()..color = projectile.color.withValues(alpha: 1 - (t * 0.3)),
+        );
+      }
     }
   }
 
@@ -5823,14 +5900,29 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void _drawImpacts(Canvas canvas) {
     for (final impact in _impacts) {
       final t = (impact.age / impact.lifetime).clamp(0.0, 1.0);
-      canvas.drawCircle(
-        impact.center.toOffset(),
-        impact.maxRadius * (0.35 + (t * 0.65)),
-        Paint()
-          ..color = impact.color.withValues(alpha: (1 - t) * 0.7)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.5,
-      );
+      final sprite = impact.effectId == null
+          ? null
+          : _visualRegistry.effectSprite(impact.effectId!);
+      if (sprite != null) {
+        _drawSprite(
+          canvas,
+          sprite,
+          center: impact.center.toOffset(),
+          size: impact.maxRadius * (1.0 + (t * 0.65)),
+          fallbackTint: impact.color,
+          opacity: (1 - t) * 0.9,
+          tintColor: impact.color,
+        );
+      } else {
+        canvas.drawCircle(
+          impact.center.toOffset(),
+          impact.maxRadius * (0.35 + (t * 0.65)),
+          Paint()
+            ..color = impact.color.withValues(alpha: (1 - t) * 0.7)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.5,
+        );
+      }
     }
   }
 
@@ -5866,6 +5958,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     required Color color,
     required double lifetime,
     required double radius,
+    String? effectId,
   }) {
     _projectiles.add(
       _ProjectileVisual(
@@ -5874,6 +5967,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         color: color,
         lifetime: lifetime,
         radius: radius,
+        effectId: effectId,
       ),
     );
   }
@@ -5918,14 +6012,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     Vector2 center,
     Color color,
     double maxRadius,
-    double lifetime,
-  ) {
+    double lifetime, {
+    String? effectId,
+  }) {
     _impacts.add(
       _ImpactVisual(
         center: center.clone(),
         color: color,
         maxRadius: maxRadius,
         lifetime: lifetime,
+        effectId: effectId,
       ),
     );
   }
@@ -6053,6 +6149,39 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       height: size,
     );
     canvas.drawImageRect(image, src, mirroredDst, paint);
+    canvas.restore();
+  }
+
+  void _drawOrientedSpriteRect(
+    Canvas canvas,
+    ui.Image image, {
+    required Offset center,
+    required double width,
+    required double height,
+    required double angle,
+    double opacity = 1.0,
+    Color? tintColor,
+  }) {
+    final src = Rect.fromLTWH(
+      0,
+      0,
+      image.width.toDouble(),
+      image.height.toDouble(),
+    );
+    final dst = Rect.fromCenter(
+      center: Offset.zero,
+      width: width,
+      height: height,
+    );
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: opacity.clamp(0.0, 1.0));
+    if (tintColor != null) {
+      paint.colorFilter = ColorFilter.mode(tintColor, BlendMode.modulate);
+    }
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(angle);
+    canvas.drawImageRect(image, src, dst, paint);
     canvas.restore();
   }
 
@@ -6734,6 +6863,7 @@ class _ProjectileVisual {
     required this.color,
     required this.lifetime,
     required this.radius,
+    this.effectId,
   });
 
   final Vector2 from;
@@ -6741,6 +6871,7 @@ class _ProjectileVisual {
   final Color color;
   final double lifetime;
   final double radius;
+  final String? effectId;
   double age = 0;
 }
 
@@ -6784,12 +6915,14 @@ class _ImpactVisual {
     required this.color,
     required this.maxRadius,
     required this.lifetime,
+    this.effectId,
   });
 
   final Vector2 center;
   final Color color;
   final double maxRadius;
   final double lifetime;
+  final String? effectId;
   double age = 0;
 }
 

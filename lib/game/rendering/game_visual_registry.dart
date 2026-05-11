@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
+import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,8 @@ class GameVisualRegistry {
   final Map<String, ui.Image> _heroSprites = {};
   final Map<String, ui.Image> _supportSprites = {};
   final Map<String, ui.Image> _environmentSprites = {};
+  final Map<String, ui.Image> _barrierSprites = {};
+  final Map<String, ui.Image> _effectSprites = {};
 
   ui.Image? _grassTile;
   ui.Image? _grassTile2;
@@ -159,6 +162,21 @@ class GameVisualRegistry {
       _supportSprites[assetPath] = await _loadImage(assetPath);
     }
 
+    for (final assetPath in BarrierVisualCatalog.assetPaths()) {
+      if (!assetKeys.contains(assetPath)) {
+        continue;
+      }
+      _barrierSprites[assetPath] = await _loadImage(assetPath);
+    }
+
+    for (final effectId in EffectVisualCatalog.ids) {
+      final assetPath = EffectVisualCatalog.assetPath(effectId);
+      if (!assetKeys.contains(assetPath)) {
+        continue;
+      }
+      _effectSprites[effectId] = await _loadImage(assetPath);
+    }
+
     for (final assetPath in assetKeys) {
       if (!assetPath.startsWith('assets/sprites/environment/') ||
           !assetPath.endsWith('.png')) {
@@ -297,6 +315,14 @@ class GameVisualRegistry {
     );
     final fallbackPath = BarracksDefenderVisualCatalog.assetPath(level: level);
     return _supportSprites[assetPath] ?? _supportSprites[fallbackPath];
+  }
+
+  ui.Image? barrierSprite(BarrierKind kind) {
+    return _barrierSprites[BarrierVisualCatalog.assetPath(kind)];
+  }
+
+  ui.Image? effectSprite(String id) {
+    return _effectSprites[id];
   }
 
   ui.Image? environmentSprite(String assetPath) {

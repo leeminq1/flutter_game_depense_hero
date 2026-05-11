@@ -513,12 +513,12 @@ void main() {
   });
 
   test('tower and hero range labels use compact grid coverage values', () {
-    expect(TowerCatalog.byKind(TowerKind.guardBarracks).range, 2);
-    expect(TowerCatalog.byKind(TowerKind.archer).range, 3);
-    expect(TowerCatalog.byKind(TowerKind.frostShrine).range, 3);
-    expect(TowerCatalog.byKind(TowerKind.ballista).range, 3);
-    expect(TowerCatalog.byKind(TowerKind.emberkeep).range, 3);
-    expect(TowerCatalog.byKind(TowerKind.mageObelisk).range, 5);
+    expect(TowerCatalog.byKind(TowerKind.guardBarracks).range, 3);
+    expect(TowerCatalog.byKind(TowerKind.archer).range, 4);
+    expect(TowerCatalog.byKind(TowerKind.frostShrine).range, 4);
+    expect(TowerCatalog.byKind(TowerKind.ballista).range, 4);
+    expect(TowerCatalog.byKind(TowerKind.emberkeep).range, 4);
+    expect(TowerCatalog.byKind(TowerKind.mageObelisk).range, 6);
     expect(TowerCatalog.byKind(TowerKind.coinMill).range, 0);
 
     expect(HeroCatalog.byKind(HeroKind.knight).range, 2);

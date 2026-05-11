@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.6+7
+version: 1.0.8+9
 environment:
   sdk: ^3.10.8
 # Dependencies specify other packages that your package needs in order to work.
@@ -163,6 +163,8 @@ flutter:
     - assets/sprites/heroes/paladin/south/
     - assets/sprites/heroes/paladin/west/
     - assets/sprites/defenders/
+    - assets/sprites/barriers/
+    - assets/sprites/effects/
     - assets/sprites/environment/
     - assets/sprites/environment/landmarks/
     - assets/sprites/environment/props/
