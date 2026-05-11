@@ -3433,7 +3433,7 @@ class CampaignData {
       environmentTheme,
     );
     final decorationBlockedCells = {
-      ...stageCitadelFootprintCells(citadelCell),
+      ...stageCitadelBuildBlockedCells(citadelCell),
       for (final decoration in decorations)
         ...stageDecorationFootprintCells(decoration),
     };

@@ -112,7 +112,7 @@ void main() {
       };
       final occupied = <(int, int)>{};
 
-      for (final cell in stageCitadelFootprintCells(stage.citadelCell)) {
+      for (final cell in stageCitadelBuildBlockedCells(stage.citadelCell)) {
         expect(
           buildSlotCells.contains(cell),
           isFalse,
@@ -121,6 +121,8 @@ void main() {
         );
         occupied.add(cell);
       }
+
+      occupied.addAll(stageCitadelFootprintCells(stage.citadelCell));
 
       for (final decoration in stage.decorations) {
         final footprint = stageDecorationFootprintCells(decoration);

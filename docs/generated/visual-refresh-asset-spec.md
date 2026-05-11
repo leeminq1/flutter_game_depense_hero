@@ -39,6 +39,12 @@ Acceptance:
 - Current production pass uses an AI-authored local generation script with
   material noise, rim highlights, outline cleanup, and soft contact shadows so
   every generated PNG remains deterministic and buildable from source.
+- The `1.0.9+10` base tower refresh was produced from the user-approved
+  AI-generated sheet archived at
+  `docs/generated/tower-imagegen-sheet-20260511.png`, then cropped into the
+  existing level filenames for archer, barracks, mage, frost, and coin mill
+  towers. The sheet background was removed locally so the final `64x64` PNGs
+  keep transparent corners and do not carry the white checker backdrop.
 
 ### Barrier Sprites
 

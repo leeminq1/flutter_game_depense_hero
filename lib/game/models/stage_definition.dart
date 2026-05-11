@@ -193,6 +193,19 @@ Set<(int, int)> stageCitadelFootprintCells(
   );
 }
 
+Set<(int, int)> stageCitadelBuildBlockedCells(
+  List<int>? citadelCell, {
+  int columns = 14,
+  int rows = 14,
+}) {
+  return stageCitadelFootprintCells(
+    citadelCell,
+    columns: columns,
+    rows: rows,
+    visualSpanCells: 1.0,
+  );
+}
+
 Set<(int, int)> stageVisualFootprintCells({
   required double centerCol,
   required double centerRow,
