@@ -299,6 +299,29 @@ void main() {
 
       expect(seenIds, designCardIds);
     });
+
+    test(
+      'stage event roll follows the dice-stage cadence deterministically',
+      () {
+        final stage4Event = StageEventGenerator.roll(
+          seed: 1234,
+          stageNumber: 4,
+        );
+        final repeated = StageEventGenerator.roll(seed: 1234, stageNumber: 4);
+        final nonDiceStageEvent = StageEventGenerator.roll(
+          seed: 1234,
+          stageNumber: 5,
+        );
+
+        expect(stage4Event, isNotNull);
+        expect(repeated?.id, stage4Event?.id);
+        expect(stage4Event?.trigger, StageEventTrigger.remainingEnemies);
+        expect(stage4Event?.remainingEnemiesThreshold, 2);
+        expect(stage4Event?.hitPointMultiplier, greaterThanOrEqualTo(3.0));
+        expect(stage4Event?.damageMultiplier, greaterThanOrEqualTo(1.5));
+        expect(nonDiceStageEvent, isNull);
+      },
+    );
   });
 }
 

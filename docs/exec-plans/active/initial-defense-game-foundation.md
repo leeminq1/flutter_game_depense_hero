@@ -136,6 +136,9 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-05-09: Playtest follow-up strengthened road readability from subtle dirt marks into full brown road tiles, aligned enemy movement to authored visible road cells instead of free-grid shortest paths, and replaced the Stage briefing diagram with a fixed Stage 1 tactical preview image.
 - 2026-05-09: Campaign content review now temporarily unlocks all 30 stages through `kUnlockAllCampaignStagesForDevelopment`; this is documented in `docs/product-specs/campaign-structure.md` and must be set back to `false` before public release so authored unlock progression returns.
 - 2026-05-11: Firebase Hosting project `pixel-guard-wave-min21` now serves the PIXEL GUARD:WAVE developer site, privacy policy, and root `app-ads.txt` for AdMob seller authorization.
+- 2026-05-12: Playtest fixes now score Stage stars from both citadel HP and remaining in-siege Gold, start authored-route enemies on visible route cells instead of screen-edge anchors, reuse the same route cells for visible roads and movement, narrow prop build blocking to occupied footprint cells, and clean up result/ad retry copy.
+- 2026-05-13: Playtest feedback pass adds citadel-proximity spawn-route filtering, obstacle footprint ownership, dice-cadence stage events, Wave-time barrier demolition, and archer/barracks range buffs for clearer fortress recovery.
+- 2026-05-13: Follow-up playtest pass keeps tower build cards active after placement, allows Wave-time barrier demolition from the Flutter action bar, snaps promoted prop obstacles to single occupied cells, strengthens dice-cadence bosses, lowers starting/kill gold, and adds a once-per-stage Wave 3/4 artillery strike using a generated cannonball sprite.
 
 ## Risks
 

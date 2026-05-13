@@ -36,6 +36,8 @@ List<int>? citadelGateCellForDirection(
 
 enum BarrierKind { woodFence, stoneWall, reinforcedWall, fortressWall }
 
+enum StageEventTrigger { remainingEnemies }
+
 enum StageEnvironmentTheme {
   frontierRoad,
   banditCrossroads,
@@ -96,6 +98,7 @@ class StageRunSummary {
     required this.cleared,
     required this.baseHealthRemaining,
     required this.maxBaseHealth,
+    required this.remainingGold,
     required this.towersBuilt,
     required this.towersSold,
     required this.builtTowerKinds,
@@ -104,6 +107,7 @@ class StageRunSummary {
   final bool cleared;
   final int baseHealthRemaining;
   final int maxBaseHealth;
+  final int remainingGold;
   final int towersBuilt;
   final int towersSold;
   final Set<String> builtTowerKinds;
@@ -127,6 +131,153 @@ class StageEvaluationResult {
 
   final int starsAwarded;
   final List<StageObjectiveResult> objectiveResults;
+}
+
+class StageEventDefinition {
+  const StageEventDefinition({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.enemyKind,
+    this.trigger = StageEventTrigger.remainingEnemies,
+    this.remainingEnemiesThreshold = 2,
+    this.hitPointMultiplier = 3.6,
+    this.damageMultiplier = 1.7,
+    this.visualScale = 1.55,
+  });
+
+  final String id;
+  final String title;
+  final String message;
+  final EnemyKind enemyKind;
+  final StageEventTrigger trigger;
+  final int remainingEnemiesThreshold;
+  final double hitPointMultiplier;
+  final double damageMultiplier;
+  final double visualScale;
+}
+
+class StageEventGenerator {
+  const StageEventGenerator._();
+
+  static bool usesStageEventDice(int stageNumber) =>
+      stageNumber >= 4 && (stageNumber - 4) % 3 == 0;
+
+  static StageEventDefinition? roll({
+    required int seed,
+    required int stageNumber,
+    int rollIndex = 0,
+  }) {
+    if (!usesStageEventDice(stageNumber)) {
+      return null;
+    }
+    final pool = poolForStage(stageNumber);
+    if (pool.isEmpty) {
+      return null;
+    }
+    final random = math.Random(
+      seed + (stageNumber * 15401) + (rollIndex * 46337),
+    );
+    return pool[random.nextInt(pool.length)];
+  }
+
+  static List<StageEventDefinition> poolForStage(int stageNumber) {
+    if (stageNumber <= 5) {
+      return const [
+        StageEventDefinition(
+          id: 'elite_shield_breaker',
+          title: '정예 방패병',
+          message: '보스 등장! 정예 방패병이 마지막 전선을 압박합니다.',
+          enemyKind: EnemyKind.shieldInfantry,
+          hitPointMultiplier: 3.35,
+          damageMultiplier: 1.55,
+          visualScale: 1.48,
+        ),
+      ];
+    }
+    if (stageNumber <= 10) {
+      return const [
+        StageEventDefinition(
+          id: 'boss_banner_captain',
+          title: '깃발 대장',
+          message: '보스 등장! 깃발 대장이 주변 적을 지휘합니다.',
+          enemyKind: EnemyKind.bannerCaptain,
+          hitPointMultiplier: 3.55,
+          damageMultiplier: 1.65,
+          visualScale: 1.52,
+        ),
+        StageEventDefinition(
+          id: 'elite_grave_guard',
+          title: '정예 묘지 경비병',
+          message: '보스 등장! 묘지 경비병이 마지막 길목을 돌파합니다.',
+          enemyKind: EnemyKind.graveGuard,
+          hitPointMultiplier: 3.2,
+          damageMultiplier: 1.6,
+          visualScale: 1.5,
+        ),
+      ];
+    }
+    if (stageNumber <= 20) {
+      return const [
+        StageEventDefinition(
+          id: 'boss_corrupted_knight',
+          title: '타락 기사',
+          message: '보스 등장! 타락 기사가 마지막 방어선을 두드립니다.',
+          enemyKind: EnemyKind.corruptedKnight,
+          hitPointMultiplier: 3.15,
+          damageMultiplier: 1.65,
+          visualScale: 1.54,
+        ),
+        StageEventDefinition(
+          id: 'boss_warlock',
+          title: '암흑 주술사',
+          message: '보스 등장! 암흑 주술사가 병력을 불러냅니다.',
+          enemyKind: EnemyKind.warlock,
+          hitPointMultiplier: 3.25,
+          damageMultiplier: 1.58,
+          visualScale: 1.52,
+        ),
+      ];
+    }
+    return const [
+      StageEventDefinition(
+        id: 'boss_bastion_priest',
+        title: '성채 사제',
+        message: '보스 등장! 성채 사제가 마지막 공세를 강화합니다.',
+        enemyKind: EnemyKind.bastionPriest,
+        hitPointMultiplier: 3.1,
+        damageMultiplier: 1.6,
+        visualScale: 1.55,
+      ),
+      StageEventDefinition(
+        id: 'boss_bastion_overlord',
+        title: '성채 군주',
+        message: '보스 등장! 성채 군주가 전장을 짓밟습니다.',
+        enemyKind: EnemyKind.bastionOverlord,
+        hitPointMultiplier: 1.75,
+        damageMultiplier: 1.38,
+        visualScale: 1.68,
+      ),
+    ];
+  }
+}
+
+class StageBombardmentDefinition {
+  const StageBombardmentDefinition({
+    required this.id,
+    required this.targetWaveNumber,
+    required this.rollChance,
+    required this.damage,
+    required this.radiusTiles,
+    this.warningSeconds = 0.95,
+  });
+
+  final String id;
+  final int targetWaveNumber;
+  final double rollChance;
+  final int damage;
+  final double radiusTiles;
+  final double warningSeconds;
 }
 
 class StageDecorationDefinition {
@@ -155,6 +306,17 @@ Set<(int, int)> stageDecorationFootprintCells(
     return const {};
   }
   final isLandmark = decoration.assetPath.contains('/landmarks/');
+  if (!isLandmark) {
+    return {
+      (
+        (decoration.position.dx * columns)
+            .floor()
+            .clamp(0, columns - 1)
+            .toInt(),
+        (decoration.position.dy * rows).floor().clamp(0, rows - 1).toInt(),
+      ),
+    };
+  }
   final baseSize = isLandmark ? 86.0 : 44.0;
   final minSpan = isLandmark ? 2.0 : 1.0;
   final visualSpan = math.max(
@@ -427,6 +589,8 @@ class StageDefinition {
     this.assaultCycles = const [],
     this.spawnRoutes = const [],
     this.initialBarrierOptions = const [],
+    this.stageEvents = const [],
+    this.bombardment,
   });
 
   final int number;
@@ -474,6 +638,8 @@ class StageDefinition {
 
   final List<SpawnRouteDefinition> spawnRoutes;
   final List<BarrierKind> initialBarrierOptions;
+  final List<StageEventDefinition> stageEvents;
+  final StageBombardmentDefinition? bombardment;
 
   int get startingGold => startingCoins;
   int get citadelHitPoints => citadelHp ?? baseHealth;
@@ -485,19 +651,17 @@ class StageDefinition {
       return const StageEvaluationResult(starsAwarded: 0, objectiveResults: []);
     }
 
-    // 별 기준: 클리어 시 남은 기지 체력 비율로 결정
-    final hpRatio = summary.maxBaseHealth > 0
-        ? summary.baseHealthRemaining / summary.maxBaseHealth
-        : 0.0;
-
-    final int stars;
-    if (hpRatio >= 0.7) {
-      stars = 3; // 체력 70% 이상 유지
-    } else if (hpRatio >= 0.3) {
-      stars = 2; // 체력 30% 이상 유지
-    } else {
-      stars = 1; // 클리어만
-    }
+    final hpStars = summary.baseHealthRemaining >= 3
+        ? 3
+        : summary.baseHealthRemaining >= 2
+        ? 2
+        : 1;
+    final goldStars = summary.remainingGold >= 50
+        ? 3
+        : summary.remainingGold >= 30
+        ? 2
+        : 1;
+    final stars = math.min(hpStars, goldStars);
 
     return StageEvaluationResult(
       starsAwarded: stars,

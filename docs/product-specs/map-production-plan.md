@@ -145,6 +145,9 @@ Rules:
 - towers never block enemy routing
 - enemies only target barriers on their assigned authored route; they must not peel toward a nearest off-route barrier
 - if the assigned route is blocked, enemies attack the first barrier on that route until a path opens
+- each stage filters out spawn route entries that are too close to the authored
+  citadel cell; `activeRouteIds` is the single source for spawn legality and
+  visible road rendering
 - early stages should expose only authored build cells near the citadel, route bends, and fallback pockets; do not make the whole grass field buildable
 - wall placement is a fortress-design choice, not freeform map drawing
 - Stage 1-5 enemies stop and attack the wall in front of them; map-route variety should come from authored lanes, not hidden enemy reroutes

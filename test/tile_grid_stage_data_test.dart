@@ -34,7 +34,7 @@ void main() {
       expect(tileGrid.first.length, 14);
       expect(stage.pathsByDirection?.keys.toSet(), allFronts);
       expect(stage.spawnRoutes.length, 12);
-      expect(stage.obstacles, isEmpty);
+      expect(stage.obstacles, isNotEmpty);
       expect(stage.decorations, isNotEmpty);
       expect(stage.supplyNodeCells, isEmpty);
       expect(
@@ -124,6 +124,23 @@ void main() {
 
       occupied.addAll(stageCitadelFootprintCells(stage.citadelCell));
 
+      for (final obstacle in stage.obstacles) {
+        for (final cell in obstacle.occupiedCells) {
+          final occupiedCell = (cell[0], cell[1]);
+          expect(
+            occupied.add(occupiedCell),
+            isTrue,
+            reason: 'Stage $stageNumber obstacle footprint overlaps $cell',
+          );
+          expect(
+            buildSlotCells.contains(occupiedCell),
+            isFalse,
+            reason:
+                'Stage $stageNumber build slot should not cover obstacle $cell',
+          );
+        }
+      }
+
       for (final decoration in stage.decorations) {
         final footprint = stageDecorationFootprintCells(decoration);
         for (final cell in footprint) {
@@ -141,6 +158,66 @@ void main() {
         }
       }
     }
+  });
+
+  test('promoted prop obstacles occupy only their snapped cell', () {
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
+      final stage = CampaignData.stage(stageNumber);
+      for (final obstacle in stage.obstacles) {
+        if (obstacle.assetPath.contains('/landmarks/')) {
+          continue;
+        }
+
+        expect(
+          obstacle.occupiedCells.length,
+          1,
+          reason:
+              'Stage $stageNumber prop obstacle ${obstacle.assetPath} should '
+              'snap into one grid cell instead of sitting between cells.',
+        );
+      }
+    }
+  });
+
+  test('citadel-adjacent spawn routes are filtered out', () {
+    final stage7Routes = CampaignData.stage(
+      7,
+    ).assaultCycles.first.activeRouteIds;
+    expect(stage7Routes, isNot(contains('south_3')));
+    expect(stage7Routes, isNot(contains('east_3')));
+    expect(stage7Routes, contains('south_1'));
+
+    final stage13Routes = CampaignData.stage(
+      13,
+    ).assaultCycles.first.activeRouteIds;
+    expect(stage13Routes, isNot(contains('east_1')));
+    expect(stage13Routes, isNot(contains('north_3')));
+    expect(stage13Routes, contains('east_3'));
+  });
+
+  test('archer and barracks runtime ranges include the playtest buff', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+
+    game.onGameResize(Vector2(728, 728));
+
+    expect(
+      game.debugTowerBaseRangeFor(TowerKind.archer),
+      closeTo(52 * 3.05, 0.001),
+    );
+    expect(
+      game.debugTowerBaseRangeFor(TowerKind.guardBarracks),
+      closeTo(52 * 2.55, 0.001),
+    );
   });
 
   test('stage 1 citadel gate cells align with the visible leak threshold', () {
@@ -187,11 +264,22 @@ void main() {
           stage.citadelCell,
           route.direction,
         )!;
+        final entryCenter = Vector2(
+          (route.entryCell[0] * 52) + 26,
+          (route.entryCell[1] * 52) + 26,
+        );
         final gateCenter = Vector2(
           (gateCell[0] * 52) + 26,
           (gateCell[1] * 52) + 26,
         );
 
+        expect(
+          path.first.distanceTo(entryCenter),
+          lessThan(0.001),
+          reason:
+              'Stage $stageNumber route ${route.id} should spawn on its '
+              'visible entry cell',
+        );
         expect(
           path.last.distanceTo(gateCenter),
           lessThan(0.001),
@@ -203,6 +291,93 @@ void main() {
           reason:
               'Stage $stageNumber route ${route.id} should not add '
               'a hidden segment into citadel',
+        );
+      }
+    }
+  });
+
+  test('stage 7 and 11 visible roads match their runtime spawn routes', () {
+    for (final stageNumber in [7, 11]) {
+      final stage = CampaignData.stage(stageNumber);
+      final game = DefensePrototypeGame(
+        stage: stage,
+        sessionController: GameSessionController(),
+        audioService: GameAudioService(AudioSettingsController()),
+        metaUpgrades: const ResolvedMetaUpgrades(),
+        chosenHeroKind: HeroKind.knight,
+      );
+
+      game.onGameResize(Vector2(728, 728));
+
+      for (var waveIndex = 0; waveIndex < stage.waves.length; waveIndex += 1) {
+        final visibleRouteCells = {
+          for (final path in game.debugRoadRouteCellsForWaveIndex(waveIndex))
+            _cellPathKey(path),
+        };
+        final activeFronts = stage.assaultCycles[waveIndex].activeFronts;
+        final activeRouteIds = stage.assaultCycles[waveIndex].activeRouteIds;
+        final activeRoutes = stage.spawnRoutes.where(
+          (route) =>
+              activeFronts.contains(route.direction) &&
+              activeRouteIds.contains(route.id),
+        );
+
+        for (final route in activeRoutes) {
+          final routeCells = _routeFromEdgeToCitadelRing(
+            route.entryCell,
+            route.direction,
+            stage.citadelCell!,
+          );
+
+          expect(
+            visibleRouteCells,
+            contains(_cellPathKey(routeCells)),
+            reason:
+                'Stage $stageNumber wave ${waveIndex + 1} should draw the '
+                'same road cells used by route ${route.id}',
+          );
+        }
+      }
+    }
+  });
+
+  test('stage 10 prop blocking only removes the prop cell', () {
+    final stage = CampaignData.stage(10);
+    final buildSlotCells = {
+      for (final slot in stage.buildSlots)
+        ((slot.dx * 13).round(), (slot.dy * 13).round()),
+    };
+    final blockedCells = <(int, int)>{
+      ...stageCitadelBuildBlockedCells(stage.citadelCell),
+      for (final decoration in stage.decorations)
+        ...stageDecorationFootprintCells(decoration),
+    };
+
+    for (final decoration in stage.decorations) {
+      if (decoration.assetPath.contains('/landmarks/')) {
+        continue;
+      }
+      final footprint = stageDecorationFootprintCells(decoration);
+
+      expect(footprint.length, 1);
+      expect(buildSlotCells, isNot(contains(footprint.single)));
+
+      for (final neighbor in _orthogonalNeighbors(footprint.single)) {
+        if (neighbor.$1 < 0 ||
+            neighbor.$1 >= 14 ||
+            neighbor.$2 < 0 ||
+            neighbor.$2 >= 14 ||
+            blockedCells.contains(neighbor) ||
+            stage.tileGrid![neighbor.$2][neighbor.$1] != TileType.buildable) {
+          continue;
+        }
+
+        expect(
+          buildSlotCells,
+          contains(neighbor),
+          reason:
+              '${decoration.assetPath} should not block adjacent build cell '
+              '$neighbor',
         );
       }
     }
@@ -363,18 +538,38 @@ void main() {
   });
 
   test('starting gold reflects the wall-building economy brackets', () {
-    expect(CampaignData.stage(1).startingCoins, 300);
-    expect(CampaignData.stage(5).startingCoins, 380);
-    expect(CampaignData.stage(6).startingCoins, 410);
-    expect(CampaignData.stage(10).startingCoins, 490);
-    expect(CampaignData.stage(11).startingCoins, 520);
-    expect(CampaignData.stage(15).startingCoins, 616);
-    expect(CampaignData.stage(16).startingCoins, 650);
-    expect(CampaignData.stage(20).startingCoins, 762);
-    expect(CampaignData.stage(21).startingCoins, 800);
-    expect(CampaignData.stage(25).startingCoins, 928);
-    expect(CampaignData.stage(26).startingCoins, 970);
-    expect(CampaignData.stage(30).startingCoins, 1114);
+    expect(CampaignData.stage(1).startingCoins, 255);
+    expect(CampaignData.stage(5).startingCoins, 325);
+    expect(CampaignData.stage(6).startingCoins, 350);
+    expect(CampaignData.stage(10).startingCoins, 415);
+    expect(CampaignData.stage(11).startingCoins, 440);
+    expect(CampaignData.stage(15).startingCoins, 525);
+    expect(CampaignData.stage(16).startingCoins, 555);
+    expect(CampaignData.stage(20).startingCoins, 650);
+    expect(CampaignData.stage(21).startingCoins, 680);
+    expect(CampaignData.stage(25).startingCoins, 790);
+    expect(CampaignData.stage(26).startingCoins, 825);
+    expect(CampaignData.stage(30).startingCoins, 945);
+  });
+
+  test('stage bombardment is authored as a single late-wave pressure roll', () {
+    expect(CampaignData.stage(1).bombardment, isNull);
+
+    for (
+      var stageNumber = 2;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
+      final stage = CampaignData.stage(stageNumber);
+      final bombardment = stage.bombardment;
+
+      expect(bombardment, isNotNull);
+      expect(bombardment!.targetWaveNumber, anyOf(3, 4));
+      expect(bombardment.targetWaveNumber, lessThanOrEqualTo(stage.cycleCount));
+      expect(bombardment.rollChance, inInclusiveRange(0.24, 0.48));
+      expect(bombardment.damage, greaterThanOrEqualTo(62));
+      expect(bombardment.radiusTiles, 1.05);
+    }
   });
 
   test('barriers and heroes expose the v2 build metadata', () {
@@ -658,6 +853,19 @@ int _expectedRaiderHp({required int stageNumber, required double hpBalance}) {
   final hpMultiplier =
       (1 + ((stageNumber - 1) * 0.18)) * durabilityMultiplier * hpBalance;
   return (57 * hpMultiplier).round();
+}
+
+String _cellPathKey(List<List<int>> cells) {
+  return cells.map((cell) => '${cell[0]},${cell[1]}').join('|');
+}
+
+List<(int, int)> _orthogonalNeighbors((int, int) cell) {
+  return [
+    (cell.$1 - 1, cell.$2),
+    (cell.$1 + 1, cell.$2),
+    (cell.$1, cell.$2 - 1),
+    (cell.$1, cell.$2 + 1),
+  ];
 }
 
 bool _startsOnExpectedEdge(List<int> cell, SpawnDirection direction) {

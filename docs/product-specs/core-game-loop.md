@@ -38,6 +38,8 @@ One stage uses this flow:
    - one or more fronts activate
    - enemies spawn in groups assigned to specific fronts
    - enemies may breach player-built barriers if all routes are sealed
+   - from Stage 2 onward, a seeded artillery roll may trigger once on Wave 3
+     or Wave 4 and damage one player structure cluster
    - the chosen hero automatically guards near its assigned defense position and engages enemies within `3.2` tiles
 3. `Recovery Window`
    - short controlled pause between waves
@@ -109,6 +111,8 @@ Cost rule:
 
 - preparation and recovery build cost: `100%`
 - live assault building: disabled for towers and barriers
+- live assault demolition: barrier demolition is allowed as an emergency route
+  release; tower selling remains a prep/recovery economy action
 
 This turns combat into a test of the fortress plan instead of finger-speed spam.
 
@@ -154,6 +158,21 @@ Design purpose:
 - keep debugging feasible by recording a run seed in session state
 - keep the run seed internal; player-facing banners show the selected operation and numeric effect only
 - make the system feel like a deliberate dice roll that changes fortress planning, not a generic stat buff lottery
+
+## Stage Pressure Events
+
+Stage pressure events are separate from player design-card offers.
+
+- Stage 4, 7, 10... may also roll one final-wave boss or elite event from
+  `StageEventDefinition`
+- the boss event triggers once when final-wave spawns are complete and the
+  remaining enemy count is `2` or lower
+- from Stage 2 onward, `StageBombardmentDefinition` can roll a single artillery
+  strike for the stage
+- artillery only targets Wave 3 or Wave 4, rolls once for the whole stage, and
+  damages nearby walls or towers instead of changing enemy paths
+- the artillery projectile uses `assets/sprites/effects/cannonball_projectile.png`
+  so the visual can later be swapped without changing combat rules
 
 ## Stage 1-5 Fun Validation
 

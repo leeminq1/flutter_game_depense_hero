@@ -601,7 +601,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 width: 128,
                                 child: _BarrierActionBar(
                                   sessionController: session,
-                                  canSell: !session.waveInProgress,
+                                  canSell: true,
                                   onSell: game.sellSelectedBarrier,
                                   onClose: game.clearSelectedBarrier,
                                 ),
@@ -3362,7 +3362,7 @@ class _ResultOverlay extends StatelessWidget {
               _LargeButton(
                 label: isShowingRewardedRetryAd
                     ? '광고 준비 중...'
-                    : '이걸 광고 보고 +200 골드 재도전',
+                    : '광고 보고 +200 골드 재도전',
                 color: const Color(0xFFE4C67A),
                 onPressed: isSavingProgress || isShowingRewardedRetryAd
                     ? null

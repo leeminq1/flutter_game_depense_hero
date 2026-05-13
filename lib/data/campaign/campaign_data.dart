@@ -53,6 +53,8 @@ class CampaignData {
       unlockRequirements: _unlockRequirementsForStage(safeStage),
       tileGrid: tileGrid,
       pathSequence: pathSequence,
+      stageEvents: _stageEventsForStage(safeStage),
+      bombardment: _bombardmentForStage(safeStage, waveCount),
       waves: List.generate(
         waveCount,
         (index) => _buildWave(
@@ -901,12 +903,13 @@ class CampaignData {
   }
 
   static int _startingCoinsForStage(int stageNumber) {
-    if (stageNumber <= 5) return 300 + ((stageNumber - 1) * 20);
-    if (stageNumber <= 10) return 410 + ((stageNumber - 6) * 20);
-    if (stageNumber <= 15) return 520 + ((stageNumber - 11) * 24);
-    if (stageNumber <= 20) return 650 + ((stageNumber - 16) * 28);
-    if (stageNumber <= 25) return 800 + ((stageNumber - 21) * 32);
-    return 970 + ((stageNumber - 26) * 36);
+    int scaled(int coins) => ((coins * 0.85) / 5).round() * 5;
+    if (stageNumber <= 5) return scaled(300 + ((stageNumber - 1) * 20));
+    if (stageNumber <= 10) return scaled(410 + ((stageNumber - 6) * 20));
+    if (stageNumber <= 15) return scaled(520 + ((stageNumber - 11) * 24));
+    if (stageNumber <= 20) return scaled(650 + ((stageNumber - 16) * 28));
+    if (stageNumber <= 25) return scaled(800 + ((stageNumber - 21) * 32));
+    return scaled(970 + ((stageNumber - 26) * 36));
   }
 
   static int _baseHealthForStage(int stageNumber) {
@@ -1350,7 +1353,17 @@ class CampaignData {
         _enemyHpBalanceMultiplier(stageNumber);
     final actNumber = ((stageNumber - 1) ~/ 5) + 1;
     final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.06);
-    final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.03);
+    final killRewardMultiplier = 0.82 + ((stageNumber - 1) * 0.025);
+    int scaledKillReward(int baseReward, {double minimumIntensity = 0.95}) {
+      return math.max(
+        1,
+        (baseReward *
+                killRewardMultiplier *
+                math.max(minimumIntensity, intensity))
+            .round(),
+      );
+    }
+
     final contactDamageMultiplier = _enemyContactDamageMultiplier(stageNumber);
     final structureDamage = _scaledStructureDamageFor(
       kind,
@@ -1369,10 +1382,7 @@ class CampaignData {
           specialDescription: 'Enrages below half health and runs faster.',
           hitPoints: (57 * hpMultiplier * intensity).round(),
           speed: 48 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            6,
-            (6 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(6),
           citadelDamage: 1,
           color: const Color(0xFFB85C38),
           structureDamage: structureDamage,
@@ -1385,10 +1395,7 @@ class CampaignData {
           specialDescription: 'Dodges the first physical hit that lands on it.',
           hitPoints: (39 * hpMultiplier * math.max(0.9, intensity)).round(),
           speed: 68 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            5,
-            (5 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(5),
           citadelDamage: 1,
           color: const Color(0xFFD89C45),
           structureDamage: structureDamage,
@@ -1402,10 +1409,7 @@ class CampaignData {
               'Periodically rallies nearby bandits with speed and damage buffs.',
           hitPoints: (78 * hpMultiplier * intensity).round(),
           speed: 44 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            9,
-            (9 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(9),
           citadelDamage: 2,
           color: const Color(0xFF9E523C),
           structureDamage: structureDamage,
@@ -1419,10 +1423,7 @@ class CampaignData {
               'Dodges its first physical hit and sprints harder when wounded.',
           hitPoints: (49 * hpMultiplier * math.max(0.95, intensity)).round(),
           speed: 74 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            7,
-            (7 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(7),
           citadelDamage: 1,
           color: const Color(0xFF8B7A57),
           structureDamage: structureDamage,
@@ -1435,10 +1436,7 @@ class CampaignData {
           specialDescription: 'Reduces damage from physical towers.',
           hitPoints: (112 * hpMultiplier * intensity).round(),
           speed: 34 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            10,
-            (10 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(10),
           citadelDamage: 2,
           color: const Color(0xFF7D8EA3),
           structureDamage: structureDamage,
@@ -1451,10 +1449,7 @@ class CampaignData {
           specialDescription: 'Periodically hastes nearby allies.',
           hitPoints: (75 * hpMultiplier * intensity).round(),
           speed: 42 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            10,
-            (10 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(10),
           citadelDamage: 2,
           color: const Color(0xFF6E4EAA),
           structureDamage: structureDamage,
@@ -1467,10 +1462,7 @@ class CampaignData {
           specialDescription: 'Revives once with partial health.',
           hitPoints: (101 * hpMultiplier * intensity).round(),
           speed: 40 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            11,
-            (11 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(11),
           citadelDamage: 1,
           color: const Color(0xFFBDB9AA),
           structureDamage: structureDamage,
@@ -1484,10 +1476,7 @@ class CampaignData {
               'Leaves a fresh skeleton behind when it is destroyed.',
           hitPoints: (86 * hpMultiplier * intensity).round(),
           speed: 44 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            13,
-            (13 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(13),
           citadelDamage: 1,
           color: const Color(0xFFC8C1AF),
           structureDamage: structureDamage,
@@ -1501,10 +1490,7 @@ class CampaignData {
               'Resists slows and pushes through control effects.',
           hitPoints: (224 * hpMultiplier * (intensity + 0.08)).round(),
           speed: 26 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            20,
-            (20 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(20),
           citadelDamage: 3,
           color: const Color(0xFF63705F),
           structureDamage: structureDamage,
@@ -1518,10 +1504,7 @@ class CampaignData {
               'Heals nearby undead and shrouds them in brief damage reduction.',
           hitPoints: (135 * hpMultiplier * intensity).round(),
           speed: 34 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            21,
-            (21 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(21),
           citadelDamage: 2,
           color: const Color(0xFF5E7152),
           structureDamage: structureDamage,
@@ -1535,10 +1518,7 @@ class CampaignData {
               'Charges harder when wounded and resists physical fire.',
           hitPoints: (189 * hpMultiplier * (intensity + 0.15)).round(),
           speed: 30 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            18,
-            (18 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(18),
           citadelDamage: 4,
           color: const Color(0xFF7A5151),
           structureDamage: structureDamage,
@@ -1552,10 +1532,7 @@ class CampaignData {
               'Refreshes a ward for itself and the most important nearby ally.',
           hitPoints: (120 * hpMultiplier * intensity).round(),
           speed: 38 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            25,
-            (25 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(25),
           citadelDamage: 2,
           color: const Color(0xFF5C4B73),
           structureDamage: structureDamage,
@@ -1569,10 +1546,7 @@ class CampaignData {
               'Wards allies and summons skeleton reinforcements.',
           hitPoints: (127 * hpMultiplier * intensity).round(),
           speed: 33 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            22,
-            (22 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(22),
           citadelDamage: 3,
           color: const Color(0xFF5E3E88),
           structureDamage: structureDamage,
@@ -1586,10 +1560,7 @@ class CampaignData {
               'Heals elite allies and restores a ward to keep the line standing.',
           hitPoints: (179 * hpMultiplier * (intensity + 0.06)).round(),
           speed: 28 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            29,
-            (29 * killRewardMultiplier * math.max(0.95, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(29),
           citadelDamage: 3,
           color: const Color(0xFF8A7A5E),
           structureDamage: structureDamage,
@@ -1603,10 +1574,7 @@ class CampaignData {
               'Final boss that phases, wards itself, and summons defenders.',
           hitPoints: (1430 * hpMultiplier * math.max(1.0, intensity)).round(),
           speed: 24 * moveSpeedMultiplier,
-          rewardCoins: math.max(
-            180,
-            (180 * killRewardMultiplier * math.max(1.0, intensity)).round(),
-          ),
+          rewardCoins: scaledKillReward(180, minimumIntensity: 1.0),
           citadelDamage: 10,
           color: const Color(0xFF8C3F34),
           structureDamage: structureDamage,
@@ -3423,17 +3391,34 @@ class CampaignData {
     );
     final assaultCycles = _fortressAssaultCycles(
       stageNumber,
+      citadelCell,
       _buildAuthoredCitadelAssaultCycles(stageNumber),
     );
     final baseHealth = _baseHealthForStage(stageNumber);
     final environmentTheme = _environmentThemeForStage(stageNumber);
-    final decorations = _fortressDecorationsForStage(
+    final decorationCandidates = _fortressDecorationsForStage(
       stageNumber,
       citadelCell,
       environmentTheme,
     );
+    final obstacles = _fortressObstaclesForStage(
+      stageNumber,
+      decorationCandidates,
+      citadelCell,
+    );
+    final obstacleAssetPaths = {
+      for (final obstacle in obstacles) obstacle.assetPath,
+    };
+    final decorations = decorationCandidates
+        .where(
+          (decoration) => !obstacleAssetPaths.contains(decoration.assetPath),
+        )
+        .toList(growable: false);
     final decorationBlockedCells = {
       ...stageCitadelBuildBlockedCells(citadelCell),
+      for (final obstacle in obstacles)
+        for (final cell in obstacle.occupiedCells)
+          if (cell.length >= 2) (cell[0], cell[1]),
       for (final decoration in decorations)
         ...stageDecorationFootprintCells(decoration),
     };
@@ -3468,11 +3453,13 @@ class CampaignData {
       tileGrid: tileGrid,
       pathSequence: legacyPathSequence,
       pathsByDirection: pathsByDirection,
-      obstacles: const [],
+      obstacles: obstacles,
       supplyNodeCells: const [],
       assaultCycles: assaultCycles,
       spawnRoutes: spawnRoutes,
       initialBarrierOptions: const [],
+      stageEvents: _stageEventsForStage(stageNumber),
+      bombardment: _bombardmentForStage(stageNumber, assaultCycles.length),
       waves: [
         for (final cycle in assaultCycles)
           WaveDefinition(
@@ -3490,6 +3477,103 @@ class CampaignData {
             ],
           ),
       ],
+    );
+  }
+
+  static List<StageObstacleDefinition> _fortressObstaclesForStage(
+    int stageNumber,
+    List<StageDecorationDefinition> decorations,
+    List<int> citadelCell,
+  ) {
+    final usedCells = {...stageCitadelFootprintCells(citadelCell)};
+    final obstacles = <StageObstacleDefinition>[];
+    for (final decoration in decorations) {
+      if (!_shouldPromoteDecorationToObstacle(decoration)) {
+        continue;
+      }
+      final footprint = _obstacleFootprintForDecoration(decoration);
+      if (footprint.isEmpty || footprint.any(usedCells.contains)) {
+        continue;
+      }
+      usedCells.addAll(footprint);
+      obstacles.add(
+        StageObstacleDefinition(
+          assetPath: decoration.assetPath,
+          occupiedCells: [
+            for (final cell in footprint) [cell.$1, cell.$2],
+          ],
+          scale: decoration.scale,
+          opacity: decoration.opacity,
+        ),
+      );
+      if (obstacles.length >= (stageNumber <= 5 ? 1 : 2)) {
+        break;
+      }
+    }
+    return obstacles;
+  }
+
+  static bool _shouldPromoteDecorationToObstacle(
+    StageDecorationDefinition decoration,
+  ) {
+    return decoration.assetPath.contains('/landmarks/') ||
+        decoration.assetPath.contains('wagon_wreck') ||
+        decoration.assetPath.contains('fort_wall_breach') ||
+        decoration.assetPath.contains('gate_ruin') ||
+        decoration.assetPath.contains('chapel_rubble');
+  }
+
+  static Set<(int, int)> _obstacleFootprintForDecoration(
+    StageDecorationDefinition decoration,
+  ) {
+    final centerCol = (decoration.position.dx * 14)
+        .floor()
+        .clamp(0, 13)
+        .toInt();
+    final centerRow = (decoration.position.dy * 14)
+        .floor()
+        .clamp(0, 13)
+        .toInt();
+    final isLandmark = decoration.assetPath.contains('/landmarks/');
+    final spanCols = isLandmark ? 2 : 1;
+    final spanRows = isLandmark ? 3 : 1;
+    final startCol = (centerCol - ((spanCols - 1) ~/ 2)).clamp(0, 13).toInt();
+    final startRow = (centerRow - ((spanRows - 1) ~/ 2)).clamp(0, 13).toInt();
+    return {
+      for (var row = startRow; row < startRow + spanRows && row < 14; row += 1)
+        for (
+          var col = startCol;
+          col < startCol + spanCols && col < 14;
+          col += 1
+        )
+          (col, row),
+    };
+  }
+
+  static List<StageEventDefinition> _stageEventsForStage(int stageNumber) {
+    if (!StageEventGenerator.usesStageEventDice(stageNumber)) {
+      return const [];
+    }
+    return StageEventGenerator.poolForStage(stageNumber);
+  }
+
+  static StageBombardmentDefinition? _bombardmentForStage(
+    int stageNumber,
+    int waveCount,
+  ) {
+    if (stageNumber < 2 || waveCount < 3) {
+      return null;
+    }
+    final targetWaveNumber =
+        waveCount >= 4 && math.Random(stageNumber * 9151).nextBool() ? 4 : 3;
+    final chance = (0.22 + (stageNumber * 0.008)).clamp(0.24, 0.48);
+    return StageBombardmentDefinition(
+      id: 'stage_${stageNumber}_bombardment',
+      targetWaveNumber: targetWaveNumber,
+      rollChance: chance.toDouble(),
+      damage: 54 + (stageNumber * 4),
+      radiusTiles: 1.05,
+      warningSeconds: 1.05,
     );
   }
 
@@ -3582,6 +3666,37 @@ class CampaignData {
             entryCell: entry.$2[index],
           ),
     ];
+  }
+
+  static List<int> _entryCellForRoute(
+    SpawnDirection direction,
+    int routeIndex,
+  ) {
+    const entries = {
+      SpawnDirection.north: [
+        [3, 0],
+        [6, 0],
+        [10, 0],
+      ],
+      SpawnDirection.south: [
+        [3, 13],
+        [6, 13],
+        [10, 13],
+      ],
+      SpawnDirection.west: [
+        [0, 3],
+        [0, 6],
+        [0, 10],
+      ],
+      SpawnDirection.east: [
+        [13, 3],
+        [13, 6],
+        [13, 10],
+      ],
+    };
+    final directionEntries = entries[direction]!;
+    final index = (routeIndex - 1).clamp(0, directionEntries.length - 1);
+    return directionEntries[index];
   }
 
   static Map<SpawnDirection, List<List<int>>> _fortressRepresentativePaths(
@@ -3687,8 +3802,10 @@ class CampaignData {
 
   static List<AssaultCycleDefinition> _fortressAssaultCycles(
     int stageNumber,
+    List<int> citadelCell,
     List<AssaultCycleDefinition> source,
   ) {
+    final activeRouteIds = _routeIdsForStage(stageNumber, citadelCell);
     if (stageNumber <= 5) {
       return [
         for (final cycle in _earlyFortressAssaultCycles(stageNumber))
@@ -3702,7 +3819,7 @@ class CampaignData {
               cycle.number,
             ),
             isFinalBreach: cycle.isFinalBreach,
-            activeRouteIds: _routeIdsForStage(stageNumber),
+            activeRouteIds: activeRouteIds,
             variants: cycle.variants,
           ),
       ];
@@ -3726,7 +3843,7 @@ class CampaignData {
             cycle.number,
           ),
           isFinalBreach: cycle.isFinalBreach,
-          activeRouteIds: _routeIdsForStage(stageNumber),
+          activeRouteIds: activeRouteIds,
           variants: cycle.variants,
         ),
     ];
@@ -4422,13 +4539,45 @@ class CampaignData {
     ];
   }
 
-  static List<String> _routeIdsForStage(int stageNumber) {
+  static List<String> _routeIdsForStage(
+    int stageNumber,
+    List<int> citadelCell,
+  ) {
     const routeCount = 3;
-    return [
-      for (final direction in SpawnDirection.values)
+    const noSpawnBuffer = 4;
+    final routeIds = <String>[];
+    for (final direction in SpawnDirection.values) {
+      final candidates = [
         for (var index = 1; index <= routeCount; index += 1)
-          '${direction.name}_$index',
-    ];
+          (
+            id: '${direction.name}_$index',
+            entry: _entryCellForRoute(direction, index),
+          ),
+      ];
+      final safeCandidates = candidates
+          .where((candidate) {
+            final distance =
+                (candidate.entry[0] - citadelCell[0]).abs() +
+                (candidate.entry[1] - citadelCell[1]).abs();
+            return distance > noSpawnBuffer;
+          })
+          .toList(growable: false);
+      if (safeCandidates.isNotEmpty) {
+        routeIds.addAll(safeCandidates.map((candidate) => candidate.id));
+        continue;
+      }
+      candidates.sort((a, b) {
+        final aDistance =
+            (a.entry[0] - citadelCell[0]).abs() +
+            (a.entry[1] - citadelCell[1]).abs();
+        final bDistance =
+            (b.entry[0] - citadelCell[0]).abs() +
+            (b.entry[1] - citadelCell[1]).abs();
+        return bDistance.compareTo(aDistance);
+      });
+      routeIds.add(candidates.first.id);
+    }
+    return routeIds;
   }
 
   static List<AssaultCycleDefinition> _buildAuthoredCitadelAssaultCycles(

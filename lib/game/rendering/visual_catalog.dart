@@ -205,6 +205,7 @@ class EffectVisualCatalog {
   static const arrowProjectile = 'arrow_projectile';
   static const siegeBoltProjectile = 'siege_bolt_projectile';
   static const arcaneBoltProjectile = 'arcane_bolt_projectile';
+  static const cannonballProjectile = 'cannonball_projectile';
   static const frostImpact = 'frost_impact';
   static const flameImpact = 'flame_impact';
 
@@ -214,6 +215,7 @@ class EffectVisualCatalog {
     arrowProjectile: '$_basePath/arrow_projectile.png',
     siegeBoltProjectile: '$_basePath/siege_bolt_projectile.png',
     arcaneBoltProjectile: '$_basePath/arcane_bolt_projectile.png',
+    cannonballProjectile: '$_basePath/cannonball_projectile.png',
     frostImpact: '$_basePath/frost_impact.png',
     flameImpact: '$_basePath/flame_impact.png',
   };

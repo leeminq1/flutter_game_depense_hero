@@ -30,6 +30,14 @@ Gold sources:
 - clean-cycle performance bonus
 - Coin Mill income
 
+Current balance note:
+
+- the May 2026 playtest pass lowers authored starting gold by about `15%`
+  from the prior bracket curve
+- enemy kill payouts now use a smaller stage scaling curve so late waves still
+  reward kills without letting the player snowball into too many emergency
+  towers
+
 Gold uses:
 
 - tower placement
@@ -117,6 +125,9 @@ Rule:
 - killing an enemy immediately awards gold
 - a visible reward particle or soul mote arcs from the kill point back toward the citadel
 - the player does not tap to collect it
+- baseline kill payout scaling is intentionally modest; difficulty should be
+  raised first through enemy pressure and one-shot stage events before restoring
+  large kill rewards
 
 ## Recovery Payout Rule
 
@@ -188,6 +199,16 @@ Recommended sell value:
 - sell during live assault may use a lower floor if balance needs it
 
 ## Persistent Reward Rule
+
+## Star Rating Rule
+
+Stage stars reward both survival and efficient fortress planning:
+
+- HP rating: `3/3 = 3 stars`, `2/3 = 2 stars`, `1/3 = 1 star`
+- remaining Gold rating: `50+ = 3 stars`, `30+ = 2 stars`, `0-29 = 1 star`
+- final stars: the lower of HP rating and remaining Gold rating
+- failures always award `0 stars`
+- Meta Gold reward formulas stay separate from in-siege remaining Gold
 
 Recommended siege token rule:
 
