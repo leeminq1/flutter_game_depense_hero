@@ -89,13 +89,6 @@ class HomeScreen extends StatelessWidget {
             color: Colors.amber,
             value: '${overview.totalStars}',
           ),
-          const SizedBox(width: 12),
-          _buildStatIndicator(
-            context,
-            icon: Icons.monetization_on_rounded,
-            color: AppTheme.moss,
-            value: '${overview.player.softCurrency}',
-          ),
         ],
       ),
     );

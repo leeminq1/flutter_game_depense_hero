@@ -203,11 +203,7 @@ class LocalProgressStore implements ProgressStore {
       if (stage.unlocked) currentCampaignStage = stage.stageNumber;
     }
     final clearedStageCount = stages.where((s) => s.cleared).length;
-    final hasMeaningfulProgress =
-        profile.totalXp > 0 ||
-        profile.softCurrency > 0 ||
-        allRecords.any((r) => stageRecordStarsForTest(r) > 0) ||
-        metaUpgrades.any((u) => u.level > 0);
+    final hasResumableRun = currentCampaignStage > 1;
 
     return CampaignOverview(
       player: PlayerProgressSnapshot(
@@ -217,7 +213,7 @@ class LocalProgressStore implements ProgressStore {
         premiumCurrency: profile.premiumCurrency,
         currentCampaignStage: currentCampaignStage,
         clearedStageCount: clearedStageCount,
-        hasResumableRun: hasMeaningfulProgress,
+        hasResumableRun: hasResumableRun,
       ),
       stages: stages,
       metaUpgrades: metaUpgrades,

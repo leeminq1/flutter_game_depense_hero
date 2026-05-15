@@ -54,4 +54,41 @@ void main() {
     expect(overview.stages[0].stars, 2);
     expect(overview.stages[1].unlocked, isTrue);
   });
+
+  test('stage 1 failure rewards do not create a resumable run', () async {
+    final store = await InMemoryProgressStore.open();
+
+    await store.recordStageCompletion(
+      stageNumber: 1,
+      evaluation: const StageEvaluationResult(
+        starsAwarded: 0,
+        objectiveResults: [],
+      ),
+      totalStages: 30,
+    );
+
+    final overview = await store.loadCampaignOverview(totalStages: 30);
+
+    expect(overview.player.softCurrency, greaterThan(0));
+    expect(overview.player.currentCampaignStage, 1);
+    expect(overview.player.hasResumableRun, isFalse);
+  });
+
+  test('clearing stage 1 makes stage 2 resumable', () async {
+    final store = await InMemoryProgressStore.open();
+
+    await store.recordStageCompletion(
+      stageNumber: 1,
+      evaluation: const StageEvaluationResult(
+        starsAwarded: 1,
+        objectiveResults: [],
+      ),
+      totalStages: 30,
+    );
+
+    final overview = await store.loadCampaignOverview(totalStages: 30);
+
+    expect(overview.player.currentCampaignStage, 2);
+    expect(overview.player.hasResumableRun, isTrue);
+  });
 }

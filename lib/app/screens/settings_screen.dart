@@ -11,7 +11,7 @@ class SettingsScreen extends StatelessWidget {
     final settings = bootstrap.audioSettingsController;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('설정')),
       body: AnimatedBuilder(
         animation: settings,
         builder: (context, _) {
@@ -25,13 +25,13 @@ class SettingsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Audio',
+                        '오디오',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 12),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Audio Enabled'),
+                        title: const Text('오디오 켜기'),
                         value: !settings.muted,
                         onChanged: (value) async {
                           settings.setMuted(!value);
@@ -39,7 +39,7 @@ class SettingsScreen extends StatelessWidget {
                         },
                       ),
                       _VolumeSlider(
-                        label: 'Master',
+                        label: '전체',
                         value: settings.masterVolume,
                         onChanged: (value) async {
                           settings.setMasterVolume(value);
@@ -47,58 +47,12 @@ class SettingsScreen extends StatelessWidget {
                         },
                       ),
                       _VolumeSlider(
-                        label: 'Music',
-                        value: settings.musicVolume,
-                        onChanged: (value) async {
-                          settings.setMusicVolume(value);
-                          await bootstrap.persistAudioSettings();
-                        },
-                      ),
-                      _VolumeSlider(
-                        label: 'SFX',
+                        label: '효과음',
                         value: settings.sfxVolume,
                         onChanged: (value) async {
                           settings.setSfxVolume(value);
                           await bootstrap.persistAudioSettings();
                         },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Gameplay',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Reset this if you want the stage 1-5 tutorial guidance cards to appear again.',
-                      ),
-                      const SizedBox(height: 12),
-                      FilledButton.tonal(
-                        onPressed: () async {
-                          await bootstrap.progressStore.setTutorialDismissed(
-                            false,
-                          );
-                          if (!context.mounted) {
-                            return;
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Early tutorial guidance has been reset.',
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text('Reset Tutorial Guidance'),
                       ),
                     ],
                   ),

@@ -152,14 +152,10 @@ class InMemoryProgressStore implements ProgressStore {
       }
     }
 
-    final hasMeaningfulProgress =
-        _profile.totalXp > 0 ||
-        _profile.softCurrency > 0 ||
-        _stageRecords.values.any((record) => record.stars > 0) ||
-        metaUpgrades.any((upgrade) => upgrade.level > 0);
     final clearedStageCount = _stageRecords.values
         .where((record) => record.stars > 0)
         .length;
+    final hasResumableRun = currentCampaignStage > 1;
 
     return CampaignOverview(
       player: PlayerProgressSnapshot(
@@ -169,7 +165,7 @@ class InMemoryProgressStore implements ProgressStore {
         premiumCurrency: _profile.premiumCurrency,
         currentCampaignStage: currentCampaignStage,
         clearedStageCount: clearedStageCount,
-        hasResumableRun: hasMeaningfulProgress,
+        hasResumableRun: hasResumableRun,
         siegeTokens: _profile.siegeTokens,
       ),
       stages: stages,

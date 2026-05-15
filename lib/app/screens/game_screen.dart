@@ -545,6 +545,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   !session.mustResolveRunOffer &&
                   session.currentWave < session.totalWaves;
               final nextLoopNumber = session.currentWave + 1;
+              final showBottomHintBanner =
+                  _stageNumber >= 11 && _stageNumber <= 20;
 
               return Stack(
                 fit: StackFit.expand,
@@ -567,13 +569,29 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                               ),
                             ),
                             if (_hintBannerVisible &&
-                                session.statusText.isNotEmpty)
+                                session.statusText.isNotEmpty &&
+                                !showBottomHintBanner)
                               Positioned(
                                 top: 4,
                                 left: 12,
                                 right: isCompactBattlefield ? 12 : 164,
                                 child: Align(
                                   alignment: Alignment.topLeft,
+                                  child: _StatusBanner(
+                                    text: session.statusText,
+                                    maxWidth: isCompactBattlefield ? 336 : 392,
+                                  ),
+                                ),
+                              ),
+                            if (_hintBannerVisible &&
+                                session.statusText.isNotEmpty &&
+                                showBottomHintBanner)
+                              Positioned(
+                                bottom: 8,
+                                left: 12,
+                                right: 12,
+                                child: Align(
+                                  alignment: Alignment.bottomLeft,
                                   child: _StatusBanner(
                                     text: session.statusText,
                                     maxWidth: isCompactBattlefield ? 336 : 392,

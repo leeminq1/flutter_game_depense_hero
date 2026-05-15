@@ -49,38 +49,6 @@ class _TitleScreenState extends State<TitleScreen> {
       return;
     }
 
-    var shouldReset = true;
-    if (overview.hasMeaningfulProgress) {
-      shouldReset =
-          await showDialog<bool>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('새 게임 시작'),
-                content: const Text(
-                  '기존 진행 데이터를 지우고 스테이지 1부터 다시 시작합니다. '
-                  '튜토리얼 흐름과 잠금 해제도 처음 상태로 돌아갑니다.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('취소'),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('새로 시작'),
-                  ),
-                ],
-              );
-            },
-          ) ??
-          false;
-    }
-
-    if (!shouldReset) {
-      return;
-    }
-
     setState(() => _busy = true);
     await widget.bootstrap.progressStore.resetCampaignProgress();
     await _refreshOverview();
@@ -96,7 +64,9 @@ class _TitleScreenState extends State<TitleScreen> {
 
   void _continueGame() {
     final overview = _overview;
-    if (overview == null || !overview.player.hasResumableRun) {
+    if (overview == null ||
+        !overview.player.hasResumableRun ||
+        overview.player.currentCampaignStage <= 1) {
       return;
     }
     setState(() {
