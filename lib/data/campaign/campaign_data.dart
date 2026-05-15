@@ -12,6 +12,8 @@ class CampaignData {
   static const int _tileRows = 14;
   static const int _buildableTopRow = 1;
   static const int _buildableBottomRow = 12;
+  static const double _startingCoinBalanceMultiplier = 0.765;
+  static const double _killRewardBalanceMultiplier = 0.90;
 
   static StageDefinition stage(int number) {
     final safeStage = number.clamp(1, totalStages);
@@ -903,7 +905,8 @@ class CampaignData {
   }
 
   static int _startingCoinsForStage(int stageNumber) {
-    int scaled(int coins) => ((coins * 0.85) / 5).round() * 5;
+    int scaled(int coins) =>
+        ((coins * _startingCoinBalanceMultiplier) / 5).round() * 5;
     if (stageNumber <= 5) return scaled(300 + ((stageNumber - 1) * 20));
     if (stageNumber <= 10) return scaled(410 + ((stageNumber - 6) * 20));
     if (stageNumber <= 15) return scaled(520 + ((stageNumber - 11) * 24));
@@ -1359,6 +1362,7 @@ class CampaignData {
         1,
         (baseReward *
                 killRewardMultiplier *
+                _killRewardBalanceMultiplier *
                 math.max(minimumIntensity, intensity))
             .round(),
       );

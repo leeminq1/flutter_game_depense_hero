@@ -20,6 +20,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Route;
 
 const double _enemyMoveSpeedMultiplier = 2.0;
+const double _stageEventBossHpBalanceMultiplier = 0.90;
+const double _stageEventBossDamageBalanceMultiplier = 0.70;
 
 class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   static const bool _combatDebugLogsEnabled = false;
@@ -1883,23 +1885,34 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       kind: base.kind,
       label: '${event.title} ${base.label}',
       specialDescription: base.specialDescription,
-      hitPoints: (base.hitPoints * event.hitPointMultiplier).round(),
+      hitPoints:
+          (base.hitPoints *
+                  event.hitPointMultiplier *
+                  _stageEventBossHpBalanceMultiplier)
+              .round(),
       speed: base.speed * 0.95,
       rewardCoins: math.max(1, (base.rewardCoins * 1.15).round()),
       citadelDamage: math.max(
         1,
-        (base.citadelDamage * event.damageMultiplier).round(),
+        (base.citadelDamage *
+                event.damageMultiplier *
+                _stageEventBossDamageBalanceMultiplier)
+            .round(),
       ),
       color: base.color,
       structureDamage: math.max(
         1,
         (EnemyDefinition.defaultStructureDamageFor(base.kind) *
-                event.damageMultiplier)
+                event.damageMultiplier *
+                _stageEventBossDamageBalanceMultiplier)
             .round(),
       ),
       towerContactDamage: math.max(
         1,
-        (base.baseTowerContactDamage * event.damageMultiplier).round(),
+        (base.baseTowerContactDamage *
+                event.damageMultiplier *
+                _stageEventBossDamageBalanceMultiplier)
+            .round(),
       ),
       citadelLeakDamage: base.citadelLeakDamage,
       structureAttackCooldown: base.structureAttackCooldown,

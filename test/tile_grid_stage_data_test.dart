@@ -561,18 +561,18 @@ void main() {
   });
 
   test('starting gold reflects the wall-building economy brackets', () {
-    expect(CampaignData.stage(1).startingCoins, 255);
-    expect(CampaignData.stage(5).startingCoins, 325);
-    expect(CampaignData.stage(6).startingCoins, 350);
-    expect(CampaignData.stage(10).startingCoins, 415);
-    expect(CampaignData.stage(11).startingCoins, 440);
-    expect(CampaignData.stage(15).startingCoins, 525);
-    expect(CampaignData.stage(16).startingCoins, 555);
-    expect(CampaignData.stage(20).startingCoins, 650);
-    expect(CampaignData.stage(21).startingCoins, 680);
-    expect(CampaignData.stage(25).startingCoins, 790);
-    expect(CampaignData.stage(26).startingCoins, 825);
-    expect(CampaignData.stage(30).startingCoins, 945);
+    expect(CampaignData.stage(1).startingCoins, 230);
+    expect(CampaignData.stage(5).startingCoins, 290);
+    expect(CampaignData.stage(6).startingCoins, 315);
+    expect(CampaignData.stage(10).startingCoins, 375);
+    expect(CampaignData.stage(11).startingCoins, 400);
+    expect(CampaignData.stage(15).startingCoins, 470);
+    expect(CampaignData.stage(16).startingCoins, 495);
+    expect(CampaignData.stage(20).startingCoins, 585);
+    expect(CampaignData.stage(21).startingCoins, 610);
+    expect(CampaignData.stage(25).startingCoins, 710);
+    expect(CampaignData.stage(26).startingCoins, 740);
+    expect(CampaignData.stage(30).startingCoins, 850);
   });
 
   test('stage bombardment is authored as a single late-wave pressure roll', () {
