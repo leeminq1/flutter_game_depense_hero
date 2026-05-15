@@ -8,6 +8,7 @@ import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
+import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:flame/game.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -217,6 +218,28 @@ void main() {
     expect(
       game.debugTowerBaseRangeFor(TowerKind.guardBarracks),
       closeTo(52 * 2.55, 0.001),
+    );
+  });
+
+  test('hero attack styles match ranged and melee class fantasy', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+
+    expect(game.debugHeroAttackStyleFor(HeroKind.knight), 'melee_slash');
+    expect(game.debugHeroAttackStyleFor(HeroKind.paladin), 'melee_slash');
+    expect(
+      game.debugHeroAttackStyleFor(HeroKind.archer),
+      EffectVisualCatalog.arrowProjectile,
+    );
+    expect(game.debugHeroAttackStyleFor(HeroKind.mage), 'arcane_beam');
+    expect(
+      game.debugHeroAttackStyleFor(HeroKind.ninja),
+      EffectVisualCatalog.shurikenProjectile,
     );
   });
 
@@ -566,10 +589,65 @@ void main() {
       expect(bombardment, isNotNull);
       expect(bombardment!.targetWaveNumber, anyOf(3, 4));
       expect(bombardment.targetWaveNumber, lessThanOrEqualTo(stage.cycleCount));
-      expect(bombardment.rollChance, inInclusiveRange(0.24, 0.48));
+      expect(bombardment.rollChance, inInclusiveRange(0.45, 0.82));
+      expect(bombardment.shellCount, 3);
+      expect(bombardment.minImpactSpacingTiles, 1.25);
+      expect(bombardment.projectileSeconds, 2.1);
+      expect(bombardment.warningSeconds, 2.1);
       expect(bombardment.damage, greaterThanOrEqualTo(62));
       expect(bombardment.radiusTiles, 1.05);
     }
+  });
+
+  test('boss shockwave classification covers stage-event bosses', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(4),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+
+    expect(game.debugEnemyKindUsesBossShockwave(EnemyKind.raider), isFalse);
+    expect(
+      game.debugEnemyKindUsesBossShockwave(EnemyKind.raider, stageEvent: true),
+      isTrue,
+    );
+    expect(
+      game.debugEnemyKindUsesBossShockwave(EnemyKind.bastionOverlord),
+      isTrue,
+    );
+    expect(
+      game.debugEnemyKindCanDamageTowersOnContact(EnemyKind.skeleton),
+      isTrue,
+    );
+    expect(
+      game.debugEnemyKindCanDamageTowersOnContact(EnemyKind.bastionOverlord),
+      isTrue,
+    );
+  });
+
+  test('bosses deal two citadel hp on leak instead of one', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(4),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+
+    expect(game.debugCitadelLeakDamageForEnemyKind(EnemyKind.raider), 1);
+    expect(
+      game.debugCitadelLeakDamageForEnemyKind(
+        EnemyKind.raider,
+        stageEvent: true,
+      ),
+      2,
+    );
+    expect(
+      game.debugCitadelLeakDamageForEnemyKind(EnemyKind.bastionOverlord),
+      2,
+    );
   });
 
   test('barriers and heroes expose the v2 build metadata', () {

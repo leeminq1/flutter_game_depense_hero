@@ -22,7 +22,7 @@ import 'package:flutter/material.dart' hide Route;
 const double _enemyMoveSpeedMultiplier = 2.0;
 
 class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
-  static const bool _combatDebugLogsEnabled = true;
+  static const bool _combatDebugLogsEnabled = false;
 
   double get _tileSize {
     final tileGrid = stage.tileGrid;
@@ -334,15 +334,23 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   StageEvaluationResult evaluateCurrentRun() {
+    final sessionIsTerminal =
+        sessionController.stageCleared || sessionController.stageFailed;
     return stage.evaluateRun(
       StageRunSummary(
-        cleared: _stageCleared,
-        baseHealthRemaining: _baseHealth,
+        cleared: _stageCleared || sessionController.stageCleared,
+        baseHealthRemaining: sessionIsTerminal
+            ? sessionController.baseHealth
+            : _baseHealth,
         maxBaseHealth: sessionController.maxBaseHealth,
-        remainingGold: _coins,
-        towersBuilt: _towersBuilt,
+        remainingGold: sessionIsTerminal ? sessionController.coins : _coins,
+        towersBuilt: sessionIsTerminal
+            ? sessionController.towersBuilt
+            : _towersBuilt,
         towersSold: _towersSold,
-        builtTowerKinds: _builtTowerKinds,
+        builtTowerKinds: sessionIsTerminal
+            ? sessionController.builtTowerKinds
+            : _builtTowerKinds,
       ),
     );
   }
@@ -643,6 +651,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   double _heroSelectionRange(_HeroPlacement hero) {
     return math.max(_heroCurrentRange(hero), _heroGuardRadius(hero));
+  }
+
+  @visibleForTesting
+  String debugHeroAttackStyleFor(HeroKind kind) {
+    return switch (kind) {
+      HeroKind.knight || HeroKind.paladin => 'melee_slash',
+      HeroKind.archer => EffectVisualCatalog.arrowProjectile,
+      HeroKind.mage => 'arcane_beam',
+      HeroKind.ninja => EffectVisualCatalog.shurikenProjectile,
+    };
   }
 
   double _towerCurrentDamage(_TowerPlacement tower) {
@@ -1719,12 +1737,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     enemy.reachedGoal = true;
     enemy.progress = 1;
     enemy.position.setFrom(leakCenter);
-    _baseHealth -= enemy.definition.citadelLeakDamage;
+    final leakDamage = _citadelLeakDamageFor(enemy);
+    _baseHealth -= leakDamage;
     _spawnImpact(leakCenter, const Color(0xCCFF6A4C), 34, 0.28);
     _spawnImpact(leakCenter, const Color(0x88FFF1B8), 20, 0.18);
     _spawnFloatingText(
       leakCenter + Vector2(0, -24),
-      '-${enemy.definition.citadelLeakDamage}',
+      '-$leakDamage',
       const Color(0xFFFF6A4C),
       lifetime: 0.72,
     );
@@ -1732,7 +1751,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       'LEAK_CITADEL',
       enemy,
       'base=$baseBefore->$_baseHealth '
-          'leakDamage=${enemy.definition.citadelLeakDamage} '
+          'leakDamage=$leakDamage '
           'leakCell=${_formatCell(leakCell)} leakPos=${_formatVector(leakCenter)} '
           'beforePos=$positionBefore beforeCell=$cellBefore '
           'touchesBefore=$touchesBefore blockingBefore=$blockingBefore',
@@ -1890,6 +1909,171 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     );
   }
 
+  bool _isBossEnemy(_Enemy enemy) {
+    return enemy.stageEventLabel != null ||
+        enemy.definition.kind == EnemyKind.bastionOverlord;
+  }
+
+  bool _canEnemyDamageTowersOnContact(_Enemy enemy) =>
+      enemy.definition.baseTowerContactDamage > 0;
+
+  int _citadelLeakDamageFor(_Enemy enemy) {
+    if (_isBossEnemy(enemy)) {
+      return math.max(2, enemy.definition.citadelLeakDamage);
+    }
+    return enemy.definition.citadelLeakDamage;
+  }
+
+  double _enemyAttackVisualDuration(_Enemy enemy) =>
+      _isBossEnemy(enemy) ? 0.44 : 0.22;
+
+  void _spawnBossShockwaveVisual(_Enemy enemy, Vector2 center) {
+    if (!_isBossEnemy(enemy)) {
+      return;
+    }
+    final radius =
+        _tileSize *
+        (enemy.definition.kind == EnemyKind.bastionOverlord ? 1.65 : 1.42);
+    enemy.bossAuraVisualTimer = math.max(enemy.bossAuraVisualTimer, 1.15);
+    _spawnImpact(
+      center,
+      const Color(0xFFFFB05F),
+      radius,
+      0.46,
+      effectId: EffectVisualCatalog.bossShockwaveImpact,
+    );
+    _spawnPulse(
+      center: center,
+      color: const Color(0xFFFFB05F),
+      maxRadius: radius,
+      lifetime: 0.44,
+      strokeWidth: 4.8,
+    );
+  }
+
+  void _applyBossShockwave(
+    _Enemy enemy, {
+    required Vector2 center,
+    required double damage,
+    required Vector2 primaryPosition,
+  }) {
+    if (!_isBossEnemy(enemy)) {
+      return;
+    }
+    _spawnBossShockwaveVisual(enemy, center);
+    final radius =
+        _tileSize *
+        (enemy.definition.kind == EnemyKind.bastionOverlord ? 1.65 : 1.42);
+    final splashDamage = math.max(1.0, damage * 0.42);
+    var removedBarrier = false;
+    var removedTower = false;
+
+    for (var index = _barriers.length - 1; index >= 0; index -= 1) {
+      final barrier = _barriers[index];
+      if (barrier.position.distanceTo(primaryPosition) < 1.0 ||
+          barrier.position.distanceTo(center) > radius) {
+        continue;
+      }
+      barrier.hitPoints -= splashDamage;
+      _spawnFloatingText(
+        barrier.position + Vector2(0, -18),
+        '-${splashDamage.round()}',
+        const Color(0xFFFFB05F),
+        lifetime: 0.52,
+      );
+      if (barrier.hitPoints > 0) {
+        continue;
+      }
+      _barriers.removeAt(index);
+      removedBarrier = true;
+      if (_selectedBarrierIndex == index) {
+        _selectedBarrierIndex = null;
+      } else if (_selectedBarrierIndex != null &&
+          _selectedBarrierIndex! > index) {
+        _selectedBarrierIndex = _selectedBarrierIndex! - 1;
+      }
+    }
+
+    for (var index = _towers.length - 1; index >= 0; index -= 1) {
+      final tower = _towers[index];
+      if (tower.position.distanceTo(primaryPosition) < 1.0 ||
+          tower.position.distanceTo(center) > radius) {
+        continue;
+      }
+      tower.hitPoints -= splashDamage;
+      _spawnFloatingText(
+        tower.position + Vector2(0, -20),
+        '-${splashDamage.round()}',
+        const Color(0xFFFFB05F),
+        lifetime: 0.52,
+      );
+      if (tower.hitPoints > 0) {
+        continue;
+      }
+      _towers.removeAt(index);
+      removedTower = true;
+      if (_selectedTowerIndex == index) {
+        _selectedTowerIndex = null;
+      } else if (_selectedTowerIndex != null && _selectedTowerIndex! > index) {
+        _selectedTowerIndex = _selectedTowerIndex! - 1;
+      }
+    }
+
+    if (removedBarrier) {
+      _rerouteEnemies();
+    }
+    if (removedTower) {
+      _maxTowerLevel = _towers.isEmpty
+          ? 1
+          : _towers.map((tower) => tower.level).reduce(math.max);
+    }
+    _syncSelectedTower();
+    _syncSelectedBarrier();
+  }
+
+  @visibleForTesting
+  bool debugEnemyKindUsesBossShockwave(
+    EnemyKind kind, {
+    bool stageEvent = false,
+  }) {
+    return stageEvent || kind == EnemyKind.bastionOverlord;
+  }
+
+  @visibleForTesting
+  bool debugEnemyKindCanDamageTowersOnContact(EnemyKind kind) {
+    return EnemyDefinition(
+          kind: kind,
+          label: kind.name,
+          specialDescription: '',
+          hitPoints: 1,
+          speed: 1,
+          rewardCoins: 0,
+          citadelDamage: 1,
+          color: const Color(0xFFFFFFFF),
+        ).baseTowerContactDamage >
+        0;
+  }
+
+  @visibleForTesting
+  int debugCitadelLeakDamageForEnemyKind(
+    EnemyKind kind, {
+    bool stageEvent = false,
+  }) {
+    final baseDamage = EnemyDefinition(
+      kind: kind,
+      label: kind.name,
+      specialDescription: '',
+      hitPoints: 1,
+      speed: 1,
+      rewardCoins: 0,
+      citadelDamage: 1,
+      color: const Color(0xFFFFFFFF),
+    ).citadelLeakDamage;
+    return stageEvent || kind == EnemyKind.bastionOverlord
+        ? math.max(2, baseDamage)
+        : baseDamage;
+  }
+
   void _prepareBombardmentForWave(int waveNumber) {
     _bombardmentTimer = -1;
     final definition = stage.bombardment;
@@ -1916,6 +2100,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     for (var index = _bombardments.length - 1; index >= 0; index -= 1) {
       final bombardment = _bombardments[index];
       bombardment.age += dt;
+      if (bombardment.age < 0) {
+        continue;
+      }
       if (!bombardment.impacted &&
           bombardment.age >= bombardment.warningSeconds) {
         bombardment.impacted = true;
@@ -1944,12 +2131,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (definition == null || _bombardmentLaunchedThisStage) {
       return;
     }
-    final targets = <({Vector2 position, String label})>[
-      for (final tower in _towers)
-        (position: tower.position.clone(), label: tower.definition.label),
-      for (final barrier in _barriers)
-        (position: barrier.position.clone(), label: barrier.definition.label),
-    ];
+    final targets = _selectBombardmentTargets(definition);
     if (targets.isEmpty) {
       return;
     }
@@ -1957,34 +2139,134 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final random = math.Random(
       _runOfferSeed + (stage.number * 7117) + ((_currentWaveIndex + 1) * 1297),
     );
-    final target = targets[random.nextInt(targets.length)];
-    final fromSide = random.nextBool() ? -1.0 : 1.0;
-    final from = Vector2(
-      fromSide < 0 ? -_tileSize * 2.2 : size.x + (_tileSize * 2.2),
-      (target.position.y - (size.y * 0.42) - (random.nextDouble() * 90))
-          .clamp(-_tileSize * 2, size.y * 0.25)
-          .toDouble(),
-    );
     final radius = definition.radiusTiles * _tileSize;
-    _bombardments.add(
-      _BombardmentVisual(
-        from: from,
-        to: target.position.clone(),
-        radius: radius,
-        damage: definition.damage,
-        warningSeconds: definition.warningSeconds,
-        lifetime: definition.warningSeconds + 0.45,
-      ),
-    );
+    for (var index = 0; index < targets.length; index += 1) {
+      final target = targets[index];
+      final fromSide = random.nextBool() ? -1.0 : 1.0;
+      final from = Vector2(
+        fromSide < 0 ? -_tileSize * 2.2 : size.x + (_tileSize * 2.2),
+        (target.position.y - (size.y * 0.42) - (random.nextDouble() * 90))
+            .clamp(-_tileSize * 2, size.y * 0.25)
+            .toDouble(),
+      );
+      _bombardments.add(
+        _BombardmentVisual(
+          from: from,
+          to: target.position.clone(),
+          radius: radius,
+          damage: definition.damage,
+          warningSeconds: definition.projectileSeconds,
+          lifetime: definition.projectileSeconds + 0.55,
+          launchDelay: index * 0.3,
+        ),
+      );
+      _spawnFloatingText(
+        target.position + Vector2(0, -30),
+        '포격!',
+        const Color(0xFFFFB05F),
+        lifetime: 0.95 + (index * 0.12),
+      );
+    }
     _bombardmentLaunchedThisStage = true;
-    _showStatus('적 포격! ${target.label} 주변이 공격받습니다.');
-    _spawnFloatingText(
-      target.position + Vector2(0, -30),
-      '포격!',
-      const Color(0xFFFFB05F),
-      lifetime: 0.85,
-    );
+    _showStatus('적 포격! 성 외곽 가까운 방어선 3곳이 공격받습니다.');
     audioService.play(AudioEvent.baseDamage);
+  }
+
+  List<({Vector2 position, String label})> _selectBombardmentTargets(
+    StageBombardmentDefinition definition,
+  ) {
+    final radius = definition.radiusTiles * _tileSize;
+    final minSpacing = math.max(
+      definition.minImpactSpacingTiles * _tileSize,
+      radius * 2.15,
+    );
+    final candidates =
+        <({Vector2 position, String label})>[
+          for (final barrier in _barriers)
+            (
+              position: barrier.position.clone(),
+              label: barrier.definition.label,
+            ),
+          for (final tower in _towers)
+            (position: tower.position.clone(), label: tower.definition.label),
+        ]..sort(
+          (a, b) => a.position
+              .distanceTo(_citadelCenter)
+              .compareTo(b.position.distanceTo(_citadelCenter)),
+        );
+
+    final selected = <({Vector2 position, String label})>[];
+    for (final candidate in candidates) {
+      if (_overlapsSelectedBombardmentTarget(
+        candidate.position,
+        selected,
+        minSpacing,
+      )) {
+        continue;
+      }
+      selected.add(candidate);
+      if (selected.length >= definition.shellCount) {
+        return selected;
+      }
+    }
+
+    final fallbackDistance = minSpacing + (_tileSize * 0.45);
+    final directions = <Vector2>[
+      Vector2(1, 0),
+      Vector2(0, -1),
+      Vector2(0, 1),
+      Vector2(-1, 0),
+      Vector2(1, -1),
+      Vector2(1, 1),
+      Vector2(-1, -1),
+      Vector2(-1, 1),
+    ];
+    for (final rawDirection in directions) {
+      final direction = rawDirection.normalized();
+      final position = _clampToBattlefield(
+        _citadelCenter + (direction * fallbackDistance),
+      );
+      if (_overlapsSelectedBombardmentTarget(position, selected, minSpacing)) {
+        continue;
+      }
+      selected.add((position: position, label: '외곽 지점'));
+      if (selected.length >= definition.shellCount) {
+        break;
+      }
+    }
+    return selected;
+  }
+
+  bool _overlapsSelectedBombardmentTarget(
+    Vector2 position,
+    List<({Vector2 position, String label})> selected,
+    double minSpacing,
+  ) {
+    for (final target in selected) {
+      if (target.position.distanceTo(position) < minSpacing) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Vector2 _clampToBattlefield(Vector2 position) {
+    return Vector2(
+      position.x.clamp(_tileSize * 0.5, size.x - (_tileSize * 0.5)).toDouble(),
+      position.y.clamp(_tileSize * 0.5, size.y - (_tileSize * 0.5)).toDouble(),
+    );
+  }
+
+  @visibleForTesting
+  List<Vector2> debugBombardmentTargetsForCurrentState() {
+    final definition = stage.bombardment;
+    if (definition == null) {
+      return const [];
+    }
+    return [
+      for (final target in _selectBombardmentTargets(definition))
+        target.position.clone(),
+    ];
   }
 
   void _resolveBombardmentImpact(_BombardmentVisual bombardment) {
@@ -2175,7 +2457,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     _applyEnemyAbility(enemy, dt);
     final heroAttackSlow = _applyEnemyHeroAttack(enemy);
-    return heroAttackSlow > 0 ? heroAttackSlow : _applyEnemyTowerAttack(enemy);
+    if (heroAttackSlow > 0) {
+      return heroAttackSlow;
+    }
+    return _canEnemyDamageTowersOnContact(enemy)
+        ? _applyEnemyTowerContactDamage(enemy)
+        : 0;
   }
 
   void _updateTowers(double dt) {
@@ -2205,7 +2492,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  double _applyEnemyTowerAttack(_Enemy enemy) {
+  double _applyEnemyTowerContactDamage(_Enemy enemy) {
     if (enemy.towerAttackCooldown > 0 || _towers.isEmpty) {
       return 0;
     }
@@ -2243,15 +2530,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       lifetime: 0.48,
     );
     enemy.towerAttackCooldown = 1.1;
-    enemy.towerAttackVisualTimer = 0.22;
-    _setEnemyAttackDirection(enemy, tower.position);
-    _spawnStrike(
-      from: enemy.position,
-      to: tower.position,
-      color: const Color(0xAAFF6A4C),
-      lifetime: 0.16,
-    );
-    _spawnImpact(tower.position, const Color(0xAAFF6A4C), 18, 0.16);
+    _spawnImpact(tower.position, const Color(0xAAFF6A4C), 14, 0.14);
     audioService.play(AudioEvent.armorHit);
 
     if (tower.hitPoints <= 0) {
@@ -2304,7 +2583,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           'heroHp=${hitPointsBefore.toStringAsFixed(1)}->${hero.hitPoints.toStringAsFixed(1)}',
     );
     enemy.towerAttackCooldown = 1.0;
-    enemy.towerAttackVisualTimer = 0.22;
+    enemy.towerAttackVisualTimer = _enemyAttackVisualDuration(enemy);
     _setEnemyAttackDirection(enemy, hero.position);
     _spawnStrike(
       from: enemy.position,
@@ -2313,6 +2592,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       lifetime: 0.16,
     );
     _spawnImpact(hero.position, const Color(0xAAFF6A4C), 18, 0.16);
+    _spawnBossShockwaveVisual(enemy, hero.position);
     audioService.play(AudioEvent.armorHit);
     if (hero.hitPoints <= 0) {
       _logEnemyEvent(
@@ -2447,7 +2727,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       lifetime: 0.48,
     );
     enemy.towerAttackCooldown = 1.0;
-    enemy.towerAttackVisualTimer = 0.22;
+    enemy.towerAttackVisualTimer = _enemyAttackVisualDuration(enemy);
     _setEnemyAttackDirection(enemy, hero.position);
     _spawnStrike(
       from: enemy.position,
@@ -2456,6 +2736,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       lifetime: 0.16,
     );
     _spawnImpact(hero.position, const Color(0xAA77A7FF), 20, 0.18);
+    _spawnBossShockwaveVisual(enemy, hero.position);
     audioService.play(AudioEvent.armorHit);
 
     if (hero.hitPoints <= 0) {
@@ -2555,6 +2836,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (enemy.towerAttackCooldown > 0) {
       return true;
     }
+    final targetPosition = target.position.clone();
     final damage = enemy.definition.baseStructureDamage;
     final hitPointsBefore = target.hitPoints;
     target.hitPoints -= damage;
@@ -2573,7 +2855,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       lifetime: 0.48,
     );
     enemy.towerAttackCooldown = enemy.definition.structureAttackCooldown;
-    enemy.towerAttackVisualTimer = 0.22;
+    enemy.towerAttackVisualTimer = _enemyAttackVisualDuration(enemy);
     _setEnemyAttackDirection(enemy, target.position);
     _spawnStrike(
       from: enemy.position,
@@ -2612,6 +2894,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _showStatus('성벽이 파괴되었습니다. 다음 회복 시간에 다시 지으세요.');
       _rerouteEnemies();
     }
+    _applyBossShockwave(
+      enemy,
+      center: targetPosition,
+      damage: damage.toDouble(),
+      primaryPosition: targetPosition,
+    );
     return true;
   }
 
@@ -5164,15 +5452,29 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           from: hero.position,
           to: target.position,
           color: hero.definition.color,
-          lifetime: 0.16,
-          strokeWidth: 3.2,
+          lifetime: 0.32,
+          strokeWidth: 5.2,
+        );
+        _spawnBeam(
+          from: hero.position,
+          to: target.position,
+          color: Colors.white.withValues(alpha: 0.82),
+          lifetime: 0.18,
+          strokeWidth: 2.4,
         );
         _spawnPulse(
           center: target.position,
           color: hero.definition.color,
-          maxRadius: 24,
-          lifetime: 0.18,
-          strokeWidth: 2.8,
+          maxRadius: 28,
+          lifetime: 0.30,
+          strokeWidth: 3.2,
+        );
+        _spawnImpact(
+          target.position,
+          hero.definition.color,
+          18,
+          0.20,
+          effectId: EffectVisualCatalog.arcaneBoltProjectile,
         );
         hero.shotCounter += 1;
         if (hero.shotCounter % 3 == 0) {
@@ -5199,18 +5501,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           from: hero.position,
           to: target.position,
           color: hero.definition.color,
-          lifetime: 0.15,
+          lifetime: 0.20,
           radius: 3.0,
+          effectId: EffectVisualCatalog.arrowProjectile,
         );
         target.heroMarkedTimer = math.max(target.heroMarkedTimer, 3.2);
         break;
       case HeroKind.ninja:
-        _spawnSlash(
-          center: hero.position,
-          direction: attackDirection,
+        _spawnProjectile(
+          from: hero.position,
+          to: target.position,
           color: hero.definition.color,
-          radius: 24,
-          lifetime: 0.18,
+          lifetime: 0.16,
+          radius: 4.2,
+          effectId: EffectVisualCatalog.shurikenProjectile,
         );
         _spawnImpact(target.position, hero.definition.color, 20, 0.14);
         if (target.hitPoints > 0 &&
@@ -5871,6 +6175,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       EffectVisualCatalog.cannonballProjectile,
     );
     for (final bombardment in _bombardments) {
+      if (bombardment.age < 0) {
+        continue;
+      }
       final warningT = (bombardment.age / bombardment.warningSeconds)
           .clamp(0.0, 1.0)
           .toDouble();
@@ -5960,12 +6267,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         direction: directionKey,
         frame: enemy.animFrame,
       );
+      final attackVisualDuration = _enemyAttackVisualDuration(enemy);
       final attackProgress = enemy.towerAttackVisualTimer > 0
-          ? 1 - (enemy.towerAttackVisualTimer / 0.22).clamp(0.0, 1.0)
+          ? 1 -
+                (enemy.towerAttackVisualTimer / attackVisualDuration).clamp(
+                  0.0,
+                  1.0,
+                )
           : 0.0;
       final attackLunge =
-          math.sin(attackProgress * math.pi) *
-          (enemy.definition.kind == EnemyKind.bastionOverlord ? 10 : 7);
+          math.sin(attackProgress * math.pi) * (_isBossEnemy(enemy) ? 20 : 7);
       final attackOffset = enemy.attackDirection * attackLunge;
       final renderCenter = Offset(
         enemy.position.x + attackOffset.x,
@@ -6096,13 +6407,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         );
       }
       if (enemy.towerAttackVisualTimer > 0) {
+        final isBoss = _isBossEnemy(enemy);
         canvas.drawCircle(
           enemy.position.toOffset(),
-          15 + (enemy.towerAttackVisualTimer * 12),
+          (isBoss ? 24 : 15) +
+              (enemy.towerAttackVisualTimer * (isBoss ? 28 : 12)),
           Paint()
             ..color = const Color(0x66FF7043)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.5,
+            ..strokeWidth = isBoss ? 4.0 : 2.5,
         );
       }
       if (enemy.warlockCastVisualTimer > 0) {
@@ -7248,7 +7561,8 @@ class _BombardmentVisual {
     required this.damage,
     required this.warningSeconds,
     required this.lifetime,
-  });
+    this.launchDelay = 0,
+  }) : age = -launchDelay;
 
   final Vector2 from;
   final Vector2 to;
@@ -7256,8 +7570,9 @@ class _BombardmentVisual {
   final int damage;
   final double warningSeconds;
   final double lifetime;
+  final double launchDelay;
   bool impacted = false;
-  double age = 0;
+  double age;
 }
 
 class _BeamVisual {

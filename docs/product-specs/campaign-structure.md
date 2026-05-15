@@ -12,9 +12,10 @@ Final structure:
 
 This preserves the content volume and progression value while keeping battle UI terminology simple.
 
-## Temporary Development Unlock
+## Development Unlock
 
-Current development builds intentionally unlock all `30` stages through
+Public builds keep authored progression enabled. Local content-review builds
+can temporarily unlock all `30` stages through
 `lib/data/persistence/progression_dev_flags.dart`.
 
 Reason:
@@ -25,13 +26,13 @@ Reason:
 - this is a content-review shortcut only; it must not be treated as final
   player progression
 
-Current switch:
+Release switch:
 
 ```dart
-const bool kUnlockAllCampaignStagesForDevelopment = true;
+const bool kUnlockAllCampaignStagesForDevelopment = false;
 ```
 
-Runtime behavior while enabled:
+Runtime behavior when temporarily enabled:
 
 - both native/local progress and web/in-memory progress report every Stage as
   unlocked
@@ -40,14 +41,12 @@ Runtime behavior while enabled:
 - clearing a Stage still writes normal completion records, so balance testing
   remains meaningful
 
-Release restoration:
+Release check:
 
-1. Set `kUnlockAllCampaignStagesForDevelopment` to `false`.
+1. Confirm `kUnlockAllCampaignStagesForDevelopment` is `false`.
 2. Run the progress-store tests and a quick campaign UI smoke test.
 3. Confirm Stage 1 is available by default and later stages require the authored
    previous-stage/star/meta requirements again.
-4. Remove or update this temporary note when the campaign is ready for public
-   distribution.
 
 ## Act Summary
 

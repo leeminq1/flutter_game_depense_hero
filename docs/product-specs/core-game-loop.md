@@ -37,10 +37,12 @@ One stage uses this flow:
 2. `Wave`
    - one or more fronts activate
    - enemies spawn in groups assigned to specific fronts
-   - enemies may breach player-built barriers if all routes are sealed
-   - from Stage 2 onward, a seeded artillery roll may trigger once on Wave 3
-     or Wave 4 and damage one player structure cluster
-   - the chosen hero automatically guards near its assigned defense position and engages enemies within `3.2` tiles
+- enemies may breach player-built barriers if all routes are sealed
+- from Stage 2 onward, a seeded artillery roll may trigger once on Wave 3
+  or Wave 4 and fire three spaced shells at player defenses near the citadel
+- the chosen hero automatically guards near its assigned defense position and engages enemies within `3.2` tiles
+- normal enemies damage the citadel by `1` when they leak; boss-class enemies
+  damage the citadel by `2`
 3. `Recovery Window`
    - short controlled pause between waves
    - wave reward payout
@@ -75,6 +77,10 @@ Stage fail:
 
 - the citadel position follows the campaign quadrant arc and returns near center late
 - enemies always route toward the citadel
+- enemies attack barriers when blocked
+- towers do not block movement; enemies may apply unit-specific pass-through
+  contact damage to nearby towers without stopping or turning away from their
+  route or barrier target
 - the playable battlefield is the full green combat field between the HUD and the build bar
 - player-built barriers define most blocked cells; empty grass cells remain buildable
 - visible route marks are muted brown only on actual authored front route cells; non-route grass should stay green so the player can read where enemies really enter
@@ -168,11 +174,16 @@ Stage pressure events are separate from player design-card offers.
 - the boss event triggers once when final-wave spawns are complete and the
   remaining enemy count is `2` or lower
 - from Stage 2 onward, `StageBombardmentDefinition` can roll a single artillery
-  strike for the stage
+  event for the stage
 - artillery only targets Wave 3 or Wave 4, rolls once for the whole stage, and
   damages nearby walls or towers instead of changing enemy paths
+- an artillery event fires exactly three shells; targets prefer the closest
+  non-overlapping player structures around the citadel, then fall back to
+  nearby empty impact points when fewer valid structures exist
 - the artillery projectile uses `assets/sprites/effects/cannonball_projectile.png`
   so the visual can later be swapped without changing combat rules
+- ninja hero attacks use `assets/sprites/effects/shuriken_projectile.png`; boss
+  structure hits use `assets/sprites/effects/boss_shockwave_impact.png`
 
 ## Stage 1-5 Fun Validation
 

@@ -45,3 +45,12 @@
 - Stage 6-30 now use a smoother HP/contact-damage ramp: HP balance `0.62 / 0.72 / 0.82 / 0.92 / 1.00` by five-stage band, contact damage `0.78 / 0.84 / 0.90 / 0.95 / 1.00`.
 - Starting Gold and recovery Gold now rise gradually by stage/act so later stages can ask for more planning without forcing early-stage grind.
 - A follow-up readability pass changed range rings to yellow, reduced selected-unit action panels to a compact upper-right overlay, and tightened combat ranges to grid-sized coverage: barracks/melee heroes about `2x2`, archer/frost/ballista/emberkeep/ranged heroes about `3x3`, and mage about `5x5`.
+
+# 2026-05-15 Hero, Artillery, Boss, and Reward Follow-up
+
+- Archer, Mage, and Ninja heroes now keep their authored ranges but read as ranged attackers through arrow, arcane, and shuriken projectile visuals; Knight and Paladin keep melee slash behavior.
+- Stage bombardment remains a once-per-stage event on Wave 3 or Wave 4, but now fires exactly three slower shells at non-overlapping defense positions nearest the citadel.
+- Dice-cadence stage bosses are roughly three times stronger than the previous event-boss tuning and add a larger lunge plus structure splash shockwave so late-wave pressure is visible and dangerous.
+- Starting Gold is unchanged. Wave-clear recovery payout from generated campaign stages is halved to reduce snowballing without removing early planning freedom.
+- Result stars are still based on citadel HP and remaining in-stage Gold, but terminal result saves now read the synced battle session values so a visibly clean clear cannot be recorded as `0` stars by a stale game snapshot.
+- Boss-class enemies now leak for `2` citadel HP, while regular enemies still leak for `1`. Tower contact damage remains unit-specific pass-through damage and no longer turns the enemy sprite or plays a direct attack lunge.

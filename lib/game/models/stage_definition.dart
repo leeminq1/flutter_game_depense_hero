@@ -141,9 +141,9 @@ class StageEventDefinition {
     required this.enemyKind,
     this.trigger = StageEventTrigger.remainingEnemies,
     this.remainingEnemiesThreshold = 2,
-    this.hitPointMultiplier = 3.6,
-    this.damageMultiplier = 1.7,
-    this.visualScale = 1.55,
+    this.hitPointMultiplier = 10.8,
+    this.damageMultiplier = 5.1,
+    this.visualScale = 1.72,
   });
 
   final String id;
@@ -189,9 +189,9 @@ class StageEventGenerator {
           title: '정예 방패병',
           message: '보스 등장! 정예 방패병이 마지막 전선을 압박합니다.',
           enemyKind: EnemyKind.shieldInfantry,
-          hitPointMultiplier: 3.35,
-          damageMultiplier: 1.55,
-          visualScale: 1.48,
+          hitPointMultiplier: 10.05,
+          damageMultiplier: 4.65,
+          visualScale: 1.65,
         ),
       ];
     }
@@ -202,18 +202,18 @@ class StageEventGenerator {
           title: '깃발 대장',
           message: '보스 등장! 깃발 대장이 주변 적을 지휘합니다.',
           enemyKind: EnemyKind.bannerCaptain,
-          hitPointMultiplier: 3.55,
-          damageMultiplier: 1.65,
-          visualScale: 1.52,
+          hitPointMultiplier: 10.65,
+          damageMultiplier: 4.95,
+          visualScale: 1.7,
         ),
         StageEventDefinition(
           id: 'elite_grave_guard',
           title: '정예 묘지 경비병',
           message: '보스 등장! 묘지 경비병이 마지막 길목을 돌파합니다.',
           enemyKind: EnemyKind.graveGuard,
-          hitPointMultiplier: 3.2,
-          damageMultiplier: 1.6,
-          visualScale: 1.5,
+          hitPointMultiplier: 9.6,
+          damageMultiplier: 4.8,
+          visualScale: 1.68,
         ),
       ];
     }
@@ -224,18 +224,18 @@ class StageEventGenerator {
           title: '타락 기사',
           message: '보스 등장! 타락 기사가 마지막 방어선을 두드립니다.',
           enemyKind: EnemyKind.corruptedKnight,
-          hitPointMultiplier: 3.15,
-          damageMultiplier: 1.65,
-          visualScale: 1.54,
+          hitPointMultiplier: 9.45,
+          damageMultiplier: 4.95,
+          visualScale: 1.72,
         ),
         StageEventDefinition(
           id: 'boss_warlock',
           title: '암흑 주술사',
           message: '보스 등장! 암흑 주술사가 병력을 불러냅니다.',
           enemyKind: EnemyKind.warlock,
-          hitPointMultiplier: 3.25,
-          damageMultiplier: 1.58,
-          visualScale: 1.52,
+          hitPointMultiplier: 9.75,
+          damageMultiplier: 4.74,
+          visualScale: 1.7,
         ),
       ];
     }
@@ -245,18 +245,18 @@ class StageEventGenerator {
         title: '성채 사제',
         message: '보스 등장! 성채 사제가 마지막 공세를 강화합니다.',
         enemyKind: EnemyKind.bastionPriest,
-        hitPointMultiplier: 3.1,
-        damageMultiplier: 1.6,
-        visualScale: 1.55,
+        hitPointMultiplier: 9.3,
+        damageMultiplier: 4.8,
+        visualScale: 1.74,
       ),
       StageEventDefinition(
         id: 'boss_bastion_overlord',
         title: '성채 군주',
         message: '보스 등장! 성채 군주가 전장을 짓밟습니다.',
         enemyKind: EnemyKind.bastionOverlord,
-        hitPointMultiplier: 1.75,
-        damageMultiplier: 1.38,
-        visualScale: 1.68,
+        hitPointMultiplier: 5.25,
+        damageMultiplier: 4.14,
+        visualScale: 1.86,
       ),
     ];
   }
@@ -269,6 +269,9 @@ class StageBombardmentDefinition {
     required this.rollChance,
     required this.damage,
     required this.radiusTiles,
+    this.shellCount = 3,
+    this.minImpactSpacingTiles = 1.25,
+    this.projectileSeconds = 2.1,
     this.warningSeconds = 0.95,
   });
 
@@ -277,6 +280,9 @@ class StageBombardmentDefinition {
   final double rollChance;
   final int damage;
   final double radiusTiles;
+  final int shellCount;
+  final double minImpactSpacingTiles;
+  final double projectileSeconds;
   final double warningSeconds;
 }
 

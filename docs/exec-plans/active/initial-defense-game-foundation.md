@@ -139,6 +139,9 @@ Create the first playable vertical slice and the documentation discipline needed
 - 2026-05-12: Playtest fixes now score Stage stars from both citadel HP and remaining in-siege Gold, start authored-route enemies on visible route cells instead of screen-edge anchors, reuse the same route cells for visible roads and movement, narrow prop build blocking to occupied footprint cells, and clean up result/ad retry copy.
 - 2026-05-13: Playtest feedback pass adds citadel-proximity spawn-route filtering, obstacle footprint ownership, dice-cadence stage events, Wave-time barrier demolition, and archer/barracks range buffs for clearer fortress recovery.
 - 2026-05-13: Follow-up playtest pass keeps tower build cards active after placement, allows Wave-time barrier demolition from the Flutter action bar, snaps promoted prop obstacles to single occupied cells, strengthens dice-cadence bosses, lowers starting/kill gold, and adds a once-per-stage Wave 3/4 artillery strike using a generated cannonball sprite.
+- 2026-05-15: Hero combat readability pass converts Archer, Mage, and Ninja to explicit ranged projectile styles, upgrades Stage bombardment to three slower non-overlapping shells, triples dice-cadence boss pressure with shockwave splash, and halves generated Wave-clear recovery gold while keeping starting Gold intact.
+- 2026-05-15: Playtest correction makes result stars evaluate from synced terminal session HP/Gold, makes boss-class leaks cost `2` citadel HP, changes Mage hero fire to read as an arcane beam, and keeps tower contact damage as pass-through damage that does not turn or stop enemies.
+- 2026-05-15: Release-readiness sweep disables verbose combat debug logs by default and restores authored campaign progression by turning off the temporary all-stage unlock flag.
 
 ## Risks
 

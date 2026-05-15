@@ -962,7 +962,7 @@ class CampaignData {
       5 => 30,
       _ => 35,
     };
-    return base + (perCycle * cycleNumber);
+    return ((base + (perCycle * cycleNumber)) * 0.5).round();
   }
 
   static WaveDefinition _buildEarlyGameWave({
@@ -3566,14 +3566,17 @@ class CampaignData {
     }
     final targetWaveNumber =
         waveCount >= 4 && math.Random(stageNumber * 9151).nextBool() ? 4 : 3;
-    final chance = (0.22 + (stageNumber * 0.008)).clamp(0.24, 0.48);
+    final chance = (0.42 + (stageNumber * 0.014)).clamp(0.45, 0.82);
     return StageBombardmentDefinition(
       id: 'stage_${stageNumber}_bombardment',
       targetWaveNumber: targetWaveNumber,
       rollChance: chance.toDouble(),
       damage: 54 + (stageNumber * 4),
       radiusTiles: 1.05,
-      warningSeconds: 1.05,
+      shellCount: 3,
+      minImpactSpacingTiles: 1.25,
+      projectileSeconds: 2.1,
+      warningSeconds: 2.1,
     );
   }
 

@@ -317,8 +317,8 @@ void main() {
         expect(repeated?.id, stage4Event?.id);
         expect(stage4Event?.trigger, StageEventTrigger.remainingEnemies);
         expect(stage4Event?.remainingEnemiesThreshold, 2);
-        expect(stage4Event?.hitPointMultiplier, greaterThanOrEqualTo(3.0));
-        expect(stage4Event?.damageMultiplier, greaterThanOrEqualTo(1.5));
+        expect(stage4Event?.hitPointMultiplier, greaterThanOrEqualTo(9.0));
+        expect(stage4Event?.damageMultiplier, greaterThanOrEqualTo(4.5));
         expect(nonDiceStageEvent, isNull);
       },
     );
