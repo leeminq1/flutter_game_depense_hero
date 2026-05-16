@@ -1,8 +1,8 @@
-# Stage 6~10 맵 제작 계획
+﻿# Stage 6~10 맵 제작 계획
 
 ## 현재 결정
 
-- Stage 6~10은 모두 `Stage/Cycle` 용어만 사용한다.
+- Stage 6~10은 모두 `Stage/Wave` 용어만 사용한다.
 - Stage 6부터 성 위치가 중앙에서 벗어나며, Stage 10까지 1사분면 방향으로 조금씩 이동한다.
 - Stage 7부터는 기존 fallback 맵을 쓰지 않고, `citadelCell`, `pathsByDirection`, `obstacles`, `assaultCycles`를 직접 작성한다.
 - Stage 10 성 위치는 `[9,4]` 안전형으로 확정한다.
@@ -49,7 +49,7 @@
 - 성은 `[9,4]`에 둔다.
 - Stage 6~9에서 배운 1사분면 성 위치 변형을 종합한다.
 - 북쪽과 동쪽 압박이 빠르고, 남쪽/서쪽은 우회 후 합류한다.
-- 미니 보스형 Stage로 사용할 수 있도록 4 Cycle 구성을 유지한다.
+- 미니 보스형 Stage로 사용할 수 있도록 4 Wave 구성을 유지한다.
 
 ## 구현 규칙
 

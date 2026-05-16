@@ -148,7 +148,7 @@ Visual implications:
 - Weak matchups: swarm-only waves
 - Unique ability: heavy bolts pin and punish armored enemies
 - Branch fantasy:
-  - `Siege`: maximum elite damage and armor crack
+  - `시즈(siege)`: maximum elite damage and armor crack
   - `Harpoon`: longer pin and control utility
 - Placement guidance: long sightlines, boss lanes, protected backline anchor pads
 - Visual read: siege frame, horizontal weapon arm, heavy braces, military platform
@@ -157,7 +157,7 @@ Visual implications:
   - T2: sturdier frame and metal reinforcement
   - T3: elite siege emplacement with larger bow arm and plated base
 - Current branch sprite direction:
-  - `Siege`: bulkier siege bed with armored braces and heavier front arm
+  - `시즈(siege)`: bulkier frame with armored braces and heavier front arm
   - `Harpoon`: slimmer launcher silhouette with hook-tip and chain support read
 
 ### Emberkeep

@@ -1,260 +1,52 @@
 # Economy And Monetization
 
-## Economy Goal
+현재 구현은 전투 내 골드와 로컬 메타 성장 중심이다. 실제 결제 상품은 구현되어 있지
+않고, 광고는 재시도 보상 흐름을 위한 서비스 구조만 가진다.
 
-The economy must support three things at once:
+## 전투 골드
 
-- immediate combat feedback
-- meaningful build tradeoffs inside a siege
-- durable progression between sieges
+- 시작 골드: `CampaignData._startingCoinsForStage`에서 계산하고 0.765 밸런스 배율을 적용한다.
+- 대표값:
+  - Stage 1: 230
+  - Stage 10: 375
+  - Stage 16: 495
+  - Stage 20: 585
+  - Stage 25: 710
+  - Stage 30: 850
+- 처치 보상은 적 기본 보상, Stage 보상 배율, 강도, 0.90 밸런스 배율로 계산한다.
+- Wave 회복 골드는 Stage/Wave 정의의 `recoveryGoldBonus`를 사용한다.
+- 금화 방앗간(`coinMill`)은 4.5초마다 기본 4골드를 생산하고, `commerce_guild` 레벨만큼
+  수익이 추가된다.
 
-It must also stay compatible with offline-first persistence and ad-safe timing.
+## Meta Gold
 
-## Resource Layers
+- 코드명은 `softCurrency`지만 문서와 UI 맥락에서는 Meta Gold로 설명한다.
+- 캠프 상단에는 표시하지 않는다.
+- Stage 보상과 실패 보상으로 누적되고, 메타 업그레이드 구매에 쓴다.
 
-### 1. In-Siege Build Currency: `Gold`
+## Siege Token
 
-Short-term rule:
+- `siegeTokens`는 클리어 보상으로 얻는 내구성 높은 성장 재화다.
+- 현재 핵심 소비처는 제한적이며, 진행도 모델에 보관된다.
+- 운영 밸런스가 확정되기 전까지 Meta Gold와 분리해 기록한다.
 
-- keep the runtime and UI term `Gold` for implementation simplicity
+## 메타 업그레이드
 
-Long-term thematic option:
+최신 비용/효과 표는 `docs/generated/current-game-data-snapshot.md`의 Meta Upgrades 표를
+기준으로 한다.
 
-- rename to `Supply` later if the fantasy shifts further toward siege logistics
-
-Gold sources:
-
-- starting gold
-- enemy kill payouts
-- recovery window payout
-- clean-cycle performance bonus
-- Coin Mill income
-
-Current balance note:
-
-- the May 2026 playtest pass lowers authored starting gold by about `15%`
-  from the prior bracket curve
-- enemy kill payouts now use a smaller stage scaling curve so late waves still
-  reward kills without letting the player snowball into too many emergency
-  towers
-
-Gold uses:
-
-- tower placement
-- tower upgrades
-- wall, fence, gate placement
-- tactical rebuilding and barrier repair during recovery
-- one free selected-hero revive during recovery after the auto-placed hero falls
-- command charge activation or refill later
-
-### 2. Permanent Soft Currency: `Meta Gold`
-
-Meta Gold is the durable account-wide progression currency.
-
-Uses:
-
-- broad upgrade tracks
-- roster unlock support when needed
-- repeat-clear progression value
-
-Implementation note:
-
-- the current runtime field `softCurrency` maps directly to `Meta Gold`
-
-### 3. Tactical Resource: `Command Charges`
-
-This resource is part of the spec, but it is optional for the first working prototype.
-
-Purpose:
-
-- recover from one collapsing front
-- create tactical decision points without replacing tower strategy
-
-Candidate actions:
-
-- emergency barricade
-- frost pulse
-- quick repair
-- decoy beacon
-
-Command Charge schedule:
-
-- not required for the first prototype
-- not required for `Act 1 Playable`
-- required in `Milestone 6`
-
-### 4. Permanent Milestone Currency: `Siege Tokens`
-
-Siege Tokens are the milestone-grade durable reward for campaign progression.
-
-They fund:
-
-- act unlock gates
-- major meta upgrades
-- branch or roster milestone access
-
-## Starting Gold Curve
-
-The new mode needs more opening currency than the old single-lane layout because the player must answer multiple fronts earlier.
-
-| Stage Range | Starting Gold |
+| ID | 핵심 효과 |
 | --- | --- |
-| 1-5 | Stage 1 starts at 300, +20 per Stage |
-| 6-10 | Stage 6 starts at 410, +20 per Stage |
-| 11-15 | Stage 11 starts at 520, +24 per Stage |
-| 16-20 | Stage 16 starts at 650, +28 per Stage |
-| 21-25 | Stage 21 starts at 800, +32 per Stage |
-| 26-30 | Stage 26 starts at 970, +36 per Stage |
+| `stronghold` | 기본 성 HP +2/레벨 |
+| `supply_cache` | 시작 골드 +25/레벨 |
+| `bow_mastery` | 궁수 피해 +12%/레벨, Lv2 발리스타 해금 |
+| `guard_drill` | 병영 피해 +12%/레벨, 기사 보호 오라 강화 |
+| `arcane_mastery` | 마법사 피해 +10%/레벨, Lv2 엠버킵 해금 |
+| `frost_focus` | 감속 +6%/레벨, 빙결 사거리 +8%/레벨 |
+| `commerce_guild` | 금화 방앗간 수익 +1/레벨, Stage 보상 +8%/레벨 |
 
-## Citadel HP Rule
+## 수익화 상태
 
-The citadel uses a strict leak-count rule instead of a large health pool.
-
-| Campaign Range | Citadel HP | Leak Damage |
-| --- | --- | --- |
-| All Stages | 3 | 1 per normal enemy |
-
-This makes defense failures readable: three enemies reaching the citadel defeats the Stage.
-
-## Kill Reward Rule
-
-Enemy kills should feel satisfying without manual loot pickup.
-
-Rule:
-
-- killing an enemy immediately awards gold
-- a visible reward particle or soul mote arcs from the kill point back toward the citadel
-- the player does not tap to collect it
-- baseline kill payout scaling is intentionally modest; difficulty should be
-  raised first through enemy pressure and one-shot stage events before restoring
-  large kill rewards
-
-## Recovery Payout Rule
-
-Every completed assault cycle gives:
-
-- flat recovery gold
-- optional clean-cycle bonus
-- optional citadel-health bonus
-- optional fast-clear bonus
-
-Recommended baseline bonus set:
-
-| Condition | Bonus |
-| --- | --- |
-| Cycle completed | Act-scaled: Act 1 `70 + 15/cycle`, Act 2 `90 + 18/cycle`, Act 3 `115 + 22/cycle`, Act 4 `145 + 26/cycle`, Act 5 `180 + 30/cycle`, Act 6 `220 + 35/cycle` |
-| No leak during cycle | +20 gold |
-| Citadel at full HP after cycle | +15 gold |
-| Fast clear | +10 gold |
-
-Early fortress build-cost targets:
-
-| Buildable | Current Cost |
-| --- | --- |
-| Wood Fence | 5 |
-| Stone Wall | 15 |
-| Reinforced Wall | 35 |
-| Gate | 20 |
-
-## Coin Mill And Supply Nodes
-
-`Coin Mill` remains in the roster, but its battlefield role changes.
-
-Act 1 playable rule:
-
-- Coin Mills follow the same `1x1` placement rule as every other tower
-- they are not restricted to special node tiles in the current playable
-
-Future-facing variant:
-
-- Coin Mills can only be built on `Supply Node` tiles
-
-Recommended income curve:
-
-| Act | Gold Per Tick | Tick Interval | Cycle Flavor |
-| --- | --- | --- | --- |
-| 1 | 4 | 4.5s | conservative economy |
-| 2 | 4 | 4.2s | still early greed |
-| 3 | 5 | 4.0s | economy becomes important |
-| 4 | 5 | 3.8s | risk-reward sharper |
-| 5 | 6 | 3.6s | high-pressure payoff |
-| 6 | 6 | 3.4s | late-siege stabilization tool |
-
-## Build-Time Cost Rule
-
-The player can build at all times, but not at equal efficiency.
-
-| Timing | Cost Multiplier |
-| --- | --- |
-| Preparation phase | 1.0x |
-| Recovery window | 1.0x |
-| Live assault | building disabled |
-
-## Sell Rule
-
-Recommended sell value:
-
-- normal sell: `70%`
-- special economy or recovery branch may increase this later
-- sell during live assault may use a lower floor if balance needs it
-
-## Persistent Reward Rule
-
-## Star Rating Rule
-
-Stage stars reward both survival and efficient fortress planning:
-
-- HP rating: `3/3 = 3 stars`, `2/3 = 2 stars`, `1/3 = 1 star`
-- remaining Gold rating: `50+ = 3 stars`, `30+ = 2 stars`, `0-29 = 1 star`
-- final stars: the lower of HP rating and remaining Gold rating
-- failures always award `0 stars`
-- Meta Gold reward formulas stay separate from in-siege remaining Gold
-
-Recommended siege token rule:
-
-| Result | Tokens |
-| --- | --- |
-| Siege clear | 1 |
-| Clear with HP objective | +1 |
-| Clear with one mastery objective | +1 |
-| Maximum per siege | 3 |
-
-Failure reward formulas:
-
-- `failureMetaGold = round(clearMetaGoldBase * 0.35 * cycleProgressRatio)`
-- `failureXp = round(clearXpBase * 0.50 * cycleProgressRatio)`
-- `cycleProgressRatio = completedCycles / totalCycles`
-- once a siege has started, `cycleProgressRatio` has a minimum floor of `0.25`
-
-Result rules:
-
-- clear: award `Meta Gold + XP`, then award `Siege Tokens` if the clear conditions are met
-- fail: award `Meta Gold + XP`, never award `Siege Tokens`
-
-## Ad Rules
-
-The product remains ad-safe by design.
-
-Allowed ad surfaces:
-
-- post-siege results
-- optional retry accelerators
-- optional reward claim boosts
-- shop or upgrade refresh moments outside live combat
-
-Not allowed:
-
-- interrupting active assault cycles
-- interrupting a recovery window countdown unexpectedly
-- inserting ads during citadel damage or boss transitions
-
-## Persistence Rule
-
-Rewards must be persisted transactionally.
-
-This especially applies to:
-
-- Siege Tokens
-- Meta Gold
-- one-time first-clear grants
-- ad-related bonus claims
+- Google Mobile Ads 의존성은 포함되어 있다.
+- 현재 문서 기준으로 비공개 테스트는 밸런스/안정성 검증 목적이다.
+- 실제 결제, 상품 가격, 유료 재화 패키지는 아직 source of truth가 없다.

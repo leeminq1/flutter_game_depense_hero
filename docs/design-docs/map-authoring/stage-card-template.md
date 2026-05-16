@@ -1,4 +1,4 @@
-# Stage 카드 템플릿
+﻿# Stage 카드 템플릿
 
 ## 상태
 
@@ -17,13 +17,13 @@
 - 전선 화살표 규칙:
 - 플레이 감정 한 줄:
 
-## Cycle 구성
+## Wave 구성
 
-- Cycle 수:
-- Cycle 1:
-- Cycle 2:
-- Cycle 3:
-- Cycle 4:
+- Wave 수:
+- Wave 1:
+- Wave 2:
+- Wave 3:
+- Wave 4:
 
 ## 장애물 설계 의도
 

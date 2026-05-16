@@ -1,48 +1,34 @@
-# Product Specs Index
+# 제품 사양 인덱스
 
-This folder is the canonical product-spec system of record for the `Citadel Siege` redesign.
+이 폴더는 현재 구현된 `Pixel Guard: Wave`의 제품 사양 source of truth다.
+문서는 한국어 중심으로 작성하고, 코드 식별자는 영어 원문을 병기한다.
 
-## Active Specs
+## 핵심 문서
 
-| Spec | Status | Purpose |
+| 문서 | 상태 | 목적 |
 | --- | --- | --- |
-| [core-game-loop.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/core-game-loop.md) | active | Final player-facing session loop and siege rules |
-| [campaign-structure.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/campaign-structure.md) | active | 30-siege campaign structure, act pacing, and unlock flow |
-| [economy-and-monetization.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/economy-and-monetization.md) | active | Gold, Meta Gold, Siege Tokens, supply nodes, and reward rules |
-| [meta-progression.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/meta-progression.md) | active | Permanent growth model, act gates, and upgrade direction |
-| [roster-and-buildables.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/roster-and-buildables.md) | active | Front identity, enemy usage, counter mapping, and citadel damage rules |
-| [map-production-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/map-production-plan.md) | active | Battlefield geometry, tile semantics, and authored siege examples |
-| [new-user-onboarding.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/new-user-onboarding.md) | active | First-session teaching flow for the multi-front format |
-| [enemy-asset-pipeline.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/enemy-asset-pipeline.md) | active | LPC-based directional enemy production and folder rules |
-| [runtime-data-contracts.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/runtime-data-contracts.md) | active | Concrete implementation contracts for siege, cycle, path, and rendering data |
-| [web-verification-and-tooling.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/web-verification-and-tooling.md) | active | Flutter Web plus Playwright validation workflow and QA harness rules |
-| [first-playable-roadmap.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/first-playable-roadmap.md) | active | Delivery milestones from spec lock to first multi-front playable |
+| `core-game-loop.md` | active | 타이틀, 캠프, 전투, 결과, 설정까지 전체 플레이 흐름 |
+| `campaign-structure.md` | active | 30 Stage 구조, 해금, Wave, 주사위 이벤트, 포격 |
+| `economy-and-monetization.md` | active | 전투 골드, 보상, Meta Gold, Siege Token, 메타 업그레이드 |
+| `roster-and-buildables.md` | active | 타워, 성벽, 영웅, 적, 보스, 주사위 카드 수치 |
+| `runtime-data-contracts.md` | active | 현재 Dart 타입과 런타임 데이터 계약 |
+| `new-user-onboarding.md` | active | Stage 1~5 학습 흐름과 안내 UI |
+| `map-production-plan.md` | support | 맵 제작 절차. 최신 좌표표는 `design-docs/map-authoring/stage-atlas.md` |
+| `enemy-asset-pipeline.md` | support | LPC 적 에셋 제작 원칙 |
+| `web-verification-and-tooling.md` | support | Flutter Web/브라우저 검증 절차 |
 
-## Related Generated Specs
+## 수치표
 
-These files are implementation-facing companions to the product specs:
+최신 수치표는 코드에서 생성한다.
 
-| Generated Spec | Status | Purpose |
-| --- | --- | --- |
-| [ai-generated-assets-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/generated/ai-generated-assets-plan.md) | active | Canonical AI and LPC asset-production plan for the first playable |
+- 생성 명령: `flutter test tool/export_game_data_docs.dart`
+- 출력 파일: `docs/generated/current-game-data-snapshot.md`
 
-## Spec Order
+수치를 손으로 복사해야 할 때는 이 스냅샷을 기준으로 한다. 밸런스 변경 후에는
+반드시 스냅샷을 다시 생성한다.
 
-Read in this order before implementation work:
+## 오래된 문서 처리
 
-1. [core-game-loop.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/core-game-loop.md)
-2. [campaign-structure.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/campaign-structure.md)
-3. [economy-and-monetization.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/economy-and-monetization.md)
-4. [roster-and-buildables.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/roster-and-buildables.md)
-5. [map-production-plan.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/map-production-plan.md)
-6. [runtime-data-contracts.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/runtime-data-contracts.md)
-7. [enemy-asset-pipeline.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/enemy-asset-pipeline.md)
-8. [new-user-onboarding.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/new-user-onboarding.md)
-9. [web-verification-and-tooling.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/web-verification-and-tooling.md)
-10. [first-playable-roadmap.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/product-specs/first-playable-roadmap.md)
-
-## Rule
-
-If a change affects player-facing behavior, combat readability, map authoring, economy pacing, enemy asset production, or the QA workflow, update the relevant spec in this folder before or with code.
-
-Do not use `docs/game-concept-*` as the source of truth after this point. Those folders are historical exploration references only.
+과거 `Citadel Siege`, `Siege`, `Act`, `Cycle` 용어가 남은 문서는 역사적 맥락이나
+내부 호환명 설명일 때만 허용한다. 현재 플레이어-facing 문서는 `Stage`와 `Wave`를
+사용한다.

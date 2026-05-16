@@ -1,56 +1,55 @@
-# 게임성 개선 통합 패스
+# Gameplay Balance Pass
 
-## 목적
+이 문서는 현재 코드 기준 밸런스 의도를 설명한다. 정확한 표는
+`docs/generated/current-game-data-snapshot.md`를 다시 생성해 확인한다.
 
-이번 패스는 초반 이탈을 줄이면서도 Stage 1부터 긴장감을 주기 위한 1차 게임성 개선이다. 기준은 “실수하면 성 체력이 깎이지만, 올바르게 배치하면 안정적으로 클리어 가능”이다.
+## 현재 목표
 
-## 확정 변경
+- Stage마다 건물은 초기화되지만, Stage가 오르면 기본 건설 레벨이 올라가 후반 피로도를 줄인다.
+- 몬스터 HP는 Stage에 따라 오르되, Stage 10 이후 플레이어 기본 레벨과 성벽 HP도 함께 오른다.
+- 보스는 위협적이어야 하지만 성벽/타워를 순식간에 지우면 안 된다.
+- Stage 16 이후 이벤트 보스는 HP cap 4500과 피해 캡으로 조정한다.
 
-- 시작 골드는 Stage 1~5를 `150, 155, 160, 165, 170`으로 낮추고, Stage 6부터는 `170 + (Stage - 5) * 2`로 완만하게 상승시킨다.
-- 적 체력 스케일은 Stage당 `15%`에서 `18%`로 올린다.
-- Stage 1은 입문용 3 Cycle을 유지하고, Stage 2부터 4 Cycle 구조로 전환한다.
-- Stage 1~30은 모두 `citadelCell`, `pathsByDirection`, `obstacles`, `assaultCycles`를 가진 authored 맵으로 다룬다.
-- 몬스터의 타워 공격은 더 체감되도록 기본 피해와 공격 주기를 강화한다.
-- 코인밀은 카드/선택 UI에서 초당 수익과 예상 회수 시간을 보여준다.
+## 플레이어 성장
 
-## 히어로 역할
+| Stage | 새 타워/영웅 기본 레벨 | 성벽 HP 보정 |
+| --- | ---: | ---: |
+| 1~9 | Lv1 | 1.00x |
+| 10~19 | Lv2 | 1.35x |
+| 20~30 | Lv3 | 1.75x |
 
-| 히어로 | 고유 능력 | 메타 연동 |
-| --- | --- | --- |
-| 기사 | 주변 타워 피해 감소 | `Guard Drill` |
-| 궁사 | 표식으로 받는 피해 증가 | `Bow Mastery` |
-| 마법사 | 세 번째 공격마다 주변 광역 피해 | `Arcane Mastery` |
-| 닌자 | 낮은 체력 적 추가 피해 | `Frost Focus` |
-| 성기사 | 주변 손상 타워 주기적 회복 | `Guard Drill` |
+- 최대 전투 레벨은 Lv4다.
+- `첫 마법사 탑 +1레벨`은 기본 레벨에 더해지며 Lv4를 넘지 않는다.
 
-## 적 가족 시너지
+## 보스 피해 구분
 
-- 산적 계열은 배너 캡틴 주변에서 더 오래 지속되는 이동/성 피해 버프를 받는다.
-- 언데드 계열은 역병사 주변에서 더 넓은 회복/피해 감소 지원을 받는다.
-- 수치는 낮게 시작하고, 실제 플레이에서 지원 유닛을 먼저 잡아야 한다는 느낌이 생기는지 확인한다.
+- 성벽 피해: 보스가 성벽을 직접 때릴 때 들어가는 피해.
+- 쇼크웨이브: 성벽 피해 직후 주변 성벽/타워에 추가로 들어가는 범위 피해. 현재 직접 피해의 42%.
+- 타워 접촉 피해: 이동 중 가까운 타워를 별도로 때리는 피해.
+- 성 도달 피해: 적이 성까지 샜을 때 하트가 깎이는 피해. 보스는 최소 2.
 
-## 검증 기준
+## 이벤트 보스 현재 기준
 
-- Stage 1은 처음부터 사방 압박이 보이되, 기본 타워 2개와 올바른 추가 배치로 클리어 가능해야 한다.
-- Stage 6과 Stage 11에서 시작 골드가 갑자기 튀지 않아야 한다.
-- Stage 16~30이 fallback 맵으로 돌아가지 않아야 한다.
-- 몬스터가 타워를 파괴하는 장면이 실전에서 가끔 발생해야 한다.
-- 코인밀은 플레이어가 손익분기 시간을 UI에서 이해할 수 있어야 한다.
+| 구간 | HP cap | 특수 조정 |
+| --- | ---: | --- |
+| Stage 4~12 | 4500 | 초반 이벤트 보스용 기본 cap |
+| Stage 13~15 | 5200 | 중반 타락 기사 구간 |
+| Stage 16~30 | 4500 | 최근 플레이테스트 기준으로 재조정 |
 
-# 2026-05-10 UI and Difficulty Follow-up
+- 이벤트 타락 기사: 물리 피해 75% 수용, 성벽 75, 쇼크웨이브 31.5, 타워 접촉 85.
+- 이벤트 성채 군주: 물리 피해 75% 수용, 성벽 95, 쇼크웨이브 39.9, 타워 접촉 110.
+- 일반 타락 기사/성채 군주는 기존 물리 피해 55% 수용을 유지한다.
 
-- Build cards now stay active after a successful tower or wall placement, so players can place multiple copies without reselecting the card. The mode ends when the same card is tapped again or when `WAVE` starts.
-- Selecting an existing tower or hero should show a translucent range circle using that unit's current runtime range. Non-combat economy buildings with `range == 0` do not draw a range circle.
-- Stage 1-5 enemy HP is reduced to 50% of the previous curve, and enemy contact damage against walls, towers, and heroes is reduced to 70%. Citadel leak damage remains fixed at 1.
-- Stage 6-30 now use a smoother HP/contact-damage ramp: HP balance `0.62 / 0.72 / 0.82 / 0.92 / 1.00` by five-stage band, contact damage `0.78 / 0.84 / 0.90 / 0.95 / 1.00`.
-- Starting Gold and recovery Gold now rise gradually by stage/act so later stages can ask for more planning without forcing early-stage grind.
-- A follow-up readability pass changed range rings to yellow, reduced selected-unit action panels to a compact upper-right overlay, and tightened combat ranges to grid-sized coverage: barracks/melee heroes about `2x2`, archer/frost/ballista/emberkeep/ranged heroes about `3x3`, and mage about `5x5`.
+## 경제 밸런스
 
-# 2026-05-15 Hero, Artillery, Boss, and Reward Follow-up
+- 시작 골드는 Stage 1의 230에서 Stage 30의 850까지 오른다.
+- 처치 보상은 Stage 보상 계수와 0.90 밸런스 계수를 함께 적용한다.
+- 회복 골드는 Wave 사이에 추가 방어선 설계를 유도한다.
+- 금화 방앗간은 장기 Wave에서 가치가 있지만, 공격 능력은 없다.
 
-- Archer, Mage, and Ninja heroes now keep their authored ranges but read as ranged attackers through arrow, arcane, and shuriken projectile visuals; Knight and Paladin keep melee slash behavior.
-- Stage bombardment remains a once-per-stage event on Wave 3 or Wave 4, but now fires exactly three slower shells at non-overlapping defense positions nearest the citadel.
-- Dice-cadence stage bosses are roughly three times stronger than the previous event-boss tuning and add a larger lunge plus structure splash shockwave so late-wave pressure is visible and dangerous.
-- Starting Gold is unchanged. Wave-clear recovery payout from generated campaign stages is halved to reduce snowballing without removing early planning freedom.
-- Result stars are still based on citadel HP and remaining in-stage Gold, but terminal result saves now read the synced battle session values so a visibly clean clear cannot be recorded as `0` stars by a stale game snapshot.
-- Boss-class enemies now leak for `2` citadel HP, while regular enemies still leak for `1`. Tower contact damage remains unit-specific pass-through damage and no longer turns the enemy sprite or plays a direct attack lunge.
+## 다음 밸런스 점검 포인트
+
+- Stage 16, 19 이벤트 보스가 HP 4500에서 적절히 잡히는지.
+- Stage 22 이후 성채 군주가 타워 접촉 110으로도 과하게 방어선을 지우지 않는지.
+- Stage 20 이후 기본 Lv3 + 성벽 1.75x가 후반을 너무 쉽게 만들지 않는지.
+- 빙결 사거리 6이 마법사와 같은 영역을 차지해도 타워 선택이 단조롭지 않은지.

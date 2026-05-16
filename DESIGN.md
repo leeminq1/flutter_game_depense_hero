@@ -2,46 +2,25 @@
 
 ## Target Feel
 
-The game should feel readable first, flashy second.
+`Pixel Guard: Wave`는 매 Stage마다 새 방어선을 설계하는 요새형 타워 디펜스다. 플레이어는
+성벽으로 적을 늦추고, 타워 사거리를 겹치고, 영웅을 핵심 위치에 세워 짧은 Wave를
+버틴다.
 
-Primary emotional targets:
-- A calm setup phase with clear choices.
-- A satisfying escalation as waves stack pressure.
-- Strong visual readability when many enemies are on screen.
+## Core Fantasy
 
-## Chosen World Direction
+- 작은 성을 지키는 픽셀 판타지 방어전.
+- 건물은 매 Stage 초기화되지만, 플레이어의 판단과 메타 성장은 누적된다.
+- Stage가 오르면 기본 건설 레벨도 올라 후반 반복 피로를 줄인다.
+- 주사위 설계 카드는 같은 Stage도 조금 다르게 풀게 만드는 변주다.
 
-Use a stylized pixel-fantasy world built around LPC-compatible humanoid characters.
+## Visual Direction
 
-Why this direction fits:
-- The Universal LPC generator is strongest for modular fantasy humanoids.
-- Tower defense readability benefits from clear silhouette-based classes like raider, knight, necromancer, scout, and priest.
-- This style keeps content production cheap because armor, hair, weapons, and palette swaps can create many variants from one base pipeline.
+- 2D stylized pixel/fantasy.
+- 성, 경로, 장애물, 전선 방향이 작은 모바일 화면에서도 읽혀야 한다.
+- Stage 11~20처럼 성이 상단에 가까운 맵은 안내 배너를 하단에 둔다.
+- 보스 쇼크웨이브, 포격, 타워 접촉 피해는 시각적으로 구분되어야 한다.
 
-Recommended initial enemy factions:
-- Bandit raiders for basic and fast units
-- Undead infantry for tanks and attrition units
-- Cultist casters for support, buffs, and debuffs
-- Corrupted knights for elite stage milestones
+## Non-Goals
 
-## Initial Visual Direction
-
-- Top-down 2D battlefield with slight depth cues, not true isometric complexity.
-- Clean silhouettes and faction-based color coding.
-- Limited palette per biome so enemy threats remain legible.
-- Effects should communicate state changes, not just spectacle.
-- Humanoid enemies should remain readable at small mobile sizes before decorative detail is added.
-
-## Asset Pipeline Direction
-
-- Start with modular enemy and tower concepts that can be re-skinned.
-- Prefer atlas-friendly sprite outputs over many loose PNG files.
-- Normalize naming, pivot points, and animation frame counts early.
-- Keep a prompt log for AI-assisted concept generation and a cleanup checklist for export.
-- Use LPC-generated bases for humanoid enemies, then derive factions through palette, gear set, and role markers.
-
-## Non-Goals For Early Production
-
-- Full procedural animation system.
-- High-complexity skeletal rigs.
-- Overly detailed backgrounds that reduce gameplay clarity.
+- 현재 문서는 실시간 PvP, 서버 계정, 클라우드 저장, 결제 상품을 source of truth로 두지 않는다.
+- 현재 비공개 테스트는 전체 Stage 해금 상태로 밸런스 검증을 우선한다.

@@ -1,243 +1,62 @@
 # Campaign Structure
 
-## Campaign Shape
-
-The campaign remains a `30-stage` progression path. `Stage` and `Wave` are the player-facing terms; `Act` is a five-Stage campaign chapter used for long-term pacing.
-
-Final structure:
-
-- `30 Stages`
-- `6 Acts`
-- `5 Stages per Act`
-
-This preserves the content volume and progression value while keeping battle UI terminology simple.
-
-## Development Unlock
-
-Public builds keep authored progression enabled. Local content-review builds
-can temporarily unlock all `30` stages through
-`lib/data/persistence/progression_dev_flags.dart`.
-
-Reason:
-
-- map and wave authoring is being validated across the full campaign
-- the developer needs to jump directly into any Stage without clearing the
-  previous chain first
-- this is a content-review shortcut only; it must not be treated as final
-  player progression
-
-Release switch:
-
-```dart
-const bool kUnlockAllCampaignStagesForDevelopment = false;
-```
-
-Runtime behavior when temporarily enabled:
-
-- both native/local progress and web/in-memory progress report every Stage as
-  unlocked
-- existing stars, clears, currency, and reward records are not faked or
-  overwritten
-- clearing a Stage still writes normal completion records, so balance testing
-  remains meaningful
-
-Release check:
-
-1. Confirm `kUnlockAllCampaignStagesForDevelopment` is `false`.
-2. Run the progress-store tests and a quick campaign UI smoke test.
-3. Confirm Stage 1 is available by default and later stages require the authored
-   previous-stage/star/meta requirements again.
-
-## Act Summary
-
-| Act | Name | Stage Range | Learning Goal | Main Pressure |
-| --- | --- | --- | --- | --- |
-| 1 | Forest Approaches | 1-5 | Learn citadel defense and two-front stabilization | Bandit speed and basic armored checks |
-| 2 | Crossroads War | 6-10 | Learn three-front prioritization and support denial | Bandits plus early cult support |
-| 3 | Grave March | 11-15 | Learn revive cleanup and attrition control | Undead from vertical pressure fronts |
-| 4 | Chapel Siege | 16-20 | Learn anti-support discipline under split pressure | Undead elites, cursed knights, and healing support |
-| 5 | Bastion Front | 21-25 | Learn full four-front control and ward management | Bastion elite overlap on all fronts |
-| 6 | Throne March | 26-30 | Final exam for the full roster and economy discipline | All factions plus Bastion Overlord |
-
-## Act Details
-
-### Act 1: Forest Approaches
-
-Intent:
-
-- teach the citadel-centered layout
-- teach that the player cannot solve every problem with one-lane logic
-- introduce the first safe `economy vs defense` tradeoff
-- prove that walls are required because towers no longer erase enemies before contact
-- keep enemy randomness previewed through Wave threat tags instead of hidden spawns
-
-Recommended Stage rhythm:
-
-| Stage | Wave Count | Active Front Pattern | Special Learning Goal | Final Breach |
-| --- | --- | --- | --- | --- |
-| 1 | 3 | North only | 성벽으로 늦추기 | north-lane breach |
-| 2 | 4 | North -> North+East | 타워 사거리 겹치기 | two-front breach |
-| 3 | 4 | North -> North+East | 영웅 방어 위치와 첫 장갑 체크 | two-front armor test |
-| 4 | 4 | North+East | first design-card Stage | two-front design test |
-| 5 | 4 | North -> North+East | early fortress-design exam | Banner Captain two-front breach |
-
-### Act 2: Crossroads War
-
-Intent:
-
-- move from split attention to real prioritization
-- teach that support enemies can be more dangerous than the frontline
-
-Main additions:
-
-- Wolf Scout
-- Cult Adept
-- denser Shield Infantry windows
-
-Recommended siege rhythm:
-
-| Siege | Cycle Count | Active Front Pattern | Special Learning Goal | Final Breach |
-| --- | --- | --- | --- | --- |
-| 6 | 4 | North -> North+West -> North+West+East | first true three-front prioritization | 3-front armor push |
-| 7 | 4 | West+East pressure with delayed North | first support denial | Cult Adept backline finale |
-| 8 | 4 | East-heavy start, then split 3-front | armor plus support together | leader-backed split breach |
-| 9 | 4 | rotating 3-front emphasis | planning from telegraphs | rotating pressure capstone |
-| 10 | 4 | four-front finish | first leader-heavy climax | four-front captain finale |
-
-### Act 3: Grave March
-
-Intent:
-
-- force cleanup discipline
-- make revive and attrition feel different from simple rush pressure
-
-Main additions:
-
-- Skeleton
-- Bone Archer
-- Grave Guard
-- Plague Bearer
-
-Recommended siege rhythm:
-
-| Siege | Cycle Count | Active Front Pattern | Special Learning Goal | Final Breach |
-| --- | --- | --- | --- | --- |
-| 11 | 4 | North only -> North+South | vertical pressure read | revive-focused north breach |
-| 12 | 4 | North+South every cycle | cleanup discipline | Bone Archer crossfire breach |
-| 13 | 4 | North+South plus light East | attrition plus armor | mixed undead armor push |
-| 14 | 4 | strong North, delayed South | uneven front density | Grave Guard intro breach |
-| 15 | 4 | full North+South stress test | revive cleanup exam | undead attrition capstone |
-
-### Act 4: Chapel Siege
-
-Intent:
-
-- make anti-support targeting mandatory
-- teach that elite overlap matters more than raw tower count
-
-Main additions:
-
-- Corrupted Knight
-- Hex Sniper
-- Warlock
-
-Recommended siege rhythm:
-
-| Siege | Cycle Count | Active Front Pattern | Special Learning Goal | Final Breach |
-| --- | --- | --- | --- | --- |
-| 16 | 4 | North+East split | anti-support basics | Knight-led split breach |
-| 17 | 4 | East-heavy start, then 3-front | ranged support focus | Hex Sniper reveal |
-| 18 | 4 | 3-front sustained pressure | support overlap discipline | Warlock pressure spike |
-| 19 | 4 | rotating 3-front with elite overlap | split-priority under stress | knight plus support breach |
-| 20 | 4 | all four fronts in later cycles | full anti-support exam | cursed-support capstone |
-
-### Act 5: Bastion Front
-
-Intent:
-
-- normalize full four-front simultaneous pressure
-- make ward and elite sustain the defining tactical problem
-
-Main additions:
-
-- Bastion Priest
-- cross-front composition mixing
-
-Recommended siege rhythm:
-
-| Siege | Cycle Count | Active Front Pattern | Special Learning Goal | Final Breach |
-| --- | --- | --- | --- | --- |
-| 21 | 5 | 3-front to 4-front escalation | full-board tower networking | first 5-cycle siege |
-| 22 | 5 | four-front every late cycle | ward and sustain management | Bastion Priest intro |
-| 23 | 5 | uneven front spikes | rebuild discipline | elite sustain breach |
-| 24 | 5 | constant four-front overlap | support sniping under load | mixed sustain capstone |
-| 25 | 5 | hardest preboss bastion siege | late-act mastery check | bastion sustain finale |
-
-### Act 6: Throne March
-
-Intent:
-
-- demand full roster mastery
-- culminate in a boss-led final breach
-
-Boss:
-
-- `Bastion Overlord` on Siege 30
-
-Recommended siege rhythm:
-
-| Siege | Cycle Count | Active Front Pattern | Special Learning Goal | Final Breach |
-| --- | --- | --- | --- | --- |
-| 26 | 5 | four-front from cycle 2 onward | no weak-side openings | elite overlap exam |
-| 27 | 5 | heavy South and East bias | support burst priority | priest-backed breach |
-| 28 | 5 | rotating four-front pressure | telegraph mastery | late mixed-roster breach |
-| 29 | 5 | strongest non-boss siege | economy and recovery exam | preboss gauntlet |
-| 30 | 5 | cycles 1-4 full normal pressure | final roster exam | Bastion Overlord boss breach |
-
-## Unlock Structure
-
-Acts are gated by `Siege Tokens`.
-
-| Unlock | Requirement |
-| --- | --- |
-| Act 2 | 5 Siege Tokens |
-| Act 3 | 12 Siege Tokens |
-| Act 4 | 22 Siege Tokens |
-| Act 5 | 35 Siege Tokens |
-| Act 6 | 50 Siege Tokens |
-
-## Siege Objective Structure
-
-Every siege should ship with one required clear condition and two optional mastery objectives.
-
-Recommended objective families:
-
-- clear the siege
-- keep citadel HP above threshold
-- build at most `X` structures
-- do not sell more than `Y` structures
-- use at least one named tower family
-- preserve a specific outer relay or support node
-
-## Final Breach Rule
-
-Every act should end with a more memorable final breach.
-
-Examples:
-
-- Siege 5: first coordinated four-front pressure
-- Siege 10: first leader-heavy finale
-- Siege 15: undead attrition capstone
-- Siege 20: late support overlap stress test
-- Siege 25: bastion sustain capstone
-- Siege 30: Bastion Overlord final siege
-
-## Endless Mode Position
-
-Endless survival is not the main progression mode.
-
-Rule:
-
-- unlock only after a meaningful campaign milestone
-- use the same battlefield language and front identity
-- reward mastery, not the best progression efficiency
+캠페인은 `CampaignData.totalStages = 30`인 30 Stage 구조다. 플레이어-facing 용어는
+`Stage`와 `Wave`만 사용한다. 코드에는 `AssaultCycleDefinition` 같은 과거 호환명이
+남아 있지만 문서에서는 내부 구현명으로만 다룬다.
+
+## Stage 진행
+
+- Stage 1은 입문용 3 Wave다.
+- Stage 2~30은 현재 4 Wave 구조다.
+- 각 Stage는 성 좌표, 14x14 타일 그리드, 네 방향 경로, 장애물, Wave 그룹을 가진다.
+- Stage 제목, 성 좌표, 시작 골드, 이벤트 여부는
+  `docs/generated/current-game-data-snapshot.md`의 Stage Atlas 표를 기준으로 한다.
+
+## 해금과 이어하기
+
+- 저장소는 `currentCampaignStage`, Stage별 별, 클리어 여부, 메타 업그레이드를 저장한다.
+- `hasResumableRun`은 `currentCampaignStage > 1`일 때 true다.
+- Stage 1만 실패하거나 중단한 상태에서는 이어하기가 비활성이다.
+- 현재 비공개 테스트 빌드에서는 `kUnlockAllCampaignStagesForDevelopment = true`라 모든
+  Stage 선택이 열린다. 운영 배포 전에는 false로 바꾼다.
+
+## Stage 이벤트 주사위
+
+- 이벤트 주사위는 Stage 4부터 3 Stage 간격으로 열린다.
+- 조건: `stageNumber >= 4 && (stageNumber - 4) % 3 == 0`
+- 대상 Stage: 4, 7, 10, 13, 16, 19, 22, 25, 28
+- 이벤트는 마지막 Wave에서 남은 적 수가 임계값 이하가 되면 보스 한 마리를 추가한다.
+- 이벤트 풀과 수치는 `StageEventGenerator.poolForStage`가 관리한다.
+
+## 이벤트 보스 밸런스
+
+- Stage 이벤트 보스 HP는 계산값과 HP cap 중 낮은 값을 사용한다.
+- Stage 16 이후 이벤트 보스 HP cap은 4500이다.
+- 타락 기사(`corruptedKnight`)와 성채 군주(`bastionOverlord`)가 이벤트 보스로 등장하면
+  물리 피해를 75% 받는다. 일반 개체는 기존 55% 물리 피해 수용을 유지한다.
+- 타락 기사 이벤트 보스:
+  - 성벽 피해 최대 75
+  - 쇼크웨이브 약 31.5
+  - 타워 접촉 피해 최대 85
+- 성채 군주 이벤트 보스:
+  - 성벽 피해 최대 95
+  - 쇼크웨이브 약 39.9
+  - 타워 접촉 피해 최대 110
+
+## 포격 이벤트
+
+- Stage 2부터 포격(`StageBombardmentDefinition`)이 생길 수 있다.
+- 포격은 지정 Wave에서 한 번만 굴린다.
+- 피해량은 Stage가 오를수록 증가하며, 현재 값은 스냅샷 Stage Atlas에 기록한다.
+- 포격은 경고 후 외곽 방어선 3곳을 타격한다.
+
+## Stage 구간 의도
+
+| Stage | 테마 | 의도 |
+| --- | --- | --- |
+| 1~5 | frontierRoad | 성벽/타워/영웅 기본기와 첫 주사위 학습 |
+| 6~10 | banditCrossroads | 우상단 성 위치와 빠른 적/중장 혼합 |
+| 11~15 | graveFields | 상단 성 위치, 저주/언데드 압박 |
+| 16~20 | cursedChapel | 좌하단 성 위치, 보스 난이도 검증 |
+| 21~25 | bastionApproach | 사방 공세와 성채 계열 적 |
+| 26~30 | throneMarch | 최종 사방 압박과 Stage 30 성채 군주 |

@@ -1,50 +1,16 @@
-# 수작업 스테이지 맵 롤아웃
+# Authored Map Rollout
 
-## 목적
+이 계획은 현재 대부분 완료되었고, 최신 구현 요약은
+`docs/design-docs/map-authoring/stage-atlas.md`로 이동했다.
 
-현재 게임 구조에 맞춰 `Stage > Cycle` 기준의 수작업 맵 제작 체계를 정리하고, 초반 `Stage 1~5`를 먼저 고정한다.
+## 현재 상태
 
-## 왜 이 작업을 하는가
+- Stage 1~30은 모두 `CampaignData.stage(number)`로 생성된다.
+- 각 Stage는 성 좌표, 네 방향 route, 장애물, Wave, 이벤트/포격 데이터를 가진다.
+- 최신 Stage 요약은 `stage-atlas.md`와 `current-game-data-snapshot.md`를 기준으로 한다.
 
-- 맵이 이 게임의 핵심 재미를 만든다
-- 랜덤 장애물보다 수작업 맵이 더 읽기 쉽고 전략성이 높다
-- 성 위치, 스폰 방향, 장애물 구조가 Stage별 개성을 만들 수 있다
+## 남은 관리 작업
 
-## 현재 합의
-
-- `Act`, `Siege` 용어는 더 이상 사용하지 않는다
-- 실제 게임 기준 용어는 `Stage`, `Cycle`이다
-- 한 Stage는 하나의 맵과 하나의 전투 단위를 의미한다
-- 각 Stage 안에는 보통 `3~4 Cycle`이 들어간다
-
-## 작업 범위
-
-1. `docs/design-docs/map-authoring/` 전체를 현행 용어 기준으로 정리
-2. 시각 자료 중심의 문서 체계 정리
-3. Stage 1~5 초안 작성
-4. Stage 1 좌표 고정
-
-## 진행 상태
-
-- [x] map-authoring 폴더 한국어 기준 정리
-- [x] Stage/Cycle 용어로 통일
-- [x] 시각 가이드 문서 추가
-- [x] Stage 1~5 맵 바이블 초안 정리
-- [x] Stage 1 작업 카드 초안 정리
-- [ ] Stage 1 좌표 확정
-- [ ] Stage 2 작업 카드 작성
-- [ ] 코드 데이터 연결 방식 정리
-
-## 리스크
-
-- 맵 문서와 실제 런타임 데이터 구조가 어긋날 수 있다
-- 장애물 역할이 문서상으로는 좋아 보여도 실제 전투에서 밋밋할 수 있다
-- 성 위치 변주가 카메라/HUD와 충돌할 수 있다
-
-## 다음 단계
-
-가장 먼저 할 일:
-
-1. Stage 1 좌표를 확정한다
-2. Stage 2 초안을 만든다
-3. 문서 구조를 실제 코드 데이터와 연결할 필드 이름을 정한다
+- 플레이테스트에서 성 위치/경로 가독성 문제가 나오면 `CampaignData`를 수정한다.
+- 수정 후 `flutter test tool/export_game_data_docs.dart`로 스냅샷을 다시 생성한다.
+- 오래된 working card는 참고 메모이며 실제 구현값으로 취급하지 않는다.

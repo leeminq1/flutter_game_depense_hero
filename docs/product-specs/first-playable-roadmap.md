@@ -1,112 +1,27 @@
 # First Playable Roadmap
 
-## Objective
+현재 first playable은 이미 비공개 테스트 빌드 단계에 들어갔다. 이 문서는 남은 운영 전환
+작업만 추적한다.
 
-Ship the first end-to-end `Citadel Siege` playable without overcommitting to late-stage complexity before the core loop is proven.
+## 현재 완료 기준
 
-## Milestone 0: Spec Lock
+- Stage 1~30 데이터가 `CampaignData`에 존재한다.
+- 타워, 성벽, 영웅, 적, 보스, 주사위 카드가 플레이 가능하다.
+- 진행도와 오디오 설정은 로컬 저장소에 저장된다.
+- Android release AAB 빌드가 가능하다.
+- 현재 비공개 테스트 버전은 `1.0.18+19`다.
 
-Required outcome:
+## 비공개 테스트에서 볼 것
 
-- product specs in this folder are the accepted source of truth
-- the team agrees to `campaign-first`, `authored multi-front`, `no baseline A* mazing`
+- Stage 16 이후 이벤트 보스 HP cap 4500이 적절한지.
+- Stage 10/20 기본 레벨 보정이 후반 피로를 줄이는지.
+- 전체 Stage 해금 상태에서 각 Stage가 정상 진입/클리어/실패 처리되는지.
+- 보상형 재시도 광고 흐름이 실패해도 게임 재시도를 막지 않는지.
 
-## Milestone 1: Runtime Data Bridge
+## 운영 배포 전 남은 일
 
-Required work:
-
-- add `SpawnDirection`
-- add `AssaultCycleDefinition`
-- add `pathsByDirection`
-- add citadel-aware targeting
-- preserve existing tower and enemy definition reuse
-
-Exit criteria:
-
-- one Stage can resolve with authored north and east fronts without spawning from the citadel quadrant
-
-## Milestone 2: Battlefield Conversion
-
-Required work:
-
-- convert the battlefield to `14 x 14`
-- add central `3 x 3` citadel
-- add supply node tiles
-- add front telegraphs
-
-Exit criteria:
-
-- Stage 1-3 run on the new battlefield without random dice offers
-
-## Milestone 3: Art And Rendering Bridge
-
-Required work:
-
-- runtime supports direction-aware enemy sprite lookup
-- east mirroring works
-- north and south pilot exports are integrated
-- citadel landmark renders correctly
-
-Exit criteria:
-
-- at least one enemy family renders correctly in all directions
-
-## Milestone 4: Stage 1-5 Fun Validation
-
-Required work:
-
-- Stage 1-5 authored around fortress-design lessons
-- Stage 4 design-card dice implemented, then repeated on the `Stage 4, 7, 10...` cadence
-- onboarding prompts implemented
-- recovery windows and rewards functioning
-- persistence updated for new result flow
-- Command Charges explicitly out of scope for this milestone
-
-Exit criteria:
-
-- Stage 1-5 can be played and cleared
-- a failed run still returns valid persistent progress
-- the run is playable without Command Charges
-- player-facing UI uses Stage/Wave terminology
-
-## Milestone 5: Web QA Harness
-
-Required work:
-
-- make Flutter Web run cleanly through `web-server`
-- add a web-safe persistence path or debug-only in-memory store for browser QA
-- add a QA overlay path for automation
-- expose readable state text for wave, fronts, gold, citadel HP, and selected buildable
-- capture the required portrait-phone and portrait-tablet screenshots
-
-Exit criteria:
-
-- Playwright can load the app and drive the portrait smoke flow
-- required viewport checks pass at `360 x 800`, `412 x 915`, `768 x 1024`, and `834 x 1194`
-- landscape mode is blocked by the portrait-only guard
-
-## Milestone 6: Tactical Layer And Campaign Expansion
-
-Required work:
-
-- Command Charges implemented and tuned
-- Acts 2-6 authored
-- support, revive, ward, and boss pressure tuned
-- late acts stress-tested for readability
-
-Exit criteria:
-
-- Stage 30 final breach completes
-
-## Required Verification
-
-Before calling the first playable ready, verify:
-
-- `flutter analyze` passes
-- Flutter Web launches on `web-server`
-- Playwright can drive the app for smoke flows
-- at least one automated or semi-automated screenshot review exists for key states
-- required portrait viewport checks pass at `360 x 800` and `412 x 915`
-- required tablet portrait viewport checks pass at `768 x 1024` and `834 x 1194`
-- portrait HUD, battle viewport, and build controls remain readable and tappable
-- landscape mode is blocked by the portrait-only guard
+- 전체 Stage 해금 디버그 제거.
+- Google Play 데이터 보안/광고 선언 최종 확인.
+- 개인정보처리방침 URL 배포 확인.
+- 현재 문서와 `current-game-data-snapshot.md` 재생성.
+- 실제 운영용 밸런스 스모크 테스트.

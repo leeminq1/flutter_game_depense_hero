@@ -1,52 +1,38 @@
 # 맵 제작 워크플로우
 
-이 폴더는 `Pixel Guard: Wave`의 Stage 맵을 사용자와 함께 손수 제작하기 위한 기준 문서 모음이다. 이 폴더에서는 실제 게임에서 쓰는 용어만 사용한다.
+이 폴더는 현재 `Pixel Guard: Wave`의 Stage 맵 제작 규칙을 정리한다. 실제 구현값은
+`stage-atlas.md`와 `docs/generated/current-game-data-snapshot.md`를 기준으로 한다.
 
-## 용어
+## 현재 구현 단위
 
-- `Stage`: 실제 맵이 바뀌는 전투 단위
-- `Wave`: 한 Stage 안에서 반복되는 적 공격 단위
-- `성 좌표`: Stage별 성 위치 `[col,row]`
-- `경로`: 북/동/남/서 각 변에서 성까지 이어지는 몬스터 이동 좌표
-- `장애물`: 보이는 오브젝트이면서 타워 배치와 몬스터 이동을 막는 칸
+- `Stage`: 맵과 적 조합이 바뀌는 전투 단위
+- `Wave`: 한 Stage 안의 적 공격 단위
+- `citadelCell`: 성 중심 좌표 `[col,row]`
+- `pathsByDirection`: 북/동/남/서 경로 좌표
+- `TileType.path`: 적 이동 경로
+- `TileType.buildable`: 배치 가능 칸
+- `StageObstacleDefinition`: 보이는 장애물이자 배치/경로 차단물
 
-사용하지 않는 용어:
-
-- `Act`
-- `Siege`
-
-## 현재 구현 상태
-
-- Stage 1~5: `[2,11]` 성 위치 고정, 요새 설계 기본기 검증 구간
-- Stage 6~10: 1사분면, 우상단 성 위치 변형
-- Stage 11~15: 2사분면, 좌상단 성 위치 변형
-- Stage 16~20: 3사분면, 좌하단 성 위치 변형
-- Stage 21~25: 4사분면, 우하단 성 위치 변형
-- Stage 26~30: 중앙 회귀와 사분면 재압박을 섞은 최종 시험 구간
-
-모든 Stage는 코드에서 `citadelCell`, `pathsByDirection`, `obstacles`, `assaultCycles`를 가진 authored 맵으로 다룬다. fallback 격자 맵은 더 이상 Stage 1~30 검증 기준에 포함하지 않는다.
-
-## Stage 작성 순서
+## 제작 순서
 
 1. 성 좌표를 정한다.
-2. 북/동/남/서 각 방향 경로가 성 주변 한 칸에 닿는지 확인한다.
-3. 장애물이 경로를 막지 않으면서도 몬스터가 돌아오는 느낌을 만드는지 확인한다.
-4. Wave별 적 조합과 회복 보너스를 정한다.
-5. ASCII 가이드와 실제 코드 좌표를 맞춘다.
-6. 앱에서 성 위치, 장애물, 스폰 화살표, 경로, 난이도를 검증한다.
-7. 플레이 결과를 문서에 다시 반영한다.
+2. 네 방향마다 최대 3개 entry route가 성 주변 한 칸으로 닿게 한다.
+3. 경로가 너무 짧은 front는 초반 Wave에서 제외하거나 적 수를 줄인다.
+4. 장애물은 경로를 가리지 않되 배치 선택을 만들 정도로만 둔다.
+5. Wave마다 front, 적 종류, 수량, 간격을 정한다.
+6. Stage 이벤트 주사위와 포격이 겹칠 때 화면이 읽히는지 확인한다.
+7. `flutter test tool/export_game_data_docs.dart`로 Stage Atlas 스냅샷을 갱신한다.
 
-## 관련 문서
+## 오래된 작업 카드
 
-- `campaign-position-plan.md`: 30 Stage 전체 성 위치 흐름
-- `visual-guide.md`: ASCII 표기법과 좌표 읽는 법
-- `stage-*-working-card.md`: 각 Stage별 작업 카드
-- `stage-*-plan.md`: 5 Stage 단위 구간 계획
+`stage-*-working-card.md` 파일들은 제작 과정의 메모로 남아 있다. 실제 좌표/골드/Wave가
+다르면 `stage-atlas.md`와 코드가 우선한다. 새로 구현할 때는 작업 카드보다
+`CampaignData.stage(number)`의 결과를 확인한다.
 
-## 최근 결정
+## 검증 체크리스트
 
-- Stage 2부터 4 Wave를 기본으로 한다.
-- Stage 1은 입문용 3 Wave를 유지한다.
-- Stage 1~3은 주사위 없이 고정 학습 작전으로 진행하고, Stage 4부터 설계 카드 주사위를 연다.
-- Stage 6과 Stage 11에서 시작 골드가 튀지 않도록 단일 골드 곡선을 사용한다.
-- Stage 16~30은 직접 제작 맵 구조를 사용하되, 세부 장애물은 이후 실제 플레이를 보며 계속 손본다.
+- 성이 화면 가장자리 UI와 겹치지 않는가.
+- 안내 배너가 Stage 11~20에서 하단에 나와 성과 몬스터를 가리지 않는가.
+- 첫 Wave에서 플레이어가 적이 오는 방향을 읽을 수 있는가.
+- 포격/보스/쇼크웨이브가 동시에 나와도 피해 원인이 구분되는가.
+- Stage 10 이후 기본 레벨 보정 때문에 초반 배치 선택이 무의미해지지 않는가.

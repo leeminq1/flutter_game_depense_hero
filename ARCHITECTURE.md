@@ -1,96 +1,49 @@
 # Architecture
 
-This project is a Flutter app that hosts a Flame-driven tower defense simulation.
+`Pixel Guard: Wave`는 Flutter UI와 Flame 전투 런타임을 함께 쓰는 Android 우선 2D 타워
+디펜스다.
 
-## Top-Level Architecture
+## Top-Level
 
-- Flutter owns app shell concerns: boot, navigation, settings, store, profile, and debug tools.
-- Flutter also owns monetization surfaces such as rewarded prompts, ad-safe pause points, and offer presentation.
-- Flame owns the real-time game loop: map, waves, towers, projectiles, enemies, targeting, collisions, and combat effects.
-- Shared domain data defines towers, enemies, waves, upgrades, missions, and economy values.
-- A local persistence layer owns durable player progress, settings, unlocks, and ad-related cooldown bookkeeping.
-- Tooling converts source assets and design data into game-ready formats.
+- `lib/app/`: Flutter 화면, 라우팅, 부트스트랩, 광고 재시도 서비스.
+- `lib/game/core/depense_game.dart`: Flame 기반 전투 시뮬레이션, 배치, 공격, 적 이동,
+  Wave 상태, 보스 쇼크웨이브, UI 세션 동기화.
+- `lib/game/models/`: 타워, 영웅, 성벽, 적, Stage, 설계 카드 데이터 타입.
+- `lib/data/campaign/campaign_data.dart`: Stage 1~30의 단일 source of truth.
+- `lib/data/meta/`: 메타 업그레이드 정의와 해석.
+- `lib/data/persistence/`: Isar 기반 로컬 진행도 저장과 web/test용 in-memory 저장.
+- `docs/generated/current-game-data-snapshot.md`: 코드에서 추출한 최신 수치 문서.
 
-## Recommended Package Boundaries
+## Runtime Boundary
 
-When code is added, prefer this structure:
+- 전투 중 임시 상태는 `DefensePrototypeGame` 안에 둔다.
+- Flutter 오버레이는 `GameSessionController` 스냅샷만 읽고, 전투 계산을 직접 하지 않는다.
+- 진행도, 오디오 설정, 메타 업그레이드는 `ProgressStore`를 통해 저장한다.
+- Web 또는 테스트 환경은 네이티브 DB 대신 in-memory store를 사용할 수 있다.
 
-```text
-lib/
-├── app/
-│   ├── bootstrap/
-│   ├── routing/
-│   ├── theme/
-│   └── overlays/
-├── game/
-│   ├── core/
-│   ├── camera/
-│   ├── map/
-│   ├── simulation/
-│   ├── entities/
-│   │   ├── towers/
-│   │   ├── enemies/
-│   │   ├── projectiles/
-│   │   └── effects/
-│   ├── waves/
-│   ├── ui_bridge/
-│   └── debug/
-├── features/
-│   ├── onboarding/
-│   ├── progression/
-│   ├── inventory/
-│   └── settings/
-├── data/
-│   ├── definitions/
-│   ├── repositories/
-│   ├── persistence/
-│   └── save/
-└── tooling/
-    ├── asset_pipeline/
-    └── balancing/
-```
+## Data Contracts
 
-## Runtime Rules
+- Stage: `StageDefinition`
+- Wave: `WaveDefinition`
+- 내부 Wave 호환명: `AssaultCycleDefinition`
+- 적: `EnemyDefinition`, `EnemyKind`
+- 타워: `TowerDefinition`, `TowerKind`
+- 영웅: `HeroDefinition`, `HeroKind`
+- 성벽: `BarrierDefinition`, `BarrierKind`
+- 설계 카드: `RunOfferDefinition`, `RunModifier`
+- 메타 성장: `MetaUpgradeDefinition`, `ResolvedMetaUpgrades`
 
-- The simulation should run from a single authoritative `FlameGame` root.
-- Flutter widgets should observe state and send commands, not own combat logic.
-- Prefer data-driven entity definitions over hardcoded per-enemy behavior.
-- Use overlays for menus and HUD panels that do not need per-frame component logic.
-- Keep hitboxes simple and deliberate. Avoid collision-heavy designs when path or lane checks are enough.
-- Ads must never interrupt active combat unexpectedly. Only show them at explicit, player-safe boundaries.
+## Performance Rules
 
-## Performance Shape
+- 모바일 60 FPS를 우선한다.
+- 전투 오디오와 HUD 동기화는 과도한 프레임당 rebuild를 피한다.
+- 적 경로는 Stage 데이터의 경로 좌표를 사용하고, 런타임에서 불필요한 전역 탐색을 피한다.
+- 시각 효과는 전투 원인 구분이 가능해야 하며, 특히 보스 쇼크웨이브와 포격은 겹쳐도 읽혀야 한다.
 
-- Use sprite atlases and batch-friendly rendering where possible.
-- Load and cache assets intentionally at scene boundaries.
-- Avoid deep component trees for cheap visual effects that can be pooled or batched.
-- Separate update frequency for expensive systems when full per-frame precision is unnecessary.
-- Profile on target devices early, especially spawn bursts, projectile spam, and death effects.
-- Treat audio like a budgeted subsystem: preload hot SFX, pool repeated sounds, and avoid long-audio misuse for short events.
+## Build And Release
 
-## Data Contracts To Stabilize Early
-
-- `TowerDefinition`
-- `EnemyDefinition`
-- `WaveDefinition`
-- `MapDefinition`
-- `UpgradeDefinition`
-- `SessionResult`
-- `PlayerProgress`
-- `StageProgress`
-- `EconomyState`
-- `AudioEventId`
-
-## Architecture Risks
-
-- Letting Flutter UI state and Flame simulation state drift apart.
-- Mixing authored content with generated runtime state.
-- Building highly bespoke tower logic before the data schema settles.
-- Over-investing in VFX before the enemy count budget is proven.
-
-## Persistence Recommendation
-
-For the current plan, prefer a local-first database layer built on Isar:
-- It is designed for Flutter and documents cross-platform support, async operations, and ACID semantics.
-- It fits durable player progression, unlocks, inventory-like structures, and run history better than ad hoc key-value storage.
-- Keep ephemeral combat state out of the database; persist only checkpoints, results, and durable progression.
+- 현재 비공개 테스트 버전: `1.0.18+19`
+- Android 패키지: `com.min21.pixelguardwave`
+- Play 업로드 산출물: `build/app/outputs/bundle/release/app-release.aab`
+- 현재 테스트 빌드는 전체 Stage 해금 플래그를 켠다.
+- 운영 배포 전에는 `kUnlockAllCampaignStagesForDevelopment`를 false로 돌린다.

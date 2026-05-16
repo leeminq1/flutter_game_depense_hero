@@ -69,7 +69,7 @@ Responsibilities:
   - stage_clear
   - reward_granted
   - unlock
-- Music
+- BGM
   - menu_bgm
   - stage_bgm
   - boss_bgm
@@ -83,7 +83,6 @@ Responsibilities:
 
 ## Current Project Decision
 
-- The selected starting audio comes from Kenney interface, impact, RPG, music-jingles, and voiceover packs.
 - The selected starting audio comes from Kenney interface, impact, RPG, and music-jingles packs.
 - Those assets are enough for an early vertical slice of UI, placement, hits, rewards, and outcome cues.
 - The current library does not include strong loopable fantasy stage BGM, so dedicated BGM generation is still needed.

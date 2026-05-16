@@ -1,4 +1,4 @@
-## Current Art Direction Pass
+﻿## Current Art Direction Pass
 
 Use the existing Kenney 2D asset folders as the first map-readability pass before generating new art:
 
@@ -29,9 +29,9 @@ Map composition target:
 ```mermaid
 flowchart TD
     G["게임 진행"] --> S["Stage"]
-    S --> C1["Cycle 1"]
-    S --> C2["Cycle 2"]
-    S --> C3["Cycle 3~4"]
+    S --> C1["Wave 1"]
+    S --> C2["Wave 2"]
+    S --> C3["Wave 3~4"]
     C1 --> M["맵 구조와 장애물"]
     C2 --> M
     C3 --> M
@@ -106,7 +106,7 @@ Stage 4 핵심:
 Stage 5 핵심:
 
 - Stage 1~4에서 배운 판단을 한 번에 시험한다
-- 마지막 Cycle에서 동쪽 중장과 남쪽 지휘관을 함께 처리한다
+- 마지막 Wave에서 동쪽 중장과 남쪽 지휘관을 함께 처리한다
 - 초반 중앙 성 구간의 마무리 시험으로 둔다
 
 ## 5. Stage 1 ASCII 예시

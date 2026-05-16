@@ -1,114 +1,40 @@
 # Meta Progression
 
-## Progression Philosophy
+메타 진행은 전투마다 초기화되는 건물 구조를 보완하는 영구 성장축이다. 현재 구현의
+source of truth는 `MetaUpgradeCatalog`와 `ProgressStore`다.
 
-The redesign stays `campaign-first` and `permanent-growth-first`.
+## 저장되는 값
 
-It is not switching to a hard roguelite reset structure.
+- 계정 레벨과 XP
+- Meta Gold(`softCurrency`)
+- Siege Token(`siegeTokens`)
+- Stage별 별/클리어/해금 상태
+- 메타 업그레이드 레벨
 
-The player should feel:
+## 업그레이드 목록
 
-- stronger over multiple sessions
-- better informed about the next objective
-- rewarded for both clears and repeated mastery
+최신 비용과 효과는 `docs/generated/current-game-data-snapshot.md`의 Meta Upgrades 표를
+사용한다.
 
-## Persistent Reward Channels
-
-Recommended persistent channels:
-
-- `Meta Gold` for broad upgrades
-- `Siege Tokens` for milestone-grade upgrades and gates
-- `XP` for account-level continuity
-- stage history and best clear records
-
-## Siege Token Uses
-
-Siege Tokens should gate impactful progression, not tiny stat crumbs.
-
-Recommended uses:
-
-- act unlocks
-- major citadel upgrades
-- starting-gold upgrades
-- economy-track upgrades
-- command-charge capacity
-- unlocking late roster options if needed
-
-## Recommended Upgrade Tracks
-
-| Track | Cost Direction | Effect |
-| --- | --- | --- |
-| Stronghold Masonry | 1 token per early tier, then 2 | Citadel HP increases |
-| Supply Cache | 1 token per early tier, then 2 | Starting gold increases |
-| Commerce Guild | 2 tokens per tier | Coin Mill income improves |
-| Arsenal Drills | 2 tokens per tier | Global tower baseline damage improves modestly |
-| Command Mastery | 3 tokens per tier | More command capacity or recharge access |
-| Veteran Unlocks | milestone cost | Unlock Ballista, Emberkeep, or later roster gates |
-
-## Sample Upgrade Effects
-
-Recommended early shape:
-
-- Stronghold Masonry: `+5 Citadel HP` per tier
-- Supply Cache: `+25 starting gold` per tier
-- Commerce Guild: `+1 Coin Mill income per tick` at milestone tiers
-- Arsenal Drills: `+5% baseline tower damage` per tier, capped conservatively
-
-## Act Gate Rule
-
-Acts should be gated by total Siege Tokens, not by pure stage index alone.
-
-| Act Unlock | Token Requirement |
+| ID | 역할 |
 | --- | --- |
-| Act 2 | 5 |
-| Act 3 | 12 |
-| Act 4 | 22 |
-| Act 5 | 35 |
-| Act 6 | 50 |
+| `stronghold` | 성 HP 증가 |
+| `supply_cache` | 시작 골드 증가 |
+| `bow_mastery` | 궁수 강화, Lv2 발리스타 해금 |
+| `guard_drill` | 병영/기사/성기사 계열 강화 |
+| `arcane_mastery` | 마법사 강화, Lv2 엠버킵 해금 |
+| `frost_focus` | 빙결/닌자 계열 강화 |
+| `commerce_guild` | 금화 방앗간과 Stage 보상 강화 |
 
-## Failure Reward Rule
+## 현재 해금 정책
 
-Failure should never feel like total waste.
+- 영웅은 전원 시작부터 선택 가능하다.
+- 발리스타는 `bow_mastery >= 2`에서 열린다.
+- 엠버킵은 `arcane_mastery >= 2`에서 열린다.
+- 현재 비공개 테스트 빌드는 전체 Stage 해금 플래그를 켠다.
 
-Recommended rule:
+## 설계 의도
 
-- no Siege Tokens on failure
-- yes to baseline `Meta Gold + XP`
-- yes to visible progress toward the next permanent goal
-
-## Home-Screen Surfacing Rule
-
-The home or camp flow must clearly surface:
-
-- the next locked act and its token requirement
-- the recommended next upgrade
-- the most recent clear result
-- the next playable siege
-
-## Save Model Requirements
-
-The persistence layer must store at least:
-
-- total Siege Tokens earned
-- total tokens spent
-- unlocked act
-- unlocked towers or branches
-- per-siege best result
-- per-siege mastery objective completion
-
-## Balance Rule
-
-Permanent growth should widen options before it over-amplifies raw stats.
-
-Avoid:
-
-- one track becoming mandatory
-- tower-only stat growth making placement irrelevant
-- late acts being balanced around maxed meta
-
-Prefer:
-
-- clearer starts
-- better recovery options
-- roster expression
-- smoother economy choices
+- 플레이어는 매 Stage 건물을 다시 짓지만, 메타 업그레이드로 기본 전투 여유가 늘어난다.
+- Stage 10/20의 기본 레벨 보정과 메타 업그레이드가 함께 후반 피로를 낮춘다.
+- 운영 배포 전에는 전체 Stage 해금 플래그를 끄고 정상 해금 흐름을 다시 검증한다.

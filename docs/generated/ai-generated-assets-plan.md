@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the canonical production brief for all new AI-assisted or LPC-assisted assets required by the first playable of `Citadel Siege`.
+This document is the production brief for AI-assisted or LPC-assisted assets used by `Pixel Guard: Wave`.
 
 Rules:
 

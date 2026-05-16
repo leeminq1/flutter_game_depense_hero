@@ -1,101 +1,32 @@
 # New User Onboarding
 
-## Onboarding Goal
+초반 온보딩은 긴 튜토리얼보다 Stage 1~5의 실제 전투 규칙으로 가르친다.
 
-Teach the player the Stage/Wave fortress-defense format without overwhelming them with four-front chaos immediately.
+## Stage 1~5 학습 목표
 
-The player should understand:
+| Stage | 목표 |
+| ---: | --- |
+| 1 | 성벽으로 적을 늦추고 궁수/병영 사거리를 겹친다 |
+| 2 | 동쪽 전선이 추가되어 두 방향 압박을 읽는다 |
+| 3 | 영웅 방어 위치와 첫 중장 대응을 배운다 |
+| 4 | 첫 설계 카드 주사위와 이벤트 보스를 경험한다 |
+| 5 | 초반 규칙을 종합해 빠른 적/중장/지원몹을 함께 막는다 |
 
-- what the citadel is
-- where fronts come from
-- why recovery windows matter
-- why support enemies must be prioritized
-- why economy structures are risky but valuable
+## 안내 배너
 
-## Stage 1 Teaching Script
+- 안내 배너 문구와 타이머는 전투 상태 갱신 로직에서 유지한다.
+- Stage 11~20은 성 위치가 상단에 가까우므로 안내 배너를 battlefield 하단에 둔다.
+- 나머지 Stage는 기존 상단 배치를 유지한다.
 
-Stage 1 should teach:
+## 설정 화면
 
-- the citadel is the defended target
-- north front activates first
-- walls slow and redirect enough for towers to work
-- towers can be placed before combat
-- gold is gained from kills automatically
-- recovery window follows the first Wave
-- on the first Stage 1 entry, the stage briefing opens automatically before the player has to discover the Stage info button
+- 설정 화면은 실제 동작하는 오디오 옵션만 보여준다.
+- 표시 항목: `오디오 켜기`, `전체`, `효과음`
+- 현재 BGM 재생 경로가 없으므로 음악 슬라이더는 숨긴다.
+- 튜토리얼 안내 초기화 버튼과 Gameplay 카드는 제거되어 있다.
 
-Recommended constraints:
+## 실패와 재시작
 
-- no dice offer
-- one active front in Wave 1
-- one or two fronts maximum by the end
-- no support enemies
-- generous starting gold
-
-## Stage 2 Teaching Script
-
-Stage 2 should teach:
-
-- second-front pressure from north and east
-- tower range overlap and kill-zone placement
-- how recovery telegraphs help planning
-
-Recommended additions:
-
-- first clear two-front prioritization
-- archer plus barracks plus wall line as the default readable answer
-
-## Stage 3 Teaching Script
-
-Stage 3 should teach:
-
-- first real armored target
-- why anti-armor towers matter
-- that one tower type cannot solve every front
-- hero defense position is a tactical anchor, not an action-character control scheme
-
-Recommended additions:
-
-- Shield Infantry
-- stronger use of inner-ring placement
-- fixed operation prompt, no dice offer yet
-
-## Stage 4-5 Teaching Script
-
-Stage 4 introduces the first design-card dice roll. Stage 5 tests the complete early kit without asking for another card.
-
-Recommended constraints:
-
-- exactly one `1 of 3` design-card choice before Wave 1
-- design cards must suggest a build plan, not only a stat bonus
-- Stage 5 may briefly preview four fronts but should still be readable on mobile
-
-## UI Teaching Rules
-
-The first playable should surface short tutorial prompts for:
-
-- citadel HP
-- next active fronts
-- recovery timer
-- hero defense position
-- Stage 4 design-card operation line
-- Stage 1 briefing should include a compact tactical diagram showing citadel, active route, suggested wall cells, and the starting hero position
-
-## Failure Messaging Rule
-
-When the player loses, the game should explain:
-
-- which front failed
-- whether the issue was speed, armor, support, or lack of coverage
-- one suggested correction
-- for Stage 1-5 this starts as stage-specific template text, not a complex combat-log diagnosis
-
-## First-Session Success Condition
-
-The player should finish the first session understanding:
-
-- the map has multiple fronts
-- the citadel is the shared defense target
-- prep and recovery are both meaningful
-- tower composition matters more than one strong lane
-- random cards are build-plan prompts, not the main way to win
+- `새 게임`은 확인 팝업 없이 바로 Stage 1부터 시작한다.
+- Stage 1만 중단/실패한 상태에서는 `이어하기`가 의미 없으므로 비활성이다.
+- Stage 2 이상이 열리면 `이어하기`가 현재 캠페인 Stage로 이어진다.

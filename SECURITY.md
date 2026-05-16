@@ -2,25 +2,18 @@
 
 ## Scope
 
-This is a game project, so the biggest practical security risks are dependency hygiene, save-data trust, and asset provenance.
+현재 앱은 서버 계정, 로그인, 결제, 클라우드 저장을 운영하지 않는다. 주요 보안/개인정보
+관심사는 로컬 저장, 광고 SDK, 외부 에셋 출처다.
 
 ## Rules
 
-- Prefer maintained packages and pin major version intent deliberately.
-- Record source and license status for every external asset.
-- Treat client save data as user-controlled input.
-- Avoid storing secrets in the client bundle.
-- If backend features are added later, move auth and economy authority off-device.
+- 비밀키와 서명 파일은 저장소에 커밋하지 않는다.
+- Play 업로드용 keystore 정보는 로컬 `key.properties`로 관리한다.
+- 진행도와 설정은 기기 내부 저장소에 둔다.
+- 광고 SDK 사용 여부와 AD_ID 권한은 개인정보처리방침과 Google Play 데이터 보안 문서에 반영한다.
 
-## LPC Asset Rules
+## Asset Hygiene
 
-- The LPC generator and spritesheets require attention to attribution and license compatibility.
-- Store exported credits alongside the selected LPC asset set.
-- Do not assume every selected LPC part is CC0; keep the license export as part of the asset record.
-- If derivative art is made from LPC assets, preserve the obligations of the source license.
-
-## AI Asset Hygiene
-
-- Keep prompt logs for generated concepts.
-- Record whether assets are final, derivative, or temporary placeholder work.
-- Review output for unwanted logo, watermark, or trademark contamination before shipping.
+- AI 생성 에셋은 생성 목적, 사용 위치, 라이선스/출처를 문서에 남긴다.
+- 외부 LPC/오픈소스 에셋은 원본 라이선스를 확인한다.
+- 스크린샷/스토어 이미지는 `docs/generated/google-play`에 보관한다.

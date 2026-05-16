@@ -1,27 +1,29 @@
 # Design Docs Index
 
-| Doc | Status | Purpose |
-| --- | --- | --- |
-| [core-beliefs.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/core-beliefs.md) | drafted | Shared principles for agent work and game direction |
-| [combat-pillars.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/combat-pillars.md) | drafted | Defines what combat should optimize for |
-| [gameplay-balance-pass.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/gameplay-balance-pass.md) | active | 초반 난이도, 골드 곡선, 타워 파괴감, 히어로 능력, 적 가족 시너지 기준 |
-| [map-authoring/README.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/README.md) | drafted | 현재 게임 구조 기준의 Stage/Cycle 맵 설계 워크플로우 |
-| [map-authoring/map-pillars.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/map-pillars.md) | drafted | 좋은 맵이 무엇인지 판단하는 핵심 설계 원칙 |
-| [map-authoring/castle-and-spawn-rules.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/castle-and-spawn-rules.md) | drafted | 성 위치 패턴과 스폰 방향 규칙 |
-| [map-authoring/obstacle-language.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/obstacle-language.md) | drafted | 장애물 역할과 배치 언어 정리 |
-| [map-authoring/stage-card-template.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-card-template.md) | drafted | Stage 하나를 설계할 때 쓰는 템플릿 |
-| [map-authoring/stage-1-5-map-bible.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-1-5-map-bible.md) | drafted | 초반 Stage 1~5 수작업 맵 방향 정리 |
-| [map-authoring/stage-1-working-card.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/stage-1-working-card.md) | drafted | Stage 1 실제 설계 초안 |
-| [map-authoring/visual-guide.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/map-authoring/visual-guide.md) | drafted | Stage, Cycle, 장애물 구조를 시각적으로 읽는 가이드 |
-| [content-pipeline.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/content-pipeline.md) | drafted | Asset and definition authoring workflow |
-| [art-direction-lpc-fantasy.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/art-direction-lpc-fantasy.md) | drafted | Visual direction built around LPC modular sprite generation |
-| [enemy-roster-bible.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/enemy-roster-bible.md) | drafted | Detailed role, pacing, silhouette, and counter design for the enemy roster |
-| [defense-roster-bible.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/defense-roster-bible.md) | drafted | Detailed role, upgrade fantasy, and art direction for towers and summoned defenders |
-| [stage-art-bible.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/stage-art-bible.md) | drafted | Visual progression and landmark language across the 30-stage campaign |
-| [environment-asset-matrix.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/environment-asset-matrix.md) | drafted | Prop and landmark production matrix for each stage bracket |
-| [size-and-silhouette-rules.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/size-and-silhouette-rules.md) | drafted | Relative scale and readability rules for units, towers, and props |
-| [audio-architecture.md](/C:/Users/min21/Desktop/flutter_grame/depense_game/docs/design-docs/audio-architecture.md) | drafted | Audio structure, performance rules, and asset mapping |
+이 폴더는 현재 코드 기준의 게임 감각, 밸런스, 맵 제작 원칙을 정리한다.
 
-## Updating
+## Active
 
-If a design decision changes player feel, content production cost, or runtime budget, update these docs before or with code.
+| 문서 | 목적 |
+| --- | --- |
+| `gameplay-balance-pass.md` | 현재 수치 밸런스와 조정 의도 |
+| `combat-pillars.md` | 전투가 지켜야 하는 감각 원칙 |
+| `defense-roster-bible.md` | 방어 유닛의 판타지/실루엣 참고 |
+| `enemy-roster-bible.md` | 적 역할과 아트 방향 참고 |
+| `map-authoring/README.md` | 새 Stage를 만들 때의 작업 규칙 |
+| `map-authoring/stage-atlas.md` | Stage 1~30의 실제 구현 요약 |
+| `stage-art-bible.md` | 환경 테마와 시각 진행 |
+| `audio-architecture.md` | 오디오 서비스와 성능 규칙 |
+
+## Generated Pair
+
+정확한 수치표는 `docs/generated/current-game-data-snapshot.md`에서 확인한다. 이 파일은
+`flutter test tool/export_game_data_docs.dart`로 갱신한다.
+
+## 용어
+
+- 현재 문서/게임명: `Pixel Guard: Wave`
+- 현재 플레이어 용어: `Stage`, `Wave`, `Camp`, `설계 카드`
+- 과거 호환 용어: `Citadel Siege`, `Siege`, `Act`, `Cycle`
+
+과거 용어는 역사 설명이나 코드 호환 타입 설명에만 사용한다.

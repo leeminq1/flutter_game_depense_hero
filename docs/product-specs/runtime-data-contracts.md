@@ -1,224 +1,60 @@
 # Runtime Data Contracts
 
-## Purpose
-
-This document is the bridge between product intent and implementation. It defines the smallest concrete model changes required to build the new mode without overgeneralizing too early.
-
-## Implementation Principle
-
-Do not jump directly to a fully abstract `FrontDefinition` engine.
-
-First bridge:
-
-- keep the current codebase understandable
-- add the minimum new contracts needed for multi-front Stages
-
-## Required Enums
-
-```dart
-enum SpawnDirection { north, south, east, west }
-
-enum TileType {
-  path,
-  buildable,
-  blocked,
-  supplyNode,
-  citadel,
-}
-```
-
-## Required Stage/Wave Contracts
-
-```dart
-class AssaultCycleDefinition {
-  final int number;
-  final List<SpawnDirection> activeFronts;
-  final List<FrontSpawnGroupDefinition> groups;
-  final double recoverySeconds;
-  final int recoveryGoldBonus;
-  final bool isFinalBreach;
-}
-
-class FrontSpawnGroupDefinition {
-  final SpawnDirection front;
-  final EnemyDefinition enemy;
-  final int count;
-  final double spawnInterval;
-}
-```
-
-## Siege Definition Bridge
-
-Recommended first-pass shape keeps the player-facing `StageDefinition` name:
-
-```dart
-class StageDefinition {
-  final int number;
-  final int actNumber;
-  final String title;
-  final String description;
-  final int startingGold;
-  final int citadelHp;
-  final List<List<TileType>> tileGrid;
-  final Map<SpawnDirection, List<List<int>>> pathsByDirection;
-  final List<List<int>> supplyNodeCells;
-  final List<AssaultCycleDefinition> assaultCycles;
-  final List<StageObjectiveDefinition> objectives;
-}
-```
-
-Current implementation note:
-
-- `stage_definition.dart` remains the canonical runtime model
-- `SiegeDefinition` may remain only as a compatibility alias while docs/UI use Stage/Wave
-
-## Runtime Scaling Formulas
-
-These formulas are required rules, not optional tuning ideas.
-
-```dart
-final durabilityMultiplier = stageNumber <= 5 ? 1.75 : stageNumber <= 15 ? 1.55 : 1.40;
-final hpMultiplier = (1 + ((stageNumber - 1) * 0.18)) * durabilityMultiplier;
-final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.04);
-final killRewardMultiplier = 1 + ((stageNumber - 1) * 0.05);
-```
-
-Rules:
-
-- HP scales by stage number
-- move speed scales by act number only
-- kill rewards scale by stage number
-- `citadelLeakDamage` is fixed at `1` for normal enemies
-- `citadelDamage` remains available for combat flavor and enemy attack pressure, but does not decide leak damage
-- enemies expose `wallBehavior`, `wallBreakChance`, `structureDamage`, and `towerContactDamage`
-- authored Stage data stores base enemy composition and the runtime applies the derived multipliers
-
-## Runtime Movement Rule
-
-Current state:
-
-- all enemies advance on one `_pathPoints` list
-
-Required new state:
-
-- `_pathsByDirection: Map<SpawnDirection, List<Vector2>>`
-- `_citadelCenter: Vector2`
-
-Each enemy must store:
-
-- `spawnDirection`
-- `currentDirection`
-
-## Targeting Rule
-
-Existing target logic based on one linear path progress is no longer sufficient.
-
-MVP targeting rule:
-
-- prefer enemies with the smallest `distanceToCitadel`
-- break ties with support priority or elite priority where needed
-
-This applies to:
-
-- normal tower targeting
-- Ballista targeting
-- cluster targeting
-- support-priority targeting
-
-## Rendering Rule
-
-`GameVisualRegistry` must support direction-aware sprite selection.
-
-Required signature target:
-
-```dart
-Image enemySprite(EnemyKind kind, int frame, SpawnDirection direction)
-```
-
-MVP behavior:
-
-- `west`: current sprite package or nested `west` package
-- `east`: mirrored draw from `west`
-- `north`: true up package if available, else temporary rotation fallback
-- `south`: true down package if available, else temporary rotation fallback
-
-## File-By-File Expectations
-
-### `lib/game/models/stage_definition.dart`
-
-Required changes:
-
-- add `SpawnDirection`
-- expand `TileType`
-- add `AssaultCycleDefinition`
-- add `pathsByDirection`
-- add `supplyNodeCells`
-- expose `SiegeDefinition` naming aliases during migration
-
-### `lib/data/campaign/campaign_data.dart`
-
-Required changes:
-
-- convert authored stage data to the new siege layout
-- provide `14 x 14` tile grids
-- provide `pathsByDirection`
-- author `assaultCycles`
-- validate every direction route before runtime load
-
-### `lib/game/core/depense_game.dart`
-
-Required changes:
-
-- maintain `_pathsByDirection`
-- compute `_citadelCenter`
-- spawn by front
-- update enemies by assigned route
-- switch targeting to `distanceToCitadel`
-- add recovery-window state handling
-- render citadel, nodes, and front telegraphs
-
-### `lib/game/rendering/game_visual_registry.dart`
-
-Required changes:
-
-- expose direction-aware enemy sprite lookup
-- preserve legacy fallback during migration
-- prefer the nested enemy-folder structure when available
-
-### `lib/app/screens/game_screen.dart`
-
-Required changes:
-
-- expose new HUD fields
-- support recovery-state UI
-- keep gameplay viewport clear of overlapping chrome
-- support QA overlay fields for web verification
-
-## Map Rendering Rule
-
-The renderer must support:
-
-- citadel landmark draw
-- multi-front path draw
-- supply node visuals
-- front telegraph overlays
-
-## UI Bridge Rule
-
-Flutter overlays must surface at least:
-
-- citadel HP
-- gold
-- current cycle
-- next active fronts
-- selected buildable
-- recovery timer
-
-## Explicit Non-Goals For MVP
-
-Do not build these in the first bridge:
-
-- fully dynamic front graph editor
-- global A* mazing system for every enemy
-- complete endless mode
-- fully independent summoned-unit simulation rewrite
+현재 런타임 데이터는 Flutter/Flame UI와 전투 시뮬레이션 사이를 연결한다. 이름이 과거
+프로토타입에서 온 타입도 있지만, player-facing 문서와 UI는 `Stage`와 `Wave`를 쓴다.
+
+## CampaignData
+
+- `CampaignData.totalStages = 30`
+- `CampaignData.stage(number)`는 안전하게 1~30으로 clamp한다.
+- 반환 타입은 `StageDefinition`이다.
+- Stage는 성 좌표, 타일 그리드, 경로, 장애물, Wave, 이벤트, 포격을 포함한다.
+
+## StageDefinition 핵심 필드
+
+| 필드 | 의미 |
+| --- | --- |
+| `number` | Stage 번호 |
+| `title`, `description` | UI 표시 텍스트 |
+| `startingCoins` / `startingGold` | 시작 골드 |
+| `baseHealth` / `citadelHitPoints` | 성 하트/체력 |
+| `environmentTheme` | 배경/장식 테마 |
+| `tileGrid` | 14x14 `TileType` 그리드 |
+| `citadelCell` | 성 중심 좌표 `[col,row]` |
+| `pathsByDirection` | 북/동/남/서 경로 좌표 |
+| `obstacles` | 보이는 장애물이자 배치/경로 차단물 |
+| `waves` | 실제 전투 Wave |
+| `assaultCycles` | 내부 호환명. 현재 Wave 데이터와 연결됨 |
+| `stageEvents` | 주사위 보스 이벤트 풀 |
+| `bombardment` | 포격 이벤트 정의 |
+
+## TileType
+
+| 값 | 의미 |
+| --- | --- |
+| `path` | 적 이동 경로 |
+| `buildable` | 타워/성벽 배치 가능 |
+| `blocked` | 배치/이동 불가 |
+| `supplyNode` | 과거 보급 노드 호환값 |
+| `citadel` | 성 위치 |
+
+## Wave와 Spawn
+
+- `WaveDefinition`은 Wave 번호와 적 그룹을 가진다.
+- `SpawnGroupDefinition`과 `FrontSpawnGroupDefinition`은 적 종류, 수량, 스폰 간격, 방향을 가진다.
+- `SpawnDirection`은 `north`, `south`, `east`, `west` 네 방향이다.
+- Stage 1~30은 각 방향마다 최대 3개 entry route를 가진다.
+
+## StageEventDefinition
+
+- `id`, `title`, `message`, `enemyKind`가 UI와 스폰을 결정한다.
+- `hitPointMultiplier`, `damageMultiplier`, `visualScale`은 이벤트 보스 강화값이다.
+- 이벤트 트리거는 현재 `remainingEnemies` 하나다.
+- 최종 이벤트 보스 수치는 `DefensePrototypeGame._stageEventEnemyDefinition`에서 추가 보정한다.
+
+## Progress Store
+
+- 네이티브/Android는 로컬 persistence store를 사용한다.
+- Web 또는 테스트 경로는 in-memory store를 사용할 수 있다.
+- 저장 모델은 Stage 진행도, 메타 업그레이드, 오디오 설정, 재화, 이어하기 가능 여부를 보관한다.
+- 현재 테스트 빌드는 `kUnlockAllCampaignStagesForDevelopment = true`를 통해 전체 Stage를 열어둔다.

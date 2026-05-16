@@ -2,26 +2,24 @@
 
 ## Product Thesis
 
-We are building a defense game that is easy to understand in the first minute, then grows through positioning, timing, and upgrade choices instead of raw screen chaos alone.
-
-The long-term hook is permanent account growth across many short stage-based sessions.
+짧은 모바일 세션에서 “이번 Stage는 어디를 막아야 하지?”를 빠르게 판단하게 만드는
+방어 설계 게임이다. 건물은 매번 다시 짓지만, Stage별 성 위치, 적 조합, 설계 카드가
+매번 다른 퍼즐을 만든다.
 
 ## Player Promise
 
-- Runs are readable.
-- Losses feel explainable.
-- New content adds meaningful choices, not just bigger numbers.
+- 1~3분 안에 방어선을 만들고 결과를 본다.
+- 실패해도 어떤 전선이 뚫렸는지 읽을 수 있다.
+- Stage가 오를수록 적만 강해지는 것이 아니라 플레이어 기본 레벨도 오른다.
+- 보스는 단단하지만 피해 원인이 구분된다.
 
 ## Audience
 
-- Players who like strategy games with short-to-medium sessions.
-- Mobile-first users who want one-hand readability and fast retries.
-- Content updates should be frequent enough that a small team can sustain them.
+- 타워 디펜스와 자동 전투를 좋아하는 모바일 플레이어.
+- 복잡한 빌드보다 “짧은 설계와 즉각 피드백”을 원하는 플레이어.
+- 픽셀 판타지와 가벼운 성장 루프를 선호하는 플레이어.
 
-## Early Success Signals
+## Current Test Goal
 
-- First-time players understand placement, wave pressure, and upgrades without a tutorial wall.
-- The first three towers already create distinct strategies.
-- Performance remains smooth during the first meaningful enemy-density spike.
-- Returning players feel consistent account growth after each session.
-- Monetization feels optional and supportive, not punitive.
+비공개 테스트 `1.0.18+19`의 목적은 전체 Stage를 빠르게 검증하는 것이다. 따라서
+전체 Stage 해금 디버그는 유지한다. 운영 배포 전에는 진행도 해금을 정상화한다.
