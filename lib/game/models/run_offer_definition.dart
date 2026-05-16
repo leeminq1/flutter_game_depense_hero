@@ -227,7 +227,7 @@ class RunOfferGenerator {
       id: 'mage_first_level',
       title: '교차로 오벨리스크',
       description: '교차로 근처 첫 마법사 탑으로 장갑 적을 빨리 녹입니다.',
-      effectLine: '첫 마법사 탑 Lv.2',
+      effectLine: '첫 마법사 탑 +1레벨',
       operationLine: '교차로 마법사',
       rarity: RunOfferRarity.rare,
       modifiers: [

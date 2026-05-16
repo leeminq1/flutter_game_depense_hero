@@ -928,13 +928,22 @@ class CampaignData {
     return 1.0;
   }
 
+  static double _enemyLateStageHpPacingMultiplier(int stageNumber) {
+    if (stageNumber <= 5) return 1.0;
+    if (stageNumber <= 10) return 1.0 - (((stageNumber - 5) / 5) * 0.12);
+    if (stageNumber <= 15) return 0.88 - (((stageNumber - 10) / 5) * 0.12);
+    if (stageNumber <= 20) return 0.76 - (((stageNumber - 15) / 5) * 0.10);
+    if (stageNumber <= 25) return 0.66 - (((stageNumber - 20) / 5) * 0.08);
+    return (0.58 - (((stageNumber - 25) / 5) * 0.06)).clamp(0.52, 0.58);
+  }
+
   static double _enemyContactDamageMultiplier(int stageNumber) {
     if (stageNumber <= 5) return 0.70;
-    if (stageNumber <= 10) return 0.78;
-    if (stageNumber <= 15) return 0.84;
-    if (stageNumber <= 20) return 0.90;
-    if (stageNumber <= 25) return 0.95;
-    return 1.0;
+    if (stageNumber <= 10) return 0.70;
+    if (stageNumber <= 15) return 0.72;
+    if (stageNumber <= 20) return 0.74;
+    if (stageNumber <= 25) return 0.76;
+    return 0.78;
   }
 
   static int _scaledStructureDamageFor(EnemyKind kind, double multiplier) {
@@ -1353,7 +1362,8 @@ class CampaignData {
     final hpMultiplier =
         (1 + ((stageNumber - 1) * 0.18)) *
         durabilityMultiplier *
-        _enemyHpBalanceMultiplier(stageNumber);
+        _enemyHpBalanceMultiplier(stageNumber) *
+        _enemyLateStageHpPacingMultiplier(stageNumber);
     final actNumber = ((stageNumber - 1) ~/ 5) + 1;
     final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.06);
     final killRewardMultiplier = 0.82 + ((stageNumber - 1) * 0.025);

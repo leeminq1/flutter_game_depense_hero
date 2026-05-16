@@ -216,6 +216,10 @@ void main() {
       closeTo(52 * 3.05, 0.001),
     );
     expect(
+      game.debugTowerBaseRangeFor(TowerKind.frostShrine),
+      closeTo(52 * 3.05, 0.001),
+    );
+    expect(
       game.debugTowerBaseRangeFor(TowerKind.guardBarracks),
       closeTo(52 * 2.55, 0.001),
     );
@@ -650,6 +654,72 @@ void main() {
     );
   });
 
+  test('late stage-event bosses use tuned hp damage and armor caps', () {
+    final hpCapsByStage = {16: 4500, 19: 4500, 22: 4500, 25: 4500, 28: 4500};
+
+    for (final entry in hpCapsByStage.entries) {
+      final stageNumber = entry.key;
+      final game = DefensePrototypeGame(
+        stage: CampaignData.stage(stageNumber),
+        sessionController: GameSessionController(),
+        audioService: GameAudioService(AudioSettingsController()),
+        metaUpgrades: const ResolvedMetaUpgrades(),
+        chosenHeroKind: HeroKind.knight,
+      );
+
+      for (final event in StageEventGenerator.poolForStage(stageNumber)) {
+        final boss = game.debugStageEventEnemyDefinition(event);
+
+        expect(
+          boss.hitPoints,
+          lessThanOrEqualTo(entry.value),
+          reason: 'Stage $stageNumber ${event.id} HP should stay capped.',
+        );
+
+        if (boss.kind == EnemyKind.corruptedKnight) {
+          expect(boss.baseStructureDamage, lessThanOrEqualTo(75));
+          expect(boss.baseTowerContactDamage, lessThanOrEqualTo(85));
+          expect(
+            game.debugPhysicalDamageMultiplierForEnemyKind(
+              boss.kind,
+              stageEvent: true,
+            ),
+            0.75,
+          );
+        }
+
+        if (boss.kind == EnemyKind.bastionOverlord) {
+          expect(boss.baseStructureDamage, lessThanOrEqualTo(95));
+          expect(boss.baseTowerContactDamage, lessThanOrEqualTo(110));
+          expect(
+            game.debugPhysicalDamageMultiplierForEnemyKind(
+              boss.kind,
+              stageEvent: true,
+            ),
+            0.75,
+          );
+        }
+      }
+    }
+
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(16),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+
+    expect(
+      game.debugPhysicalDamageMultiplierForEnemyKind(EnemyKind.corruptedKnight),
+      0.55,
+    );
+    expect(
+      game.debugPhysicalDamageMultiplierForEnemyKind(EnemyKind.bastionOverlord),
+      0.55,
+    );
+  });
+
   test('barriers and heroes expose the v2 build metadata', () {
     expect(BarrierCatalog.byKind(BarrierKind.woodFence).cost, 5);
     expect(BarrierCatalog.byKind(BarrierKind.stoneWall).hitPoints, 220);
@@ -741,13 +811,13 @@ void main() {
 
   test('enemy hp balance multipliers ease early stages then ramp smoothly', () {
     final expectations = {
-      1: _expectedRaiderHp(stageNumber: 1, hpBalance: 0.50),
-      5: _expectedRaiderHp(stageNumber: 5, hpBalance: 0.50),
-      6: _expectedRaiderHp(stageNumber: 6, hpBalance: 0.62),
-      11: _expectedRaiderHp(stageNumber: 11, hpBalance: 0.72),
-      16: _expectedRaiderHp(stageNumber: 16, hpBalance: 0.82),
-      21: _expectedRaiderHp(stageNumber: 21, hpBalance: 0.92),
-      26: _expectedRaiderHp(stageNumber: 26, hpBalance: 1.00),
+      1: _expectedRaiderHp(stageNumber: 1, hpBalance: 0.50, hpPacing: 1.00),
+      5: _expectedRaiderHp(stageNumber: 5, hpBalance: 0.50, hpPacing: 1.00),
+      6: _expectedRaiderHp(stageNumber: 6, hpBalance: 0.62, hpPacing: 0.976),
+      11: _expectedRaiderHp(stageNumber: 11, hpBalance: 0.72, hpPacing: 0.856),
+      16: _expectedRaiderHp(stageNumber: 16, hpBalance: 0.82, hpPacing: 0.74),
+      21: _expectedRaiderHp(stageNumber: 21, hpBalance: 0.92, hpPacing: 0.644),
+      26: _expectedRaiderHp(stageNumber: 26, hpBalance: 1.00, hpPacing: 0.568),
     };
 
     for (final entry in expectations.entries) {
@@ -790,7 +860,7 @@ void main() {
   test('tower and hero range labels use compact grid coverage values', () {
     expect(TowerCatalog.byKind(TowerKind.guardBarracks).range, 3);
     expect(TowerCatalog.byKind(TowerKind.archer).range, 4);
-    expect(TowerCatalog.byKind(TowerKind.frostShrine).range, 4);
+    expect(TowerCatalog.byKind(TowerKind.frostShrine).range, 6);
     expect(TowerCatalog.byKind(TowerKind.ballista).range, 4);
     expect(TowerCatalog.byKind(TowerKind.emberkeep).range, 4);
     expect(TowerCatalog.byKind(TowerKind.mageObelisk).range, 6);
@@ -922,14 +992,21 @@ Set<EnemyKind> _enemyKinds(StageDefinition stage) {
   };
 }
 
-int _expectedRaiderHp({required int stageNumber, required double hpBalance}) {
+int _expectedRaiderHp({
+  required int stageNumber,
+  required double hpBalance,
+  required double hpPacing,
+}) {
   final durabilityMultiplier = stageNumber <= 5
       ? 1.75
       : stageNumber <= 15
       ? 1.55
       : 1.40;
   final hpMultiplier =
-      (1 + ((stageNumber - 1) * 0.18)) * durabilityMultiplier * hpBalance;
+      (1 + ((stageNumber - 1) * 0.18)) *
+      durabilityMultiplier *
+      hpBalance *
+      hpPacing;
   return (57 * hpMultiplier).round();
 }
 

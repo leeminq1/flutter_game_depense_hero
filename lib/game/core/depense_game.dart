@@ -20,8 +20,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Route;
 
 const double _enemyMoveSpeedMultiplier = 2.0;
+const int _maxCombatUnitLevel = 4;
 const double _stageEventBossHpBalanceMultiplier = 0.90;
 const double _stageEventBossDamageBalanceMultiplier = 0.70;
+const double _stageEventStructureDamageBalanceMultiplier = 0.70;
+const double _stageEventBossPhysicalDamageMultiplier = 0.75;
 
 class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   static const bool _combatDebugLogsEnabled = false;
@@ -322,7 +325,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _syncSession();
       return;
     }
-    _heroes.add(_HeroPlacement(definition: definition, position: position));
+    _heroes.add(
+      _HeroPlacement(
+        definition: definition,
+        position: position,
+        initialLevel: _baseBuildLevelForStage(),
+      ),
+    );
     _heroReviveUsed = true;
     _selectedHeroIndex = _heroes.length - 1;
     _selectedBarrierIndex = null;
@@ -499,7 +508,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
     final definition = HeroCatalog.byKind(chosenHeroKind);
-    _heroes.add(_HeroPlacement(definition: definition, position: position));
+    _heroes.add(
+      _HeroPlacement(
+        definition: definition,
+        position: position,
+        initialLevel: _baseBuildLevelForStage(),
+      ),
+    );
     _autoHeroPlaced = true;
     _heroSummonedThisStage = true;
     sessionController.setHeroSummonState(summoned: true, available: false);
@@ -593,6 +608,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return math.max(
       1,
       (definition.hitPoints *
+              _barrierStageHitPointMultiplier() *
               _runModifiers.barrierHitPointMultiplier(definition.kind))
           .round(),
     );
@@ -605,6 +621,26 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
               _runModifiers.barrierRepairCostMultiplier(definition.kind))
           .round(),
     );
+  }
+
+  int _baseBuildLevelForStage() {
+    if (stage.number >= 20) {
+      return 3;
+    }
+    if (stage.number >= 10) {
+      return 2;
+    }
+    return 1;
+  }
+
+  double _barrierStageHitPointMultiplier() {
+    if (stage.number >= 20) {
+      return 1.75;
+    }
+    if (stage.number >= 10) {
+      return 1.35;
+    }
+    return 1.0;
   }
 
   double _towerCurrentRange(_TowerPlacement tower) {
@@ -627,10 +663,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       TowerKind.coinMill => 0,
       TowerKind.guardBarracks => _tileSize * 2.55,
       TowerKind.archer => _tileSize * 3.05,
-      TowerKind.frostShrine ||
-      TowerKind.ballista ||
-      TowerKind.emberkeep => _tileSize * 2.05,
-      TowerKind.mageObelisk => _tileSize * 3.05,
+      TowerKind.ballista || TowerKind.emberkeep => _tileSize * 2.05,
+      TowerKind.frostShrine || TowerKind.mageObelisk => _tileSize * 3.05,
     };
   }
 
@@ -1148,7 +1182,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         alreadyBuiltKind || _firstLevelBonusUsed.contains(selection)
         ? 0
         : _runModifiers.firstTowerLevelBonus(selection);
-    final initialLevel = (1 + levelBonus).clamp(1, 3);
+    final initialLevel = (_baseBuildLevelForStage() + levelBonus).clamp(
+      1,
+      _maxCombatUnitLevel,
+    );
     if (levelBonus > 0) {
       _firstLevelBonusUsed.add(selection);
     }
@@ -1209,7 +1246,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
     _heroes.add(
-      _HeroPlacement(definition: definition, position: snapTarget.clone()),
+      _HeroPlacement(
+        definition: definition,
+        position: snapTarget.clone(),
+        initialLevel: _baseBuildLevelForStage(),
+      ),
     );
     _heroSummonedThisStage = true;
     _selectedHeroIndex = _heroes.length - 1;
@@ -1881,15 +1922,18 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       stageNumber: stage.number,
       intensity: 1.0,
     );
+    final hitPoints =
+        (base.hitPoints *
+                event.hitPointMultiplier *
+                _stageEventBossHpBalanceMultiplier)
+            .round()
+            .clamp(1, _stageEventBossHpCap())
+            .toInt();
     return EnemyDefinition(
       kind: base.kind,
       label: '${event.title} ${base.label}',
       specialDescription: base.specialDescription,
-      hitPoints:
-          (base.hitPoints *
-                  event.hitPointMultiplier *
-                  _stageEventBossHpBalanceMultiplier)
-              .round(),
+      hitPoints: hitPoints,
       speed: base.speed * 0.95,
       rewardCoins: math.max(1, (base.rewardCoins * 1.15).round()),
       citadelDamage: math.max(
@@ -1900,25 +1944,80 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
             .round(),
       ),
       color: base.color,
-      structureDamage: math.max(
-        1,
-        (EnemyDefinition.defaultStructureDamageFor(base.kind) *
-                event.damageMultiplier *
-                _stageEventBossDamageBalanceMultiplier)
-            .round(),
-      ),
-      towerContactDamage: math.max(
-        1,
-        (base.baseTowerContactDamage *
-                event.damageMultiplier *
-                _stageEventBossDamageBalanceMultiplier)
-            .round(),
-      ),
+      structureDamage: _stageEventBossStructureDamage(base.kind, event),
+      towerContactDamage: _stageEventBossTowerContactDamage(base, event),
       citadelLeakDamage: base.citadelLeakDamage,
       structureAttackCooldown: base.structureAttackCooldown,
       canBreachWalls: base.canBreachWalls,
       wallBehavior: base.wallBehavior,
       wallBreakChance: base.wallBreakChance,
+    );
+  }
+
+  int _stageEventBossHpCap() {
+    if (stage.number <= 12) {
+      return 4500;
+    }
+    if (stage.number <= 15) {
+      return 5200;
+    }
+    return 4500;
+  }
+
+  int _stageEventBossStructureDamage(
+    EnemyKind kind,
+    StageEventDefinition event,
+  ) {
+    final scaled = math.max(
+      1,
+      (EnemyDefinition.defaultStructureDamageFor(kind) *
+              event.damageMultiplier *
+              _stageEventBossDamageBalanceMultiplier)
+          .round(),
+    );
+    final cap = _stageEventBossStructureDamageCap(kind);
+    if (cap == null) {
+      return scaled;
+    }
+    return math.min(scaled, _rawStructureDamageCapForBalancedDamage(cap));
+  }
+
+  int _stageEventBossTowerContactDamage(
+    EnemyDefinition base,
+    StageEventDefinition event,
+  ) {
+    final scaled = math.max(
+      1,
+      (base.baseTowerContactDamage *
+              event.damageMultiplier *
+              _stageEventBossDamageBalanceMultiplier)
+          .round(),
+    );
+    final cap = _stageEventBossTowerContactDamageCap(base.kind);
+    return cap == null ? scaled : math.min(scaled, cap);
+  }
+
+  int? _stageEventBossStructureDamageCap(EnemyKind kind) {
+    return switch (kind) {
+      EnemyKind.corruptedKnight => 75,
+      EnemyKind.bastionOverlord => 95,
+      _ => null,
+    };
+  }
+
+  int? _stageEventBossTowerContactDamageCap(EnemyKind kind) {
+    return switch (kind) {
+      EnemyKind.corruptedKnight => 85,
+      EnemyKind.bastionOverlord => 110,
+      _ => null,
+    };
+  }
+
+  int _rawStructureDamageCapForBalancedDamage(int balancedDamage) {
+    return math.max(
+      1,
+      ((balancedDamage + 0.499) / _stageEventStructureDamageBalanceMultiplier)
+          .floor(),
     );
   }
 
@@ -2050,6 +2149,19 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     bool stageEvent = false,
   }) {
     return stageEvent || kind == EnemyKind.bastionOverlord;
+  }
+
+  @visibleForTesting
+  EnemyDefinition debugStageEventEnemyDefinition(StageEventDefinition event) {
+    return _stageEventEnemyDefinition(event);
+  }
+
+  @visibleForTesting
+  double debugPhysicalDamageMultiplierForEnemyKind(
+    EnemyKind kind, {
+    bool stageEvent = false,
+  }) {
+    return _physicalDamageMultiplierForEnemyKind(kind, stageEvent: stageEvent);
   }
 
   @visibleForTesting
@@ -3387,11 +3499,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       target.dodgeFlashTimer = 0.5;
     }
 
-    if ((target.definition.kind == EnemyKind.shieldInfantry ||
-            target.definition.kind == EnemyKind.corruptedKnight ||
-            target.definition.kind == EnemyKind.bastionOverlord) &&
-        damageType == _DamageType.physical) {
-      adjusted *= 0.55;
+    if (damageType == _DamageType.physical) {
+      adjusted *= _physicalDamageMultiplierForEnemyKind(
+        target.definition.kind,
+        stageEvent: target.stageEventLabel != null,
+      );
     }
 
     if (target.wardCharges > 0) {
@@ -3412,6 +3524,23 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     return adjusted;
+  }
+
+  double _physicalDamageMultiplierForEnemyKind(
+    EnemyKind kind, {
+    required bool stageEvent,
+  }) {
+    if (stageEvent &&
+        (kind == EnemyKind.corruptedKnight ||
+            kind == EnemyKind.bastionOverlord)) {
+      return _stageEventBossPhysicalDamageMultiplier;
+    }
+    return switch (kind) {
+      EnemyKind.shieldInfantry ||
+      EnemyKind.corruptedKnight ||
+      EnemyKind.bastionOverlord => 0.55,
+      _ => 1.0,
+    };
   }
 
   bool _resolveEnemyDefeatIfNeeded(_Enemy target) {
@@ -7128,19 +7257,22 @@ class _HeroPlacement {
   _HeroPlacement({
     required this.definition,
     required this.position,
+    this.initialLevel = 1,
     Vector2? guardAnchor,
   }) : guardAnchor = (guardAnchor ?? position).clone(),
+       level = initialLevel,
        totalSpent = definition.cost,
-       hitPoints = 160 + (definition.cost * 0.45);
+       hitPoints = 160 + (definition.cost * 0.45) + ((initialLevel - 1) * 45);
 
   static const double walkSpeed = 90.0;
 
   final HeroDefinition definition;
   final Vector2 position;
+  final int initialLevel;
   final Vector2 guardAnchor;
   final Vector2 attackDirection = Vector2(0, 1);
   Vector2? walkTarget;
-  int level = 1;
+  int level;
   int totalSpent;
   double hitPoints;
   double cooldownRemaining = 0;
@@ -7156,7 +7288,7 @@ class _HeroPlacement {
   double get currentCooldown =>
       math.max(0.24, definition.cooldown * (1 - ((level - 1) * 0.07)));
   int get upgradeCost => (definition.cost * (0.70 + (level * 0.50))).round();
-  bool get canUpgrade => level < 3;
+  bool get canUpgrade => level < _maxCombatUnitLevel;
   double get maxHitPoints =>
       160 + (definition.cost * 0.45) + ((level - 1) * 45);
 
@@ -7221,7 +7353,7 @@ class _TowerPlacement {
         },
   );
   int get upgradeCost => (definition.cost * (0.75 + (level * 0.55))).round();
-  bool get canUpgrade => level < 3;
+  bool get canUpgrade => level < _maxCombatUnitLevel;
   bool get canChooseBranch => level >= 2 && branchId == null;
   int get sellValue =>
       (totalSpent * (branchId == 'tribute' ? 0.82 : 0.7)).round();

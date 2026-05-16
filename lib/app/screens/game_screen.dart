@@ -643,6 +643,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         ),
                       ),
                       _BuildBar(
+                        stageNumber: _stageNumber,
                         sessionController: session,
                         metaUpgrades: activeMetaUpgrades,
                         chosenHeroKind: _chosenHeroKind ?? HeroKind.knight,
@@ -2083,6 +2084,7 @@ class _StatusBanner extends StatelessWidget {
 
 class _BuildBar extends StatefulWidget {
   const _BuildBar({
+    required this.stageNumber,
     required this.sessionController,
     required this.metaUpgrades,
     required this.chosenHeroKind,
@@ -2097,6 +2099,7 @@ class _BuildBar extends StatefulWidget {
     this.onTogglePause,
   });
 
+  final int stageNumber;
   final GameSessionController sessionController;
   final ResolvedMetaUpgrades metaUpgrades;
   final HeroKind chosenHeroKind;
@@ -2252,6 +2255,8 @@ class _BuildBarState extends State<_BuildBar> {
               definition: specDef,
               barrierDefinition: specBarrier,
               heroDefinition: specHero,
+              barrierStageHitPointMultiplier:
+                  _barrierStageHitPointMultiplierForStage(widget.stageNumber),
               sessionController: widget.sessionController,
             ),
           ),
@@ -2330,6 +2335,16 @@ class _BuildBarState extends State<_BuildBar> {
   }
 }
 
+double _barrierStageHitPointMultiplierForStage(int stageNumber) {
+  if (stageNumber >= 20) {
+    return 1.75;
+  }
+  if (stageNumber >= 10) {
+    return 1.35;
+  }
+  return 1.0;
+}
+
 class _BuildTabSelector extends StatelessWidget {
   const _BuildTabSelector({required this.activeTab, required this.onChanged});
 
@@ -2383,12 +2398,14 @@ class _BuildSummaryStrip extends StatelessWidget {
   const _BuildSummaryStrip({
     required this.definition,
     required this.sessionController,
+    required this.barrierStageHitPointMultiplier,
     this.barrierDefinition,
     this.heroDefinition,
   });
 
   final TowerDefinition? definition;
   final GameSessionController sessionController;
+  final double barrierStageHitPointMultiplier;
   final BarrierDefinition? barrierDefinition;
   final HeroDefinition? heroDefinition;
 
@@ -2405,6 +2422,7 @@ class _BuildSummaryStrip extends StatelessWidget {
     if (barrier != null) {
       return _BarrierCardSummary(
         definition: barrier,
+        stageHitPointMultiplier: barrierStageHitPointMultiplier,
         sessionController: sessionController,
       );
     }
@@ -2616,10 +2634,12 @@ class _HeroCardSummary extends StatelessWidget {
 class _BarrierCardSummary extends StatelessWidget {
   const _BarrierCardSummary({
     required this.definition,
+    required this.stageHitPointMultiplier,
     required this.sessionController,
   });
 
   final BarrierDefinition definition;
+  final double stageHitPointMultiplier;
   final GameSessionController sessionController;
 
   @override
@@ -2627,6 +2647,7 @@ class _BarrierCardSummary extends StatelessWidget {
     final modifiers = sessionController.runModifiers;
     final hitPoints =
         (definition.hitPoints *
+                stageHitPointMultiplier *
                 modifiers.barrierHitPointMultiplier(definition.kind))
             .round();
     return Container(

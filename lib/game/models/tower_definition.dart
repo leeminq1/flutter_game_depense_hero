@@ -162,7 +162,7 @@ class TowerCatalog {
       shortDescription: '감속과 구역 제어',
       abilityDescription: '범위 안의 적 전체를 얼리는 냉기 파동을 방출합니다.',
       cost: 55,
-      range: 4,
+      range: 6,
       damage: 7,
       cooldown: 1.05,
       color: Color(0xFF80DEEA),
