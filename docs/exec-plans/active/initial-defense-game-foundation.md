@@ -14,7 +14,7 @@
 
 ## 현재 테스트 빌드
 
-- 버전: `1.0.18+19`
+- 버전: `1.0.19+20`
 - 패키지: `com.min21.pixelguardwave`
 - AAB: `build/app/outputs/bundle/release/app-release.aab`
 - 전체 Stage 해금 디버그: 켜짐
@@ -25,3 +25,17 @@
 - 개인정보처리방침과 Google Play 데이터 보안 양식 최종 확인.
 - Stage 16 이후 이벤트 보스 체감 재검증.
 - 문서 스냅샷 재생성 후 AAB 빌드.
+
+## 2026-05-17 Balance Verification Note
+
+- Fixed stage result evaluation to prefer the authoritative game terminal
+  state, and verified Stage 17 with 3 HP and 541 gold awards 3 stars.
+- Tuned event bosses so stage-event enemies take full physical damage.
+- Tuned event Bastion Overlord to sit just above the event Corrupted Knight
+  in HP and contact pressure while preserving the 2 HP boss leak rule.
+- Raised general enemy HP by 10%; contact damage now uses +2 for weak
+  reroute-first enemies, +1 for standard enemies, and no increase for Grave
+  Guard, Corrupted Knight, or Bastion Overlord.
+- Raised bombardment minimum odds to 50% from Stage 2 onward. Stage 15+
+  now rolls a second late-wave bombardment on the opposite wave, scaling from
+  28% to 40%.

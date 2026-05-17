@@ -579,7 +579,7 @@ void main() {
     expect(CampaignData.stage(30).startingCoins, 850);
   });
 
-  test('stage bombardment is authored as a single late-wave pressure roll', () {
+  test('stage bombardment uses higher early odds and late secondary rolls', () {
     expect(CampaignData.stage(1).bombardment, isNull);
 
     for (
@@ -593,14 +593,48 @@ void main() {
       expect(bombardment, isNotNull);
       expect(bombardment!.targetWaveNumber, anyOf(3, 4));
       expect(bombardment.targetWaveNumber, lessThanOrEqualTo(stage.cycleCount));
-      expect(bombardment.rollChance, inInclusiveRange(0.45, 0.82));
+      expect(bombardment.rollChance, inInclusiveRange(0.50, 0.82));
       expect(bombardment.shellCount, 3);
       expect(bombardment.minImpactSpacingTiles, 1.25);
       expect(bombardment.projectileSeconds, 2.1);
       expect(bombardment.warningSeconds, 2.1);
       expect(bombardment.damage, greaterThanOrEqualTo(62));
       expect(bombardment.radiusTiles, 1.05);
+
+      if (stageNumber < 15) {
+        expect(bombardment.secondaryTargetWaveNumber, isNull);
+        expect(bombardment.secondaryRollChance, isNull);
+      } else {
+        expect(bombardment.secondaryTargetWaveNumber, anyOf(3, 4));
+        expect(
+          bombardment.secondaryTargetWaveNumber,
+          isNot(bombardment.targetWaveNumber),
+        );
+        expect(
+          bombardment.secondaryTargetWaveNumber,
+          lessThanOrEqualTo(stage.cycleCount),
+        );
+        expect(bombardment.secondaryRollChance, inInclusiveRange(0.28, 0.40));
+      }
     }
+
+    expect(CampaignData.stage(2).bombardment!.rollChance, closeTo(0.50, 0.001));
+    expect(
+      CampaignData.stage(15).bombardment!.rollChance,
+      closeTo(0.63, 0.001),
+    );
+    expect(
+      CampaignData.stage(15).bombardment!.secondaryRollChance,
+      closeTo(0.28, 0.001),
+    );
+    expect(
+      CampaignData.stage(30).bombardment!.rollChance,
+      closeTo(0.82, 0.001),
+    );
+    expect(
+      CampaignData.stage(30).bombardment!.secondaryRollChance,
+      closeTo(0.40, 0.001),
+    );
   });
 
   test('boss shockwave classification covers stage-event bosses', () {
@@ -677,6 +711,7 @@ void main() {
         );
 
         if (boss.kind == EnemyKind.corruptedKnight) {
+          expect(boss.hitPoints, 4400);
           expect(boss.baseStructureDamage, lessThanOrEqualTo(75));
           expect(boss.baseTowerContactDamage, lessThanOrEqualTo(85));
           expect(
@@ -684,19 +719,21 @@ void main() {
               boss.kind,
               stageEvent: true,
             ),
-            0.75,
+            1.0,
           );
         }
 
         if (boss.kind == EnemyKind.bastionOverlord) {
-          expect(boss.baseStructureDamage, lessThanOrEqualTo(95));
-          expect(boss.baseTowerContactDamage, lessThanOrEqualTo(110));
+          expect(boss.hitPoints, 4500);
+          expect(boss.citadelDamage, 15);
+          expect(boss.baseStructureDamage, lessThanOrEqualTo(78));
+          expect(boss.baseTowerContactDamage, lessThanOrEqualTo(88));
           expect(
             game.debugPhysicalDamageMultiplierForEnemyKind(
               boss.kind,
               stageEvent: true,
             ),
-            0.75,
+            1.0,
           );
         }
       }
@@ -718,6 +755,16 @@ void main() {
       game.debugPhysicalDamageMultiplierForEnemyKind(EnemyKind.bastionOverlord),
       0.55,
     );
+
+    for (final event in StageEventGenerator.poolForStage(4)) {
+      expect(
+        game.debugPhysicalDamageMultiplierForEnemyKind(
+          event.enemyKind,
+          stageEvent: true,
+        ),
+        1.0,
+      );
+    }
   });
 
   test('barriers and heroes expose the v2 build metadata', () {
@@ -783,30 +830,62 @@ void main() {
       if (fast.contains(kind)) {
         expect(enemy.wallBehavior, EnemyWallBehavior.rerouteFirst);
         expect(enemy.wallBreakChance, 0);
-        expect(enemy.baseStructureDamage, 5);
-        expect(enemy.baseTowerContactDamage, 6);
+        expect(enemy.baseStructureDamage, 7);
+        expect(enemy.baseTowerContactDamage, 8);
       } else if (heavy.contains(kind)) {
         expect(enemy.wallBehavior, EnemyWallBehavior.forceBreaker);
         expect(enemy.wallBreakChance, 1);
         final expectedStructureDamage = switch (kind) {
           EnemyKind.bastionOverlord => 35,
           EnemyKind.corruptedKnight || EnemyKind.graveGuard => 25,
-          _ => 20,
+          _ => 21,
         };
         final expectedTowerDamage = switch (kind) {
           EnemyKind.bastionOverlord => 63,
           EnemyKind.corruptedKnight || EnemyKind.graveGuard => 41,
-          _ => 29,
+          _ => 30,
         };
         expect(enemy.baseStructureDamage, expectedStructureDamage);
         expect(enemy.baseTowerContactDamage, expectedTowerDamage);
       } else {
         expect(enemy.wallBehavior, EnemyWallBehavior.mixedBreaker);
         expect(enemy.wallBreakChance, 0.7);
-        expect(enemy.baseStructureDamage, 14);
-        expect(enemy.baseTowerContactDamage, 15);
+        expect(enemy.baseStructureDamage, 15);
+        expect(enemy.baseTowerContactDamage, 16);
       }
     }
+  });
+
+  test('late normal enemies use tiered contact damage buffs', () {
+    final skeleton = CampaignData.enemyForKind(
+      EnemyKind.skeleton,
+      stageNumber: 16,
+      intensity: 1,
+    );
+    final boneArcher = CampaignData.enemyForKind(
+      EnemyKind.boneArcher,
+      stageNumber: 16,
+      intensity: 1,
+    );
+    final graveGuard = CampaignData.enemyForKind(
+      EnemyKind.graveGuard,
+      stageNumber: 16,
+      intensity: 1,
+    );
+    final corruptedKnight = CampaignData.enemyForKind(
+      EnemyKind.corruptedKnight,
+      stageNumber: 16,
+      intensity: 1,
+    );
+
+    expect(skeleton.baseStructureDamage, 16);
+    expect(skeleton.baseTowerContactDamage, 17);
+    expect(boneArcher.baseStructureDamage, 7);
+    expect(boneArcher.baseTowerContactDamage, 8);
+    expect(graveGuard.baseStructureDamage, 27);
+    expect(graveGuard.baseTowerContactDamage, 43);
+    expect(corruptedKnight.baseStructureDamage, 27);
+    expect(corruptedKnight.baseTowerContactDamage, 43);
   });
 
   test('enemy hp balance multipliers ease early stages then ramp smoothly', () {
@@ -1006,7 +1085,8 @@ int _expectedRaiderHp({
       (1 + ((stageNumber - 1) * 0.18)) *
       durabilityMultiplier *
       hpBalance *
-      hpPacing;
+      hpPacing *
+      1.10;
   return (57 * hpMultiplier).round();
 }
 

@@ -55,6 +55,22 @@ void main() {
     expect(overview.stages[1].unlocked, isTrue);
   });
 
+  test('recorded completion result preserves awarded stars', () async {
+    final store = await InMemoryProgressStore.open();
+
+    final result = await store.recordStageCompletion(
+      stageNumber: 17,
+      evaluation: const StageEvaluationResult(
+        starsAwarded: 3,
+        objectiveResults: [],
+      ),
+      totalStages: 30,
+    );
+
+    expect(result.starsAwarded, 3);
+    expect(result.totalStars, 3);
+  });
+
   test('stage 1 failure rewards do not create a resumable run', () async {
     final store = await InMemoryProgressStore.open();
 

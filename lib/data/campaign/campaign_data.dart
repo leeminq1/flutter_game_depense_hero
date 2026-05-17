@@ -14,6 +14,10 @@ class CampaignData {
   static const int _buildableBottomRow = 12;
   static const double _startingCoinBalanceMultiplier = 0.765;
   static const double _killRewardBalanceMultiplier = 0.90;
+  static const double _generalEnemyHpMultiplier = 1.10;
+  static const int _standardContactDamageBonus = 1;
+  static const int _weakContactDamageBonus = 2;
+  static const double _structureDamageBalanceMultiplier = 0.7;
 
   static StageDefinition stage(int number) {
     final safeStage = number.clamp(1, totalStages);
@@ -948,12 +952,60 @@ class CampaignData {
 
   static int _scaledStructureDamageFor(EnemyKind kind, double multiplier) {
     final damage = EnemyDefinition.defaultStructureDamageFor(kind);
-    return (damage * multiplier).round().clamp(1, damage);
+    final scaled = (damage * multiplier).round().clamp(1, damage);
+    if (_keepsCurrentContactDamage(kind)) {
+      return scaled;
+    }
+    final balancedDamage = _balancedStructureDamage(scaled);
+    return _rawStructureDamageForBalancedDamage(
+      balancedDamage + _contactDamageBonusFor(kind),
+    );
   }
 
   static int _scaledTowerContactDamageFor(EnemyKind kind, double multiplier) {
     final damage = EnemyDefinition.defaultTowerContactDamageFor(kind);
-    return (damage * multiplier).round().clamp(1, damage);
+    final scaled = (damage * multiplier).round().clamp(1, damage);
+    if (_keepsCurrentContactDamage(kind)) {
+      return scaled;
+    }
+    return scaled + _contactDamageBonusFor(kind);
+  }
+
+  static bool _keepsCurrentContactDamage(EnemyKind kind) {
+    return kind == EnemyKind.graveGuard ||
+        kind == EnemyKind.corruptedKnight ||
+        kind == EnemyKind.bastionOverlord;
+  }
+
+  static int _contactDamageBonusFor(EnemyKind kind) {
+    return switch (EnemyDefinition.defaultWallBehaviorFor(kind)) {
+      EnemyWallBehavior.rerouteFirst => _weakContactDamageBonus,
+      _ => _standardContactDamageBonus,
+    };
+  }
+
+  static int _balancedStructureDamage(int rawDamage) {
+    return (rawDamage * _structureDamageBalanceMultiplier).round().clamp(
+      1,
+      rawDamage,
+    );
+  }
+
+  static int _rawStructureDamageForBalancedDamage(int balancedDamage) {
+    return math.max(
+      1,
+      ((balancedDamage + 0.499) / _structureDamageBalanceMultiplier).floor(),
+    );
+  }
+
+  static double _hpMultiplierForKind(
+    EnemyKind kind, {
+    required bool applyGeneralHpBuff,
+  }) {
+    if (!applyGeneralHpBuff || kind == EnemyKind.bastionOverlord) {
+      return 1.0;
+    }
+    return _generalEnemyHpMultiplier;
   }
 
   static int _recoveryGoldBonusForStage(int stageNumber, int cycleNumber) {
@@ -1353,6 +1405,7 @@ class CampaignData {
     EnemyKind kind, {
     required int stageNumber,
     required double intensity,
+    bool applyGeneralHpBuff = true,
   }) {
     final durabilityMultiplier = stageNumber <= 5
         ? 1.75
@@ -1363,7 +1416,8 @@ class CampaignData {
         (1 + ((stageNumber - 1) * 0.18)) *
         durabilityMultiplier *
         _enemyHpBalanceMultiplier(stageNumber) *
-        _enemyLateStageHpPacingMultiplier(stageNumber);
+        _enemyLateStageHpPacingMultiplier(stageNumber) *
+        _hpMultiplierForKind(kind, applyGeneralHpBuff: applyGeneralHpBuff);
     final actNumber = ((stageNumber - 1) ~/ 5) + 1;
     final moveSpeedMultiplier = 1 + ((actNumber - 1) * 0.06);
     final killRewardMultiplier = 0.82 + ((stageNumber - 1) * 0.025);
@@ -3580,13 +3634,21 @@ class CampaignData {
     }
     final targetWaveNumber =
         waveCount >= 4 && math.Random(stageNumber * 9151).nextBool() ? 4 : 3;
-    final chance = (0.42 + (stageNumber * 0.014)).clamp(0.45, 0.82);
+    final chance = (0.42 + (stageNumber * 0.014)).clamp(0.50, 0.82);
+    final secondaryTargetWaveNumber = stageNumber >= 15 && waveCount >= 4
+        ? (targetWaveNumber == 3 ? 4 : 3)
+        : null;
+    final secondaryChance = secondaryTargetWaveNumber == null
+        ? null
+        : (0.16 + (stageNumber * 0.008)).clamp(0.28, 0.40).toDouble();
     return StageBombardmentDefinition(
       id: 'stage_${stageNumber}_bombardment',
       targetWaveNumber: targetWaveNumber,
       rollChance: chance.toDouble(),
       damage: 54 + (stageNumber * 4),
       radiusTiles: 1.05,
+      secondaryTargetWaveNumber: secondaryTargetWaveNumber,
+      secondaryRollChance: secondaryChance,
       shellCount: 3,
       minImpactSpacingTiles: 1.25,
       projectileSeconds: 2.1,

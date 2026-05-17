@@ -10,11 +10,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   StageEvaluationResult evaluate({
+    int stageNumber = 1,
     required bool cleared,
     required int hp,
     required int gold,
   }) {
-    return CampaignData.stage(1).evaluateRun(
+    return CampaignData.stage(stageNumber).evaluateRun(
       StageRunSummary(
         cleared: cleared,
         baseHealthRemaining: hp,
@@ -29,11 +30,20 @@ void main() {
 
   test('stage stars require both citadel hp and remaining gold', () {
     expect(evaluate(cleared: true, hp: 3, gold: 50).starsAwarded, 3);
+    expect(evaluate(cleared: true, hp: 3, gold: 49).starsAwarded, 2);
     expect(evaluate(cleared: true, hp: 3, gold: 30).starsAwarded, 2);
+    expect(evaluate(cleared: true, hp: 3, gold: 29).starsAwarded, 1);
     expect(evaluate(cleared: true, hp: 2, gold: 50).starsAwarded, 2);
     expect(evaluate(cleared: true, hp: 1, gold: 99).starsAwarded, 1);
     expect(evaluate(cleared: true, hp: 3, gold: 0).starsAwarded, 1);
     expect(evaluate(cleared: false, hp: 3, gold: 99).starsAwarded, 0);
+  });
+
+  test('stage 17 clear with full citadel hp and high gold awards 3 stars', () {
+    expect(
+      evaluate(stageNumber: 17, cleared: true, hp: 3, gold: 541).starsAwarded,
+      3,
+    );
   });
 
   test(

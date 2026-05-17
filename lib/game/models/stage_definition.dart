@@ -269,6 +269,8 @@ class StageBombardmentDefinition {
     required this.rollChance,
     required this.damage,
     required this.radiusTiles,
+    this.secondaryTargetWaveNumber,
+    this.secondaryRollChance,
     this.shellCount = 3,
     this.minImpactSpacingTiles = 1.25,
     this.projectileSeconds = 2.1,
@@ -280,10 +282,22 @@ class StageBombardmentDefinition {
   final double rollChance;
   final int damage;
   final double radiusTiles;
+  final int? secondaryTargetWaveNumber;
+  final double? secondaryRollChance;
   final int shellCount;
   final double minImpactSpacingTiles;
   final double projectileSeconds;
   final double warningSeconds;
+
+  double? rollChanceForWave(int waveNumber) {
+    if (waveNumber == targetWaveNumber) {
+      return rollChance;
+    }
+    if (waveNumber == secondaryTargetWaveNumber) {
+      return secondaryRollChance;
+    }
+    return null;
+  }
 }
 
 class StageDecorationDefinition {

@@ -43,9 +43,19 @@ void main() {
     ) {
       final stage = CampaignData.stage(stageNumber);
       final events = stage.stageEvents.map((event) => event.title).join(', ');
-      final bombardment = stage.bombardment == null
+      final bombardmentDefinition = stage.bombardment;
+      final bombardment = bombardmentDefinition == null
           ? '-'
-          : 'W${stage.bombardment!.targetWaveNumber} / ${stage.bombardment!.damage} dmg / ${(stage.bombardment!.rollChance * 100).round()}%';
+          : [
+              'W${bombardmentDefinition.targetWaveNumber} / '
+                  '${bombardmentDefinition.damage} dmg / '
+                  '${(bombardmentDefinition.rollChance * 100).round()}%',
+              if (bombardmentDefinition.secondaryTargetWaveNumber != null &&
+                  bombardmentDefinition.secondaryRollChance != null)
+                'W${bombardmentDefinition.secondaryTargetWaveNumber} / '
+                    '${bombardmentDefinition.damage} dmg / '
+                    '${(bombardmentDefinition.secondaryRollChance! * 100).round()}%',
+            ].join(' + ');
       final fronts = _frontsForStage(stage);
       final enemies = _enemyKindsForStage(
         stage,

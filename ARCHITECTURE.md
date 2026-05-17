@@ -42,7 +42,7 @@
 
 ## Build And Release
 
-- 현재 비공개 테스트 버전: `1.0.18+19`
+- 현재 비공개 테스트 버전: `1.0.19+20`
 - Android 패키지: `com.min21.pixelguardwave`
 - Play 업로드 산출물: `build/app/outputs/bundle/release/app-release.aab`
 - 현재 테스트 빌드는 전체 Stage 해금 플래그를 켠다.

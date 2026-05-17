@@ -24,7 +24,9 @@ const int _maxCombatUnitLevel = 4;
 const double _stageEventBossHpBalanceMultiplier = 0.90;
 const double _stageEventBossDamageBalanceMultiplier = 0.70;
 const double _stageEventStructureDamageBalanceMultiplier = 0.70;
-const double _stageEventBossPhysicalDamageMultiplier = 0.75;
+const double _stageEventBossPhysicalDamageMultiplier = 1.0;
+const int _stageEventCorruptedKnightTargetHp = 4400;
+const int _stageEventBastionOverlordTargetHp = 4500;
 
 class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   static const bool _combatDebugLogsEnabled = false;
@@ -108,9 +110,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   int _runOfferRollIndex = 0;
   StageEventDefinition? _stageEvent;
   bool _stageEventTriggered = false;
-  bool _bombardmentRolledThisStage = false;
-  bool _bombardmentLaunchedThisStage = false;
+  final Set<int> _bombardmentRolledWaveNumbers = <int>{};
+  final Set<int> _bombardmentLaunchedWaveNumbers = <int>{};
   double _bombardmentTimer = -1;
+  int? _pendingBombardmentWaveNumber;
   int _nextEnemyDebugId = 1;
   double _combatDebugSummaryTimer = 0;
   int? _lastLoggedUiBaseHealth;
@@ -345,21 +348,32 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   StageEvaluationResult evaluateCurrentRun() {
+    final gameIsTerminal = _stageCleared || _stageFailed;
     final sessionIsTerminal =
         sessionController.stageCleared || sessionController.stageFailed;
     return stage.evaluateRun(
       StageRunSummary(
         cleared: _stageCleared || sessionController.stageCleared,
-        baseHealthRemaining: sessionIsTerminal
+        baseHealthRemaining: gameIsTerminal
+            ? _baseHealth
+            : sessionIsTerminal
             ? sessionController.baseHealth
             : _baseHealth,
         maxBaseHealth: sessionController.maxBaseHealth,
-        remainingGold: sessionIsTerminal ? sessionController.coins : _coins,
-        towersBuilt: sessionIsTerminal
+        remainingGold: gameIsTerminal
+            ? _coins
+            : sessionIsTerminal
+            ? sessionController.coins
+            : _coins,
+        towersBuilt: gameIsTerminal
+            ? _towersBuilt
+            : sessionIsTerminal
             ? sessionController.towersBuilt
             : _towersBuilt,
         towersSold: _towersSold,
-        builtTowerKinds: sessionIsTerminal
+        builtTowerKinds: gameIsTerminal
+            ? _builtTowerKinds
+            : sessionIsTerminal
             ? sessionController.builtTowerKinds
             : _builtTowerKinds,
       ),
@@ -1921,14 +1935,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       event.enemyKind,
       stageNumber: stage.number,
       intensity: 1.0,
+      applyGeneralHpBuff: false,
     );
-    final hitPoints =
-        (base.hitPoints *
-                event.hitPointMultiplier *
-                _stageEventBossHpBalanceMultiplier)
-            .round()
-            .clamp(1, _stageEventBossHpCap())
-            .toInt();
+    final hitPoints = _stageEventBossHitPoints(base, event);
     return EnemyDefinition(
       kind: base.kind,
       label: '${event.title} ${base.label}',
@@ -1936,13 +1945,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       hitPoints: hitPoints,
       speed: base.speed * 0.95,
       rewardCoins: math.max(1, (base.rewardCoins * 1.15).round()),
-      citadelDamage: math.max(
-        1,
-        (base.citadelDamage *
-                event.damageMultiplier *
-                _stageEventBossDamageBalanceMultiplier)
-            .round(),
-      ),
+      citadelDamage: _stageEventBossCitadelDamage(base, event),
       color: base.color,
       structureDamage: _stageEventBossStructureDamage(base.kind, event),
       towerContactDamage: _stageEventBossTowerContactDamage(base, event),
@@ -1952,6 +1955,27 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       wallBehavior: base.wallBehavior,
       wallBreakChance: base.wallBreakChance,
     );
+  }
+
+  int _stageEventBossHitPoints(
+    EnemyDefinition base,
+    StageEventDefinition event,
+  ) {
+    final targetHitPoints = switch (base.kind) {
+      EnemyKind.corruptedKnight => _stageEventCorruptedKnightTargetHp,
+      EnemyKind.bastionOverlord => _stageEventBastionOverlordTargetHp,
+      _ => null,
+    };
+    if (targetHitPoints != null) {
+      return targetHitPoints.clamp(1, _stageEventBossHpCap()).toInt();
+    }
+
+    return (base.hitPoints *
+            event.hitPointMultiplier *
+            _stageEventBossHpBalanceMultiplier)
+        .round()
+        .clamp(1, _stageEventBossHpCap())
+        .toInt();
   }
 
   int _stageEventBossHpCap() {
@@ -1964,10 +1988,29 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return 4500;
   }
 
+  int _stageEventBossCitadelDamage(
+    EnemyDefinition base,
+    StageEventDefinition event,
+  ) {
+    if (base.kind == EnemyKind.bastionOverlord) {
+      return 15;
+    }
+    return math.max(
+      1,
+      (base.citadelDamage *
+              event.damageMultiplier *
+              _stageEventBossDamageBalanceMultiplier)
+          .round(),
+    );
+  }
+
   int _stageEventBossStructureDamage(
     EnemyKind kind,
     StageEventDefinition event,
   ) {
+    if (kind == EnemyKind.bastionOverlord) {
+      return _rawStructureDamageCapForBalancedDamage(78);
+    }
     final scaled = math.max(
       1,
       (EnemyDefinition.defaultStructureDamageFor(kind) *
@@ -1986,6 +2029,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     EnemyDefinition base,
     StageEventDefinition event,
   ) {
+    if (base.kind == EnemyKind.bastionOverlord) {
+      return 88;
+    }
     final scaled = math.max(
       1,
       (base.baseTowerContactDamage *
@@ -2000,7 +2046,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   int? _stageEventBossStructureDamageCap(EnemyKind kind) {
     return switch (kind) {
       EnemyKind.corruptedKnight => 75,
-      EnemyKind.bastionOverlord => 95,
+      EnemyKind.bastionOverlord => 78,
       _ => null,
     };
   }
@@ -2008,7 +2054,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   int? _stageEventBossTowerContactDamageCap(EnemyKind kind) {
     return switch (kind) {
       EnemyKind.corruptedKnight => 85,
-      EnemyKind.bastionOverlord => 110,
+      EnemyKind.bastionOverlord => 88,
       _ => null,
     };
   }
@@ -2045,7 +2091,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
     final radius =
         _tileSize *
-        (enemy.definition.kind == EnemyKind.bastionOverlord ? 1.65 : 1.42);
+        (enemy.definition.kind == EnemyKind.bastionOverlord
+            ? (enemy.stageEventLabel != null ? 1.46 : 1.65)
+            : 1.42);
     enemy.bossAuraVisualTimer = math.max(enemy.bossAuraVisualTimer, 1.15);
     _spawnImpact(
       center,
@@ -2075,7 +2123,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _spawnBossShockwaveVisual(enemy, center);
     final radius =
         _tileSize *
-        (enemy.definition.kind == EnemyKind.bastionOverlord ? 1.65 : 1.42);
+        (enemy.definition.kind == EnemyKind.bastionOverlord
+            ? (enemy.stageEventLabel != null ? 1.46 : 1.65)
+            : 1.42);
     final splashDamage = math.max(1.0, damage * 0.42);
     var removedBarrier = false;
     var removedTower = false;
@@ -2201,23 +2251,26 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   void _prepareBombardmentForWave(int waveNumber) {
     _bombardmentTimer = -1;
+    _pendingBombardmentWaveNumber = null;
     final definition = stage.bombardment;
+    final rollChance = definition?.rollChanceForWave(waveNumber);
     if (definition == null ||
-        _bombardmentRolledThisStage ||
-        _bombardmentLaunchedThisStage ||
-        definition.targetWaveNumber != waveNumber) {
+        rollChance == null ||
+        _bombardmentRolledWaveNumbers.contains(waveNumber) ||
+        _bombardmentLaunchedWaveNumbers.contains(waveNumber)) {
       return;
     }
 
-    _bombardmentRolledThisStage = true;
+    _bombardmentRolledWaveNumbers.add(waveNumber);
     final random = math.Random(
       _runOfferSeed + (stage.number * 31091) + (waveNumber * 9173),
     );
-    if (random.nextDouble() > definition.rollChance) {
+    if (random.nextDouble() > rollChance) {
       return;
     }
 
     _bombardmentTimer = 2.4 + (random.nextDouble() * 2.2);
+    _pendingBombardmentWaveNumber = waveNumber;
     _showStatus('적 포격 징후가 포착되었습니다. 성벽과 타워를 주의하세요.');
   }
 
@@ -2240,7 +2293,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     if (!_waveActive ||
         _bombardmentTimer < 0 ||
-        _bombardmentLaunchedThisStage) {
+        _pendingBombardmentWaveNumber == null ||
+        _bombardmentLaunchedWaveNumbers.contains(
+          _pendingBombardmentWaveNumber,
+        )) {
       return;
     }
     _bombardmentTimer -= dt;
@@ -2248,12 +2304,17 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
     _bombardmentTimer = -1;
-    _launchStageBombardment();
+    final waveNumber = _pendingBombardmentWaveNumber;
+    _pendingBombardmentWaveNumber = null;
+    if (waveNumber != null) {
+      _launchStageBombardment(waveNumber);
+    }
   }
 
-  void _launchStageBombardment() {
+  void _launchStageBombardment(int waveNumber) {
     final definition = stage.bombardment;
-    if (definition == null || _bombardmentLaunchedThisStage) {
+    if (definition == null ||
+        _bombardmentLaunchedWaveNumbers.contains(waveNumber)) {
       return;
     }
     final targets = _selectBombardmentTargets(definition);
@@ -2292,7 +2353,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         lifetime: 0.95 + (index * 0.12),
       );
     }
-    _bombardmentLaunchedThisStage = true;
+    _bombardmentLaunchedWaveNumbers.add(waveNumber);
     _showStatus('적 포격! 성 외곽 가까운 방어선 3곳이 공격받습니다.');
     audioService.play(AudioEvent.baseDamage);
   }
@@ -3530,9 +3591,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     EnemyKind kind, {
     required bool stageEvent,
   }) {
-    if (stageEvent &&
-        (kind == EnemyKind.corruptedKnight ||
-            kind == EnemyKind.bastionOverlord)) {
+    if (stageEvent) {
       return _stageEventBossPhysicalDamageMultiplier;
     }
     return switch (kind) {
@@ -3785,47 +3844,69 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     if (enemy.definition.kind == EnemyKind.bastionOverlord) {
+      final isStageEventBoss = enemy.stageEventLabel != null;
       enemy.bossPulseTimer -= dt;
 
       if (!enemy.bossPhaseOneTriggered &&
           enemy.hitPoints <= enemy.definition.hitPoints * 0.72) {
         enemy.bossPhaseOneTriggered = true;
-        enemy.wardCharges = 2;
-        enemy.wardVisualTimer = 6.0;
+        enemy.wardCharges = isStageEventBoss ? 1 : 2;
+        enemy.wardVisualTimer = isStageEventBoss ? 4.5 : 6.0;
         enemy.wardFlashTimer = 0.35;
         enemy.bossAuraVisualTimer = 1.1;
-        enemy.hasteMultiplier = math.max(enemy.hasteMultiplier, 1.12);
+        enemy.hasteMultiplier = math.max(
+          enemy.hasteMultiplier,
+          isStageEventBoss ? 1.06 : 1.12,
+        );
         enemy.hasteTimer = 99;
         _spawnBossEscort(enemy, EnemyKind.graveGuard);
-        _spawnBossEscort(enemy, EnemyKind.warlock);
+        if (!isStageEventBoss) {
+          _spawnBossEscort(enemy, EnemyKind.warlock);
+        }
       }
 
       if (!enemy.bossPhaseTwoTriggered &&
           enemy.hitPoints <= enemy.definition.hitPoints * 0.36) {
         enemy.bossPhaseTwoTriggered = true;
-        enemy.wardCharges = 3;
-        enemy.wardVisualTimer = 7.5;
+        enemy.wardCharges = isStageEventBoss ? 1 : 3;
+        enemy.wardVisualTimer = isStageEventBoss ? 4.8 : 7.5;
         enemy.wardFlashTimer = 0.45;
         enemy.bossAuraVisualTimer = 1.4;
-        enemy.hasteMultiplier = math.max(enemy.hasteMultiplier, 1.24);
+        enemy.hasteMultiplier = math.max(
+          enemy.hasteMultiplier,
+          isStageEventBoss ? 1.12 : 1.24,
+        );
         enemy.hasteTimer = 99;
-        enemy.bonusBaseDamage = 2;
+        enemy.bonusBaseDamage = isStageEventBoss ? 1 : 2;
         _spawnBossEscort(enemy, EnemyKind.corruptedKnight);
-        _spawnBossEscort(enemy, EnemyKind.graveGuard);
+        if (!isStageEventBoss) {
+          _spawnBossEscort(enemy, EnemyKind.graveGuard);
+        }
       }
 
       if (enemy.bossPulseTimer <= 0) {
-        enemy.bossPulseTimer = enemy.bossPhaseTwoTriggered ? 4.0 : 5.6;
+        enemy.bossPulseTimer = enemy.bossPhaseTwoTriggered
+            ? (isStageEventBoss ? 5.0 : 4.0)
+            : (isStageEventBoss ? 6.0 : 5.6);
         enemy.bossAuraVisualTimer = 0.95;
         enemy.wardCharges = math.max(
           enemy.wardCharges,
-          enemy.bossPhaseTwoTriggered ? 2 : 1,
+          isStageEventBoss
+              ? 1
+              : enemy.bossPhaseTwoTriggered
+              ? 2
+              : 1,
         );
-        enemy.wardVisualTimer = math.max(enemy.wardVisualTimer, 3.6);
+        enemy.wardVisualTimer = math.max(
+          enemy.wardVisualTimer,
+          isStageEventBoss ? 2.8 : 3.6,
+        );
         _spawnPulse(
           center: enemy.position,
           color: const Color(0xFFB85749),
-          maxRadius: enemy.bossPhaseTwoTriggered ? 94 : 72,
+          maxRadius: enemy.bossPhaseTwoTriggered
+              ? (isStageEventBoss ? 82 : 94)
+              : 72,
           lifetime: 0.42,
           strokeWidth: 4,
         );
@@ -4281,6 +4362,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           : 'STAGE 클리어! 다음 전장으로 진격하세요.';
       audioService.play(AudioEvent.stageClear);
       _syncSession();
+      _sessionDirty = false;
+      _flushSession();
       return;
     }
 
