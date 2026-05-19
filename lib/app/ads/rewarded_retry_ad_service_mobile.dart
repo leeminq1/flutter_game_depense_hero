@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'mobile_ads_initializer.dart';
 import 'rewarded_retry_ad_service.dart';
 
 const String _androidTestInterstitialAdUnitId =
@@ -30,7 +31,7 @@ class MobileRewardedRetryAdService implements RewardedRetryAdService {
     if (!_isSupportedPlatform || _isInitialized) {
       return;
     }
-    await MobileAds.instance.initialize();
+    await ensureMobileAdsInitialized();
     _isInitialized = true;
     await preload();
   }

@@ -663,6 +663,13 @@ void main() {
       game.debugEnemyKindCanDamageTowersOnContact(EnemyKind.bastionOverlord),
       isTrue,
     );
+    expect(
+      game.debugEnemyKindCanDamageTowersOnContact(
+        EnemyKind.bastionOverlord,
+        hasActiveBreachTarget: true,
+      ),
+      isFalse,
+    );
   });
 
   test('bosses deal two citadel hp on leak instead of one', () {

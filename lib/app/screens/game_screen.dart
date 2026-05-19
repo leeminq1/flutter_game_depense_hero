@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:depense_game/app/ads/result_banner_ad_service.dart';
 import 'package:depense_game/app/ads/rewarded_retry_ad_service.dart';
 import 'package:depense_game/app/ads/rewarded_retry_bonus_tracker.dart';
 import 'package:depense_game/app/bootstrap/app_bootstrap.dart';
@@ -62,6 +63,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       RewardedRetryBonusTracker();
   bool _isShowingRewardedRetryAd = false;
   String? _rewardedRetryStatusText;
+  Future<void>? _terminalResultPreparation;
+  ResultBannerAdHandle? _resultBannerAd;
+  bool _resultOverlayReady = false;
+  int _resultPreparationGeneration = 0;
 
   @override
   void initState() {
@@ -78,8 +83,21 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _hintTimer?.cancel();
     _towerActionBarTimer?.cancel();
+    _disposeResultBannerAd();
     _sessionController.removeListener(_handleSessionChanged);
     super.dispose();
+  }
+
+  void _disposeResultBannerAd() {
+    _resultBannerAd?.dispose();
+    _resultBannerAd = null;
+  }
+
+  void _resetTerminalResultUi() {
+    _resultPreparationGeneration += 1;
+    _terminalResultPreparation = null;
+    _resultOverlayReady = false;
+    _disposeResultBannerAd();
   }
 
   @override
@@ -152,6 +170,20 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     _hintTimer?.cancel();
     _towerActionBarTimer?.cancel();
+    _resetTerminalResultUi();
+    _sessionController.hydrate(
+      stageNumber: stage.number,
+      totalStages: CampaignData.totalStages,
+      stageTitle: stage.title,
+      totalWaves: stage.cycleCount,
+      coins:
+          stage.startingCoins +
+          resolvedMeta.bonusStartingCoins +
+          rewardedRetryStartingCoinBonus,
+      baseHealth: stage.citadelHitPoints,
+      actNumber: stage.actNumber ?? (((stage.number - 1) ~/ 5) + 1),
+      loopLabel: 'WAVE',
+    );
     setState(() {
       _isBackgroundPaused = false;
       _activeMetaUpgrades = resolvedMeta;
@@ -355,7 +387,56 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _handleTransientHud();
 
     if (_sessionController.stageCleared || _sessionController.stageFailed) {
-      await _recordTerminalProgressIfNeeded();
+      await _prepareTerminalResultIfNeeded();
+    }
+  }
+
+  Future<void> _prepareTerminalResultIfNeeded() {
+    if (!_sessionController.stageCleared && !_sessionController.stageFailed) {
+      return Future.value();
+    }
+    final existingPreparation = _terminalResultPreparation;
+    if (existingPreparation != null) {
+      return existingPreparation;
+    }
+
+    final generation = _resultPreparationGeneration;
+    final preparation =
+        Future.wait([
+          _recordTerminalProgressIfNeeded(),
+          _loadResultBannerAdWithTimeout(generation),
+        ]).then((_) {
+          if (!mounted || generation != _resultPreparationGeneration) {
+            return;
+          }
+          if (_completionResult == null) {
+            return;
+          }
+          setState(() => _resultOverlayReady = true);
+        });
+
+    _terminalResultPreparation = preparation;
+    preparation.whenComplete(() {
+      if (identical(_terminalResultPreparation, preparation)) {
+        _terminalResultPreparation = null;
+      }
+    });
+    return preparation;
+  }
+
+  Future<void> _loadResultBannerAdWithTimeout(int generation) async {
+    _disposeResultBannerAd();
+    try {
+      final handle = await widget.bootstrap.resultBannerAdService
+          .load()
+          .timeout(const Duration(seconds: 5), onTimeout: () => null);
+      if (!mounted || generation != _resultPreparationGeneration) {
+        handle?.dispose();
+        return;
+      }
+      _resultBannerAd = handle;
+    } catch (error) {
+      debugPrint('Failed to load result banner ad: $error');
     }
   }
 
@@ -415,6 +496,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
       setState(() {
         _completionResult = result;
+        _isEvaluating = false;
       });
       return result;
     } catch (error) {
@@ -505,6 +587,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       return;
     }
     _rewardedRetryBonusTracker.reset();
+    _resetTerminalResultUi();
     widget.onExitToCamp();
   }
 
@@ -691,21 +774,26 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                     ),
                   if (session.stageCleared || session.stageFailed)
                     Positioned.fill(
-                      child: _ResultOverlay(
-                        sessionController: session,
-                        completionResult: _completionResult,
-                        immediateStarsAwarded: _immediateStarsAwarded,
-                        stage: currentStage,
-                        hasNextStage: _stageNumber < CampaignData.totalStages,
-                        isSavingProgress:
-                            _isEvaluating && _completionResult == null,
-                        onRetry: _retryStageFromResult,
-                        onRewardedRetry: _retryStageWithRewardedAd,
-                        onNextStage: _goToNextStageFromResult,
-                        onReturnToCamp: _returnToCampFromResult,
-                        isShowingRewardedRetryAd: _isShowingRewardedRetryAd,
-                        rewardedRetryStatusText: _rewardedRetryStatusText,
-                      ),
+                      child: _resultOverlayReady
+                          ? _ResultOverlay(
+                              sessionController: session,
+                              completionResult: _completionResult,
+                              immediateStarsAwarded: _immediateStarsAwarded,
+                              stage: currentStage,
+                              hasNextStage:
+                                  _stageNumber < CampaignData.totalStages,
+                              isSavingProgress:
+                                  _isEvaluating && _completionResult == null,
+                              onRetry: _retryStageFromResult,
+                              onRewardedRetry: _retryStageWithRewardedAd,
+                              onNextStage: _goToNextStageFromResult,
+                              onReturnToCamp: _returnToCampFromResult,
+                              isShowingRewardedRetryAd:
+                                  _isShowingRewardedRetryAd,
+                              rewardedRetryStatusText: _rewardedRetryStatusText,
+                              resultBannerAd: _resultBannerAd,
+                            )
+                          : const _ResultRecordingOverlay(),
                     ),
                 ],
               );
@@ -3275,6 +3363,47 @@ class _PanelActionButton extends StatelessWidget {
   }
 }
 
+class _ResultRecordingOverlay extends StatelessWidget {
+  const _ResultRecordingOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black54,
+      alignment: Alignment.center,
+      child: Container(
+        width: 300,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161D26),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 34,
+              height: 34,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+            SizedBox(height: 18),
+            Text(
+              '게임 결과를 기록하는 중...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ResultOverlay extends StatelessWidget {
   const _ResultOverlay({
     required this.sessionController,
@@ -3289,6 +3418,7 @@ class _ResultOverlay extends StatelessWidget {
     required this.onReturnToCamp,
     required this.isShowingRewardedRetryAd,
     required this.rewardedRetryStatusText,
+    required this.resultBannerAd,
   });
 
   final GameSessionController sessionController;
@@ -3303,6 +3433,7 @@ class _ResultOverlay extends StatelessWidget {
   final VoidCallback onReturnToCamp;
   final bool isShowingRewardedRetryAd;
   final String? rewardedRetryStatusText;
+  final ResultBannerAdHandle? resultBannerAd;
 
   @override
   Widget build(BuildContext context) {
@@ -3312,8 +3443,8 @@ class _ResultOverlay extends StatelessWidget {
       color: Colors.black54,
       alignment: Alignment.center,
       child: Container(
-        width: 320,
-        padding: const EdgeInsets.all(24),
+        width: 352,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         decoration: BoxDecoration(
           color: const Color(0xFF161D26),
           borderRadius: BorderRadius.circular(24),
@@ -3322,6 +3453,12 @@ class _ResultOverlay extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            SizedBox(
+              width: 320,
+              height: 50,
+              child: resultBannerAd?.buildWidget() ?? const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 18),
             Icon(
               cleared ? Icons.emoji_events_rounded : Icons.cancel_rounded,
               size: 64,
@@ -3445,7 +3582,7 @@ class _ResultOverlay extends StatelessWidget {
 String _failureHintForStage(int stageNumber) {
   return switch (stageNumber) {
     1 => '성벽으로 북쪽 적을 늦추고 궁수 사거리 안에서 처리하세요.',
-    2 => '한쪽에만 몰아짓지 말고 북쪽과 동쪽 타워 사거리를 겹치세요.',
+    2 => '한쪽에만 몰아짓지 말고 북쪽과 동쪽\n타워 사거리를 겹치세요.',
     3 => '영웅 방어 위치를 성벽 뒤로 옮기고 장갑 적에는 마법 화력을 준비하세요.',
     4 => '선택한 설계 카드의 작전 방향에 맞춰 성벽과 타워를 다시 배치하세요.',
     5 => '성벽, 타워 조합, 영웅 방어 위치를 모두 나눠 준비하세요.',

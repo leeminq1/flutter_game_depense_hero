@@ -2215,18 +2215,27 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   @visibleForTesting
-  bool debugEnemyKindCanDamageTowersOnContact(EnemyKind kind) {
-    return EnemyDefinition(
-          kind: kind,
-          label: kind.name,
-          specialDescription: '',
-          hitPoints: 1,
-          speed: 1,
-          rewardCoins: 0,
-          citadelDamage: 1,
-          color: const Color(0xFFFFFFFF),
-        ).baseTowerContactDamage >
-        0;
+  bool debugEnemyKindCanDamageTowersOnContact(
+    EnemyKind kind, {
+    bool hasActiveBreachTarget = false,
+  }) {
+    final enemy = _Enemy.fromDefinition(
+      EnemyDefinition(
+        kind: kind,
+        label: kind.name,
+        specialDescription: '',
+        hitPoints: 1,
+        speed: 1,
+        rewardCoins: 0,
+        citadelDamage: 1,
+        color: const Color(0xFFFFFFFF),
+      ),
+      spawnDirection: SpawnDirection.north,
+    );
+    if (hasActiveBreachTarget) {
+      enemy.breachTargetCell = (0, 0);
+    }
+    return _shouldApplyEnemyTowerContactDamage(enemy);
   }
 
   @visibleForTesting
@@ -2584,6 +2593,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         continue;
       }
 
+      if (_shouldApplyEnemyTowerContactDamage(enemy)) {
+        _applyEnemyTowerContactDamage(enemy);
+      }
+
       final path = _pathForEnemy(enemy);
       if (path.length < 2) {
         if (!_updateEnemyBreachAttack(enemy, dt)) {
@@ -2646,9 +2659,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (heroAttackSlow > 0) {
       return heroAttackSlow;
     }
-    return _canEnemyDamageTowersOnContact(enemy)
-        ? _applyEnemyTowerContactDamage(enemy)
-        : 0;
+    return 0;
+  }
+
+  bool _shouldApplyEnemyTowerContactDamage(_Enemy enemy) {
+    return _canEnemyDamageTowersOnContact(enemy) &&
+        enemy.breachTargetCell == null;
   }
 
   void _updateTowers(double dt) {
