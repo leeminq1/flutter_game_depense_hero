@@ -14,7 +14,7 @@
 
 ## 현재 테스트 빌드
 
-- 버전: `1.0.19+20`
+- 버전: `1.0.21+22`
 - 패키지: `com.min21.pixelguardwave`
 - AAB: `build/app/outputs/bundle/release/app-release.aab`
 - 전체 Stage 해금 디버그: 켜짐
@@ -39,3 +39,10 @@
 - Raised bombardment minimum odds to 50% from Stage 2 onward. Stage 15+
   now rolls a second late-wave bombardment on the opposite wave, scaling from
   28% to 40%.
+# 2026-05-20 Balance Implementation Note
+
+- Implemented capped linear normal-wave pressure normalization across Stage 1~30.
+- Wave 1 targets about 90% of prior pressure; final Wave targets 130%; middle
+  Waves interpolate linearly.
+- Gold rewards, spawn timing, enemy counts, citadel leak damage, and Stage Event
+  boss stats stay unchanged.

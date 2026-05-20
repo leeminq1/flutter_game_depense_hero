@@ -53,3 +53,13 @@
 - Stage 22 이후 성채 군주가 타워 접촉 110으로도 과하게 방어선을 지우지 않는지.
 - Stage 20 이후 기본 Lv3 + 성벽 1.75x가 후반을 너무 쉽게 만들지 않는지.
 - 빙결 사거리 6이 마법사와 같은 영역을 차지해도 타워 선택이 단조롭지 않은지.
+# 2026-05-20 Wave Pressure Rebalance Note
+
+- Normal Stage waves now use a generated pressure index: HP budget 60%, wall
+  damage 25%, tower contact damage 15%, with old Stage 1 Wave 1 as 100.
+- Each Stage normalizes Wave 1 to about 90% of its former pressure and the
+  final Wave to 130%; middle Waves are linearly interpolated.
+- Enemy counts, spawn timing, kill rewards, recovery gold, citadel leak damage,
+  and Stage Event boss stats are intentionally unchanged.
+- The generated snapshot includes `Wave Pressure Index` so future balance passes
+  can compare Stage-to-Stage pressure without re-running an ad hoc script.
