@@ -2,7 +2,7 @@
 
 앱 이름: `PIXEL GUARD:WAVE`  
 패키지 이름: `com.min21.pixelguardwave`  
-현재 버전: `1.0.19+20`  
+현재 버전: `1.0.21+22`
 기본 언어: `한국어 - ko-KR`  
 트랙: `비공개 테스트`
 
@@ -19,7 +19,7 @@
 
 - Android App Bundle 경로:
   `build/app/outputs/bundle/release/app-release.aab`
-- `pubspec.yaml` 버전: `1.0.19+20`
+- `pubspec.yaml` 버전: `1.0.21+22`
 - `google_mobile_ads`가 포함되어 있고, Android main manifest에 `AD_ID` 권한과 AdMob
   application id meta-data가 있다.
 - 진행도, 설정, 업그레이드, 보상 기록은 기기 내부 로컬 저장소에 저장된다.

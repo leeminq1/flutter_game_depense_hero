@@ -18,6 +18,9 @@ class CampaignData {
   static const int _standardContactDamageBonus = 1;
   static const int _weakContactDamageBonus = 2;
   static const double _structureDamageBalanceMultiplier = 0.7;
+  static const int _pressureBaselineHitPoints = 389;
+  static const int _pressureBaselineStructureDamage = 96;
+  static const int _pressureBaselineTowerContactDamage = 104;
 
   static StageDefinition stage(int number) {
     final safeStage = number.clamp(1, totalStages);
@@ -995,6 +998,119 @@ class CampaignData {
     return math.max(
       1,
       ((balancedDamage + 0.499) / _structureDamageBalanceMultiplier).floor(),
+    );
+  }
+
+  static double _normalWavePressureIndex(
+    List<FrontSpawnGroupDefinition> groups,
+  ) {
+    var hitPoints = 0;
+    var structureDamage = 0;
+    var towerContactDamage = 0;
+    for (final group in groups) {
+      hitPoints += group.enemy.hitPoints * group.count;
+      structureDamage += group.enemy.baseStructureDamage * group.count;
+      towerContactDamage += group.enemy.baseTowerContactDamage * group.count;
+    }
+    return (hitPoints / _pressureBaselineHitPoints) * 60 +
+        (structureDamage / _pressureBaselineStructureDamage) * 25 +
+        (towerContactDamage / _pressureBaselineTowerContactDamage) * 15;
+  }
+
+  static List<AssaultCycleDefinition> _normalizeNormalWavePressure(
+    List<AssaultCycleDefinition> cycles,
+  ) {
+    if (cycles.length < 2) {
+      return cycles;
+    }
+
+    final currentPressures = [
+      for (final cycle in cycles) _normalWavePressureIndex(cycle.groups),
+    ];
+    final firstTarget = currentPressures.first * 0.90;
+    final finalTarget = currentPressures.last * 1.30;
+    final step = (finalTarget - firstTarget) / (cycles.length - 1);
+
+    return [
+      for (var index = 0; index < cycles.length; index += 1)
+        _scaleAssaultCyclePressure(
+          cycles[index],
+          (firstTarget + (step * index)) / currentPressures[index],
+        ),
+    ];
+  }
+
+  static AssaultCycleDefinition _scaleAssaultCyclePressure(
+    AssaultCycleDefinition cycle,
+    double scale,
+  ) {
+    return AssaultCycleDefinition(
+      number: cycle.number,
+      activeFronts: cycle.activeFronts,
+      groups: [
+        for (final group in cycle.groups) _scaleFrontSpawnGroup(group, scale),
+      ],
+      recoverySeconds: cycle.recoverySeconds,
+      recoveryGoldBonus: cycle.recoveryGoldBonus,
+      isFinalBreach: cycle.isFinalBreach,
+      activeRouteIds: cycle.activeRouteIds,
+      variants: [
+        for (final variant in cycle.variants)
+          WaveVariantDefinition(
+            id: variant.id,
+            label: variant.label,
+            threatTags: variant.threatTags,
+            groups: [
+              for (final group in variant.groups)
+                _scaleFrontSpawnGroup(group, scale),
+            ],
+          ),
+      ],
+    );
+  }
+
+  static FrontSpawnGroupDefinition _scaleFrontSpawnGroup(
+    FrontSpawnGroupDefinition group,
+    double scale,
+  ) {
+    return FrontSpawnGroupDefinition(
+      front: group.front,
+      enemy: _scaleEnemyPressure(group.enemy, scale),
+      count: group.count,
+      spawnInterval: group.spawnInterval,
+      routeId: group.routeId,
+    );
+  }
+
+  static EnemyDefinition _scaleEnemyPressure(
+    EnemyDefinition enemy,
+    double scale,
+  ) {
+    final hitPoints = math.max(1, (enemy.hitPoints * scale).round());
+    final structureDamage = math.max(
+      1,
+      (enemy.baseStructureDamage * scale).round(),
+    );
+    final towerContactDamage = math.max(
+      1,
+      (enemy.baseTowerContactDamage * scale).round(),
+    );
+    return EnemyDefinition(
+      kind: enemy.kind,
+      label: enemy.label,
+      specialDescription: enemy.specialDescription,
+      hitPoints: hitPoints,
+      speed: enemy.speed,
+      rewardCoins: enemy.rewardCoins,
+      citadelDamage: enemy.citadelDamage,
+      color: enemy.color,
+      structureDamage: _rawStructureDamageForBalancedDamage(structureDamage),
+      towerContactDamage: towerContactDamage,
+      citadelLeakDamage: enemy.citadelLeakDamage,
+      structureAttackCooldown: enemy.structureAttackCooldown,
+      canBreachWalls: enemy.canBreachWalls,
+      wallBehavior: enemy.wallBehavior,
+      wallBreakChance: enemy.wallBreakChance,
     );
   }
 
@@ -3886,7 +4002,7 @@ class CampaignData {
   ) {
     final activeRouteIds = _routeIdsForStage(stageNumber, citadelCell);
     if (stageNumber <= 5) {
-      return [
+      return _normalizeNormalWavePressure([
         for (final cycle in _earlyFortressAssaultCycles(stageNumber))
           AssaultCycleDefinition(
             number: cycle.number,
@@ -3901,9 +4017,9 @@ class CampaignData {
             activeRouteIds: activeRouteIds,
             variants: cycle.variants,
           ),
-      ];
+      ]);
     }
-    return [
+    return _normalizeNormalWavePressure([
       for (final cycle in source)
         AssaultCycleDefinition(
           number: cycle.number,
@@ -3925,7 +4041,7 @@ class CampaignData {
           activeRouteIds: activeRouteIds,
           variants: cycle.variants,
         ),
-    ];
+    ]);
   }
 
   static List<AssaultCycleDefinition> _earlyFortressAssaultCycles(

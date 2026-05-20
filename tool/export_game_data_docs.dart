@@ -67,6 +67,37 @@ void main() {
 
     buffer
       ..writeln()
+      ..writeln('## Wave Pressure Index')
+      ..writeln()
+      ..writeln(
+        'Pressure uses the pre-rebalance Stage 1 Wave 1 budget as 100: '
+        'HP 60%, wall damage 25%, tower contact damage 15%.',
+      )
+      ..writeln()
+      ..writeln('| Stage | Wave Pressure | Wave Gold Gain | Enemy Counts |')
+      ..writeln('| ---: | --- | --- | --- |');
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
+      final stage = CampaignData.stage(stageNumber);
+      final pressures = [
+        for (final cycle in stage.assaultCycles)
+          _pressureIndex(cycle.groups).round(),
+      ].join(' / ');
+      final gains = [
+        for (final cycle in stage.assaultCycles) _waveGoldGain(cycle),
+      ].join(' / ');
+      final counts = [
+        for (final cycle in stage.assaultCycles)
+          cycle.groups.fold<int>(0, (sum, group) => sum + group.count),
+      ].join(' / ');
+      buffer.writeln('| $stageNumber | $pressures | $gains | $counts |');
+    }
+
+    buffer
+      ..writeln()
       ..writeln('## Buildables')
       ..writeln()
       ..writeln('### Towers')
@@ -264,6 +295,34 @@ String _escape(String value) {
   return value.replaceAll('|', '\\|').replaceAll('\n', ' ');
 }
 
+double _pressureIndex(List<FrontSpawnGroupDefinition> groups) {
+  const baseline = _PressureBudget(389, 96, 104);
+  final budget = _pressureBudget(groups);
+  return (budget.hitPoints / baseline.hitPoints) * 60 +
+      (budget.structureDamage / baseline.structureDamage) * 25 +
+      (budget.towerContactDamage / baseline.towerContactDamage) * 15;
+}
+
+_PressureBudget _pressureBudget(List<FrontSpawnGroupDefinition> groups) {
+  var hitPoints = 0;
+  var structureDamage = 0;
+  var towerContactDamage = 0;
+  for (final group in groups) {
+    hitPoints += group.enemy.hitPoints * group.count;
+    structureDamage += group.enemy.baseStructureDamage * group.count;
+    towerContactDamage += group.enemy.baseTowerContactDamage * group.count;
+  }
+  return _PressureBudget(hitPoints, structureDamage, towerContactDamage);
+}
+
+int _waveGoldGain(AssaultCycleDefinition cycle) {
+  final killGold = cycle.groups.fold<int>(
+    0,
+    (sum, group) => sum + (group.enemy.rewardCoins * group.count),
+  );
+  return killGold + cycle.recoveryGoldBonus;
+}
+
 String _special(EnemyKind kind) {
   final enemy = CampaignData.enemyForKind(
     kind,
@@ -271,4 +330,16 @@ String _special(EnemyKind kind) {
     intensity: 1.0,
   );
   return enemy.specialDescription;
+}
+
+class _PressureBudget {
+  const _PressureBudget(
+    this.hitPoints,
+    this.structureDamage,
+    this.towerContactDamage,
+  );
+
+  final int hitPoints;
+  final int structureDamage;
+  final int towerContactDamage;
 }

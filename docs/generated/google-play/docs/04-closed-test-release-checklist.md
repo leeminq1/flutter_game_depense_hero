@@ -5,7 +5,7 @@
 ```text
 App name: PIXEL GUARD:WAVE
 Package name: com.min21.pixelguardwave
-Version: 1.0.19+20
+Version: 1.0.21+22
 Default language: Korean - ko-KR
 App or game: Game
 Free or paid: Free
