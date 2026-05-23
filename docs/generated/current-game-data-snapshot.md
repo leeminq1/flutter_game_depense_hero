@@ -85,8 +85,8 @@ Pressure uses the pre-rebalance Stage 1 Wave 1 budget as 100: HP 60%, wall damag
 | `mageObelisk` | 마법사 | 65 | 6.0 | 17.5 | 1.25 | 기본 해금 | 스톰(storm), 룬(rune) |
 | `frostShrine` | 빙결 | 55 | 6.0 | 3.5 | 1.05 | 기본 해금 | 글레이셔(glacier), 샤터(shatter) |
 | `coinMill` | 금화 방앗간 | 65 | 0.0 | 0.0 | 0.0 | 기본 해금 | 민트(mint), 트리뷰트(tribute) |
-| `ballista` | 발리스타 | 85 | 8.0 | 13.5 | 1.75 | 요새 훈련 2단계에서 해금됩니다. | 시즈(siege), 하푼(harpoon) |
-| `emberkeep` | 엠버킵 | 80 | 6.0 | 9.5 | 1.35 | 비전 훈련 2단계에서 해금됩니다. | 인페르노(inferno), 신더(cinder) |
+| `ballista` | 발리스타 | 85 | 8.0 | 13.5 | 1.75 | 기본 해금 | 시즈(siege), 하푼(harpoon) |
+| `emberkeep` | 엠버킵 | 80 | 6.0 | 9.5 | 1.35 | 기본 해금 | 인페르노(inferno), 신더(cinder) |
 
 ### Barriers
 
@@ -172,8 +172,8 @@ Values use `CampaignData.enemyForKind(kind, intensity: 1.0)`.
 | --- | --- | ---: | ---: | --- | --- | --- |
 | `stronghold` | Stronghold Masonry | 5 | 90 | 1.0, 1.35, 1.8, 2.45, 3.2 | - | Base HP +10 |
 | `supply_cache` | Supply Cache | 5 | 85 | 1.0, 1.32, 1.75, 2.35, 3.05 | - | Starting Coins +125 |
-| `bow_mastery` | Bow Mastery | 5 | 100 | 1.0, 1.34, 1.9, 2.6, 3.45 | Ballista unlocked at level 2. | Archer Damage +60% - Hero Mark +5% • Ballista unlocked |
+| `bow_mastery` | Bow Mastery | 5 | 100 | 1.0, 1.34, 1.9, 2.6, 3.45 | Ballista scaling improves at level 2. | Archer/Ballista Damage +60% - Hero Mark +5% |
 | `guard_drill` | Guard Drill | 5 | 100 | 1.0, 1.3, 1.82, 2.45, 3.2 | Stronger defender line at level 2 pacing. | Barracks Damage +60% - Hero Guard +25% |
-| `arcane_mastery` | Arcane Mastery | 5 | 110 | 1.0, 1.34, 1.88, 2.58, 3.42 | Emberkeep unlocked at level 2. | Mage Damage +50% - Hero Mage +30% • Emberkeep unlocked |
+| `arcane_mastery` | Arcane Mastery | 5 | 110 | 1.0, 1.34, 1.88, 2.58, 3.42 | Emberkeep scaling improves at level 2. | Mage/Emberkeep Damage +50% - Hero Mage +30% |
 | `frost_focus` | Frost Focus | 5 | 100 | 1.0, 1.3, 1.8, 2.4, 3.18 | Slows become noticeably stronger at level 2. | Slow +30% - Ninja Execute +5% |
 | `commerce_guild` | Commerce Guild | 5 | 108 | 1.0, 1.28, 1.72, 2.28, 3.0 | Coin Mill economy spikes harder from level 2 onward. | Coin Mill Income +5 • Stage Rewards +40% |

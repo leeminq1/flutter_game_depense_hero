@@ -682,6 +682,41 @@ void main() {
     );
   });
 
+  test('late tower cards are unlocked for playtest builds', () {
+    const meta = ResolvedMetaUpgrades();
+
+    expect(TowerCatalog.isUnlocked(TowerKind.ballista, meta), isTrue);
+    expect(TowerCatalog.isUnlocked(TowerKind.emberkeep, meta), isTrue);
+  });
+
+  test('enemy pass-through contact damages every tower it crosses', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+    game.onGameResize(Vector2(728, 728));
+
+    game.debugAddTowerForContactTest(TowerKind.archer, Vector2(100, 100));
+    game.debugAddTowerForContactTest(TowerKind.mageObelisk, Vector2(145, 100));
+    game.debugAddTowerForContactTest(TowerKind.frostShrine, Vector2(260, 100));
+
+    final before = game.debugTowerHitPoints();
+    final totalDamage = game.debugApplyEnemyTowerContactDamageForTest(
+      EnemyKind.raider,
+      from: Vector2(60, 100),
+      to: Vector2(185, 100),
+    );
+    final after = game.debugTowerHitPoints();
+
+    expect(totalDamage, greaterThan(0));
+    expect(after[0], lessThan(before[0]));
+    expect(after[1], lessThan(before[1]));
+    expect(after[2], before[2]);
+  });
+
   test('bosses deal two citadel hp on leak instead of one', () {
     final game = DefensePrototypeGame(
       stage: CampaignData.stage(4),

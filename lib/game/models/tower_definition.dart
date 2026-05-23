@@ -65,9 +65,7 @@ class TowerDefinition {
   bool isUnlocked(ResolvedMetaUpgrades metaUpgrades) {
     switch (kind) {
       case TowerKind.ballista:
-        return metaUpgrades.ballistaUnlocked;
       case TowerKind.emberkeep:
-        return metaUpgrades.emberkeepUnlocked;
       case TowerKind.archer:
       case TowerKind.guardBarracks:
       case TowerKind.mageObelisk:
@@ -232,7 +230,6 @@ class TowerCatalog {
           description: '고정 시간이 길어지고 연속 제어가 좋아집니다.',
         ),
       ],
-      unlockHint: '요새 훈련 2단계에서 해금됩니다.',
     ),
     TowerDefinition(
       kind: TowerKind.emberkeep,
@@ -258,7 +255,6 @@ class TowerCatalog {
           description: '화상 지속시간이 길어지고 구역 억제가 강해집니다.',
         ),
       ],
-      unlockHint: '비전 훈련 2단계에서 해금됩니다.',
     ),
   ];
 

@@ -129,6 +129,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   double _selectedTowerOverlayTimer = 0;
   int _lastRecoveryReportedSecond = -1;
   int _towersBuilt = 0;
+  int _nextTowerContactId = 0;
   bool _heroSummonedThisStage = false;
   bool _autoHeroPlaced = false;
   bool _heroReviveUsed = false;
@@ -1236,6 +1237,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final tower = _TowerPlacement(
       definition: definition,
       position: snapTarget.clone(),
+      contactId: _nextTowerContactId++,
       initialLevel: initialLevel,
       totalSpent: buildCost,
     )..economyIncomeBonus = metaUpgrades.coinMillIncomeBonus;
@@ -1532,6 +1534,17 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   bool _isFiniteVector(Vector2 value) {
     return value.x.isFinite && value.y.isFinite;
+  }
+
+  double _distancePointToSegment(Vector2 point, Vector2 start, Vector2 end) {
+    final segment = end - start;
+    final lengthSquared = segment.length2;
+    if (lengthSquared <= 0.0001) {
+      return point.distanceTo(end);
+    }
+    final t = ((point - start).dot(segment) / lengthSquared).clamp(0.0, 1.0);
+    final projection = start + segment * t;
+    return point.distanceTo(projection);
   }
 
   void _combatLog(String event, String details) {
@@ -2251,6 +2264,37 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   @visibleForTesting
+  int debugAddTowerForContactTest(TowerKind kind, Vector2 position) {
+    final definition = TowerCatalog.byKind(kind);
+    _towers.add(
+      _TowerPlacement(
+        definition: definition,
+        position: position.clone(),
+        contactId: _nextTowerContactId++,
+      ),
+    );
+    return _towers.length - 1;
+  }
+
+  @visibleForTesting
+  List<double> debugTowerHitPoints() {
+    return [for (final tower in _towers) tower.hitPoints];
+  }
+
+  @visibleForTesting
+  double debugApplyEnemyTowerContactDamageForTest(
+    EnemyKind kind, {
+    required Vector2 from,
+    required Vector2 to,
+  }) {
+    final enemy = _Enemy.fromDefinition(
+      CampaignData.enemyForKind(kind, stageNumber: stage.number, intensity: 1),
+      spawnDirection: SpawnDirection.north,
+    )..position.setFrom(to);
+    return _applyEnemyTowerContactDamage(enemy, from: from);
+  }
+
+  @visibleForTesting
   double debugPhysicalDamageMultiplierForEnemyKind(
     EnemyKind kind, {
     bool stageEvent = false,
@@ -2637,10 +2681,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         continue;
       }
 
-      if (_shouldApplyEnemyTowerContactDamage(enemy)) {
-        _applyEnemyTowerContactDamage(enemy);
-      }
-
       final path = _pathForEnemy(enemy);
       if (path.length < 2) {
         if (!_updateEnemyBreachAttack(enemy, dt)) {
@@ -2650,12 +2690,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         }
         continue;
       }
+      final previousPosition = enemy.position.clone();
       enemy.advance(path, dt, _citadelCenter);
       if (!_isFiniteVector(enemy.position)) {
         _logEnemyEvent('REMOVE_NON_FINITE_AFTER_ADVANCE', enemy);
         _consumeRemainingEnemy('non_finite_after_advance');
         _enemies.removeAt(index);
         continue;
+      }
+      if (_shouldApplyEnemyTowerContactDamage(enemy)) {
+        _applyEnemyTowerContactDamage(enemy, from: previousPosition);
       }
       _logCitadelTouchIfBlocked(enemy);
       if (!enemy.reachedGoal && _shouldResolveEnemyLeak(enemy)) {
@@ -2738,65 +2782,78 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  double _applyEnemyTowerContactDamage(_Enemy enemy) {
-    if (enemy.towerAttackCooldown > 0 || _towers.isEmpty) {
+  double _applyEnemyTowerContactDamage(_Enemy enemy, {Vector2? from}) {
+    if (_towers.isEmpty) {
       return 0;
     }
 
-    var targetIndex = -1;
-    var bestDistance = _tileSize * 0.92;
-    for (var i = 0; i < _towers.length; i += 1) {
-      final distance = _towers[i].position.distanceTo(enemy.position);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        targetIndex = i;
+    final contactStart = from ?? enemy.position;
+    final contactEnd = enemy.position;
+    final contactRadius = _tileSize * 0.92;
+    var totalDamage = 0.0;
+    var hitAnyTower = false;
+    for (
+      var targetIndex = _towers.length - 1;
+      targetIndex >= 0;
+      targetIndex -= 1
+    ) {
+      final tower = _towers[targetIndex];
+      if ((enemy.towerContactCooldowns[tower.contactId] ?? 0) > 0) {
+        continue;
       }
-    }
-    if (targetIndex < 0) {
-      return 0;
-    }
-
-    final tower = _towers[targetIndex];
-    final damage =
-        enemy.definition.baseTowerContactDamage *
-        _towerProtectionMultiplier(tower.position);
-    final hitPointsBefore = tower.hitPoints;
-    tower.hitPoints -= damage;
-    _logEnemyEvent(
-      'HIT_TOWER_PASS_THROUGH',
-      enemy,
-      'tower=${tower.definition.kind.name} towerIndex=$targetIndex '
-          'damage=${damage.toStringAsFixed(1)} '
-          'towerHp=${hitPointsBefore.toStringAsFixed(1)}->${tower.hitPoints.toStringAsFixed(1)}',
-    );
-    _spawnFloatingText(
-      tower.position + Vector2(0, -22),
-      '-${damage.round()}',
-      const Color(0xFFFF8A65),
-      lifetime: 0.48,
-    );
-    enemy.towerAttackCooldown = 1.1;
-    _spawnImpact(tower.position, const Color(0xAAFF6A4C), 14, 0.14);
-    audioService.play(AudioEvent.armorHit);
-
-    if (tower.hitPoints <= 0) {
-      _logEnemyEvent(
-        'DESTROY_TOWER',
-        enemy,
-        'tower=${tower.definition.kind.name} towerIndex=$targetIndex',
+      final distance = _distancePointToSegment(
+        tower.position,
+        contactStart,
+        contactEnd,
       );
-      _spawnImpact(tower.position, const Color(0xAAFFB15A), 30, 0.28);
-      _towers.removeAt(targetIndex);
-      if (_selectedTowerIndex == targetIndex) {
-        _clearSelectedTowerSelection();
-      } else if (_selectedTowerIndex != null &&
-          _selectedTowerIndex! > targetIndex) {
-        _selectedTowerIndex = _selectedTowerIndex! - 1;
+      if (distance > contactRadius) {
+        continue;
       }
-      _showStatus('몬스터가 타워를 파괴했습니다. 해당 칸에 다시 건설할 수 있습니다.');
+      final damage =
+          enemy.definition.baseTowerContactDamage *
+          _towerProtectionMultiplier(tower.position);
+      final hitPointsBefore = tower.hitPoints;
+      tower.hitPoints -= damage;
+      totalDamage += damage;
+      hitAnyTower = true;
+      enemy.towerContactCooldowns[tower.contactId] = 1.1;
+      _logEnemyEvent(
+        'HIT_TOWER_PASS_THROUGH',
+        enemy,
+        'tower=${tower.definition.kind.name} towerIndex=$targetIndex '
+            'damage=${damage.toStringAsFixed(1)} '
+            'towerHp=${hitPointsBefore.toStringAsFixed(1)}->${tower.hitPoints.toStringAsFixed(1)}',
+      );
+      _spawnFloatingText(
+        tower.position + Vector2(0, -22),
+        '-${damage.round()}',
+        const Color(0xFFFF8A65),
+        lifetime: 0.48,
+      );
+      _spawnImpact(tower.position, const Color(0xAAFF6A4C), 14, 0.14);
+
+      if (tower.hitPoints <= 0) {
+        _logEnemyEvent(
+          'DESTROY_TOWER',
+          enemy,
+          'tower=${tower.definition.kind.name} towerIndex=$targetIndex',
+        );
+        _spawnImpact(tower.position, const Color(0xAAFFB15A), 30, 0.28);
+        _towers.removeAt(targetIndex);
+        if (_selectedTowerIndex == targetIndex) {
+          _clearSelectedTowerSelection();
+        } else if (_selectedTowerIndex != null &&
+            _selectedTowerIndex! > targetIndex) {
+          _selectedTowerIndex = _selectedTowerIndex! - 1;
+        }
+        _showStatus('몬스터가 타워를 파괴했습니다. 해당 칸에 다시 건설할 수 있습니다.');
+      }
     }
 
-    return 0;
+    if (hitAnyTower) {
+      audioService.play(AudioEvent.armorHit);
+    }
+    return totalDamage;
   }
 
   double _applyEnemyHeroAttack(_Enemy enemy) {
@@ -7445,6 +7502,7 @@ class _TowerPlacement {
   _TowerPlacement({
     required this.definition,
     required this.position,
+    required this.contactId,
     this.initialLevel = 1,
     int? totalSpent,
   }) : level = initialLevel,
@@ -7453,6 +7511,7 @@ class _TowerPlacement {
 
   final TowerDefinition definition;
   final Vector2 position;
+  final int contactId;
   final int initialLevel;
   int level;
   int totalSpent;
@@ -7643,6 +7702,7 @@ class _Enemy {
   bool bossPhaseTwoTriggered = false;
   bool wasSlowedRecently = false;
   double towerAttackCooldown = 0;
+  final Map<int, double> towerContactCooldowns = <int, double>{};
   double towerAttackVisualTimer = 0;
   final Vector2 attackDirection = Vector2(0, 1);
   double visualScale = 1.0;
@@ -7733,6 +7793,20 @@ class _Enemy {
     }
     if (towerAttackCooldown > 0) {
       towerAttackCooldown -= dt;
+    }
+    if (towerContactCooldowns.isNotEmpty) {
+      final expiredTowerIds = <int>[];
+      for (final entry in towerContactCooldowns.entries.toList()) {
+        final remaining = entry.value - dt;
+        if (remaining <= 0) {
+          expiredTowerIds.add(entry.key);
+        } else {
+          towerContactCooldowns[entry.key] = remaining;
+        }
+      }
+      for (final towerId in expiredTowerIds) {
+        towerContactCooldowns.remove(towerId);
+      }
     }
     if (towerAttackVisualTimer > 0) {
       towerAttackVisualTimer -= dt;
