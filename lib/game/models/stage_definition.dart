@@ -127,10 +127,18 @@ class StageEvaluationResult {
   const StageEvaluationResult({
     required this.starsAwarded,
     required this.objectiveResults,
+    this.baseHealthStars = 0,
+    this.goldStars = 0,
+    this.remainingGold = 0,
+    this.goldStarsThreeThreshold = 50,
   });
 
   final int starsAwarded;
   final List<StageObjectiveResult> objectiveResults;
+  final int baseHealthStars;
+  final int goldStars;
+  final int remainingGold;
+  final int goldStarsThreeThreshold;
 }
 
 class StageEventDefinition {
@@ -668,15 +676,20 @@ class StageDefinition {
 
   StageEvaluationResult evaluateRun(StageRunSummary summary) {
     if (!summary.cleared) {
-      return const StageEvaluationResult(starsAwarded: 0, objectiveResults: []);
+      return StageEvaluationResult(
+        starsAwarded: 0,
+        objectiveResults: const [],
+        remainingGold: summary.remainingGold,
+      );
     }
 
+    const goldStarsThreeThreshold = 50;
     final hpStars = summary.baseHealthRemaining >= 3
         ? 3
         : summary.baseHealthRemaining >= 2
         ? 2
         : 1;
-    final goldStars = summary.remainingGold >= 50
+    final goldStars = summary.remainingGold >= goldStarsThreeThreshold
         ? 3
         : summary.remainingGold >= 30
         ? 2
@@ -686,6 +699,10 @@ class StageDefinition {
     return StageEvaluationResult(
       starsAwarded: stars,
       objectiveResults: const [],
+      baseHealthStars: hpStars,
+      goldStars: goldStars,
+      remainingGold: summary.remainingGold,
+      goldStarsThreeThreshold: goldStarsThreeThreshold,
     );
   }
 }

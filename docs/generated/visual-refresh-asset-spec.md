@@ -50,6 +50,17 @@ Acceptance:
   `docs/generated/barracks-defender-imagegen-sheet-20260511.png`, then
   chroma-keyed into the existing `48x48` defender filenames. Runtime defender
   draw sizes were reduced so summoned barracks units read smaller than towers.
+- The `2026-05-23` Ballista and Emberkeep refresh was produced with built-in
+  imagegen as a green chroma-key sprite sheet archived at
+  `docs/generated/ballista-emberkeep-imagegen-sheet-20260523.png`. The sheet
+  was locally chroma-keyed, cropped, and resized into the existing `64x64`
+  base, tier, and branch filenames. Lv4 continues to reuse the T3 visual
+  fallback while applying Lv4 combat stats at runtime. Inspection montage:
+  `output/ballista_emberkeep_refresh_montage.png`.
+  Prompt focus: top-down high-angle mobile fantasy tower defense sprites on a
+  solid green chroma-key background, 4x4 sheet, no text/UI, readable 64px
+  silhouettes, Ballista variants with long-range siege/harpoon silhouettes,
+  Emberkeep variants with contained brazier, inferno, and cinder-fire cues.
 
 ### Barrier Sprites
 

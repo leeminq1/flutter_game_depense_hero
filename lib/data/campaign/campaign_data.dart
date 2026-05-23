@@ -1018,8 +1018,9 @@ class CampaignData {
   }
 
   static List<AssaultCycleDefinition> _normalizeNormalWavePressure(
-    List<AssaultCycleDefinition> cycles,
-  ) {
+    List<AssaultCycleDefinition> cycles, {
+    int? stageNumber,
+  }) {
     if (cycles.length < 2) {
       return cycles;
     }
@@ -1027,6 +1028,19 @@ class CampaignData {
     final currentPressures = [
       for (final cycle in cycles) _normalWavePressureIndex(cycle.groups),
     ];
+    final pressureTargets = stageNumber == null
+        ? null
+        : _normalWavePressureTargetsForStage(stageNumber, cycles.length);
+    if (pressureTargets != null) {
+      return [
+        for (var index = 0; index < cycles.length; index += 1)
+          _scaleAssaultCyclePressure(
+            cycles[index],
+            pressureTargets[index] / currentPressures[index],
+          ),
+      ];
+    }
+
     final firstTarget = currentPressures.first * 0.90;
     final finalTarget = currentPressures.last * 1.30;
     final step = (finalTarget - firstTarget) / (cycles.length - 1);
@@ -1038,6 +1052,56 @@ class CampaignData {
           (firstTarget + (step * index)) / currentPressures[index],
         ),
     ];
+  }
+
+  static List<double>? _normalWavePressureTargetsForStage(
+    int stageNumber,
+    int cycleCount,
+  ) {
+    final targets = switch (stageNumber) {
+      18 => const [350.0, 490.0, 630.0, 770.0],
+      19 => const [365.0, 505.0, 645.0, 785.0],
+      _ => null,
+    };
+    return targets == null || targets.length != cycleCount ? null : targets;
+  }
+
+  static List<AssaultCycleDefinition> _applyStageWaveGoldTargets(
+    int stageNumber,
+    List<AssaultCycleDefinition> cycles,
+  ) {
+    final targets = switch (stageNumber) {
+      18 => const [166, 202, 238, 270],
+      19 => const [178, 211, 247, 274],
+      _ => null,
+    };
+    if (targets == null || targets.length != cycles.length) {
+      return cycles;
+    }
+    return [
+      for (var index = 0; index < cycles.length; index += 1)
+        _withWaveGoldTarget(cycles[index], targets[index]),
+    ];
+  }
+
+  static AssaultCycleDefinition _withWaveGoldTarget(
+    AssaultCycleDefinition cycle,
+    int targetGold,
+  ) {
+    final killGold = cycle.groups.fold<int>(
+      0,
+      (sum, group) => sum + (group.enemy.rewardCoins * group.count),
+    );
+    return AssaultCycleDefinition(
+      number: cycle.number,
+      activeFronts: cycle.activeFronts,
+      groups: cycle.groups,
+      recoverySeconds: cycle.recoverySeconds,
+      recoveryGoldBonus: math.max(0, targetGold - killGold),
+      isFinalBreach: cycle.isFinalBreach,
+      activeRouteIds: cycle.activeRouteIds,
+      variants: cycle.variants,
+    );
   }
 
   static AssaultCycleDefinition _scaleAssaultCyclePressure(
@@ -4002,7 +4066,7 @@ class CampaignData {
   ) {
     final activeRouteIds = _routeIdsForStage(stageNumber, citadelCell);
     if (stageNumber <= 5) {
-      return _normalizeNormalWavePressure([
+      final normalized = _normalizeNormalWavePressure([
         for (final cycle in _earlyFortressAssaultCycles(stageNumber))
           AssaultCycleDefinition(
             number: cycle.number,
@@ -4017,9 +4081,10 @@ class CampaignData {
             activeRouteIds: activeRouteIds,
             variants: cycle.variants,
           ),
-      ]);
+      ], stageNumber: stageNumber);
+      return _applyStageWaveGoldTargets(stageNumber, normalized);
     }
-    return _normalizeNormalWavePressure([
+    final normalized = _normalizeNormalWavePressure([
       for (final cycle in source)
         AssaultCycleDefinition(
           number: cycle.number,
@@ -4041,7 +4106,8 @@ class CampaignData {
           activeRouteIds: activeRouteIds,
           variants: cycle.variants,
         ),
-    ]);
+    ], stageNumber: stageNumber);
+    return _applyStageWaveGoldTargets(stageNumber, normalized);
   }
 
   static List<AssaultCycleDefinition> _earlyFortressAssaultCycles(

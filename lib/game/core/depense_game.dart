@@ -28,6 +28,37 @@ const double _stageEventBossPhysicalDamageMultiplier = 1.0;
 const int _stageEventCorruptedKnightTargetHp = 4400;
 const int _stageEventBastionOverlordTargetHp = 4500;
 
+int _coinMillWaveStartBonusFor({
+  required int level,
+  required int incomeBonus,
+  String? branchId,
+}) {
+  return 8 +
+      ((math.max(1, level) - 1) * 2) +
+      incomeBonus +
+      (branchId == 'tribute' ? 4 : 0);
+}
+
+double _towerDamageForLevel(TowerDefinition definition, int level) {
+  if (definition.damage <= 0) {
+    return 0;
+  }
+  final safeLevel = math.max(1, level);
+  final preReductionBaseDamage = switch (definition.kind) {
+    TowerKind.mageObelisk => 23.0,
+    TowerKind.ballista => 12.0,
+    _ => definition.damage + 2.5,
+  };
+  final unreduced = preReductionBaseDamage * (1 + ((safeLevel - 1) * 0.45));
+  final reduction = safeLevel == 1 ? 2.5 : 1.5;
+  final roleAdjustment = switch (definition.kind) {
+    TowerKind.mageObelisk => safeLevel == 1 ? -3.0 : -5.0,
+    TowerKind.ballista => 4.0,
+    _ => 0.0,
+  };
+  return ((unreduced - reduction + roleAdjustment) * 10).roundToDouble() / 10;
+}
+
 class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   static const bool _combatDebugLogsEnabled = false;
 
@@ -677,7 +708,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       TowerKind.coinMill => 0,
       TowerKind.guardBarracks => _tileSize * 2.55,
       TowerKind.archer => _tileSize * 3.05,
-      TowerKind.ballista || TowerKind.emberkeep => _tileSize * 2.05,
+      TowerKind.ballista => _tileSize * 4.05,
+      TowerKind.emberkeep => _tileSize * 3.05,
       TowerKind.frostShrine || TowerKind.mageObelisk => _tileSize * 3.05,
     };
   }
@@ -798,10 +830,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     for (final tower in _towers.where(
       (tower) => tower.definition.kind == TowerKind.coinMill,
     )) {
-      final waveBonus =
-          (cycle?.recoveryGoldBonus ?? 4) + metaUpgrades.coinMillIncomeBonus;
+      final waveBonus = tower.economyWaveStartBonus;
       _coins += waveBonus;
-      tower.lastWaveBonus = waveBonus;
       audioService.play(AudioEvent.coinGain);
     }
     audioService.play(AudioEvent.uiConfirm);
@@ -2207,6 +2237,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   @visibleForTesting
+  int debugCoinMillWaveStartBonus({required int level, String? branchId}) {
+    return _coinMillWaveStartBonusFor(
+      level: level,
+      incomeBonus: metaUpgrades.coinMillIncomeBonus,
+      branchId: branchId,
+    );
+  }
+
+  @visibleForTesting
+  double debugTowerDamageForLevel(TowerKind kind, int level) {
+    return _towerDamageForLevel(TowerCatalog.byKind(kind), level);
+  }
+
+  @visibleForTesting
   double debugPhysicalDamageMultiplierForEnemyKind(
     EnemyKind kind, {
     bool stageEvent = false,
@@ -3418,14 +3462,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     tower.cooldownRemaining = _towerCurrentCooldown(tower);
-    var damage =
-        _towerCurrentDamage(tower) *
-        (1.55 + (tower.branchId == 'siege' ? 0.22 : 0));
-    if (target.definition.kind == EnemyKind.corruptedKnight ||
-        target.definition.kind == EnemyKind.shieldInfantry ||
-        target.definition.kind == EnemyKind.bastionOverlord) {
-      damage *= tower.branchId == 'siege' ? 1.38 : 1.24;
-    }
+    final damage =
+        _towerCurrentDamage(tower) * metaUpgrades.archerDamageMultiplier;
 
     _applyTowerDamage(
       tower: tower,
@@ -7423,11 +7461,10 @@ class _TowerPlacement {
   double economyTimer = 1.5;
   double attackVisualTimer = 0;
   int shotCounter = 0;
-  int lastWaveBonus = 0;
   int economyIncomeBonus = 0;
   String? branchId;
 
-  double get currentDamage => definition.damage * (1 + ((level - 1) * 0.45));
+  double get currentDamage => _towerDamageForLevel(definition, level);
   double get currentRange {
     final branchRange = switch (branchId) {
       'ranger' => 1.18,
@@ -7454,6 +7491,13 @@ class _TowerPlacement {
   int get upgradeCost => (definition.cost * (0.75 + (level * 0.55))).round();
   bool get canUpgrade => level < _maxCombatUnitLevel;
   bool get canChooseBranch => level >= 2 && branchId == null;
+  int get economyWaveStartBonus => definition.kind == TowerKind.coinMill
+      ? _coinMillWaveStartBonusFor(
+          level: level,
+          incomeBonus: economyIncomeBonus,
+          branchId: branchId,
+        )
+      : 0;
   int get sellValue =>
       (totalSpent * (branchId == 'tribute' ? 0.82 : 0.7)).round();
   double get maxHitPoints =>
@@ -7486,7 +7530,9 @@ class _TowerPlacement {
         ? null
         : (definition.economyIncome! + economyIncomeBonus) /
               definition.economyInterval!,
-    economyCycleBonus: lastWaveBonus,
+    economyCycleBonus: definition.economyIncome == null
+        ? null
+        : economyWaveStartBonus,
     economyBreakEvenSeconds:
         definition.economyIncome == null || definition.economyInterval == null
         ? null

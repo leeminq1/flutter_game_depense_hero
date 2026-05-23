@@ -10,6 +10,23 @@ import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('tower base combat numbers match the current balance pass', () {
+    expect(TowerCatalog.byKind(TowerKind.archer).damage, 9.5);
+    expect(TowerCatalog.byKind(TowerKind.guardBarracks).damage, 13.5);
+    expect(TowerCatalog.byKind(TowerKind.mageObelisk).damage, 17.5);
+    expect(TowerCatalog.byKind(TowerKind.frostShrine).damage, 3.5);
+
+    final ballista = TowerCatalog.byKind(TowerKind.ballista);
+    expect(ballista.damage, 13.5);
+    expect(ballista.range, 8);
+    expect(ballista.cooldown, 1.75);
+
+    final emberkeep = TowerCatalog.byKind(TowerKind.emberkeep);
+    expect(emberkeep.damage, 9.5);
+    expect(emberkeep.range, 6);
+    expect(emberkeep.cooldown, 1.35);
+  });
+
   test('campaign economy stays inside broad playable smoke bounds', () {
     final averageTowerCost =
         TowerCatalog.buildMenu
@@ -78,8 +95,8 @@ void main() {
       15: [202, 441, 681, 920],
       16: [305, 445, 586, 726],
       17: [332, 476, 619, 762],
-      18: [450, 598, 746, 894],
-      19: [367, 506, 646, 786],
+      18: [350, 490, 630, 770],
+      19: [365, 505, 645, 785],
       20: [370, 504, 637, 770],
       21: [1497, 2037, 2576, 3116],
       22: [1515, 2061, 2607, 3153],
@@ -153,8 +170,8 @@ void main() {
       15: [114, 123, 186, 229],
       16: [162, 195, 227, 248],
       17: [158, 195, 233, 264],
-      18: [182, 183, 256, 253],
-      19: [183, 211, 247, 274],
+      18: [166, 202, 238, 270],
+      19: [178, 211, 247, 274],
       20: [183, 211, 289, 255],
       21: [390, 482, 542, 573],
       22: [397, 491, 552, 583],
@@ -187,6 +204,57 @@ void main() {
       );
     }
   });
+
+  test(
+    'stage wave snapshot includes gold and pressure deltas around stage 18',
+    () {
+      final stage17 = CampaignData.stage(17);
+      final stage18 = CampaignData.stage(18);
+      final stage19 = CampaignData.stage(19);
+
+      expect(stage17.startingCoins, 520);
+      expect(stage18.startingCoins - stage17.startingCoins, 20);
+      expect(stage19.startingCoins - stage18.startingCoins, 20);
+
+      final stage17WaveGold = [
+        for (final cycle in stage17.assaultCycles) _waveGoldGain(cycle),
+      ];
+      final stage18WaveGold = [
+        for (final cycle in stage18.assaultCycles) _waveGoldGain(cycle),
+      ];
+      final stage19WaveGold = [
+        for (final cycle in stage19.assaultCycles) _waveGoldGain(cycle),
+      ];
+      final stage18Pressures = [
+        for (final cycle in stage18.assaultCycles) _pressureIndex(cycle.groups),
+      ];
+      final stage19Pressures = [
+        for (final cycle in stage19.assaultCycles) _pressureIndex(cycle.groups),
+      ];
+
+      expect(stage17WaveGold, [158, 195, 233, 264]);
+      expect(stage18WaveGold, [166, 202, 238, 270]);
+      expect(stage19WaveGold, [178, 211, 247, 274]);
+      expect(
+        stage18Pressures,
+        orderedEquals([
+          closeTo(350, 3),
+          closeTo(490, 3),
+          closeTo(630, 3),
+          closeTo(770, 3),
+        ]),
+      );
+      expect(
+        stage19Pressures,
+        orderedEquals([
+          closeTo(365, 3),
+          closeTo(505, 3),
+          closeTo(645, 3),
+          closeTo(785, 3),
+        ]),
+      );
+    },
+  );
 
   test('stage event boss combat snapshots stay unchanged', () {
     const expected = <int, Map<String, List<int>>>{
@@ -244,6 +312,14 @@ void main() {
       }
     }
   });
+}
+
+int _waveGoldGain(AssaultCycleDefinition cycle) {
+  return cycle.groups.fold<int>(
+        0,
+        (sum, group) => sum + (group.enemy.rewardCoins * group.count),
+      ) +
+      cycle.recoveryGoldBonus;
 }
 
 double _pressureIndex(List<FrontSpawnGroupDefinition> groups) {

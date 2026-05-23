@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
@@ -218,6 +220,14 @@ void main() {
     expect(
       game.debugTowerBaseRangeFor(TowerKind.frostShrine),
       closeTo(52 * 3.05, 0.001),
+    );
+    expect(
+      game.debugTowerBaseRangeFor(TowerKind.emberkeep),
+      closeTo(52 * 3.05, 0.001),
+    );
+    expect(
+      game.debugTowerBaseRangeFor(TowerKind.ballista),
+      closeTo(52 * 4.05, 0.001),
     );
     expect(
       game.debugTowerBaseRangeFor(TowerKind.guardBarracks),
@@ -947,8 +957,8 @@ void main() {
     expect(TowerCatalog.byKind(TowerKind.guardBarracks).range, 3);
     expect(TowerCatalog.byKind(TowerKind.archer).range, 4);
     expect(TowerCatalog.byKind(TowerKind.frostShrine).range, 6);
-    expect(TowerCatalog.byKind(TowerKind.ballista).range, 4);
-    expect(TowerCatalog.byKind(TowerKind.emberkeep).range, 4);
+    expect(TowerCatalog.byKind(TowerKind.ballista).range, 8);
+    expect(TowerCatalog.byKind(TowerKind.emberkeep).range, 6);
     expect(TowerCatalog.byKind(TowerKind.mageObelisk).range, 6);
     expect(TowerCatalog.byKind(TowerKind.coinMill).range, 0);
 
@@ -957,6 +967,48 @@ void main() {
     expect(HeroCatalog.byKind(HeroKind.paladin).range, 2);
     expect(HeroCatalog.byKind(HeroKind.archer).range, 3);
     expect(HeroCatalog.byKind(HeroKind.mage).range, 5);
+  });
+
+  test('ballista and emberkeep art paths load and level 4 reuses tier 3', () {
+    final expectedPaths = <String>[
+      'assets/sprites/towers/ballista.png',
+      'assets/sprites/towers/ballista_t1.png',
+      'assets/sprites/towers/ballista_t2.png',
+      'assets/sprites/towers/ballista_t3.png',
+      'assets/sprites/towers/ballista_siege_t2.png',
+      'assets/sprites/towers/ballista_siege_t3.png',
+      'assets/sprites/towers/ballista_harpoon_t2.png',
+      'assets/sprites/towers/ballista_harpoon_t3.png',
+      'assets/sprites/towers/emberkeep.png',
+      'assets/sprites/towers/emberkeep_t1.png',
+      'assets/sprites/towers/emberkeep_t2.png',
+      'assets/sprites/towers/emberkeep_t3.png',
+      'assets/sprites/towers/emberkeep_inferno_t2.png',
+      'assets/sprites/towers/emberkeep_inferno_t3.png',
+      'assets/sprites/towers/emberkeep_cinder_t2.png',
+      'assets/sprites/towers/emberkeep_cinder_t3.png',
+    ];
+
+    for (final assetPath in expectedPaths) {
+      expect(File(assetPath).existsSync(), isTrue, reason: assetPath);
+    }
+
+    expect(
+      TowerVisualCatalog.tierAssetPath(TowerKind.ballista, 4),
+      'assets/sprites/towers/ballista_t3.png',
+    );
+    expect(
+      TowerVisualCatalog.branchTierAssetPath(TowerKind.ballista, 4, 'siege'),
+      'assets/sprites/towers/ballista_siege_t3.png',
+    );
+    expect(
+      TowerVisualCatalog.tierAssetPath(TowerKind.emberkeep, 4),
+      'assets/sprites/towers/emberkeep_t3.png',
+    );
+    expect(
+      TowerVisualCatalog.branchTierAssetPath(TowerKind.emberkeep, 4, 'inferno'),
+      'assets/sprites/towers/emberkeep_inferno_t3.png',
+    );
   });
 
   test('stage 1 to 5 teach fortress design before full randomness', () {

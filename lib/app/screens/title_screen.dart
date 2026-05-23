@@ -49,6 +49,29 @@ class _TitleScreenState extends State<TitleScreen> {
       return;
     }
 
+    if (overview.hasMeaningfulProgress) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('진행 기록을 삭제할까요?'),
+          content: const Text('새 게임을 시작하면 지금까지의 스테이지 기록과 업그레이드가 삭제됩니다.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('삭제'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) {
+        return;
+      }
+    }
+
     setState(() => _busy = true);
     await widget.bootstrap.progressStore.resetCampaignProgress();
     await _refreshOverview();
@@ -320,6 +343,24 @@ class _MainMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canContinue = overview.player.hasResumableRun && !busy;
+    final newGameButton = _MenuButton(
+      icon: Icons.play_arrow_rounded,
+      iconColor: AppTheme.moss,
+      label: busy ? '로딩 중...' : '새 게임',
+      subtitle: '스테이지 1부터 다시 시작',
+      glowColor: AppTheme.moss,
+      onTap: busy ? null : onNewGame,
+    );
+    final continueButton = _MenuButton(
+      icon: Icons.fast_forward_rounded,
+      iconColor: canContinue ? AppTheme.ember : AppTheme.inkMuted,
+      label: '이어하기',
+      subtitle: canContinue
+          ? '스테이지 ${overview.currentCampaignStage}부터 재개'
+          : '이어할 진행이 없습니다',
+      glowColor: canContinue ? AppTheme.ember : null,
+      onTap: canContinue ? onContinue : null,
+    );
 
     return SafeArea(
       child: Padding(
@@ -337,25 +378,15 @@ class _MainMenu extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _MenuButton(
-              icon: Icons.play_arrow_rounded,
-              iconColor: AppTheme.moss,
-              label: busy ? '로딩 중...' : '새 게임',
-              subtitle: '스테이지 1부터 다시 시작',
-              glowColor: AppTheme.moss,
-              onTap: busy ? null : onNewGame,
-            ),
-            const SizedBox(height: 14),
-            _MenuButton(
-              icon: Icons.fast_forward_rounded,
-              iconColor: canContinue ? AppTheme.ember : AppTheme.inkMuted,
-              label: '이어하기',
-              subtitle: canContinue
-                  ? '스테이지 ${overview.currentCampaignStage}부터 재개'
-                  : '이어할 진행이 없습니다',
-              glowColor: canContinue ? AppTheme.ember : null,
-              onTap: canContinue ? onContinue : null,
-            ),
+            if (canContinue) ...[
+              continueButton,
+              const SizedBox(height: 14),
+              newGameButton,
+            ] else ...[
+              newGameButton,
+              const SizedBox(height: 14),
+              continueButton,
+            ],
             const SizedBox(height: 14),
             _MenuButton(
               icon: Icons.settings_rounded,
