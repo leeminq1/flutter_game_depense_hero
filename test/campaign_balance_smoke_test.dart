@@ -77,38 +77,7 @@ void main() {
   });
 
   test('normal wave pressure follows capped linear balance targets', () {
-    const expectedPressures = <int, List<double>>{
-      1: [90, 160, 229],
-      2: [123, 167, 211, 255],
-      3: [234, 284, 335, 385],
-      4: [273, 328, 382, 436],
-      5: [314, 441, 568, 695],
-      6: [127, 166, 206, 245],
-      7: [139, 258, 376, 494],
-      8: [146, 270, 393, 517],
-      9: [152, 281, 410, 539],
-      10: [157, 291, 424, 558],
-      11: [143, 335, 527, 719],
-      12: [166, 370, 574, 778],
-      13: [201, 352, 503, 654],
-      14: [174, 347, 520, 693],
-      15: [202, 441, 681, 920],
-      16: [305, 445, 586, 726],
-      17: [332, 476, 619, 762],
-      18: [350, 490, 630, 770],
-      19: [365, 505, 645, 785],
-      20: [370, 504, 637, 770],
-      21: [1497, 2037, 2576, 3116],
-      22: [1515, 2061, 2607, 3153],
-      23: [1531, 2083, 2635, 3187],
-      24: [1544, 2100, 2657, 3213],
-      25: [1555, 2115, 2675, 3235],
-      26: [1702, 2315, 2929, 3542],
-      27: [1720, 2339, 2959, 3579],
-      28: [1734, 2359, 2984, 3609],
-      29: [1748, 2377, 3007, 3637],
-      30: [1758, 2788, 3818, 4848],
-    };
+    List<double>? previousPressures;
 
     for (
       var stageNumber = 1;
@@ -119,7 +88,7 @@ void main() {
       final pressures = [
         for (final cycle in stage.assaultCycles) _pressureIndex(cycle.groups),
       ];
-      final expected = expectedPressures[stageNumber]!;
+      final expected = _expectedPressureTargets(stageNumber);
 
       for (var index = 0; index < pressures.length; index += 1) {
         expect(
@@ -148,45 +117,34 @@ void main() {
           reason: 'Stage $stageNumber pressure should increase each wave.',
         );
       }
+
+      if (previousPressures != null) {
+        for (
+          var index = 0;
+          index < previousPressures.length && index < pressures.length;
+          index += 1
+        ) {
+          expect(
+            pressures[index],
+            greaterThan(previousPressures[index]),
+            reason:
+                'Stage $stageNumber wave ${index + 1} pressure should be '
+                'higher than the previous stage.',
+          );
+        }
+      }
+      previousPressures = pressures;
     }
   });
 
-  test('wave rebalance preserves stage economy rewards', () {
-    const expectedWaveGold = <int, List<int>>{
-      1: [75, 90, 112],
-      2: [89, 103, 129, 135],
-      3: [120, 164, 186, 172],
-      4: [139, 179, 174, 165],
-      5: [138, 168, 212, 206],
-      6: [84, 84, 133, 126],
-      7: [92, 125, 148, 170],
-      8: [92, 125, 148, 174],
-      9: [96, 129, 153, 177],
-      10: [99, 133, 157, 177],
-      11: [102, 124, 145, 215],
-      12: [107, 118, 156, 228],
-      13: [113, 104, 166, 195],
-      14: [107, 125, 161, 198],
-      15: [114, 123, 186, 229],
-      16: [162, 195, 227, 248],
-      17: [158, 195, 233, 264],
-      18: [166, 202, 238, 270],
-      19: [178, 211, 247, 274],
-      20: [183, 211, 289, 255],
-      21: [390, 482, 542, 573],
-      22: [397, 491, 552, 583],
-      23: [402, 497, 559, 590],
-      24: [409, 506, 569, 595],
-      25: [414, 512, 576, 607],
-      26: [440, 551, 618, 642],
-      27: [447, 559, 627, 654],
-      28: [452, 566, 635, 659],
-      29: [459, 575, 645, 671],
-      30: [464, 581, 652, 895],
-    };
+  test('wave rewards do not regress between stages', () {
+    List<int>? previousWaveGold;
 
-    for (final MapEntry(key: stageNumber, value: expected)
-        in expectedWaveGold.entries) {
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
       final stage = CampaignData.stage(stageNumber);
       final actual = [
         for (final cycle in stage.assaultCycles)
@@ -197,64 +155,39 @@ void main() {
               cycle.recoveryGoldBonus,
       ];
 
-      expect(
-        actual,
-        expected,
-        reason: 'Stage $stageNumber wave rewards should stay unchanged.',
-      );
+      for (var index = 1; index < actual.length; index += 1) {
+        expect(
+          actual[index],
+          greaterThan(actual[index - 1]),
+          reason: 'Stage $stageNumber wave rewards should increase by wave.',
+        );
+      }
+      if (previousWaveGold != null) {
+        for (
+          var index = 0;
+          index < previousWaveGold.length && index < actual.length;
+          index += 1
+        ) {
+          expect(
+            actual[index],
+            greaterThanOrEqualTo(previousWaveGold[index]),
+            reason:
+                'Stage $stageNumber wave ${index + 1} reward should not dip '
+                'below the previous stage.',
+          );
+        }
+      }
+      previousWaveGold = actual;
     }
   });
 
-  test(
-    'stage wave snapshot includes gold and pressure deltas around stage 18',
-    () {
-      final stage17 = CampaignData.stage(17);
-      final stage18 = CampaignData.stage(18);
-      final stage19 = CampaignData.stage(19);
-
-      expect(stage17.startingCoins, 520);
-      expect(stage18.startingCoins - stage17.startingCoins, 20);
-      expect(stage19.startingCoins - stage18.startingCoins, 20);
-
-      final stage17WaveGold = [
-        for (final cycle in stage17.assaultCycles) _waveGoldGain(cycle),
-      ];
-      final stage18WaveGold = [
-        for (final cycle in stage18.assaultCycles) _waveGoldGain(cycle),
-      ];
-      final stage19WaveGold = [
-        for (final cycle in stage19.assaultCycles) _waveGoldGain(cycle),
-      ];
-      final stage18Pressures = [
-        for (final cycle in stage18.assaultCycles) _pressureIndex(cycle.groups),
-      ];
-      final stage19Pressures = [
-        for (final cycle in stage19.assaultCycles) _pressureIndex(cycle.groups),
-      ];
-
-      expect(stage17WaveGold, [158, 195, 233, 264]);
-      expect(stage18WaveGold, [166, 202, 238, 270]);
-      expect(stage19WaveGold, [178, 211, 247, 274]);
-      expect(
-        stage18Pressures,
-        orderedEquals([
-          closeTo(350, 3),
-          closeTo(490, 3),
-          closeTo(630, 3),
-          closeTo(770, 3),
-        ]),
-      );
-      expect(
-        stage19Pressures,
-        orderedEquals([
-          closeTo(365, 3),
-          closeTo(505, 3),
-          closeTo(645, 3),
-          closeTo(785, 3),
-        ]),
-      );
-    },
-  );
+  test('early and mid campaign waves keep readable enemy counts', () {
+    expect(_enemyCountsForStage(5), [7, 9, 11, 12]);
+    expect(_enemyCountsForStage(10), [7, 10, 12, 13]);
+    expect(_enemyCountsForStage(11), [7, 10, 12, 13]);
+    expect(_enemyCountsForStage(20), [7, 10, 12, 13]);
+    expect(_enemyCountsForStage(21), [8, 11, 13, 14]);
+  });
 
   test('stage event boss combat snapshots stay unchanged', () {
     const expected = <int, Map<String, List<int>>>{
@@ -314,12 +247,26 @@ void main() {
   });
 }
 
-int _waveGoldGain(AssaultCycleDefinition cycle) {
-  return cycle.groups.fold<int>(
-        0,
-        (sum, group) => sum + (group.enemy.rewardCoins * group.count),
-      ) +
-      cycle.recoveryGoldBonus;
+List<double> _expectedPressureTargets(int stageNumber) {
+  if (stageNumber == 1) {
+    return const [90, 160, 230];
+  }
+
+  final offset = stageNumber - 2;
+  final lateOffset = stageNumber > 20 ? stageNumber - 20 : 0;
+  return [
+    105 + (offset * 14) + (lateOffset * 5),
+    175 + (offset * 19) + (lateOffset * 7),
+    240 + (offset * 24) + (lateOffset * 9),
+    300 + (offset * 28) + (lateOffset * 11),
+  ];
+}
+
+List<int> _enemyCountsForStage(int stageNumber) {
+  return [
+    for (final cycle in CampaignData.stage(stageNumber).assaultCycles)
+      cycle.groups.fold<int>(0, (sum, group) => sum + group.count),
+  ];
 }
 
 double _pressureIndex(List<FrontSpawnGroupDefinition> groups) {

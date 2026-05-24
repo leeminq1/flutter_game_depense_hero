@@ -1025,8 +1025,17 @@ class CampaignData {
       return cycles;
     }
 
+    final countTargets = stageNumber == null
+        ? null
+        : _normalWaveEnemyCountTargetsForStage(stageNumber, cycles.length);
+    final countedCycles = countTargets == null
+        ? cycles
+        : [
+            for (var index = 0; index < cycles.length; index += 1)
+              _scaleAssaultCycleEnemyCount(cycles[index], countTargets[index]),
+          ];
     final currentPressures = [
-      for (final cycle in cycles) _normalWavePressureIndex(cycle.groups),
+      for (final cycle in countedCycles) _normalWavePressureIndex(cycle.groups),
     ];
     final pressureTargets = stageNumber == null
         ? null
@@ -1035,7 +1044,7 @@ class CampaignData {
       return [
         for (var index = 0; index < cycles.length; index += 1)
           _scaleAssaultCyclePressure(
-            cycles[index],
+            countedCycles[index],
             pressureTargets[index] / currentPressures[index],
           ),
       ];
@@ -1048,39 +1057,83 @@ class CampaignData {
     return [
       for (var index = 0; index < cycles.length; index += 1)
         _scaleAssaultCyclePressure(
-          cycles[index],
+          countedCycles[index],
           (firstTarget + (step * index)) / currentPressures[index],
         ),
     ];
+  }
+
+  static List<int>? _normalWaveEnemyCountTargetsForStage(
+    int stageNumber,
+    int cycleCount,
+  ) {
+    final targets = switch (stageNumber) {
+      1 => const [8, 10, 12],
+      >= 2 && <= 3 => const [7, 8, 10, 11],
+      >= 4 && <= 6 => const [7, 9, 11, 12],
+      >= 7 && <= 20 => const [7, 10, 12, 13],
+      >= 21 && <= 25 => const [8, 11, 13, 14],
+      >= 26 && <= 30 => const [9, 12, 14, 15],
+      _ => null,
+    };
+    return targets == null || targets.length != cycleCount ? null : targets;
   }
 
   static List<double>? _normalWavePressureTargetsForStage(
     int stageNumber,
     int cycleCount,
   ) {
-    final targets = switch (stageNumber) {
-      18 => const [350.0, 490.0, 630.0, 770.0],
-      19 => const [365.0, 505.0, 645.0, 785.0],
-      _ => null,
-    };
+    final targets = _linearStagePressureTargets(stageNumber);
     return targets == null || targets.length != cycleCount ? null : targets;
+  }
+
+  static List<double>? _linearStagePressureTargets(int stageNumber) {
+    if (stageNumber == 1) {
+      return const [90.0, 160.0, 230.0];
+    }
+    if (stageNumber < 2 || stageNumber > totalStages) {
+      return null;
+    }
+
+    final offset = stageNumber - 2;
+    final lateOffset = math.max(0, stageNumber - 20);
+    return [
+      105.0 + (offset * 14) + (lateOffset * 5),
+      175.0 + (offset * 19) + (lateOffset * 7),
+      240.0 + (offset * 24) + (lateOffset * 9),
+      300.0 + (offset * 28) + (lateOffset * 11),
+    ];
   }
 
   static List<AssaultCycleDefinition> _applyStageWaveGoldTargets(
     int stageNumber,
     List<AssaultCycleDefinition> cycles,
   ) {
-    final targets = switch (stageNumber) {
-      18 => const [166, 202, 238, 270],
-      19 => const [178, 211, 247, 274],
-      _ => null,
-    };
+    final targets = _linearStageWaveGoldTargets(stageNumber);
     if (targets == null || targets.length != cycles.length) {
       return cycles;
     }
     return [
       for (var index = 0; index < cycles.length; index += 1)
         _withWaveGoldTarget(cycles[index], targets[index]),
+    ];
+  }
+
+  static List<int>? _linearStageWaveGoldTargets(int stageNumber) {
+    if (stageNumber == 1) {
+      return const [75, 90, 112];
+    }
+    if (stageNumber < 2 || stageNumber > totalStages) {
+      return null;
+    }
+
+    final offset = stageNumber - 2;
+    final lateOffset = math.max(0, stageNumber - 20);
+    return [
+      82 + (offset * 6) + (lateOffset * 2),
+      102 + (offset * 7) + (lateOffset * 3),
+      126 + (offset * 8) + (lateOffset * 4),
+      148 + (offset * 9) + (lateOffset * 4),
     ];
   }
 
@@ -1092,16 +1145,164 @@ class CampaignData {
       0,
       (sum, group) => sum + (group.enemy.rewardCoins * group.count),
     );
+    final groups = killGold > targetGold
+        ? _scaleFrontSpawnGroupRewards(cycle.groups, targetGold)
+        : cycle.groups;
+    final adjustedKillGold = groups.fold<int>(
+      0,
+      (sum, group) => sum + (group.enemy.rewardCoins * group.count),
+    );
     return AssaultCycleDefinition(
       number: cycle.number,
       activeFronts: cycle.activeFronts,
-      groups: cycle.groups,
+      groups: groups,
       recoverySeconds: cycle.recoverySeconds,
-      recoveryGoldBonus: math.max(0, targetGold - killGold),
+      recoveryGoldBonus: math.max(0, targetGold - adjustedKillGold),
       isFinalBreach: cycle.isFinalBreach,
       activeRouteIds: cycle.activeRouteIds,
       variants: cycle.variants,
     );
+  }
+
+  static List<FrontSpawnGroupDefinition> _scaleFrontSpawnGroupRewards(
+    List<FrontSpawnGroupDefinition> groups,
+    int targetGold,
+  ) {
+    final currentGold = groups.fold<int>(
+      0,
+      (sum, group) => sum + (group.enemy.rewardCoins * group.count),
+    );
+    if (groups.isEmpty || currentGold <= 0 || currentGold <= targetGold) {
+      return groups;
+    }
+
+    final scale = targetGold / currentGold;
+    return [
+      for (final group in groups)
+        FrontSpawnGroupDefinition(
+          front: group.front,
+          enemy: _scaleEnemyReward(group.enemy, scale),
+          count: group.count,
+          spawnInterval: group.spawnInterval,
+          routeId: group.routeId,
+        ),
+    ];
+  }
+
+  static EnemyDefinition _scaleEnemyReward(
+    EnemyDefinition enemy,
+    double scale,
+  ) {
+    return EnemyDefinition(
+      kind: enemy.kind,
+      label: enemy.label,
+      specialDescription: enemy.specialDescription,
+      hitPoints: enemy.hitPoints,
+      speed: enemy.speed,
+      rewardCoins: math.max(1, (enemy.rewardCoins * scale).round()),
+      citadelDamage: enemy.citadelDamage,
+      color: enemy.color,
+      structureDamage: enemy.structureDamage,
+      towerContactDamage: enemy.towerContactDamage,
+      citadelLeakDamage: enemy.citadelLeakDamage,
+      structureAttackCooldown: enemy.structureAttackCooldown,
+      canBreachWalls: enemy.canBreachWalls,
+      wallBehavior: enemy.wallBehavior,
+      wallBreakChance: enemy.wallBreakChance,
+    );
+  }
+
+  static AssaultCycleDefinition _scaleAssaultCycleEnemyCount(
+    AssaultCycleDefinition cycle,
+    int targetCount,
+  ) {
+    return AssaultCycleDefinition(
+      number: cycle.number,
+      activeFronts: cycle.activeFronts,
+      groups: _scaleFrontSpawnGroupCounts(cycle.groups, targetCount),
+      recoverySeconds: cycle.recoverySeconds,
+      recoveryGoldBonus: cycle.recoveryGoldBonus,
+      isFinalBreach: cycle.isFinalBreach,
+      activeRouteIds: cycle.activeRouteIds,
+      variants: [
+        for (final variant in cycle.variants)
+          WaveVariantDefinition(
+            id: variant.id,
+            label: variant.label,
+            threatTags: variant.threatTags,
+            groups: _scaleFrontSpawnGroupCounts(variant.groups, targetCount),
+          ),
+      ],
+    );
+  }
+
+  static List<FrontSpawnGroupDefinition> _scaleFrontSpawnGroupCounts(
+    List<FrontSpawnGroupDefinition> groups,
+    int targetCount,
+  ) {
+    if (groups.isEmpty) {
+      return groups;
+    }
+
+    final safeTarget = math.max(groups.length, targetCount);
+    final currentTotal = groups.fold<int>(0, (sum, group) => sum + group.count);
+    if (currentTotal == safeTarget) {
+      return groups;
+    }
+
+    final scaled = [
+      for (final group in groups)
+        _ScaledSpawnCount(rawCount: group.count * safeTarget / currentTotal),
+    ];
+    final counts = [
+      for (final entry in scaled) math.max(1, entry.rawCount.floor()),
+    ];
+    var total = counts.fold<int>(0, (sum, count) => sum + count);
+
+    while (total < safeTarget) {
+      var bestIndex = 0;
+      var bestFraction = double.negativeInfinity;
+      for (var index = 0; index < scaled.length; index += 1) {
+        final fraction = scaled[index].rawCount - counts[index];
+        if (fraction > bestFraction) {
+          bestFraction = fraction;
+          bestIndex = index;
+        }
+      }
+      counts[bestIndex] += 1;
+      total += 1;
+    }
+
+    while (total > safeTarget) {
+      var bestIndex = -1;
+      var bestFraction = double.infinity;
+      for (var index = 0; index < scaled.length; index += 1) {
+        if (counts[index] <= 1) {
+          continue;
+        }
+        final fraction = scaled[index].rawCount - counts[index];
+        if (fraction < bestFraction) {
+          bestFraction = fraction;
+          bestIndex = index;
+        }
+      }
+      if (bestIndex < 0) {
+        break;
+      }
+      counts[bestIndex] -= 1;
+      total -= 1;
+    }
+
+    return [
+      for (var index = 0; index < groups.length; index += 1)
+        FrontSpawnGroupDefinition(
+          front: groups[index].front,
+          enemy: groups[index].enemy,
+          count: counts[index],
+          spawnInterval: groups[index].spawnInterval,
+          routeId: groups[index].routeId,
+        ),
+    ];
   }
 
   static AssaultCycleDefinition _scaleAssaultCyclePressure(
@@ -7224,6 +7425,12 @@ class SampleCampaign {
       intensity: intensity,
     );
   }
+}
+
+class _ScaledSpawnCount {
+  const _ScaledSpawnCount({required this.rawCount});
+
+  final double rawCount;
 }
 
 class _BiomeProfile {
