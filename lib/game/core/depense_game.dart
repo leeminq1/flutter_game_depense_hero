@@ -718,6 +718,30 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   @visibleForTesting
   double debugTowerBaseRangeFor(TowerKind kind) => _towerBaseRange(kind);
 
+  @visibleForTesting
+  double debugTowerCombatRangeFor(TowerKind kind, {int level = 1}) {
+    return _towerCurrentRange(
+      _TowerPlacement(
+        definition: TowerCatalog.byKind(kind),
+        position: Vector2.zero(),
+        contactId: -1,
+        initialLevel: level,
+      ),
+    );
+  }
+
+  @visibleForTesting
+  double debugTowerDisplayedRangeFor(TowerKind kind, {int level = 1}) {
+    return _towerDisplayedRange(
+      _TowerPlacement(
+        definition: TowerCatalog.byKind(kind),
+        position: Vector2.zero(),
+        contactId: -1,
+        initialLevel: level,
+      ),
+    );
+  }
+
   double _heroCurrentRange(_HeroPlacement hero) {
     final levelRange = 1 + ((hero.level - 1) * 0.07);
     final baseRange = switch (hero.definition.kind) {
@@ -732,8 +756,45 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return _tileSize * 3.2;
   }
 
-  double _heroSelectionRange(_HeroPlacement hero) {
-    return math.max(_heroCurrentRange(hero), _heroGuardRadius(hero));
+  double _towerDisplayedRange(_TowerPlacement tower) {
+    return _towerCurrentRange(tower);
+  }
+
+  double _heroDisplayedRange(_HeroPlacement hero) {
+    return _heroGuardRadius(hero);
+  }
+
+  @visibleForTesting
+  double debugHeroCombatRangeFor(HeroKind kind, {int level = 1}) {
+    return _heroCurrentRange(
+      _HeroPlacement(
+        definition: HeroCatalog.byKind(kind),
+        position: Vector2.zero(),
+        initialLevel: level,
+      ),
+    );
+  }
+
+  @visibleForTesting
+  double debugHeroEngagementRangeFor(HeroKind kind, {int level = 1}) {
+    return _heroGuardRadius(
+      _HeroPlacement(
+        definition: HeroCatalog.byKind(kind),
+        position: Vector2.zero(),
+        initialLevel: level,
+      ),
+    );
+  }
+
+  @visibleForTesting
+  double debugHeroDisplayedRangeFor(HeroKind kind, {int level = 1}) {
+    return _heroDisplayedRange(
+      _HeroPlacement(
+        definition: HeroCatalog.byKind(kind),
+        position: Vector2.zero(),
+        initialLevel: level,
+      ),
+    );
   }
 
   @visibleForTesting
@@ -1536,17 +1597,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return value.x.isFinite && value.y.isFinite;
   }
 
-  double _distancePointToSegment(Vector2 point, Vector2 start, Vector2 end) {
-    final segment = end - start;
-    final lengthSquared = segment.length2;
-    if (lengthSquared <= 0.0001) {
-      return point.distanceTo(end);
-    }
-    final t = ((point - start).dot(segment) / lengthSquared).clamp(0.0, 1.0);
-    final projection = start + segment * t;
-    return point.distanceTo(projection);
-  }
-
   void _combatLog(String event, String details) {
     if (!kDebugMode || !_combatDebugLogsEnabled) {
       return;
@@ -2286,12 +2336,104 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     EnemyKind kind, {
     required Vector2 from,
     required Vector2 to,
+    bool hasActiveBreachTarget = false,
   }) {
     final enemy = _Enemy.fromDefinition(
       CampaignData.enemyForKind(kind, stageNumber: stage.number, intensity: 1),
       spawnDirection: SpawnDirection.north,
     )..position.setFrom(to);
+    if (hasActiveBreachTarget) {
+      enemy.breachTargetCell = (0, 0);
+    }
     return _applyEnemyTowerContactDamage(enemy, from: from);
+  }
+
+  @visibleForTesting
+  double debugApplyLeakFrameTowerContactForTest(
+    EnemyKind kind, {
+    required TowerKind towerKind,
+    required Vector2 towerPosition,
+  }) {
+    final towerIndex = debugAddTowerForContactTest(towerKind, towerPosition);
+    final tower = _towers[towerIndex];
+    final before = tower.hitPoints;
+    final enemy = _Enemy.fromDefinition(
+      CampaignData.enemyForKind(kind, stageNumber: stage.number, intensity: 1),
+      spawnDirection: SpawnDirection.north,
+    )..position.setFrom(towerPosition);
+    enemy.reachedGoal = true;
+    enemy.distanceToCitadel = enemy.position.distanceTo(_citadelCenter);
+    _baseHealth = math.max(_baseHealth, stage.citadelHitPoints);
+    _remainingEnemiesInCycle = math.max(_remainingEnemiesInCycle, 1);
+    _enemies.add(enemy);
+
+    _updateEnemies(0.016);
+
+    final stillPresent = _towers.where(
+      (candidate) => identical(candidate, tower),
+    );
+    final after = stillPresent.isEmpty ? 0.0 : stillPresent.single.hitPoints;
+    return before - after;
+  }
+
+  @visibleForTesting
+  List<String?> debugFireTowerAtEnemyForTest(
+    TowerKind kind, {
+    required Vector2 towerPosition,
+    required Vector2 enemyPosition,
+  }) {
+    final tower = _TowerPlacement(
+      definition: TowerCatalog.byKind(kind),
+      position: towerPosition.clone(),
+      contactId: _nextTowerContactId++,
+    );
+    final enemy = _Enemy.fromDefinition(
+      CampaignData.enemyForKind(
+        EnemyKind.raider,
+        stageNumber: stage.number,
+        intensity: 1,
+      ),
+      spawnDirection: SpawnDirection.north,
+    )..position.setFrom(enemyPosition);
+    enemy.distanceToCitadel = enemy.position.distanceTo(_citadelCenter);
+    _towers.add(tower);
+    _enemies.add(enemy);
+    final firstNewProjectileIndex = _projectiles.length;
+
+    _fireTower(tower);
+
+    return _projectiles
+        .skip(firstNewProjectileIndex)
+        .map((projectile) => projectile.effectId)
+        .toList(growable: false);
+  }
+
+  @visibleForTesting
+  List<double> debugFireTowerAtEnemyBurnTimersForTest(
+    TowerKind kind, {
+    required Vector2 towerPosition,
+    required Vector2 enemyPosition,
+  }) {
+    final tower = _TowerPlacement(
+      definition: TowerCatalog.byKind(kind),
+      position: towerPosition.clone(),
+      contactId: _nextTowerContactId++,
+    );
+    final enemy = _Enemy.fromDefinition(
+      CampaignData.enemyForKind(
+        EnemyKind.raider,
+        stageNumber: stage.number,
+        intensity: 1,
+      ),
+      spawnDirection: SpawnDirection.north,
+    )..position.setFrom(enemyPosition);
+    enemy.distanceToCitadel = enemy.position.distanceTo(_citadelCenter);
+    _towers.add(tower);
+    _enemies.add(enemy);
+
+    _fireTower(tower);
+
+    return _enemies.map((enemy) => enemy.burnTimer).toList(growable: false);
   }
 
   @visibleForTesting
@@ -2660,6 +2802,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
       _logCitadelTouchIfBlocked(enemy);
 
+      if (_shouldApplyEnemyTowerContactDamage(enemy)) {
+        _applyEnemyTowerContactDamage(enemy);
+      }
       if (_shouldResolveEnemyLeak(enemy)) {
         if (!playedBaseDamageSfx) {
           playedBaseDamageSfx = true;
@@ -2751,8 +2896,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   bool _shouldApplyEnemyTowerContactDamage(_Enemy enemy) {
-    return _canEnemyDamageTowersOnContact(enemy) &&
-        enemy.breachTargetCell == null;
+    return _canEnemyDamageTowersOnContact(enemy);
   }
 
   void _updateTowers(double dt) {
@@ -2789,7 +2933,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     final contactStart = from ?? enemy.position;
     final contactEnd = enemy.position;
-    final contactRadius = _tileSize * 0.92;
+    final crossedCells = _cellsCrossedByMovement(contactStart, contactEnd);
     var totalDamage = 0.0;
     var hitAnyTower = false;
     for (
@@ -2801,13 +2945,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       if ((enemy.towerContactCooldowns[tower.contactId] ?? 0) > 0) {
         continue;
       }
-      final distance = _distancePointToSegment(
-        tower.position,
-        contactStart,
-        contactEnd,
-      );
-      if (distance > contactRadius) {
-        continue;
+      final towerCell = _cellForWorldPosition(tower.position);
+      if (towerCell != null && crossedCells.isNotEmpty) {
+        if (!crossedCells.contains(towerCell)) {
+          continue;
+        }
+      } else {
+        final distance = _distanceToSegment(
+          tower.position,
+          contactStart,
+          contactEnd,
+        );
+        if (distance > _tileSize * 0.38) {
+          continue;
+        }
       }
       final damage =
           enemy.definition.baseTowerContactDamage *
@@ -3596,6 +3747,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _applyBurn(enemy, dps: burnDps, duration: burnDuration);
     }
 
+    _spawnProjectile(
+      from: tower.position,
+      to: target.position,
+      color: tower.definition.color,
+      lifetime: 0.24,
+      radius: 5.8,
+      effectId: EffectVisualCatalog.cannonballProjectile,
+    );
     _spawnPulse(
       center: target.position,
       color: tower.definition.color,
@@ -4083,7 +4242,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   _Enemy? _pickClusterTarget(Vector2 origin, double range) {
     _Enemy? target;
-    var bestScore = -1.0;
+    var bestScore = double.negativeInfinity;
 
     for (final enemy in _enemies) {
       if (origin.distanceTo(enemy.position) > range) {
@@ -4958,6 +5117,22 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return null;
     }
     return (col, row);
+  }
+
+  Set<(int, int)> _cellsCrossedByMovement(Vector2 start, Vector2 end) {
+    final cells = <(int, int)>{};
+    final distance = start.distanceTo(end);
+    final stepSize = math.max(1.0, _tileSize * 0.2);
+    final samples = math.max(1, (distance / stepSize).ceil());
+    final delta = end - start;
+    for (var sample = 0; sample <= samples; sample += 1) {
+      final t = sample / samples;
+      final cell = _cellForWorldPosition(start + (delta * t));
+      if (cell != null) {
+        cells.add(cell);
+      }
+    }
+    return cells;
   }
 
   void _rerouteEnemies() {
@@ -5910,7 +6085,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _drawRangeCircle(
         canvas,
         center: tower.position,
-        radius: _towerCurrentRange(tower),
+        radius: _towerDisplayedRange(tower),
         color: const Color(0xFFE4C67A),
       );
     }
@@ -5919,8 +6094,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (hero != null) {
       _drawRangeCircle(
         canvas,
-        center: hero.position,
-        radius: _heroSelectionRange(hero),
+        center: hero.guardAnchor,
+        radius: _heroDisplayedRange(hero),
         color: const Color(0xFFE4C67A),
       );
     }
@@ -6803,13 +6978,48 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         );
       }
       if (enemy.burnTimer > 0) {
+        final burnPulse = 0.65 + (math.sin(enemy.burnTimer * 9.0) * 0.18);
+        final burnCenter = enemy.position.toOffset();
         canvas.drawCircle(
-          enemy.position.toOffset(),
-          13,
+          burnCenter,
+          visualSize * 0.38,
           Paint()
-            ..color = const Color(0x44FF7E3F)
+            ..color = const Color(0x33FF4A1A)
+            ..style = PaintingStyle.fill,
+        );
+        canvas.drawCircle(
+          burnCenter,
+          visualSize * (0.34 + burnPulse * 0.08),
+          Paint()
+            ..color = const Color(0xAAFF7E3F)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.5,
+            ..strokeWidth = 3.0,
+        );
+        for (var ember = 0; ember < 3; ember += 1) {
+          final phase = enemy.burnTimer * (7 + ember) + ember;
+          final emberOffset = Offset(
+            math.sin(phase) * visualSize * 0.22,
+            -visualSize * (0.18 + ember * 0.08) -
+                (math.cos(phase * 1.3).abs() * 5),
+          );
+          canvas.drawCircle(
+            burnCenter + emberOffset,
+            math.max(2.2, visualSize * (0.06 - ember * 0.006)),
+            Paint()
+              ..color =
+                  (ember == 0
+                          ? const Color(0xFFFFD36A)
+                          : const Color(0xFFFF6A2A))
+                      .withValues(alpha: 0.72),
+          );
+        }
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: burnCenter.translate(0, -visualSize * 0.12),
+            width: visualSize * 0.36,
+            height: visualSize * 0.58,
+          ),
+          Paint()..color = const Color(0x44FF8A2A),
         );
       }
       if (enemy.damageReductionTimer > 0) {
