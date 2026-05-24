@@ -87,13 +87,11 @@ class _TitleScreenState extends State<TitleScreen> {
 
   void _continueGame() {
     final overview = _overview;
-    if (overview == null ||
-        !overview.player.hasResumableRun ||
-        overview.player.currentCampaignStage <= 1) {
+    if (overview == null || !overview.hasContinuableProgress) {
       return;
     }
     setState(() {
-      _selectedStage = overview.player.currentCampaignStage;
+      _selectedStage = overview.continueStageNumber;
       _flow = AppFlowState.camp;
     });
   }
@@ -342,8 +340,9 @@ class _MainMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canContinue = overview.player.hasResumableRun && !busy;
+    final canContinue = overview.hasContinuableProgress && !busy;
     final newGameButton = _MenuButton(
+      key: const ValueKey('main-menu-new-game'),
       icon: Icons.play_arrow_rounded,
       iconColor: AppTheme.moss,
       label: busy ? '로딩 중...' : '새 게임',
@@ -352,11 +351,12 @@ class _MainMenu extends StatelessWidget {
       onTap: busy ? null : onNewGame,
     );
     final continueButton = _MenuButton(
+      key: const ValueKey('main-menu-continue'),
       icon: Icons.fast_forward_rounded,
       iconColor: canContinue ? AppTheme.ember : AppTheme.inkMuted,
       label: '이어하기',
       subtitle: canContinue
-          ? '스테이지 ${overview.currentCampaignStage}부터 재개'
+          ? '스테이지 ${overview.continueStageNumber}부터 재개'
           : '이어할 진행이 없습니다',
       glowColor: canContinue ? AppTheme.ember : null,
       onTap: canContinue ? onContinue : null,
@@ -425,6 +425,7 @@ class _MainMenu extends StatelessWidget {
 
 class _MenuButton extends StatelessWidget {
   const _MenuButton({
+    super.key,
     required this.icon,
     required this.iconColor,
     required this.label,

@@ -1,0 +1,3 @@
+# Continue Button Rule
+
+When `kUnlockAllCampaignStagesForDevelopment` is true, QA can clear noncontiguous stages such as Stage 4-7 without clearing Stage 1-3. Continue must still be enabled if there is meaningful progress (`clearedStageCount > 0` or meta upgrade progress), and it must be ordered above New Game. The continue target should be derived from the highest cleared stage + 1 when that stage is unlocked, not only from `player.currentCampaignStage`, because `currentCampaignStage` can point to Stage 1 when all stages are unlocked and earlier stages are uncleared. Keep tests covering noncontiguous review progress in `test/title_screen_test.dart`.

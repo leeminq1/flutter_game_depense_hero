@@ -28,41 +28,80 @@ void main() {
       totalStages: CampaignData.totalStages,
     );
 
-    await tester.pumpWidget(
-      MaterialApp(home: TitleScreen(bootstrap: _TestBootstrap(store))),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
+    await _pumpMenu(tester, store);
 
-    await tester.tap(find.text('PIXEL GUARD : WAVE'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
-
-    final continueTop = tester.getTopLeft(find.text('이어하기'));
-    final newGameTop = tester.getTopLeft(find.text('새 게임'));
+    final continueTop = tester.getTopLeft(_continueButtonFinder);
+    final newGameTop = tester.getTopLeft(_newGameButtonFinder);
     expect(continueTop.dy, lessThan(newGameTop.dy));
 
-    await tester.tap(find.text('새 게임'));
+    await tester.tap(_newGameButtonFinder);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
 
-    expect(find.text('진행 기록을 삭제할까요?'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
     expect(store.resetCount, 0);
 
-    await tester.tap(find.text('취소'));
+    await tester.tap(find.byType(TextButton).last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
     expect(store.resetCount, 0);
 
-    await tester.tap(find.text('새 게임'));
+    await tester.tap(_newGameButtonFinder);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
-    await tester.tap(find.text('삭제'));
+    await tester.tap(find.byType(FilledButton).last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
 
     expect(store.resetCount, 1);
   });
+
+  testWidgets('continue is available for noncontiguous review progress', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final store = _CountingProgressStore(await InMemoryProgressStore.open());
+    await store.recordStageCompletion(
+      stageNumber: 5,
+      evaluation: const StageEvaluationResult(
+        starsAwarded: 2,
+        objectiveResults: [],
+      ),
+      totalStages: CampaignData.totalStages,
+    );
+
+    await _pumpMenu(tester, store);
+
+    final continueTop = tester.getTopLeft(_continueButtonFinder);
+    final newGameTop = tester.getTopLeft(_newGameButtonFinder);
+    expect(continueTop.dy, lessThan(newGameTop.dy));
+
+    await tester.tap(_continueButtonFinder);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('STAGE 6'), findsOneWidget);
+  });
+}
+
+Finder get _continueButtonFinder =>
+    find.byKey(const ValueKey('main-menu-continue'));
+
+Finder get _newGameButtonFinder =>
+    find.byKey(const ValueKey('main-menu-new-game'));
+
+Future<void> _pumpMenu(WidgetTester tester, ProgressStore store) async {
+  await tester.pumpWidget(
+    MaterialApp(home: TitleScreen(bootstrap: _TestBootstrap(store))),
+  );
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
+
+  await tester.tap(find.text('PIXEL GUARD : WAVE').first);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
 }
 
 class _TestBootstrap extends AppBootstrap {
