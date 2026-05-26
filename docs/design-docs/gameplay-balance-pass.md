@@ -63,3 +63,14 @@
   and Stage Event boss stats are intentionally unchanged.
 - The generated snapshot includes `Wave Pressure Index` so future balance passes
   can compare Stage-to-Stage pressure without re-running an ad hoc script.
+
+# 2026-05-26 Intra-Stage Wave Slope Note
+
+- Normal Stage Wave 1 pressure stays unchanged from the previous pressure
+  target.
+- Current Wave 1 to 2 pressure gaps are increased by about 10%.
+- Current Wave 2 to 3 pressure gaps are increased by about 20%.
+- Current Wave 3 to 4 pressure gaps are increased by about 10% so the final
+  Wave remains harder without becoming a sharp difficulty wall.
+- Enemy counts, rewards, maps, bombardment, and Stage Event boss stats are
+  intentionally unchanged.

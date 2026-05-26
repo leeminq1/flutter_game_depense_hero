@@ -1089,7 +1089,7 @@ class CampaignData {
 
   static List<double>? _linearStagePressureTargets(int stageNumber) {
     if (stageNumber == 1) {
-      return const [90.0, 160.0, 230.0];
+      return const [90.0, 166.0, 252.0];
     }
     if (stageNumber < 2 || stageNumber > totalStages) {
       return null;
@@ -1097,11 +1097,22 @@ class CampaignData {
 
     final offset = stageNumber - 2;
     final lateOffset = math.max(0, stageNumber - 20);
-    return [
+    final current = [
       105.0 + (offset * 14) + (lateOffset * 5),
       175.0 + (offset * 19) + (lateOffset * 7),
       240.0 + (offset * 24) + (lateOffset * 9),
       300.0 + (offset * 28) + (lateOffset * 11),
+    ];
+    return [
+      current[0],
+      current[0] + ((current[1] - current[0]) * 1.10),
+      current[0] +
+          ((current[1] - current[0]) * 1.10) +
+          ((current[2] - current[1]) * 1.20),
+      current[0] +
+          ((current[1] - current[0]) * 1.10) +
+          ((current[2] - current[1]) * 1.20) +
+          ((current[3] - current[2]) * 1.10),
     ];
   }
 

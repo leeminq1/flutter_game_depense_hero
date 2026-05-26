@@ -14,7 +14,7 @@
 
 ## 현재 테스트 빌드
 
-- 버전: `1.0.21+22`
+- 버전: `1.0.27+28`
 - 패키지: `com.min21.pixelguardwave`
 - AAB: `build/app/outputs/bundle/release/app-release.aab`
 - 전체 Stage 해금 디버그: 켜짐
@@ -46,3 +46,21 @@
   Waves interpolate linearly.
 - Gold rewards, spawn timing, enemy counts, citadel leak damage, and Stage Event
   boss stats stay unchanged.
+
+# 2026-05-26 Wave Slope Tuning Intent
+
+- Tune only normal Stage wave pressure targets.
+- Keep Wave 1 pressure unchanged.
+- Increase current intra-stage pressure gaps by about +10% for Wave 1 to 2,
+  +20% for Wave 2 to 3, and +10% for Wave 3 to 4.
+- Keep enemy counts, rewards, stage event bosses, bombardment, and maps unchanged.
+
+# 2026-05-26 Wave Slope Tuning Verification
+
+- Updated normal Stage wave pressure targets only.
+- Regenerated `docs/generated/current-game-data-snapshot.md`.
+- Bumped app version to `1.0.27+28`.
+- Verified with `flutter test test/campaign_balance_smoke_test.dart`.
+- Verified with the required smoke test bundle from `QUALITY_SCORE.md`.
+- Verified with `flutter analyze`.
+- Built release AAB at `build/app/outputs/bundle/release/app-release.aab`.

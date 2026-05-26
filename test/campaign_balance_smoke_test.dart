@@ -76,7 +76,7 @@ void main() {
     }
   });
 
-  test('normal wave pressure follows capped linear balance targets', () {
+  test('normal wave pressure follows tuned intra-stage slope targets', () {
     List<double>? previousPressures;
 
     for (
@@ -96,7 +96,7 @@ void main() {
           closeTo(expected[index], 3.0),
           reason:
               'Stage $stageNumber wave ${index + 1} pressure should follow '
-              'the capped linear target.',
+              'the tuned intra-stage slope target.',
         );
       }
 
@@ -108,7 +108,9 @@ void main() {
       expect(
         pressures.last,
         lessThanOrEqualTo(expected.last + 3.0),
-        reason: 'Stage $stageNumber final wave should not exceed +30%.',
+        reason:
+            'Stage $stageNumber final wave should stay within the tuned '
+            'Wave 3 to 4 slope.',
       );
       for (var index = 1; index < pressures.length; index += 1) {
         expect(
@@ -249,16 +251,29 @@ void main() {
 
 List<double> _expectedPressureTargets(int stageNumber) {
   if (stageNumber == 1) {
-    return const [90, 160, 230];
+    return const [90, 166, 252];
   }
 
   final offset = stageNumber - 2;
   final lateOffset = stageNumber > 20 ? stageNumber - 20 : 0;
+  final wave1 = (105 + (offset * 14) + (lateOffset * 5)).toDouble();
+  final wave2 = (175 + (offset * 19) + (lateOffset * 7)).toDouble();
+  final wave3 = (240 + (offset * 24) + (lateOffset * 9)).toDouble();
+  final wave4 = (300 + (offset * 28) + (lateOffset * 11)).toDouble();
+  return _steeperMiddlePressureTargets([wave1, wave2, wave3, wave4]);
+}
+
+List<double> _steeperMiddlePressureTargets(List<double> current) {
   return [
-    105 + (offset * 14) + (lateOffset * 5),
-    175 + (offset * 19) + (lateOffset * 7),
-    240 + (offset * 24) + (lateOffset * 9),
-    300 + (offset * 28) + (lateOffset * 11),
+    current[0],
+    current[0] + ((current[1] - current[0]) * 1.10),
+    current[0] +
+        ((current[1] - current[0]) * 1.10) +
+        ((current[2] - current[1]) * 1.20),
+    current[0] +
+        ((current[1] - current[0]) * 1.10) +
+        ((current[2] - current[1]) * 1.20) +
+        ((current[3] - current[2]) * 1.10),
   ];
 }
 
