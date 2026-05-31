@@ -74,3 +74,17 @@
   Wave remains harder without becoming a sharp difficulty wall.
 - Enemy counts, rewards, maps, bombardment, and Stage Event boss stats are
   intentionally unchanged.
+
+# 2026-06-01 Difficulty Ramp And Event Boss Rebalance Note
+
+- Normal Stage wave pressure now targets a banded intra-stage ramp:
+  Stage 1-10 about 160%, Stage 11-20 about 145%, Stage 21-30 about 135%.
+- Event boss HP no longer depends on the enemy kind's raw HP multiplier. It now
+  follows a Stage-based piecewise curve: Stage 4 starts at 1000 HP, Stage 4-10
+  adds 285 per event tier, Stage 13-19 adds 370 per event tier, and Stage 22-28
+  adds 450 per event tier.
+- High-damage event wall breakers are capped by Stage tier. This removes the
+  Stage 7/10 Grave Guard spike while leaving lower-damage support/caster bosses
+  mostly unchanged.
+- Regenerate `docs/generated/current-game-data-snapshot.md` and
+  `docs/generated/difficulty-audit.md` after future balance edits.

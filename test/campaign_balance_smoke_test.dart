@@ -76,7 +76,7 @@ void main() {
     }
   });
 
-  test('normal wave pressure follows tuned intra-stage slope targets', () {
+  test('normal wave pressure follows tuned stage-band ramp targets', () {
     List<double>? previousPressures;
 
     for (
@@ -89,6 +89,9 @@ void main() {
         for (final cycle in stage.assaultCycles) _pressureIndex(cycle.groups),
       ];
       final expected = _expectedPressureTargets(stageNumber);
+      final stageScore =
+          pressures.reduce((total, pressure) => total + pressure) /
+          pressures.length;
 
       for (var index = 0; index < pressures.length; index += 1) {
         expect(
@@ -96,21 +99,21 @@ void main() {
           closeTo(expected[index], 3.0),
           reason:
               'Stage $stageNumber wave ${index + 1} pressure should follow '
-              'the tuned intra-stage slope target.',
+              'the tuned stage-band ramp target.',
         );
       }
 
       expect(
         pressures.first,
         closeTo(expected.first, 3.0),
-        reason: 'Stage $stageNumber wave 1 should be about 10% easier.',
+        reason: 'Stage $stageNumber wave 1 should anchor the Stage curve.',
       );
       expect(
         pressures.last,
         lessThanOrEqualTo(expected.last + 3.0),
         reason:
-            'Stage $stageNumber final wave should stay within the tuned '
-            'Wave 3 to 4 slope.',
+            'Stage $stageNumber final wave should stay within the target '
+            'stage-band ramp.',
       );
       for (var index = 1; index < pressures.length; index += 1) {
         expect(
@@ -121,19 +124,23 @@ void main() {
       }
 
       if (previousPressures != null) {
-        for (
-          var index = 0;
-          index < previousPressures.length && index < pressures.length;
-          index += 1
-        ) {
-          expect(
-            pressures[index],
-            greaterThan(previousPressures[index]),
-            reason:
-                'Stage $stageNumber wave ${index + 1} pressure should be '
-                'higher than the previous stage.',
-          );
-        }
+        expect(
+          pressures.first,
+          greaterThan(previousPressures.first),
+          reason:
+              'Stage $stageNumber opening pressure should be higher than the '
+              'previous stage.',
+        );
+        expect(
+          stageScore,
+          greaterThan(
+            previousPressures.reduce((total, pressure) => total + pressure) /
+                previousPressures.length,
+          ),
+          reason:
+              'Stage $stageNumber average pressure should be higher than the '
+              'previous stage.',
+        );
       }
       previousPressures = pressures;
     }
@@ -191,42 +198,42 @@ void main() {
     expect(_enemyCountsForStage(21), [8, 11, 13, 14]);
   });
 
-  test('stage event boss combat snapshots stay unchanged', () {
+  test('stage event boss HP follows the staged piecewise curve', () {
     const expected = <int, Map<String, List<int>>>{
       4: {
-        'elite_shield_breaker': [1366, 96, 98],
+        'elite_shield_breaker': [1000, 72, 74],
       },
       7: {
-        'boss_banner_captain': [1419, 68, 55],
-        'elite_grave_guard': [3974, 122, 138],
+        'boss_banner_captain': [1285, 68, 55],
+        'elite_grave_guard': [1285, 74, 76],
       },
       10: {
-        'boss_banner_captain': [1658, 68, 55],
-        'elite_grave_guard': [4500, 122, 138],
+        'boss_banner_captain': [1570, 68, 55],
+        'elite_grave_guard': [1570, 76, 78],
       },
       13: {
-        'boss_corrupted_knight': [4400, 75, 85],
-        'boss_warlock': [3177, 65, 56],
+        'boss_corrupted_knight': [1940, 75, 80],
+        'boss_warlock': [1940, 65, 56],
       },
       16: {
-        'boss_corrupted_knight': [4400, 75, 85],
-        'boss_warlock': [3501, 65, 56],
+        'boss_corrupted_knight': [2310, 75, 82],
+        'boss_warlock': [2310, 65, 56],
       },
       19: {
-        'boss_corrupted_knight': [4400, 75, 85],
-        'boss_warlock': [3686, 65, 56],
+        'boss_corrupted_knight': [2680, 75, 84],
+        'boss_warlock': [2680, 65, 56],
       },
       22: {
-        'boss_bastion_priest': [4500, 66, 60],
-        'boss_bastion_overlord': [4500, 78, 88],
+        'boss_bastion_priest': [3130, 66, 60],
+        'boss_bastion_overlord': [3130, 78, 86],
       },
       25: {
-        'boss_bastion_priest': [4500, 66, 60],
-        'boss_bastion_overlord': [4500, 78, 88],
+        'boss_bastion_priest': [3580, 66, 60],
+        'boss_bastion_overlord': [3580, 78, 88],
       },
       28: {
-        'boss_bastion_priest': [4500, 66, 60],
-        'boss_bastion_overlord': [4500, 78, 88],
+        'boss_bastion_priest': [4030, 66, 60],
+        'boss_bastion_overlord': [4030, 78, 88],
       },
     };
 
@@ -242,7 +249,9 @@ void main() {
             boss.baseTowerContactDamage,
           ],
           eventSnapshots[event.id],
-          reason: 'Stage $stageNumber ${event.id} should not be rebalanced.',
+          reason:
+              'Stage $stageNumber ${event.id} should follow the linear '
+              'event boss curve.',
         );
       }
     }
@@ -251,29 +260,42 @@ void main() {
 
 List<double> _expectedPressureTargets(int stageNumber) {
   if (stageNumber == 1) {
-    return const [90, 166, 252];
+    return _linearRampPressureTargets(const [90], 1.60, 3);
   }
 
   final offset = stageNumber - 2;
   final lateOffset = stageNumber > 20 ? stageNumber - 20 : 0;
   final wave1 = (105 + (offset * 14) + (lateOffset * 5)).toDouble();
-  final wave2 = (175 + (offset * 19) + (lateOffset * 7)).toDouble();
-  final wave3 = (240 + (offset * 24) + (lateOffset * 9)).toDouble();
-  final wave4 = (300 + (offset * 28) + (lateOffset * 11)).toDouble();
-  return _steeperMiddlePressureTargets([wave1, wave2, wave3, wave4]);
+  return _linearRampPressureTargets(
+    [wave1],
+    _targetRampForStage(stageNumber),
+    4,
+  );
 }
 
-List<double> _steeperMiddlePressureTargets(List<double> current) {
+double _targetRampForStage(int stageNumber) {
+  if (stageNumber <= 10) {
+    return 1.60;
+  }
+  if (stageNumber <= 20) {
+    return 1.45;
+  }
+  return 1.35;
+}
+
+List<double> _linearRampPressureTargets(
+  List<double> current,
+  double ramp,
+  int cycleCount,
+) {
+  final first = current.first;
+  final last = first * (1 + ramp);
+  if (cycleCount == 1) {
+    return [first];
+  }
+  final step = (last - first) / (cycleCount - 1);
   return [
-    current[0],
-    current[0] + ((current[1] - current[0]) * 1.10),
-    current[0] +
-        ((current[1] - current[0]) * 1.10) +
-        ((current[2] - current[1]) * 1.20),
-    current[0] +
-        ((current[1] - current[0]) * 1.10) +
-        ((current[2] - current[1]) * 1.20) +
-        ((current[3] - current[2]) * 1.10),
+    for (var index = 0; index < cycleCount; index += 1) first + step * index,
   ];
 }
 

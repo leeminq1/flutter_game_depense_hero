@@ -1083,36 +1083,54 @@ class CampaignData {
     int stageNumber,
     int cycleCount,
   ) {
-    final targets = _linearStagePressureTargets(stageNumber);
+    final targets = _linearStagePressureTargets(stageNumber, cycleCount);
     return targets == null || targets.length != cycleCount ? null : targets;
   }
 
-  static List<double>? _linearStagePressureTargets(int stageNumber) {
-    if (stageNumber == 1) {
-      return const [90.0, 166.0, 252.0];
-    }
+  static List<double>? _linearStagePressureTargets(
+    int stageNumber,
+    int cycleCount,
+  ) {
     if (stageNumber < 2 || stageNumber > totalStages) {
+      if (stageNumber == 1) {
+        return _linearRampPressureTargets(90.0, 1.60, cycleCount);
+      }
       return null;
     }
 
     final offset = stageNumber - 2;
     final lateOffset = math.max(0, stageNumber - 20);
-    final current = [
-      105.0 + (offset * 14) + (lateOffset * 5),
-      175.0 + (offset * 19) + (lateOffset * 7),
-      240.0 + (offset * 24) + (lateOffset * 9),
-      300.0 + (offset * 28) + (lateOffset * 11),
-    ];
+    final waveOne = 105.0 + (offset * 14) + (lateOffset * 5);
+    return _linearRampPressureTargets(
+      waveOne,
+      _targetWaveRampForStage(stageNumber),
+      cycleCount,
+    );
+  }
+
+  static double _targetWaveRampForStage(int stageNumber) {
+    if (stageNumber <= 10) {
+      return 1.60;
+    }
+    if (stageNumber <= 20) {
+      return 1.45;
+    }
+    return 1.35;
+  }
+
+  static List<double> _linearRampPressureTargets(
+    double firstWavePressure,
+    double ramp,
+    int cycleCount,
+  ) {
+    if (cycleCount <= 1) {
+      return [firstWavePressure];
+    }
+    final finalWavePressure = firstWavePressure * (1 + ramp);
+    final step = (finalWavePressure - firstWavePressure) / (cycleCount - 1);
     return [
-      current[0],
-      current[0] + ((current[1] - current[0]) * 1.10),
-      current[0] +
-          ((current[1] - current[0]) * 1.10) +
-          ((current[2] - current[1]) * 1.20),
-      current[0] +
-          ((current[1] - current[0]) * 1.10) +
-          ((current[2] - current[1]) * 1.20) +
-          ((current[3] - current[2]) * 1.10),
+      for (var index = 0; index < cycleCount; index += 1)
+        firstWavePressure + (step * index),
     ];
   }
 

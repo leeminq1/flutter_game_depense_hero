@@ -21,12 +21,9 @@ import 'package:flutter/material.dart' hide Route;
 
 const double _enemyMoveSpeedMultiplier = 2.0;
 const int _maxCombatUnitLevel = 4;
-const double _stageEventBossHpBalanceMultiplier = 0.90;
 const double _stageEventBossDamageBalanceMultiplier = 0.70;
 const double _stageEventStructureDamageBalanceMultiplier = 0.70;
 const double _stageEventBossPhysicalDamageMultiplier = 1.0;
-const int _stageEventCorruptedKnightTargetHp = 4400;
-const int _stageEventBastionOverlordTargetHp = 4500;
 
 int _coinMillWaveStartBonusFor({
   required int level,
@@ -2030,7 +2027,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       intensity: 1.0,
       applyGeneralHpBuff: false,
     );
-    final hitPoints = _stageEventBossHitPoints(base, event);
+    final hitPoints = _stageEventBossHitPoints();
     return EnemyDefinition(
       kind: base.kind,
       label: '${event.title} ${base.label}',
@@ -2050,35 +2047,19 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     );
   }
 
-  int _stageEventBossHitPoints(
-    EnemyDefinition base,
-    StageEventDefinition event,
-  ) {
-    final targetHitPoints = switch (base.kind) {
-      EnemyKind.corruptedKnight => _stageEventCorruptedKnightTargetHp,
-      EnemyKind.bastionOverlord => _stageEventBastionOverlordTargetHp,
-      _ => null,
-    };
-    if (targetHitPoints != null) {
-      return targetHitPoints.clamp(1, _stageEventBossHpCap()).toInt();
+  int _stageEventBossHitPoints() {
+    final tier = _stageEventBossTier();
+    if (tier <= 2) {
+      return 1000 + (tier * 285);
     }
-
-    return (base.hitPoints *
-            event.hitPointMultiplier *
-            _stageEventBossHpBalanceMultiplier)
-        .round()
-        .clamp(1, _stageEventBossHpCap())
-        .toInt();
+    if (tier <= 5) {
+      return 1570 + ((tier - 2) * 370);
+    }
+    return 2680 + ((tier - 5) * 450);
   }
 
-  int _stageEventBossHpCap() {
-    if (stage.number <= 12) {
-      return 4500;
-    }
-    if (stage.number <= 15) {
-      return 5200;
-    }
-    return 4500;
+  int _stageEventBossTier() {
+    return ((stage.number - 4) ~/ 3).clamp(0, 8).toInt();
   }
 
   int _stageEventBossCitadelDamage(
@@ -2101,8 +2082,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     EnemyKind kind,
     StageEventDefinition event,
   ) {
+    final cap = math.min(
+      _stageEventBossStructureDamageCap(),
+      _stageEventBossKindStructureDamageCap(kind) ?? 1000,
+    );
     if (kind == EnemyKind.bastionOverlord) {
-      return _rawStructureDamageCapForBalancedDamage(78);
+      return _rawStructureDamageCapForBalancedDamage(math.min(78, cap));
     }
     final scaled = math.max(
       1,
@@ -2111,10 +2096,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
               _stageEventBossDamageBalanceMultiplier)
           .round(),
     );
-    final cap = _stageEventBossStructureDamageCap(kind);
-    if (cap == null) {
-      return scaled;
-    }
     return math.min(scaled, _rawStructureDamageCapForBalancedDamage(cap));
   }
 
@@ -2122,8 +2103,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     EnemyDefinition base,
     StageEventDefinition event,
   ) {
+    final cap = _stageEventBossTowerContactDamageCap();
     if (base.kind == EnemyKind.bastionOverlord) {
-      return 88;
+      return math.min(88, cap);
     }
     final scaled = math.max(
       1,
@@ -2132,11 +2114,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
               _stageEventBossDamageBalanceMultiplier)
           .round(),
     );
-    final cap = _stageEventBossTowerContactDamageCap(base.kind);
-    return cap == null ? scaled : math.min(scaled, cap);
+    return math.min(scaled, cap);
   }
 
-  int? _stageEventBossStructureDamageCap(EnemyKind kind) {
+  int _stageEventBossStructureDamageCap() {
+    return 72 + (_stageEventBossTier() * 2);
+  }
+
+  int? _stageEventBossKindStructureDamageCap(EnemyKind kind) {
     return switch (kind) {
       EnemyKind.corruptedKnight => 75,
       EnemyKind.bastionOverlord => 78,
@@ -2144,12 +2129,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     };
   }
 
-  int? _stageEventBossTowerContactDamageCap(EnemyKind kind) {
-    return switch (kind) {
-      EnemyKind.corruptedKnight => 85,
-      EnemyKind.bastionOverlord => 88,
-      _ => null,
-    };
+  int _stageEventBossTowerContactDamageCap() {
+    return 74 + (_stageEventBossTier() * 2);
   }
 
   int _rawStructureDamageCapForBalancedDamage(int balancedDamage) {

@@ -14,7 +14,7 @@
 
 ## 현재 테스트 빌드
 
-- 버전: `1.0.27+28`
+- 버전: `1.0.28+29`
 - 패키지: `com.min21.pixelguardwave`
 - AAB: `build/app/outputs/bundle/release/app-release.aab`
 - 전체 Stage 해금 디버그: 켜짐
@@ -64,3 +64,22 @@
 - Verified with the required smoke test bundle from `QUALITY_SCORE.md`.
 - Verified with `flutter analyze`.
 - Built release AAB at `build/app/outputs/bundle/release/app-release.aab`.
+
+# 2026-06-01 Difficulty Ramp And Boss Tuning Note
+
+- Retuned normal Stage wave pressure ramps to target about 160% for Stage 1-10,
+  145% for Stage 11-20, and 135% for Stage 21-30.
+- Changed Stage Event boss HP to a Stage-based piecewise curve: Stage 4 starts
+  at 1000 HP, Stage 4-10 adds 285 per event tier, Stage 13-19 adds 370 per
+  event tier, and Stage 22-28 adds 450 per event tier.
+- Capped high-damage Stage Event wall breakers so Stage 7/10 Grave Guard no
+  longer has a larger damage spike than later bosses.
+- Added `tool/export_difficulty_audit.dart` and generated
+  `docs/generated/difficulty-audit.md` for verification-friendly balance tables.
+- Bumped release version to `1.0.28+29`, disabled
+  `kUnlockAllCampaignStagesForDevelopment`, and built
+  `build/app/outputs/bundle/release/app-release.aab`.
+- Verified with `flutter test test/tile_grid_stage_data_test.dart
+  test/campaign_balance_smoke_test.dart test/run_offers_and_road_tiles_test.dart
+  test/game_session_controller_test.dart tool/export_game_data_docs.dart
+  tool/export_difficulty_audit.dart`, `flutter analyze`, and `git diff --check`.

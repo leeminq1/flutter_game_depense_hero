@@ -847,9 +847,15 @@ void main() {
   });
 
   test('late stage-event bosses use tuned hp damage and armor caps', () {
-    final hpCapsByStage = {16: 4500, 19: 4500, 22: 4500, 25: 4500, 28: 4500};
+    final expectedHpByStage = {
+      16: 2310,
+      19: 2680,
+      22: 3130,
+      25: 3580,
+      28: 4030,
+    };
 
-    for (final entry in hpCapsByStage.entries) {
+    for (final entry in expectedHpByStage.entries) {
       final stageNumber = entry.key;
       final game = DefensePrototypeGame(
         stage: CampaignData.stage(stageNumber),
@@ -864,12 +870,13 @@ void main() {
 
         expect(
           boss.hitPoints,
-          lessThanOrEqualTo(entry.value),
-          reason: 'Stage $stageNumber ${event.id} HP should stay capped.',
+          entry.value,
+          reason:
+              'Stage $stageNumber ${event.id} HP should follow the staged '
+              'event boss curve.',
         );
 
         if (boss.kind == EnemyKind.corruptedKnight) {
-          expect(boss.hitPoints, 4400);
           expect(boss.baseStructureDamage, lessThanOrEqualTo(75));
           expect(boss.baseTowerContactDamage, lessThanOrEqualTo(85));
           expect(
@@ -882,7 +889,6 @@ void main() {
         }
 
         if (boss.kind == EnemyKind.bastionOverlord) {
-          expect(boss.hitPoints, 4500);
           expect(boss.citadelDamage, 15);
           expect(boss.baseStructureDamage, lessThanOrEqualTo(78));
           expect(boss.baseTowerContactDamage, lessThanOrEqualTo(88));
