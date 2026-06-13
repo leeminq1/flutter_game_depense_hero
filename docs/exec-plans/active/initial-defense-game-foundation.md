@@ -83,3 +83,17 @@
   test/campaign_balance_smoke_test.dart test/run_offers_and_road_tiles_test.dart
   test/game_session_controller_test.dart tool/export_game_data_docs.dart
   tool/export_difficulty_audit.dart`, `flutter analyze`, and `git diff --check`.
+
+# 2026-06-13 Settings And Credits Note
+
+- Added a Settings entry for third-party credits and licenses.
+- Added a bundled `assets/legal/lpc_credits.txt` file for LPC attribution and
+  release review.
+- Expanded Settings audio controls to cover master, music, and SFX volume plus
+  mute persistence.
+- Bumped release version to `1.0.30+31`.
+- Verified phone-sized Settings behavior with `test/settings_screen_test.dart`.
+- Verified with `flutter test`, `flutter analyze`, `git diff --check`, and
+  `flutter build appbundle`.
+- Confirmed the release AAB includes
+  `base/assets/flutter_assets/assets/legal/lpc_credits.txt`.

@@ -1,0 +1,22 @@
+Universal LPC Spritesheet Character Generator
+Source: https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator
+Generator: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+
+This game includes LPC-derived character sprite artwork. The original LPC
+project artwork is distributed under one or more open licenses, including
+CC-BY-SA 3.0, GPL 3.0, OGA-BY 3.0, CC-BY, and CC0 depending on the selected
+asset layers.
+
+The LPC artwork was contributed as part of the Liberated Pixel Cup project from
+OpenGameArt.org. Detailed upstream authors, source URLs, and per-file licenses
+are documented by the Universal LPC project's CREDITS.csv:
+https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/blob/master/CREDITS.csv
+
+Local generated LPC sprite folders also include per-unit metadata.json and
+credits.txt files beside the exported PNGs.
+
+Important license handling:
+- Credit is required for non-CC0 LPC artwork.
+- Modified or combined CC-BY-SA artwork must preserve share-alike terms.
+- If a platform uses DRM or asset encryption, review the selected LPC asset
+  licenses before release.
