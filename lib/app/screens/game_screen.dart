@@ -634,6 +634,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               final nextLoopNumber = session.currentWave + 1;
               final showBottomHintBanner =
                   _stageNumber >= 11 && _stageNumber <= 20;
+              final selectionPanelOnLeft =
+                  _stageNumber >= 11 && _stageNumber <= 15;
 
               return Stack(
                 fit: StackFit.expand,
@@ -689,7 +691,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 session.selectedTower != null)
                               Positioned(
                                 top: 96,
-                                right: 8,
+                                left: selectionPanelOnLeft ? 8 : null,
+                                right: selectionPanelOnLeft ? null : 8,
                                 width: 136,
                                 child: _TowerActionBar(
                                   sessionController: session,
@@ -702,7 +705,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 session.selectedBarrier != null)
                               Positioned(
                                 top: 96,
-                                right: 8,
+                                left: selectionPanelOnLeft ? 8 : null,
+                                right: selectionPanelOnLeft ? null : 8,
                                 width: 128,
                                 child: _BarrierActionBar(
                                   sessionController: session,
@@ -716,7 +720,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 !session.heroMoveMode)
                               Positioned(
                                 top: 96,
-                                right: 8,
+                                left: selectionPanelOnLeft ? 8 : null,
+                                right: selectionPanelOnLeft ? null : 8,
                                 width: 148,
                                 child: _HeroActionBar(
                                   sessionController: session,
