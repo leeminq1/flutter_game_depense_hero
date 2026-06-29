@@ -12,16 +12,15 @@
 - Android release AAB 빌드 가능.
 - 문서 스냅샷 생성 도구 `tool/export_game_data_docs.dart` 추가.
 
-## 현재 테스트 빌드
+## 현재 릴리스 빌드
 
-- 버전: `1.0.28+29`
+- 버전: `1.0.31+32`
 - 패키지: `com.min21.pixelguardwave`
 - AAB: `build/app/outputs/bundle/release/app-release.aab`
-- 전체 Stage 해금 디버그: 켜짐
+- 전체 Stage 해금 디버그: 꺼짐
 
 ## 다음 운영 전환 체크
 
-- 전체 Stage 해금 디버그 끄기.
 - 개인정보처리방침과 Google Play 데이터 보안 양식 최종 확인.
 - Stage 16 이후 이벤트 보스 체감 재검증.
 - 문서 스냅샷 재생성 후 AAB 빌드.
@@ -97,3 +96,15 @@
   `flutter build appbundle`.
 - Confirmed the release AAB includes
   `base/assets/flutter_assets/assets/legal/lpc_credits.txt`.
+
+# 2026-06-29 Production Release Verification Note
+
+- Changed the title screen footer stats to show cleared Stage count as `Lv`,
+  total stars, and no separate cleared-count chip.
+- Added a phone-sized title-screen widget test for the `Lv.19`, `55`, hidden
+  `19/30`, and Stage 20 continue-state display.
+- Bumped release version to `1.0.31+32` for a new production upload.
+- Verified with `flutter test`, `flutter analyze`, `git diff --check`, and
+  `flutter build appbundle --release`.
+- Confirmed the release manifest has `versionName="1.0.31"` and
+  `versionCode="32"`, and the AAB includes bundled legal credits.

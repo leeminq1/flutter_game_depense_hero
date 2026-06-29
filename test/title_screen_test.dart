@@ -84,6 +84,25 @@ void main() {
 
     expect(find.text('STAGE 6'), findsOneWidget);
   });
+
+  testWidgets('main menu stat chips reflect campaign overview progress', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final store = _CountingProgressStore(
+      await InMemoryProgressStore.open(),
+      overview: _overviewWithNineteenClears(),
+    );
+
+    await _pumpMenu(tester, store);
+
+    expect(find.text('Lv.19'), findsOneWidget);
+    expect(find.text('55'), findsOneWidget);
+    expect(find.text('19/30'), findsNothing);
+    expect(find.text('스테이지 20부터 재개'), findsOneWidget);
+  });
 }
 
 Finder get _continueButtonFinder =>
@@ -114,9 +133,11 @@ class _TestBootstrap extends AppBootstrap {
 }
 
 class _CountingProgressStore implements ProgressStore {
-  _CountingProgressStore(this._inner);
+  _CountingProgressStore(this._inner, {CampaignOverview? overview})
+    : _overview = overview;
 
   final ProgressStore _inner;
+  final CampaignOverview? _overview;
   int resetCount = 0;
 
   @override
@@ -142,7 +163,9 @@ class _CountingProgressStore implements ProgressStore {
 
   @override
   Future<CampaignOverview> loadCampaignOverview({required int totalStages}) =>
-      _inner.loadCampaignOverview(totalStages: totalStages);
+      _overview != null
+      ? Future.value(_overview)
+      : _inner.loadCampaignOverview(totalStages: totalStages);
 
   @override
   Future<StageCompletionResult> recordStageCompletion({
@@ -172,4 +195,40 @@ class _CountingProgressStore implements ProgressStore {
   @override
   Future<MetaUpgradePurchaseResult> purchaseMetaUpgrade(String nodeId) =>
       _inner.purchaseMetaUpgrade(nodeId);
+}
+
+CampaignOverview _overviewWithNineteenClears() {
+  final stages = List<StageProgressSnapshot>.generate(30, (index) {
+    final stageNumber = index + 1;
+    final cleared = stageNumber <= 19;
+    final stars = switch (stageNumber) {
+      <= 18 => 3,
+      19 => 1,
+      _ => 0,
+    };
+    return StageProgressSnapshot(
+      stageNumber: stageNumber,
+      unlocked: stageNumber <= 20,
+      stars: stars,
+      cleared: cleared,
+      description: 'Stage $stageNumber',
+      objectives: const [],
+      unlockRequirementLabels: const [],
+      lockReason: null,
+    );
+  });
+
+  return CampaignOverview(
+    player: const PlayerProgressSnapshot(
+      accountLevel: 26,
+      totalXp: 3750,
+      softCurrency: 0,
+      premiumCurrency: 0,
+      currentCampaignStage: 20,
+      clearedStageCount: 19,
+      hasResumableRun: true,
+    ),
+    stages: stages,
+    metaUpgrades: const [],
+  );
 }

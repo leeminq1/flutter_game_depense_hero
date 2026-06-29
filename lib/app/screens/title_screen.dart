@@ -401,17 +401,12 @@ class _MainMenu extends StatelessWidget {
               children: [
                 _StatChip(
                   icon: Icons.person_rounded,
-                  label: 'Lv.${overview.player.accountLevel}',
+                  label: 'Lv.${overview.player.clearedStageCount}',
                 ),
                 const SizedBox(width: 10),
                 _StatChip(
                   icon: Icons.star_rounded,
                   label: '${overview.totalStars}',
-                ),
-                const SizedBox(width: 10),
-                _StatChip(
-                  icon: Icons.check_circle_outline_rounded,
-                  label: '${overview.player.clearedStageCount}/30',
                 ),
               ],
             ),
