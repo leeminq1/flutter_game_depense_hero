@@ -10,6 +10,23 @@ import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('tower base combat numbers match the current balance pass', () {
+    expect(TowerCatalog.byKind(TowerKind.archer).damage, 9.5);
+    expect(TowerCatalog.byKind(TowerKind.guardBarracks).damage, 13.5);
+    expect(TowerCatalog.byKind(TowerKind.mageObelisk).damage, 17.5);
+    expect(TowerCatalog.byKind(TowerKind.frostShrine).damage, 3.5);
+
+    final ballista = TowerCatalog.byKind(TowerKind.ballista);
+    expect(ballista.damage, 13.5);
+    expect(ballista.range, 8);
+    expect(ballista.cooldown, 1.75);
+
+    final emberkeep = TowerCatalog.byKind(TowerKind.emberkeep);
+    expect(emberkeep.damage, 9.5);
+    expect(emberkeep.range, 6);
+    expect(emberkeep.cooldown, 1.35);
+  });
+
   test('campaign economy stays inside broad playable smoke bounds', () {
     final averageTowerCost =
         TowerCatalog.buildMenu
@@ -59,39 +76,8 @@ void main() {
     }
   });
 
-  test('normal wave pressure follows capped linear balance targets', () {
-    const expectedPressures = <int, List<double>>{
-      1: [90, 160, 229],
-      2: [123, 167, 211, 255],
-      3: [234, 284, 335, 385],
-      4: [273, 328, 382, 436],
-      5: [314, 441, 568, 695],
-      6: [127, 166, 206, 245],
-      7: [139, 258, 376, 494],
-      8: [146, 270, 393, 517],
-      9: [152, 281, 410, 539],
-      10: [157, 291, 424, 558],
-      11: [143, 335, 527, 719],
-      12: [166, 370, 574, 778],
-      13: [201, 352, 503, 654],
-      14: [174, 347, 520, 693],
-      15: [202, 441, 681, 920],
-      16: [305, 445, 586, 726],
-      17: [332, 476, 619, 762],
-      18: [450, 598, 746, 894],
-      19: [367, 506, 646, 786],
-      20: [370, 504, 637, 770],
-      21: [1497, 2037, 2576, 3116],
-      22: [1515, 2061, 2607, 3153],
-      23: [1531, 2083, 2635, 3187],
-      24: [1544, 2100, 2657, 3213],
-      25: [1555, 2115, 2675, 3235],
-      26: [1702, 2315, 2929, 3542],
-      27: [1720, 2339, 2959, 3579],
-      28: [1734, 2359, 2984, 3609],
-      29: [1748, 2377, 3007, 3637],
-      30: [1758, 2788, 3818, 4848],
-    };
+  test('normal wave pressure follows tuned stage-band ramp targets', () {
+    List<double>? previousPressures;
 
     for (
       var stageNumber = 1;
@@ -102,7 +88,10 @@ void main() {
       final pressures = [
         for (final cycle in stage.assaultCycles) _pressureIndex(cycle.groups),
       ];
-      final expected = expectedPressures[stageNumber]!;
+      final expected = _expectedPressureTargets(stageNumber);
+      final stageScore =
+          pressures.reduce((total, pressure) => total + pressure) /
+          pressures.length;
 
       for (var index = 0; index < pressures.length; index += 1) {
         expect(
@@ -110,19 +99,21 @@ void main() {
           closeTo(expected[index], 3.0),
           reason:
               'Stage $stageNumber wave ${index + 1} pressure should follow '
-              'the capped linear target.',
+              'the tuned stage-band ramp target.',
         );
       }
 
       expect(
         pressures.first,
         closeTo(expected.first, 3.0),
-        reason: 'Stage $stageNumber wave 1 should be about 10% easier.',
+        reason: 'Stage $stageNumber wave 1 should anchor the Stage curve.',
       );
       expect(
         pressures.last,
         lessThanOrEqualTo(expected.last + 3.0),
-        reason: 'Stage $stageNumber final wave should not exceed +30%.',
+        reason:
+            'Stage $stageNumber final wave should stay within the target '
+            'stage-band ramp.',
       );
       for (var index = 1; index < pressures.length; index += 1) {
         expect(
@@ -131,45 +122,38 @@ void main() {
           reason: 'Stage $stageNumber pressure should increase each wave.',
         );
       }
+
+      if (previousPressures != null) {
+        expect(
+          pressures.first,
+          greaterThan(previousPressures.first),
+          reason:
+              'Stage $stageNumber opening pressure should be higher than the '
+              'previous stage.',
+        );
+        expect(
+          stageScore,
+          greaterThan(
+            previousPressures.reduce((total, pressure) => total + pressure) /
+                previousPressures.length,
+          ),
+          reason:
+              'Stage $stageNumber average pressure should be higher than the '
+              'previous stage.',
+        );
+      }
+      previousPressures = pressures;
     }
   });
 
-  test('wave rebalance preserves stage economy rewards', () {
-    const expectedWaveGold = <int, List<int>>{
-      1: [75, 90, 112],
-      2: [89, 103, 129, 135],
-      3: [120, 164, 186, 172],
-      4: [139, 179, 174, 165],
-      5: [138, 168, 212, 206],
-      6: [84, 84, 133, 126],
-      7: [92, 125, 148, 170],
-      8: [92, 125, 148, 174],
-      9: [96, 129, 153, 177],
-      10: [99, 133, 157, 177],
-      11: [102, 124, 145, 215],
-      12: [107, 118, 156, 228],
-      13: [113, 104, 166, 195],
-      14: [107, 125, 161, 198],
-      15: [114, 123, 186, 229],
-      16: [162, 195, 227, 248],
-      17: [158, 195, 233, 264],
-      18: [182, 183, 256, 253],
-      19: [183, 211, 247, 274],
-      20: [183, 211, 289, 255],
-      21: [390, 482, 542, 573],
-      22: [397, 491, 552, 583],
-      23: [402, 497, 559, 590],
-      24: [409, 506, 569, 595],
-      25: [414, 512, 576, 607],
-      26: [440, 551, 618, 642],
-      27: [447, 559, 627, 654],
-      28: [452, 566, 635, 659],
-      29: [459, 575, 645, 671],
-      30: [464, 581, 652, 895],
-    };
+  test('wave rewards do not regress between stages', () {
+    List<int>? previousWaveGold;
 
-    for (final MapEntry(key: stageNumber, value: expected)
-        in expectedWaveGold.entries) {
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
       final stage = CampaignData.stage(stageNumber);
       final actual = [
         for (final cycle in stage.assaultCycles)
@@ -180,50 +164,76 @@ void main() {
               cycle.recoveryGoldBonus,
       ];
 
-      expect(
-        actual,
-        expected,
-        reason: 'Stage $stageNumber wave rewards should stay unchanged.',
-      );
+      for (var index = 1; index < actual.length; index += 1) {
+        expect(
+          actual[index],
+          greaterThan(actual[index - 1]),
+          reason: 'Stage $stageNumber wave rewards should increase by wave.',
+        );
+      }
+      if (previousWaveGold != null) {
+        for (
+          var index = 0;
+          index < previousWaveGold.length && index < actual.length;
+          index += 1
+        ) {
+          expect(
+            actual[index],
+            greaterThanOrEqualTo(previousWaveGold[index]),
+            reason:
+                'Stage $stageNumber wave ${index + 1} reward should not dip '
+                'below the previous stage.',
+          );
+        }
+      }
+      previousWaveGold = actual;
     }
   });
 
-  test('stage event boss combat snapshots stay unchanged', () {
+  test('early and mid campaign waves keep readable enemy counts', () {
+    expect(_enemyCountsForStage(5), [7, 9, 11, 12]);
+    expect(_enemyCountsForStage(10), [7, 10, 12, 13]);
+    expect(_enemyCountsForStage(11), [7, 10, 12, 13]);
+    expect(_enemyCountsForStage(20), [7, 10, 12, 13]);
+    expect(_enemyCountsForStage(21), [8, 11, 13, 14]);
+  });
+
+  test('stage event boss HP follows the staged piecewise curve', () {
     const expected = <int, Map<String, List<int>>>{
       4: {
-        'elite_shield_breaker': [1366, 96, 98],
+        'elite_shield_breaker': [1000, 72, 74],
       },
       7: {
-        'boss_banner_captain': [1419, 68, 55],
-        'elite_grave_guard': [3974, 122, 138],
+        'boss_banner_captain': [1285, 68, 55],
+        'elite_grave_guard': [1285, 74, 76],
       },
       10: {
-        'boss_banner_captain': [1658, 68, 55],
-        'elite_grave_guard': [4500, 122, 138],
+        'boss_banner_captain': [1570, 68, 55],
+        'elite_grave_guard': [1570, 76, 78],
       },
       13: {
-        'boss_corrupted_knight': [4400, 75, 85],
-        'boss_warlock': [3177, 65, 56],
+        'boss_corrupted_knight': [1940, 75, 80],
+        'boss_warlock': [1940, 65, 56],
       },
       16: {
-        'boss_corrupted_knight': [4400, 75, 85],
-        'boss_warlock': [3501, 65, 56],
+        'boss_corrupted_knight': [2310, 75, 82],
+        'boss_warlock': [2310, 65, 56],
       },
       19: {
-        'boss_corrupted_knight': [4400, 75, 85],
-        'boss_warlock': [3686, 65, 56],
+        'boss_corrupted_knight': [2680, 75, 84],
+        'boss_warlock': [2680, 65, 56],
       },
       22: {
-        'boss_bastion_priest': [4500, 66, 60],
-        'boss_bastion_overlord': [4500, 78, 88],
+        'boss_bastion_priest': [3130, 66, 60],
+        'boss_bastion_overlord': [3130, 78, 86],
       },
       25: {
-        'boss_bastion_priest': [4500, 66, 60],
-        'boss_bastion_overlord': [4500, 78, 88],
+        'boss_bastion_priest': [3580, 66, 60],
+        'boss_bastion_overlord': [3580, 78, 88],
       },
       28: {
-        'boss_bastion_priest': [4500, 66, 60],
-        'boss_bastion_overlord': [4500, 78, 88],
+        'boss_bastion_priest': [4030, 66, 60],
+        'boss_bastion_overlord': [4030, 78, 88],
       },
     };
 
@@ -239,11 +249,61 @@ void main() {
             boss.baseTowerContactDamage,
           ],
           eventSnapshots[event.id],
-          reason: 'Stage $stageNumber ${event.id} should not be rebalanced.',
+          reason:
+              'Stage $stageNumber ${event.id} should follow the linear '
+              'event boss curve.',
         );
       }
     }
   });
+}
+
+List<double> _expectedPressureTargets(int stageNumber) {
+  if (stageNumber == 1) {
+    return _linearRampPressureTargets(const [90], 1.60, 3);
+  }
+
+  final offset = stageNumber - 2;
+  final lateOffset = stageNumber > 20 ? stageNumber - 20 : 0;
+  final wave1 = (105 + (offset * 14) + (lateOffset * 5)).toDouble();
+  return _linearRampPressureTargets(
+    [wave1],
+    _targetRampForStage(stageNumber),
+    4,
+  );
+}
+
+double _targetRampForStage(int stageNumber) {
+  if (stageNumber <= 10) {
+    return 1.60;
+  }
+  if (stageNumber <= 20) {
+    return 1.45;
+  }
+  return 1.35;
+}
+
+List<double> _linearRampPressureTargets(
+  List<double> current,
+  double ramp,
+  int cycleCount,
+) {
+  final first = current.first;
+  final last = first * (1 + ramp);
+  if (cycleCount == 1) {
+    return [first];
+  }
+  final step = (last - first) / (cycleCount - 1);
+  return [
+    for (var index = 0; index < cycleCount; index += 1) first + step * index,
+  ];
+}
+
+List<int> _enemyCountsForStage(int stageNumber) {
+  return [
+    for (final cycle in CampaignData.stage(stageNumber).assaultCycles)
+      cycle.groups.fold<int>(0, (sum, group) => sum + group.count),
+  ];
 }
 
 double _pressureIndex(List<FrontSpawnGroupDefinition> groups) {

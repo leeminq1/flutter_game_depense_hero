@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
@@ -218,6 +220,14 @@ void main() {
     expect(
       game.debugTowerBaseRangeFor(TowerKind.frostShrine),
       closeTo(52 * 3.05, 0.001),
+    );
+    expect(
+      game.debugTowerBaseRangeFor(TowerKind.emberkeep),
+      closeTo(52 * 3.05, 0.001),
+    );
+    expect(
+      game.debugTowerBaseRangeFor(TowerKind.ballista),
+      closeTo(52 * 4.05, 0.001),
     );
     expect(
       game.debugTowerBaseRangeFor(TowerKind.guardBarracks),
@@ -668,8 +678,149 @@ void main() {
         EnemyKind.bastionOverlord,
         hasActiveBreachTarget: true,
       ),
-      isFalse,
+      isTrue,
     );
+  });
+
+  test('late tower cards are unlocked for playtest builds', () {
+    const meta = ResolvedMetaUpgrades();
+
+    expect(TowerCatalog.isUnlocked(TowerKind.ballista, meta), isTrue);
+    expect(TowerCatalog.isUnlocked(TowerKind.emberkeep, meta), isTrue);
+  });
+
+  test('enemy pass-through contact damages every tower it crosses', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+    game.onGameResize(Vector2(728, 728));
+
+    game.debugAddTowerForContactTest(TowerKind.archer, Vector2(100, 100));
+    game.debugAddTowerForContactTest(TowerKind.mageObelisk, Vector2(145, 100));
+    game.debugAddTowerForContactTest(TowerKind.frostShrine, Vector2(260, 100));
+
+    final before = game.debugTowerHitPoints();
+    final totalDamage = game.debugApplyEnemyTowerContactDamageForTest(
+      EnemyKind.raider,
+      from: Vector2(60, 100),
+      to: Vector2(185, 100),
+    );
+    final after = game.debugTowerHitPoints();
+
+    expect(totalDamage, greaterThan(0));
+    expect(after[0], lessThan(before[0]));
+    expect(after[1], lessThan(before[1]));
+    expect(after[2], before[2]);
+  });
+
+  test('enemy pass-through contact ignores adjacent off-road tower cells', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+    game.onGameResize(Vector2(728, 728));
+
+    game.debugAddTowerForContactTest(TowerKind.archer, Vector2(145, 160));
+
+    final before = game.debugTowerHitPoints();
+    final totalDamage = game.debugApplyEnemyTowerContactDamageForTest(
+      EnemyKind.raider,
+      from: Vector2(60, 100),
+      to: Vector2(185, 100),
+    );
+    final after = game.debugTowerHitPoints();
+
+    expect(totalDamage, 0);
+    expect(after.single, before.single);
+  });
+
+  test('enemy pass-through contact still applies while breaching', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+    game.onGameResize(Vector2(728, 728));
+
+    game.debugAddTowerForContactTest(TowerKind.archer, Vector2(145, 100));
+
+    final before = game.debugTowerHitPoints();
+    final totalDamage = game.debugApplyEnemyTowerContactDamageForTest(
+      EnemyKind.raider,
+      from: Vector2(60, 100),
+      to: Vector2(185, 100),
+      hasActiveBreachTarget: true,
+    );
+    final after = game.debugTowerHitPoints();
+
+    expect(totalDamage, greaterThan(0));
+    expect(after.single, lessThan(before.single));
+  });
+
+  test('enemy leak frame applies tower contact damage before removal', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+    game.onGameResize(Vector2(728, 728));
+
+    final damage = game.debugApplyLeakFrameTowerContactForTest(
+      EnemyKind.raider,
+      towerKind: TowerKind.archer,
+      towerPosition: game.debugCitadelCenter() + Vector2(44, 0),
+    );
+
+    expect(damage, greaterThan(0));
+  });
+
+  test('emberkeep launches a visible fire projectile before impact', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+    game.onGameResize(Vector2(728, 728));
+
+    final effectIds = game.debugFireTowerAtEnemyForTest(
+      TowerKind.emberkeep,
+      towerPosition: Vector2(100, 100),
+      enemyPosition: Vector2(160, 100),
+    );
+
+    expect(effectIds, contains(EffectVisualCatalog.cannonballProjectile));
+  });
+
+  test('emberkeep applies visible burn state after impact', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+    game.onGameResize(Vector2(728, 728));
+
+    final burnTimers = game.debugFireTowerAtEnemyBurnTimersForTest(
+      TowerKind.emberkeep,
+      towerPosition: Vector2(100, 100),
+      enemyPosition: Vector2(160, 100),
+    );
+
+    expect(burnTimers.single, greaterThan(3));
   });
 
   test('bosses deal two citadel hp on leak instead of one', () {
@@ -696,9 +847,15 @@ void main() {
   });
 
   test('late stage-event bosses use tuned hp damage and armor caps', () {
-    final hpCapsByStage = {16: 4500, 19: 4500, 22: 4500, 25: 4500, 28: 4500};
+    final expectedHpByStage = {
+      16: 2310,
+      19: 2680,
+      22: 3130,
+      25: 3580,
+      28: 4030,
+    };
 
-    for (final entry in hpCapsByStage.entries) {
+    for (final entry in expectedHpByStage.entries) {
       final stageNumber = entry.key;
       final game = DefensePrototypeGame(
         stage: CampaignData.stage(stageNumber),
@@ -713,12 +870,13 @@ void main() {
 
         expect(
           boss.hitPoints,
-          lessThanOrEqualTo(entry.value),
-          reason: 'Stage $stageNumber ${event.id} HP should stay capped.',
+          entry.value,
+          reason:
+              'Stage $stageNumber ${event.id} HP should follow the staged '
+              'event boss curve.',
         );
 
         if (boss.kind == EnemyKind.corruptedKnight) {
-          expect(boss.hitPoints, 4400);
           expect(boss.baseStructureDamage, lessThanOrEqualTo(75));
           expect(boss.baseTowerContactDamage, lessThanOrEqualTo(85));
           expect(
@@ -731,7 +889,6 @@ void main() {
         }
 
         if (boss.kind == EnemyKind.bastionOverlord) {
-          expect(boss.hitPoints, 4500);
           expect(boss.citadelDamage, 15);
           expect(boss.baseStructureDamage, lessThanOrEqualTo(78));
           expect(boss.baseTowerContactDamage, lessThanOrEqualTo(88));
@@ -947,8 +1104,8 @@ void main() {
     expect(TowerCatalog.byKind(TowerKind.guardBarracks).range, 3);
     expect(TowerCatalog.byKind(TowerKind.archer).range, 4);
     expect(TowerCatalog.byKind(TowerKind.frostShrine).range, 6);
-    expect(TowerCatalog.byKind(TowerKind.ballista).range, 4);
-    expect(TowerCatalog.byKind(TowerKind.emberkeep).range, 4);
+    expect(TowerCatalog.byKind(TowerKind.ballista).range, 8);
+    expect(TowerCatalog.byKind(TowerKind.emberkeep).range, 6);
     expect(TowerCatalog.byKind(TowerKind.mageObelisk).range, 6);
     expect(TowerCatalog.byKind(TowerKind.coinMill).range, 0);
 
@@ -957,6 +1114,79 @@ void main() {
     expect(HeroCatalog.byKind(HeroKind.paladin).range, 2);
     expect(HeroCatalog.byKind(HeroKind.archer).range, 3);
     expect(HeroCatalog.byKind(HeroKind.mage).range, 5);
+  });
+
+  test('tower and hero selection range indicators match live behavior', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+    game.onGameResize(Vector2(728, 728));
+
+    for (final kind in TowerKind.values) {
+      for (final level in [1, 3]) {
+        expect(
+          game.debugTowerDisplayedRangeFor(kind, level: level),
+          game.debugTowerCombatRangeFor(kind, level: level),
+          reason: '${kind.name} level $level displayed tower range',
+        );
+      }
+    }
+
+    for (final kind in HeroKind.values) {
+      for (final level in [1, 3]) {
+        expect(
+          game.debugHeroDisplayedRangeFor(kind, level: level),
+          game.debugHeroEngagementRangeFor(kind, level: level),
+          reason: '${kind.name} level $level displayed hero engagement range',
+        );
+      }
+    }
+  });
+
+  test('ballista and emberkeep art paths load and level 4 reuses tier 3', () {
+    final expectedPaths = <String>[
+      'assets/sprites/towers/ballista.png',
+      'assets/sprites/towers/ballista_t1.png',
+      'assets/sprites/towers/ballista_t2.png',
+      'assets/sprites/towers/ballista_t3.png',
+      'assets/sprites/towers/ballista_siege_t2.png',
+      'assets/sprites/towers/ballista_siege_t3.png',
+      'assets/sprites/towers/ballista_harpoon_t2.png',
+      'assets/sprites/towers/ballista_harpoon_t3.png',
+      'assets/sprites/towers/emberkeep.png',
+      'assets/sprites/towers/emberkeep_t1.png',
+      'assets/sprites/towers/emberkeep_t2.png',
+      'assets/sprites/towers/emberkeep_t3.png',
+      'assets/sprites/towers/emberkeep_inferno_t2.png',
+      'assets/sprites/towers/emberkeep_inferno_t3.png',
+      'assets/sprites/towers/emberkeep_cinder_t2.png',
+      'assets/sprites/towers/emberkeep_cinder_t3.png',
+    ];
+
+    for (final assetPath in expectedPaths) {
+      expect(File(assetPath).existsSync(), isTrue, reason: assetPath);
+    }
+
+    expect(
+      TowerVisualCatalog.tierAssetPath(TowerKind.ballista, 4),
+      'assets/sprites/towers/ballista_t3.png',
+    );
+    expect(
+      TowerVisualCatalog.branchTierAssetPath(TowerKind.ballista, 4, 'siege'),
+      'assets/sprites/towers/ballista_siege_t3.png',
+    );
+    expect(
+      TowerVisualCatalog.tierAssetPath(TowerKind.emberkeep, 4),
+      'assets/sprites/towers/emberkeep_t3.png',
+    );
+    expect(
+      TowerVisualCatalog.branchTierAssetPath(TowerKind.emberkeep, 4, 'inferno'),
+      'assets/sprites/towers/emberkeep_inferno_t3.png',
+    );
   });
 
   test('stage 1 to 5 teach fortress design before full randomness', () {

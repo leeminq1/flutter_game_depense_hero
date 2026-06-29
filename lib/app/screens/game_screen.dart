@@ -58,6 +58,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   String? _lastSelectedBarrierSignature;
   bool _isBackgroundPaused = false;
   int? _immediateStarsAwarded;
+  StageEvaluationResult? _immediateEvaluation;
   bool _stageOneBriefingShown = false;
   final RewardedRetryBonusTracker _rewardedRetryBonusTracker =
       RewardedRetryBonusTracker();
@@ -191,6 +192,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       _completionResult = null;
       _terminalProgressSave = null;
       _immediateStarsAwarded = null;
+      _immediateEvaluation = null;
       _isEvaluating = false;
       _isShowingRewardedRetryAd = false;
       _rewardedRetryStatusText = null;
@@ -475,10 +477,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       setState(() {
         _isEvaluating = true;
         _immediateStarsAwarded = evaluation.starsAwarded;
+        _immediateEvaluation = evaluation;
       });
     } else {
       _isEvaluating = true;
       _immediateStarsAwarded = evaluation.starsAwarded;
+      _immediateEvaluation = evaluation;
     }
 
     try {
@@ -630,6 +634,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               final nextLoopNumber = session.currentWave + 1;
               final showBottomHintBanner =
                   _stageNumber >= 11 && _stageNumber <= 20;
+              final selectionPanelOnLeft =
+                  _stageNumber >= 11 && _stageNumber <= 15;
 
               return Stack(
                 fit: StackFit.expand,
@@ -685,7 +691,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 session.selectedTower != null)
                               Positioned(
                                 top: 96,
-                                right: 8,
+                                left: selectionPanelOnLeft ? 8 : null,
+                                right: selectionPanelOnLeft ? null : 8,
                                 width: 136,
                                 child: _TowerActionBar(
                                   sessionController: session,
@@ -698,7 +705,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 session.selectedBarrier != null)
                               Positioned(
                                 top: 96,
-                                right: 8,
+                                left: selectionPanelOnLeft ? 8 : null,
+                                right: selectionPanelOnLeft ? null : 8,
                                 width: 128,
                                 child: _BarrierActionBar(
                                   sessionController: session,
@@ -712,7 +720,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 !session.heroMoveMode)
                               Positioned(
                                 top: 96,
-                                right: 8,
+                                left: selectionPanelOnLeft ? 8 : null,
+                                right: selectionPanelOnLeft ? null : 8,
                                 width: 148,
                                 child: _HeroActionBar(
                                   sessionController: session,
@@ -779,6 +788,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                               sessionController: session,
                               completionResult: _completionResult,
                               immediateStarsAwarded: _immediateStarsAwarded,
+                              immediateEvaluation: _immediateEvaluation,
                               stage: currentStage,
                               hasNextStage:
                                   _stageNumber < CampaignData.totalStages,
@@ -3074,8 +3084,9 @@ class _TowerActionBar extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final subtitle =
-        tower.branchLabel ?? _compactSelectionSubtitle(tower.shortDescription);
+    final subtitle = tower.economyIncomePerSecond == null
+        ? tower.branchLabel ?? _compactSelectionSubtitle(tower.shortDescription)
+        : '초당 ${tower.economyIncomePerSecond!.toStringAsFixed(1)} / WAVE 시작 +${tower.economyCycleBonus ?? 0}';
 
     return _SelectionActionPanel(
       title: '${tower.label} Lv.${tower.level}',
@@ -3409,6 +3420,7 @@ class _ResultOverlay extends StatelessWidget {
     required this.sessionController,
     required this.completionResult,
     required this.immediateStarsAwarded,
+    required this.immediateEvaluation,
     required this.stage,
     required this.hasNextStage,
     required this.isSavingProgress,
@@ -3424,6 +3436,7 @@ class _ResultOverlay extends StatelessWidget {
   final GameSessionController sessionController;
   final StageCompletionResult? completionResult;
   final int? immediateStarsAwarded;
+  final StageEvaluationResult? immediateEvaluation;
   final StageProgressSnapshot stage;
   final bool hasNextStage;
   final bool isSavingProgress;
@@ -3510,6 +3523,14 @@ class _ResultOverlay extends StatelessWidget {
                 value:
                     '${sessionController.baseHealth}/${sessionController.maxBaseHealth}',
               ),
+              if (immediateEvaluation != null) ...[
+                const SizedBox(height: 8),
+                _RewardRow(
+                  label: '남은 골드',
+                  value:
+                      '${immediateEvaluation!.remainingGold}/${immediateEvaluation!.goldStarsThreeThreshold}',
+                ),
+              ],
             ] else ...[
               Text(
                 _failureHintForStage(stage.stageNumber),

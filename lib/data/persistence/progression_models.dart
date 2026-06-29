@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'dart:math' as math;
 
 class MetaUpgradeSnapshot {
   const MetaUpgradeSnapshot({required this.id, required this.level});
@@ -23,12 +24,14 @@ class PlayerProgressSnapshot {
 
   final int accountLevel;
   final int totalXp;
+
   /// In-game Meta Gold balance (maps to [softCurrency] internally).
   final int softCurrency;
   final int premiumCurrency;
   final int currentCampaignStage;
   final int clearedStageCount;
   final bool hasResumableRun;
+
   /// Total unspent Siege Tokens held by the player.
   final int siegeTokens;
 }
@@ -66,16 +69,47 @@ class CampaignOverview {
   final List<StageProgressSnapshot> stages;
   final List<MetaUpgradeSnapshot> metaUpgrades;
 
-  bool get hasMeaningfulProgress => 
-    player.clearedStageCount > 0 || metaUpgrades.any((u) => u.level > 0);
+  bool get hasMeaningfulProgress =>
+      player.clearedStageCount > 0 || metaUpgrades.any((u) => u.level > 0);
+
+  bool get hasContinuableProgress =>
+      player.hasResumableRun || hasMeaningfulProgress;
 
   int get totalStars => stages.fold(0, (sum, s) => sum + s.stars);
 
   int get currentCampaignStage => player.currentCampaignStage;
 
+  int get continueStageNumber {
+    final highestClearedStage = stages
+        .where((stage) => stage.cleared)
+        .fold<int>(0, (highest, stage) => math.max(highest, stage.stageNumber));
+    if (highestClearedStage > 0) {
+      final nextStageNumber = highestClearedStage + 1;
+      final nextStage = stages.firstWhereOrNull(
+        (stage) => stage.stageNumber == nextStageNumber && stage.unlocked,
+      );
+      return nextStage?.stageNumber ?? highestClearedStage;
+    }
+
+    return recommendedStage?.stageNumber ?? player.currentCampaignStage;
+  }
+
   StageProgressSnapshot? get recommendedStage {
-    return stages.firstWhereOrNull((s) => s.unlocked && !s.cleared) ?? 
-           stages.firstWhereOrNull((s) => s.unlocked);
+    final highestClearedStage = stages
+        .where((stage) => stage.cleared)
+        .fold<int>(0, (highest, stage) => math.max(highest, stage.stageNumber));
+    if (highestClearedStage > 0) {
+      final nextStageNumber = highestClearedStage + 1;
+      final nextStage = stages.firstWhereOrNull(
+        (stage) => stage.stageNumber == nextStageNumber && stage.unlocked,
+      );
+      if (nextStage != null) {
+        return nextStage;
+      }
+    }
+
+    return stages.firstWhereOrNull((s) => s.unlocked && !s.cleared) ??
+        stages.firstWhereOrNull((s) => s.unlocked);
   }
 }
 

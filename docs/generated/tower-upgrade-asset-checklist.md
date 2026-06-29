@@ -92,6 +92,12 @@ References:
 - `assets/sprites/towers/emberkeep_cinder_t2.png`
 - `assets/sprites/towers/emberkeep_cinder_t3.png`
 
+Ballista and Emberkeep were refreshed on 2026-05-23 from built-in imagegen
+output archived at `docs/generated/ballista-emberkeep-imagegen-sheet-20260523.png`.
+The generated sheet used a green chroma-key background and was locally cropped
+into transparent `64x64` PNGs for each existing runtime filename. Lv4 uses the
+existing T3 visual fallback.
+
 ## Tier Progression Intent
 
 - `T1`: simple field deployment

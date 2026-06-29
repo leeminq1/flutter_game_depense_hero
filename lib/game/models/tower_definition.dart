@@ -65,9 +65,7 @@ class TowerDefinition {
   bool isUnlocked(ResolvedMetaUpgrades metaUpgrades) {
     switch (kind) {
       case TowerKind.ballista:
-        return metaUpgrades.ballistaUnlocked;
       case TowerKind.emberkeep:
-        return metaUpgrades.emberkeepUnlocked;
       case TowerKind.archer:
       case TowerKind.guardBarracks:
       case TowerKind.mageObelisk:
@@ -88,7 +86,7 @@ class TowerCatalog {
       abilityDescription: '세 번째 화살마다 치명적인 관통 사격을 날립니다.',
       cost: 35,
       range: 4,
-      damage: 14,
+      damage: 9.5,
       cooldown: 0.85,
       color: Color(0xFF8BC34A),
       attackEvent: AudioEvent.arrowShot,
@@ -113,7 +111,7 @@ class TowerCatalog {
       abilityDescription: '적을 비틀거리게 만들고 주변 적까지 함께 벱니다.',
       cost: 45,
       range: 3,
-      damage: 18,
+      damage: 13.5,
       cooldown: 1.15,
       color: Color(0xFF5C8FC9),
       attackEvent: AudioEvent.slashHit,
@@ -138,7 +136,7 @@ class TowerCatalog {
       abilityDescription: '비전 전류가 여러 적 사이를 연쇄하며 번집니다.',
       cost: 65,
       range: 6,
-      damage: 25,
+      damage: 17.5,
       cooldown: 1.25,
       color: Color(0xFF9C27B0),
       attackEvent: AudioEvent.magicHit,
@@ -163,7 +161,7 @@ class TowerCatalog {
       abilityDescription: '범위 안의 적 전체를 얼리는 냉기 파동을 방출합니다.',
       cost: 55,
       range: 6,
-      damage: 7,
+      damage: 3.5,
       cooldown: 1.05,
       color: Color(0xFF80DEEA),
       attackEvent: AudioEvent.magicHit,
@@ -215,9 +213,9 @@ class TowerCatalog {
       shortDescription: '장거리 대형 적 특화 화력',
       abilityDescription: '무거운 볼트로 돌격 적을 강하게 묶어 둡니다.',
       cost: 85,
-      range: 4,
-      damage: 50,
-      cooldown: 1.95,
+      range: 8,
+      damage: 13.5,
+      cooldown: 1.75,
       color: Color(0xFF8D6E63),
       attackEvent: AudioEvent.armorHit,
       branches: [
@@ -232,7 +230,6 @@ class TowerCatalog {
           description: '고정 시간이 길어지고 연속 제어가 좋아집니다.',
         ),
       ],
-      unlockHint: '요새 훈련 2단계에서 해금됩니다.',
     ),
     TowerDefinition(
       kind: TowerKind.emberkeep,
@@ -241,9 +238,9 @@ class TowerCatalog {
       shortDescription: '지속 폭발과 화상 피해',
       abilityDescription: '지면을 불태워 여러 적을 지속적으로 소각합니다.',
       cost: 80,
-      range: 4,
-      damage: 17,
-      cooldown: 1.30,
+      range: 6,
+      damage: 9.5,
+      cooldown: 1.35,
       color: Color(0xFFFF5722),
       attackEvent: AudioEvent.magicHit,
       branches: [
@@ -258,7 +255,6 @@ class TowerCatalog {
           description: '화상 지속시간이 길어지고 구역 억제가 강해집니다.',
         ),
       ],
-      unlockHint: '비전 훈련 2단계에서 해금됩니다.',
     ),
   ];
 

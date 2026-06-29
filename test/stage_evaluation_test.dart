@@ -39,6 +39,20 @@ void main() {
     expect(evaluate(cleared: false, hp: 3, gold: 99).starsAwarded, 0);
   });
 
+  test('stage 6 clear at 46 gold explains the 2 star result', () {
+    final lowGold = evaluate(stageNumber: 6, cleared: true, hp: 3, gold: 46);
+    expect(lowGold.starsAwarded, 2);
+    expect(lowGold.baseHealthStars, 3);
+    expect(lowGold.goldStars, 2);
+    expect(lowGold.remainingGold, 46);
+    expect(lowGold.goldStarsThreeThreshold, 50);
+
+    final enoughGold = evaluate(stageNumber: 6, cleared: true, hp: 3, gold: 50);
+    expect(enoughGold.starsAwarded, 3);
+    expect(enoughGold.baseHealthStars, 3);
+    expect(enoughGold.goldStars, 3);
+  });
+
   test('stage 17 clear with full citadel hp and high gold awards 3 stars', () {
     expect(
       evaluate(stageNumber: 17, cleared: true, hp: 3, gold: 541).starsAwarded,

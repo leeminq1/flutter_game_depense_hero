@@ -1,3 +1,8 @@
+import 'package:depense_game/data/campaign/campaign_data.dart';
+import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
+import 'package:depense_game/game/audio/audio_settings_controller.dart';
+import 'package:depense_game/game/audio/game_audio_service.dart';
+import 'package:depense_game/game/core/depense_game.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
@@ -216,6 +221,76 @@ void main() {
       );
 
       expect(notifications, 1);
+    });
+
+    test('coin mill wave start bonus is small and predictable', () {
+      final game = DefensePrototypeGame(
+        stage: CampaignData.stage(1),
+        sessionController: GameSessionController(),
+        audioService: GameAudioService(AudioSettingsController()),
+        metaUpgrades: const ResolvedMetaUpgrades(coinMillIncomeBonus: 2),
+        chosenHeroKind: HeroKind.knight,
+      );
+
+      expect(game.debugCoinMillWaveStartBonus(level: 1), 10);
+      expect(game.debugCoinMillWaveStartBonus(level: 3), 14);
+      expect(
+        game.debugCoinMillWaveStartBonus(level: 3, branchId: 'tribute'),
+        18,
+      );
+    });
+
+    test('tower level damage table applies the playtest reduction', () {
+      final game = DefensePrototypeGame(
+        stage: CampaignData.stage(1),
+        sessionController: GameSessionController(),
+        audioService: GameAudioService(AudioSettingsController()),
+        metaUpgrades: const ResolvedMetaUpgrades(),
+        chosenHeroKind: HeroKind.knight,
+      );
+
+      expect(
+        [
+          for (var level = 1; level <= 4; level += 1)
+            game.debugTowerDamageForLevel(TowerKind.archer, level),
+        ],
+        [9.5, 15.9, 21.3, 26.7],
+      );
+      expect(
+        [
+          for (var level = 1; level <= 4; level += 1)
+            game.debugTowerDamageForLevel(TowerKind.guardBarracks, level),
+        ],
+        [13.5, 21.7, 28.9, 36.1],
+      );
+      expect(
+        [
+          for (var level = 1; level <= 4; level += 1)
+            game.debugTowerDamageForLevel(TowerKind.mageObelisk, level),
+        ],
+        [17.5, 26.9, 37.2, 47.6],
+      );
+      expect(
+        [
+          for (var level = 1; level <= 4; level += 1)
+            game.debugTowerDamageForLevel(TowerKind.frostShrine, level),
+        ],
+        [3.5, 7.2, 9.9, 12.6],
+      );
+      expect(
+        [
+          for (var level = 1; level <= 4; level += 1)
+            game.debugTowerDamageForLevel(TowerKind.ballista, level),
+        ],
+        [13.5, 19.9, 25.3, 30.7],
+      );
+      expect(
+        [
+          for (var level = 1; level <= 4; level += 1)
+            game.debugTowerDamageForLevel(TowerKind.emberkeep, level),
+        ],
+        [9.5, 15.9, 21.3, 26.7],
+      );
     });
 
     test('selecting the same barrier details twice does not notify again', () {

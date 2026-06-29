@@ -74,26 +74,48 @@ void main() {
         'HP 60%, wall damage 25%, tower contact damage 15%.',
       )
       ..writeln()
-      ..writeln('| Stage | Wave Pressure | Wave Gold Gain | Enemy Counts |')
-      ..writeln('| ---: | --- | --- | --- |');
+      ..writeln(
+        '| Stage | Starting Gold | Gold Delta | Wave Pressure | Pressure Delta | Wave Gold Gain | Wave Gold Delta | Enemy Counts |',
+      )
+      ..writeln('| ---: | ---: | ---: | --- | --- | --- | --- | --- |');
+    StageDefinition? previousStage;
     for (
       var stageNumber = 1;
       stageNumber <= CampaignData.totalStages;
       stageNumber += 1
     ) {
       final stage = CampaignData.stage(stageNumber);
-      final pressures = [
+      final pressureValues = [
         for (final cycle in stage.assaultCycles)
           _pressureIndex(cycle.groups).round(),
-      ].join(' / ');
-      final gains = [
+      ];
+      final gainValues = [
         for (final cycle in stage.assaultCycles) _waveGoldGain(cycle),
-      ].join(' / ');
+      ];
+      final previousPressureValues = previousStage == null
+          ? const <int>[]
+          : [
+              for (final cycle in previousStage.assaultCycles)
+                _pressureIndex(cycle.groups).round(),
+            ];
+      final previousGainValues = previousStage == null
+          ? const <int>[]
+          : [
+              for (final cycle in previousStage.assaultCycles)
+                _waveGoldGain(cycle),
+            ];
+      final pressures = pressureValues.join(' / ');
+      final gains = gainValues.join(' / ');
+      final pressureDeltas = _deltas(pressureValues, previousPressureValues);
+      final gainDeltas = _deltas(gainValues, previousGainValues);
       final counts = [
         for (final cycle in stage.assaultCycles)
           cycle.groups.fold<int>(0, (sum, group) => sum + group.count),
       ].join(' / ');
-      buffer.writeln('| $stageNumber | $pressures | $gains | $counts |');
+      buffer.writeln(
+        '| $stageNumber | ${stage.startingCoins} | ${previousStage == null ? '-' : stage.startingCoins - previousStage.startingCoins} | $pressures | $pressureDeltas | $gains | $gainDeltas | $counts |',
+      );
+      previousStage = stage;
     }
 
     buffer
@@ -322,6 +344,20 @@ int _waveGoldGain(AssaultCycleDefinition cycle) {
   );
   return killGold + cycle.recoveryGoldBonus;
 }
+
+String _deltas(List<int> values, List<int> previousValues) {
+  if (previousValues.isEmpty) {
+    return '-';
+  }
+  return [
+    for (var index = 0; index < values.length; index += 1)
+      index < previousValues.length
+          ? _signed(values[index] - previousValues[index])
+          : '-',
+  ].join(' / ');
+}
+
+String _signed(int value) => value >= 0 ? '+$value' : '$value';
 
 String _special(EnemyKind kind) {
   final enemy = CampaignData.enemyForKind(
