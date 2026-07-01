@@ -9,7 +9,7 @@ import 'package:depense_game/data/persistence/store_models.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
 class LocalProgressStore implements ProgressStore {

@@ -42,11 +42,11 @@ tasks.register<Delete>("clean") {
 subprojects {
     val project = this
     val fixIsarAndroidConfig: (Project) -> Unit = { p ->
-        if (p.name == "isar_flutter_libs") {
+        if (p.name == "isar_community_flutter_libs") {
             p.extensions.findByName("android")?.let { android ->
                 setAndroidCompileSdk(android, androidCompileSdkVersion)
                 try {
-                    android.javaClass.getMethod("setNamespace", String::class.java).invoke(android, "dev.isar.isar_flutter_libs")
+                    android.javaClass.getMethod("setNamespace", String::class.java).invoke(android, "dev.isar.isar_community_flutter_libs")
                 } catch (e: Exception) {
                     // Fail silently or log
                 }
