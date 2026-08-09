@@ -208,12 +208,17 @@ class GameSessionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setCameraSnapshot(BattlefieldCameraSnapshot value) {
+  void setCameraSnapshot(
+    BattlefieldCameraSnapshot value, {
+    bool notify = true,
+  }) {
     if (cameraSnapshot == value) {
       return;
     }
     cameraSnapshot = value;
-    notifyListeners();
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   RunModifierSet get runModifiers => RunModifierSet(activeRunOffers);

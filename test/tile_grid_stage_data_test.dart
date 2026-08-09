@@ -292,7 +292,7 @@ void main() {
     expect(game.debugHeroSpawnCell(), (3, 12));
   });
 
-  test('stage 1 grid stays anchored when the bottom panel changes height', () {
+  test('stage 1 grid remains centered when the battlefield height changes', () {
     final game = DefensePrototypeGame(
       stage: CampaignData.stage(1),
       sessionController: GameSessionController(),
@@ -305,7 +305,8 @@ void main() {
     final before = game.debugCitadelCenter();
     game.onGameResize(Vector2(430, 760));
 
-    expect(game.debugCitadelCenter(), before);
+    expect(game.debugCitadelCenter().x, before.x);
+    expect(game.debugCitadelCenter().y - before.y, closeTo(100, 0.001));
   });
 
   test('runtime spawn routes stop at gate cells', () {

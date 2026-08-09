@@ -1,21 +1,31 @@
 import 'dart:ui';
 
 class BattlefieldCameraSnapshot {
-  const BattlefieldCameraSnapshot({this.zoom = 1, this.pan = Offset.zero});
+  const BattlefieldCameraSnapshot({
+    this.zoom = 1,
+    this.pan = Offset.zero,
+    this.defaultZoom = 1,
+    this.defaultPan = Offset.zero,
+  });
 
   final double zoom;
   final Offset pan;
+  final double defaultZoom;
+  final Offset defaultPan;
 
-  bool get isTransformed => (zoom - 1).abs() > 0.001 || pan.distance > 0.5;
+  bool get isTransformed =>
+      (zoom - defaultZoom).abs() > 0.001 || (pan - defaultPan).distance > 0.5;
 
   @override
   bool operator ==(Object other) =>
       other is BattlefieldCameraSnapshot &&
       other.zoom == zoom &&
-      other.pan == pan;
+      other.pan == pan &&
+      other.defaultZoom == defaultZoom &&
+      other.defaultPan == defaultPan;
 
   @override
-  int get hashCode => Object.hash(zoom, pan);
+  int get hashCode => Object.hash(zoom, pan, defaultZoom, defaultPan);
 }
 
 class BattlefieldCameraTransform {
@@ -23,7 +33,13 @@ class BattlefieldCameraTransform {
   static const maxZoom = 2.5;
   static const dragThreshold = 8.0;
 
-  double _zoom = 1;
+  BattlefieldCameraTransform({double defaultZoom = 1})
+    : _defaultZoom = defaultZoom.clamp(minZoom, maxZoom).toDouble(),
+      _zoom = defaultZoom.clamp(minZoom, maxZoom).toDouble();
+
+  final double _defaultZoom;
+  Offset _defaultPan = Offset.zero;
+  double _zoom;
   Offset _pan = Offset.zero;
   Offset _gestureStart = Offset.zero;
   Offset _lastFocalPoint = Offset.zero;
@@ -34,8 +50,24 @@ class BattlefieldCameraTransform {
   Offset get pan => _pan;
   bool get suppressTap => _dragging || _pinching;
   bool get isTransformed => snapshot.isTransformed;
-  BattlefieldCameraSnapshot get snapshot =>
-      BattlefieldCameraSnapshot(zoom: _zoom, pan: _pan);
+  BattlefieldCameraSnapshot get snapshot => BattlefieldCameraSnapshot(
+    zoom: _zoom,
+    pan: _pan,
+    defaultZoom: _defaultZoom,
+    defaultPan: _defaultPan,
+  );
+
+  void setViewport(Size viewport) {
+    final wasAtDefault = !isTransformed;
+    _defaultPan = Offset(
+      (viewport.width - (viewport.width * _defaultZoom)) / 2,
+      (viewport.height - (viewport.height * _defaultZoom)) / 2,
+    );
+    if (wasAtDefault) {
+      _zoom = _defaultZoom;
+      _pan = _defaultPan;
+    }
+  }
 
   void beginGesture(Offset focalPoint) {
     _gestureStart = focalPoint;
@@ -90,8 +122,8 @@ class BattlefieldCameraTransform {
   }
 
   void reset() {
-    _zoom = 1;
-    _pan = Offset.zero;
+    _zoom = _defaultZoom;
+    _pan = _defaultPan;
     _dragging = false;
     _pinching = false;
   }

@@ -4,6 +4,28 @@ import 'package:depense_game/game/input/battlefield_camera_transform.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('default zoom is centered and reset returns to that baseline', () {
+    final camera = BattlefieldCameraTransform(defaultZoom: 1.1);
+
+    camera.setViewport(const Size(400, 600));
+
+    expect(camera.zoom, closeTo(1.1, 0.001));
+    expect(camera.pan.dx, closeTo(-20, 0.001));
+    expect(camera.pan.dy, closeTo(-30, 0.001));
+    expect(camera.isTransformed, isFalse);
+
+    camera.beginGesture(const Offset(200, 300));
+    camera.applyScale(scale: 1.8, focalPoint: const Offset(200, 300));
+    expect(camera.isTransformed, isTrue);
+
+    camera.reset();
+
+    expect(camera.zoom, closeTo(1.1, 0.001));
+    expect(camera.pan.dx, closeTo(-20, 0.001));
+    expect(camera.pan.dy, closeTo(-30, 0.001));
+    expect(camera.isTransformed, isFalse);
+  });
+
   test('zoom clamps to 1.0 through 2.5 and reset returns identity', () {
     final camera = BattlefieldCameraTransform();
 

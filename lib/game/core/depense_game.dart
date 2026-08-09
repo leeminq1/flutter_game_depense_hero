@@ -85,7 +85,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     required this.chosenHeroKind,
     this.startingCoinBonus = 0,
     this.tutorialDirector,
-  });
+  }) : _cameraTransform = BattlefieldCameraTransform(
+         defaultZoom: stage.number == 1 ? 1.1 : 1,
+       );
 
   final StageDefinition stage;
   final GameSessionController sessionController;
@@ -161,8 +163,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   int? _lastLoggedUiWave;
   String? _lastLoggedUiBattleState;
 
-  final BattlefieldCameraTransform _cameraTransform =
-      BattlefieldCameraTransform();
+  final BattlefieldCameraTransform _cameraTransform;
   double _scaleStart = 1.0;
 
   Shader? _cachedBgShader;
@@ -210,12 +211,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _cameraTransform.endGesture();
   }
 
-  void _applyCameraTransform() {
+  void _applyCameraTransform({bool notifySession = true}) {
     _cameraTransform.clampPan(
       viewport: ui.Size(size.x, size.y),
       world: ui.Size(size.x, size.y),
     );
-    sessionController.setCameraSnapshot(_cameraTransform.snapshot);
+    sessionController.setCameraSnapshot(
+      _cameraTransform.snapshot,
+      notify: notifySession,
+    );
   }
 
   void resetCamera() {
@@ -368,7 +372,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
-    _applyCameraTransform();
+    _cameraTransform.setViewport(ui.Size(size.x, size.y));
+    _applyCameraTransform(notifySession: false);
     _cachedBgShader = null;
     _gridOrigin = _resolvedGridOrigin();
     _pathsByDirection = _resolvedPathsByDirection();
@@ -7128,10 +7133,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
     final gridWidth = tileGrid.first.length * _tileSize;
     final gridHeight = tileGrid.length * _tileSize;
-    final verticalSlack = size.y - gridHeight;
     return Vector2(
       math.max(0, (size.x - gridWidth) / 2),
-      stage.number == 1 ? 0 : (verticalSlack <= 0 ? 0 : verticalSlack / 2),
+      math.max(0, (size.y - gridHeight) / 2),
     );
   }
 
