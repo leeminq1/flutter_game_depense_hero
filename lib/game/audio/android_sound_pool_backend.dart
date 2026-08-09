@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:depense_game/game/audio/combat_sfx_backend.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class AndroidSoundPoolBackend implements CombatSfxBackend {
@@ -12,7 +13,7 @@ class AndroidSoundPoolBackend implements CombatSfxBackend {
 
   @override
   Future<bool> initialize(Iterable<String> assets) async {
-    if (!Platform.isAndroid) {
+    if (kIsWeb || !Platform.isAndroid) {
       return false;
     }
 

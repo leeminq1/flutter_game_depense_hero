@@ -4,6 +4,7 @@ import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
+import 'package:depense_game/game/rendering/structure_visual_definition.dart';
 
 enum VisualTokenShape {
   circle,
@@ -37,6 +38,169 @@ class UnitVisualDefinition {
   final double renderScale;
   final String generatorHint;
   final int frames;
+}
+
+class StageOneVisualCatalog {
+  static const String _root = 'assets/sprites/stage1';
+  static const Color groundBaseColor = Color(0xFF789322);
+  static const double groundTextureOpacity = 0.22;
+
+  static bool enabledForStage(int stageNumber) => stageNumber <= 1;
+
+  static StructureVisualDefinition tower(TowerKind kind) {
+    final fileName = switch (kind) {
+      TowerKind.archer => 'archer',
+      TowerKind.guardBarracks => 'guard_barracks',
+      TowerKind.mageObelisk => 'mage_obelisk',
+      TowerKind.frostShrine => 'frost_shrine',
+      TowerKind.coinMill => 'coin_mill',
+      TowerKind.ballista => 'ballista',
+      TowerKind.emberkeep => 'ember_keep',
+    };
+    return StructureVisualDefinition(
+      assetPath: '$_root/towers/$fileName.png',
+      sourcePixelSize: const Size(128, 160),
+      footprintTiles: const Size(1, 1),
+      renderTiles: const Size(1, 1.58),
+      anchor: const Offset(0.5, 0.86),
+      drawOffsetTiles: const Offset(0, 0.08),
+      baseLayer: WorldRenderLayer.structure,
+      castsShadow: true,
+    );
+  }
+
+  static const StructureVisualDefinition citadel = StructureVisualDefinition(
+    assetPath: '$_root/environment/tutorial_citadel.png',
+    sourcePixelSize: Size(224, 224),
+    footprintTiles: Size(3, 3),
+    renderTiles: Size(3.25, 3.25),
+    anchor: Offset(0.5, 0.82),
+    drawOffsetTiles: Offset(0, 0.45),
+    baseLayer: WorldRenderLayer.structure,
+    castsShadow: true,
+  );
+
+  static const StructureVisualDefinition villageGatehouse =
+      StructureVisualDefinition(
+        assetPath: '$_root/environment/village_gatehouse.png',
+        sourcePixelSize: Size(256, 256),
+        footprintTiles: Size(2, 3),
+        renderTiles: Size(2.7, 2.7),
+        anchor: Offset(0.5, 0.92),
+        drawOffsetTiles: Offset(0, 0.08),
+        baseLayer: WorldRenderLayer.structure,
+        castsShadow: true,
+      );
+
+  static const StructureVisualDefinition roadSignpost =
+      StructureVisualDefinition(
+        assetPath: '$_root/environment/road_signpost.png',
+        sourcePixelSize: Size(112, 144),
+        footprintTiles: Size(1, 1),
+        renderTiles: Size(0.95, 1.2),
+        anchor: Offset(0.5, 0.92),
+        drawOffsetTiles: Offset.zero,
+        baseLayer: WorldRenderLayer.groundObject,
+        castsShadow: true,
+      );
+
+  static const StructureVisualDefinition well = StructureVisualDefinition(
+    assetPath: '$_root/environment/well.png',
+    sourcePixelSize: Size(160, 160),
+    footprintTiles: Size(1, 1),
+    renderTiles: Size(1.35, 1.35),
+    anchor: Offset(0.5, 0.9),
+    drawOffsetTiles: Offset.zero,
+    baseLayer: WorldRenderLayer.groundObject,
+    castsShadow: true,
+  );
+
+  static const StructureVisualDefinition brokenSupplyWagon =
+      StructureVisualDefinition(
+        assetPath: '$_root/environment/broken_supply_wagon.png',
+        sourcePixelSize: Size(192, 160),
+        footprintTiles: Size(1, 1),
+        renderTiles: Size(1.5, 1.25),
+        anchor: Offset(0.5, 0.88),
+        drawOffsetTiles: Offset.zero,
+        baseLayer: WorldRenderLayer.groundObject,
+        castsShadow: true,
+      );
+
+  static const StructureVisualDefinition supplyCart = StructureVisualDefinition(
+    assetPath: '$_root/environment/supply_cart.png',
+    sourcePixelSize: Size(128, 128),
+    footprintTiles: Size(1, 1),
+    renderTiles: Size(1.2, 1.2),
+    anchor: Offset(0.5, 0.88),
+    drawOffsetTiles: Offset.zero,
+    baseLayer: WorldRenderLayer.groundObject,
+    castsShadow: true,
+  );
+
+  static StructureVisualDefinition? environmentForLegacyPath(String path) {
+    if (path.endsWith('/village_gate.png')) {
+      return villageGatehouse;
+    }
+    if (path.endsWith('/road_signpost.png')) {
+      return roadSignpost;
+    }
+    if (path.endsWith('/well.png')) {
+      return well;
+    }
+    if (path.endsWith('/wagon_wreck.png')) {
+      return brokenSupplyWagon;
+    }
+    if (path.endsWith('/supply_crate.png')) {
+      return supplyCart;
+    }
+    return null;
+  }
+
+  static bool shouldHideLegacyDecoration(String path) =>
+      path.endsWith('/wooden_fence_segment.png');
+
+  static const String grassBase = '$_root/tiles/grass_base.png';
+  static const String grassAlt = '$_root/tiles/grass_alt.png';
+  static const String roadStraight = '$_root/tiles/road_straight.png';
+  static const String roadCorner = '$_root/tiles/road_corner.png';
+  static const String roadCap = '$_root/tiles/road_cap.png';
+  static const String roadFill = '$_root/tiles/road_fill.png';
+
+  static Map<String, String> barrierModulePaths(BarrierKind kind) {
+    final material = switch (kind) {
+      BarrierKind.woodFence => 'wood',
+      BarrierKind.stoneWall => 'stone',
+      BarrierKind.reinforcedWall || BarrierKind.fortressWall => 'fortress',
+    };
+    return {
+      'isolated': '$_root/walls/$material/isolated.png',
+      'straight': '$_root/walls/$material/straight.png',
+      'corner': '$_root/walls/$material/corner.png',
+    };
+  }
+
+  static Iterable<String> get assetPaths sync* {
+    for (final kind in TowerKind.values) {
+      yield tower(kind).assetPath;
+    }
+    yield citadel.assetPath;
+    yield villageGatehouse.assetPath;
+    yield roadSignpost.assetPath;
+    yield well.assetPath;
+    yield brokenSupplyWagon.assetPath;
+    yield supplyCart.assetPath;
+    yield grassBase;
+    yield grassAlt;
+    yield roadStraight;
+    yield roadCorner;
+    yield roadCap;
+    yield roadFill;
+    for (final kind in BarrierKind.values) {
+      yield* barrierModulePaths(kind).values;
+    }
+    yield '$_root/walls/keep/straight.png';
+  }
 }
 
 class TowerVisualCatalog {

@@ -80,6 +80,15 @@ flutter:
     - assets/audio/sfx/economy/
     - assets/audio/jingles/
     - assets/sprites/
+    - assets/sprites/stage1/
+    - assets/sprites/stage1/environment/
+    - assets/sprites/stage1/tiles/
+    - assets/sprites/stage1/towers/
+    - assets/sprites/stage1/walls/
+    - assets/sprites/stage1/walls/wood/
+    - assets/sprites/stage1/walls/stone/
+    - assets/sprites/stage1/walls/fortress/
+    - assets/sprites/stage1/walls/keep/
     - assets/sprites/towers/
     - assets/sprites/enemies/
     - assets/sprites/enemies/banner_captain/

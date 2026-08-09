@@ -108,3 +108,30 @@
   `flutter build appbundle --release`.
 - Confirmed the release manifest has `versionName="1.0.31"` and
   `versionCode="32"`, and the AAB includes bundled legal credits.
+
+# 2026-08-09 Combat UX, Tutorial, And Stage 1 Visual Slice Note
+
+- Added bounded 0.7x–2.5x battlefield pan/zoom, tap suppression after drag,
+  conditional camera reset, explicit enemy-front labels, and immediate
+  pause/resume state updates.
+- Rebuilt the lower construction UI as a state-adaptive panel with 74×82
+  cards during preparation and a 52–60px combat bar during an active Wave.
+- Replaced the automatic Stage 1 briefing with an eight-step fail-less training
+  map. New games continue directly to Stage 1; the title-screen tutorial ends
+  with replay/home choices. The tutorial includes all four spawn directions,
+  wall blocking, safe tower placement, a 1.5x pass-through/contact-damage demo,
+  combined defense, and a mini Wave.
+- Enabled constrained top-down 3/4 pixel visuals only for the tutorial and
+  Stage 1: T1 towers, citadel, roads, connected walls, village gatehouse,
+  signpost, well, and supply wagons. T2/T3/branches, heroes/enemies, and Stage
+  2–30 intentionally keep the current fallbacks until device acceptance.
+- Kept enemy stats, Wave composition, tower/barrier stats, economy, and
+  difficulty data unchanged.
+- Verified the 430×900 browser preview for the compact tutorial card, visible
+  four-direction lesson, terrain, connected wall pass, and Stage 1 prop style.
+- Automated verification: `flutter test` (125 passed), `flutter analyze`
+  (zero issues), `flutter build apk --debug`, and `git diff --check`.
+- Device acceptance remains: frame pacing, 1x/2.5x pivot readability, pinch
+  focal stability, no accidental placement after drag, connected T/cross walls,
+  natural unit overlap, 2–3 minute tutorial pacing, pause behavior, automatic
+  Stage 1 transition, and menu replay/home completion routes.

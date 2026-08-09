@@ -16,6 +16,7 @@ class GameVisualRegistry {
   final Map<String, ui.Image> _environmentSprites = {};
   final Map<String, ui.Image> _barrierSprites = {};
   final Map<String, ui.Image> _effectSprites = {};
+  final Map<String, ui.Image> _stageOneSprites = {};
 
   ui.Image? _grassTile;
   ui.Image? _grassTile2;
@@ -185,6 +186,13 @@ class GameVisualRegistry {
       _environmentSprites[assetPath] = await _loadImage(assetPath);
     }
 
+    for (final assetPath in StageOneVisualCatalog.assetPaths.toSet()) {
+      if (!assetKeys.contains(assetPath)) {
+        continue;
+      }
+      _stageOneSprites[assetPath] = await _loadImage(assetPath);
+    }
+
     const grassPath = 'assets/sprites/tiles/grass.png';
     const grass2Path = 'assets/sprites/tiles/grass2.png';
     const buildableGroundPath = 'assets/sprites/tiles/buildable_ground.png';
@@ -328,6 +336,8 @@ class GameVisualRegistry {
   ui.Image? environmentSprite(String assetPath) {
     return _environmentSprites[assetPath];
   }
+
+  ui.Image? stageOneSprite(String assetPath) => _stageOneSprites[assetPath];
 
   Future<ui.Image> _loadImage(String assetPath) async {
     final byteData = await rootBundle.load(assetPath);

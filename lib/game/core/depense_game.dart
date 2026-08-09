@@ -14,7 +14,11 @@ import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/game_visual_registry.dart';
 import 'package:depense_game/game/rendering/map_texture_planner.dart';
+import 'package:depense_game/game/rendering/barrier_connectivity.dart';
+import 'package:depense_game/game/rendering/stage1_road_tile_plan.dart';
+import 'package:depense_game/game/rendering/structure_visual_definition.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
+import 'package:depense_game/game/rendering/world_render_item.dart';
 import 'package:depense_game/game/tutorial/tutorial_director.dart';
 import 'package:depense_game/game/tutorial/tutorial_models.dart';
 import 'package:flame/events.dart';
@@ -1172,6 +1176,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   @override
   void render(Canvas canvas) {
     super.render(canvas);
+    final stageOneVisual = StageOneVisualCatalog.enabledForStage(stage.number);
 
     _cachedBgShader ??= _backgroundShader();
     canvas.drawRect(
@@ -1185,21 +1190,29 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawGroundTexture(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.background);
     _drawRoadTiles(canvas);
-    _drawObstacles(canvas);
-    _drawBarriers(canvas);
+    if (!stageOneVisual) {
+      _drawObstacles(canvas);
+    }
     _drawFrontTelegraphs(canvas);
     _drawSpawnCue(canvas);
-    _drawCitadel(canvas);
     _drawSlots(canvas);
     _drawSelectionRanges(canvas);
     _drawPulses(canvas);
-    _drawTowers(canvas);
-    _drawHeroes(canvas);
+    if (stageOneVisual) {
+      _drawStageOneSortedStructures(canvas);
+    } else {
+      _drawBarriers(canvas);
+      _drawCitadel(canvas);
+      _drawTowers(canvas);
+      _drawHeroes(canvas);
+    }
     _drawSlashes(canvas);
     _drawStrikes(canvas);
     _drawProjectiles(canvas);
     _drawBombardments(canvas);
-    _drawEnemies(canvas);
+    if (!stageOneVisual) {
+      _drawEnemies(canvas);
+    }
     _drawImpacts(canvas);
     _drawFloatingTexts(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.foreground);
@@ -5353,6 +5366,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (tileGrid == null || tileGrid.isEmpty) {
       return;
     }
+    if (StageOneVisualCatalog.enabledForStage(stage.number) &&
+        _drawStageOneRoadTiles(canvas)) {
+      return;
+    }
     final roadPaths = _visibleRoadPaths();
     if (roadPaths.isEmpty) {
       return;
@@ -5492,36 +5509,165 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  void _drawObstacles(Canvas canvas) {
-    for (final obstacle in stage.obstacles) {
+  void _drawObstacles(Canvas canvas, {int? onlyIndex}) {
+    for (var index = 0; index < stage.obstacles.length; index += 1) {
+      if (onlyIndex != null && index != onlyIndex) {
+        continue;
+      }
+      final obstacle = stage.obstacles[index];
       if (obstacle.occupiedCells.isEmpty) {
         continue;
       }
-      final sprite = _visualRegistry.environmentSprite(obstacle.assetPath);
+      final stageOneDefinition =
+          StageOneVisualCatalog.enabledForStage(stage.number)
+          ? StageOneVisualCatalog.environmentForLegacyPath(obstacle.assetPath)
+          : null;
+      final sprite = stageOneDefinition == null
+          ? _visualRegistry.environmentSprite(obstacle.assetPath)
+          : _visualRegistry.stageOneSprite(stageOneDefinition.assetPath);
       final center = _obstacleCenter(obstacle);
       final size = _obstacleVisualSize(obstacle);
       if (sprite != null) {
-        _drawSprite(
-          canvas,
-          sprite,
-          center: center,
-          size: size,
-          fallbackTint: Colors.white,
-          opacity: obstacle.opacity,
-        );
+        if (stageOneDefinition != null) {
+          _drawAnchoredSprite(
+            canvas,
+            sprite,
+            definition: stageOneDefinition,
+            worldAnchor: _obstacleGroundAnchor(obstacle),
+            opacity: obstacle.opacity,
+          );
+        } else {
+          _drawSprite(
+            canvas,
+            sprite,
+            center: center,
+            size: size,
+            fallbackTint: Colors.white,
+            opacity: obstacle.opacity,
+          );
+        }
       }
     }
   }
 
-  void _drawBarriers(Canvas canvas) {
+  void _drawStageOneSortedStructures(Canvas canvas) {
+    final items = <WorldRenderItem>[
+      WorldRenderItem(
+        layer: WorldRenderLayer.structure.index,
+        groundY: _citadelCenter.y + _tileSize,
+        stableId: 0,
+        draw: _drawCitadel,
+      ),
+      for (var index = 0; index < stage.obstacles.length; index += 1)
+        WorldRenderItem(
+          layer: WorldRenderLayer.structure.index,
+          groundY: _obstacleGroundAnchor(stage.obstacles[index]).dy,
+          stableId: 10 + index,
+          draw: (canvas) => _drawObstacles(canvas, onlyIndex: index),
+        ),
+      for (var index = 0; index < _barriers.length; index += 1)
+        WorldRenderItem(
+          layer: WorldRenderLayer.structure.index,
+          groundY: _barriers[index].position.y,
+          stableId: 100 + index,
+          draw: (canvas) => _drawBarriers(canvas, onlyIndex: index),
+        ),
+      for (var index = 0; index < _towers.length; index += 1)
+        WorldRenderItem(
+          layer: WorldRenderLayer.structure.index,
+          groundY: _towers[index].position.y,
+          stableId: 1000 + index,
+          draw: (canvas) => _drawTowers(canvas, onlyIndex: index),
+        ),
+      for (var index = 0; index < _heroes.length; index += 1)
+        WorldRenderItem(
+          layer: WorldRenderLayer.structure.index,
+          groundY: _heroes[index].position.y,
+          stableId: 2000 + index,
+          draw: (canvas) => _drawHeroes(canvas, onlyIndex: index),
+        ),
+      for (var index = 0; index < _enemies.length; index += 1)
+        WorldRenderItem(
+          layer: WorldRenderLayer.structure.index,
+          groundY: _enemies[index].position.y,
+          stableId: 3000 + _enemies[index].debugId,
+          draw: (canvas) => _drawEnemies(canvas, onlyIndex: index),
+        ),
+    ]..sort(WorldRenderItem.compare);
+    for (final item in items) {
+      item.draw(canvas);
+    }
+  }
+
+  bool _drawStageOneRoadTiles(Canvas canvas) {
+    final visibleWaveIndex = _waveActive && _currentWaveIndex >= 0
+        ? _currentWaveIndex
+        : _currentWaveIndex + 1;
+    if (visibleWaveIndex < 0 || visibleWaveIndex >= stage.waves.length) {
+      return false;
+    }
+    final cells = <(int, int)>{
+      for (final path in _roadRouteCellsForWaveIndex(visibleWaveIndex))
+        for (final cell in path) (cell[0], cell[1]),
+    };
+    if (cells.isEmpty) {
+      return false;
+    }
+
+    final orderedCells = cells.toList()
+      ..sort((a, b) {
+        final byRow = a.$2.compareTo(b.$2);
+        return byRow != 0 ? byRow : a.$1.compareTo(b.$1);
+      });
+    for (final cell in orderedCells) {
+      final mask = BarrierConnectivity.mask(
+        north: cells.contains((cell.$1, cell.$2 - 1)),
+        east: cells.contains((cell.$1 + 1, cell.$2)),
+        south: cells.contains((cell.$1, cell.$2 + 1)),
+        west: cells.contains((cell.$1 - 1, cell.$2)),
+      );
+      final plan = StageOneRoadTilePlan.fromMask(mask);
+      final path = switch (plan.kind) {
+        StageOneRoadTileKind.cap => StageOneVisualCatalog.roadCap,
+        StageOneRoadTileKind.straight => StageOneVisualCatalog.roadStraight,
+        StageOneRoadTileKind.corner => StageOneVisualCatalog.roadCorner,
+        StageOneRoadTileKind.fill => StageOneVisualCatalog.roadFill,
+      };
+      final image = _visualRegistry.stageOneSprite(path);
+      if (image == null) {
+        return false;
+      }
+      _drawRotatedSquareSprite(
+        canvas,
+        image,
+        center: _cellCenter([cell.$1, cell.$2]).toOffset(),
+        size: _tileSize * 1.04,
+        quarterTurns: plan.quarterTurns,
+        opacity: _waveActive ? 0.96 : 0.90,
+      );
+    }
+    return true;
+  }
+
+  void _drawBarriers(Canvas canvas, {int? onlyIndex}) {
     for (var i = 0; i < _barriers.length; i += 1) {
+      if (onlyIndex != null && i != onlyIndex) {
+        continue;
+      }
       final barrier = _barriers[i];
       final center = barrier.position.toOffset();
       final isFortressWall =
           barrier.definition.kind == BarrierKind.fortressWall;
       final isSelected = i == _selectedBarrierIndex;
-      final sprite = _visualRegistry.barrierSprite(barrier.definition.kind);
-      if (sprite != null) {
+      final stageOneVisual = StageOneVisualCatalog.enabledForStage(
+        stage.number,
+      );
+      final sprite = stageOneVisual
+          ? null
+          : _visualRegistry.barrierSprite(barrier.definition.kind);
+      if (stageOneVisual) {
+        _drawStageOneBarrier(canvas, barrier, opacity: isSelected ? 1 : 0.96);
+      } else if (sprite != null) {
         _drawSprite(
           canvas,
           sprite,
@@ -5594,6 +5740,71 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
+  void _drawStageOneBarrier(
+    Canvas canvas,
+    _BarrierPlacement barrier, {
+    required double opacity,
+  }) {
+    final cell = _cellForWorldPosition(barrier.position);
+    if (cell == null) {
+      return;
+    }
+    bool connects(int col, int row) {
+      final index = _barrierIndexAtCell(col, row);
+      return index != null &&
+          _barriers[index].definition.kind == barrier.definition.kind;
+    }
+
+    final mask = BarrierConnectivity.mask(
+      north: connects(cell.$1, cell.$2 - 1),
+      east: connects(cell.$1 + 1, cell.$2),
+      south: connects(cell.$1, cell.$2 + 1),
+      west: connects(cell.$1 - 1, cell.$2),
+    );
+    final recipe = BarrierConnectivity.recipe(mask);
+    final paths = StageOneVisualCatalog.barrierModulePaths(
+      barrier.definition.kind,
+    );
+    final center = barrier.position.toOffset();
+
+    void drawModule(String key, int quarterTurns) {
+      final image = _visualRegistry.stageOneSprite(paths[key]!);
+      if (image == null) {
+        return;
+      }
+      _drawRotatedSquareSprite(
+        canvas,
+        image,
+        center: center,
+        size: _tileSize * 1.08,
+        quarterTurns: quarterTurns,
+        opacity: opacity,
+      );
+    }
+
+    switch (recipe.shape) {
+      case BarrierConnectionShape.isolated:
+        drawModule('isolated', 0);
+      case BarrierConnectionShape.cap:
+        final vertical = mask == 1 || mask == 4;
+        drawModule('straight', vertical ? 1 : 0);
+      case BarrierConnectionShape.straight:
+        drawModule('straight', mask == 5 ? 1 : 0);
+      case BarrierConnectionShape.corner:
+        final turns = switch (mask) {
+          12 => 0,
+          9 => 1,
+          3 => 2,
+          6 => 3,
+          _ => 0,
+        };
+        drawModule('corner', turns);
+      case BarrierConnectionShape.tee || BarrierConnectionShape.cross:
+        drawModule('straight', 0);
+        drawModule('straight', 1);
+    }
+  }
+
   Offset _obstacleCenter(StageObstacleDefinition obstacle) {
     var totalX = 0.0;
     var totalY = 0.0;
@@ -5603,6 +5814,25 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
     final count = obstacle.occupiedCells.length.toDouble();
     return Offset(totalX / count, totalY / count);
+  }
+
+  Offset _obstacleGroundAnchor(StageObstacleDefinition obstacle) {
+    var totalX = 0.0;
+    var maxRow = -1;
+    for (final cell in obstacle.occupiedCells) {
+      if (cell.length < 2) {
+        continue;
+      }
+      totalX += _gridOrigin.x + (cell[0] * _tileSize) + (_tileSize / 2);
+      maxRow = math.max(maxRow, cell[1]);
+    }
+    if (maxRow < 0 || obstacle.occupiedCells.isEmpty) {
+      return _obstacleCenter(obstacle);
+    }
+    return Offset(
+      totalX / obstacle.occupiedCells.length,
+      _gridOrigin.y + ((maxRow + 1) * _tileSize),
+    );
   }
 
   double _obstacleVisualSize(StageObstacleDefinition obstacle) {
@@ -5631,17 +5861,31 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (_citadelCenter == Vector2.zero()) {
       return;
     }
-    final sprite = _visualRegistry.environmentSprite(
-      'assets/sprites/environment/landmarks/central_citadel.png',
-    );
+    final stageOneVisual = StageOneVisualCatalog.enabledForStage(stage.number);
+    final sprite = stageOneVisual
+        ? _visualRegistry.stageOneSprite(
+            StageOneVisualCatalog.citadel.assetPath,
+          )
+        : _visualRegistry.environmentSprite(
+            'assets/sprites/environment/landmarks/central_citadel.png',
+          );
     if (sprite != null) {
-      _drawSprite(
-        canvas,
-        sprite,
-        center: _citadelCenter.toOffset(),
-        size: _tileSize * 2.0,
-        fallbackTint: const Color(0xFF6C7E8C),
-      );
+      if (stageOneVisual) {
+        _drawAnchoredSprite(
+          canvas,
+          sprite,
+          definition: StageOneVisualCatalog.citadel,
+          worldAnchor: _citadelCenter.toOffset(),
+        );
+      } else {
+        _drawSprite(
+          canvas,
+          sprite,
+          center: _citadelCenter.toOffset(),
+          size: _tileSize * 2.0,
+          fallbackTint: const Color(0xFF6C7E8C),
+        );
+      }
     } else {
       canvas.drawCircle(
         _citadelCenter.toOffset(),
@@ -6194,15 +6438,25 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     );
   }
 
-  void _drawTowers(Canvas canvas) {
+  void _drawTowers(Canvas canvas, {int? onlyIndex}) {
     for (var i = 0; i < _towers.length; i += 1) {
+      if (onlyIndex != null && i != onlyIndex) {
+        continue;
+      }
       final tower = _towers[i];
       final visual = TowerVisualCatalog.byKind(tower.definition.kind);
-      final sprite = _visualRegistry.towerSprite(
-        tower.definition.kind,
-        level: tower.level,
-        branchId: tower.branchId,
-      );
+      final stageOneDefinition =
+          StageOneVisualCatalog.enabledForStage(stage.number) &&
+              tower.level == 1
+          ? StageOneVisualCatalog.tower(tower.definition.kind)
+          : null;
+      final sprite = stageOneDefinition == null
+          ? _visualRegistry.towerSprite(
+              tower.definition.kind,
+              level: tower.level,
+              branchId: tower.branchId,
+            )
+          : _visualRegistry.stageOneSprite(stageOneDefinition.assetPath);
       final center = tower.position.toOffset();
       final isSelected = i == _selectedTowerIndex;
       final towerRenderSize = _tileSize * 1.12;
@@ -6216,13 +6470,22 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           ),
       );
       if (sprite != null) {
-        _drawSprite(
-          canvas,
-          sprite,
-          center: center,
-          size: towerRenderSize,
-          fallbackTint: visual.primaryColor,
-        );
+        if (stageOneDefinition != null) {
+          _drawAnchoredSprite(
+            canvas,
+            sprite,
+            definition: stageOneDefinition,
+            worldAnchor: center,
+          );
+        } else {
+          _drawSprite(
+            canvas,
+            sprite,
+            center: center,
+            size: towerRenderSize,
+            fallbackTint: visual.primaryColor,
+          );
+        }
       } else {
         _drawTokenShape(
           canvas,
@@ -6266,8 +6529,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  void _drawHeroes(Canvas canvas) {
+  void _drawHeroes(Canvas canvas, {int? onlyIndex}) {
     for (var i = 0; i < _heroes.length; i += 1) {
+      if (onlyIndex != null && i != onlyIndex) {
+        continue;
+      }
       final hero = _heroes[i];
       final visual = HeroVisualCatalog.byKind(hero.definition.kind);
       final directionKey = switch (hero.facing) {
@@ -6403,11 +6669,27 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawGroundTexture(Canvas canvas) {
-    final grassTile = _visualRegistry.grassTile;
-    final grassTile2 = _visualRegistry.grassTile2;
+    final stageOneVisual = StageOneVisualCatalog.enabledForStage(stage.number);
+    if (stageOneVisual) {
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, size.x, size.y),
+        Paint()..color = StageOneVisualCatalog.groundBaseColor,
+      );
+    }
+    final grassTile = stageOneVisual
+        ? _visualRegistry.stageOneSprite(StageOneVisualCatalog.grassBase)
+        : _visualRegistry.grassTile;
+    final grassTile2 = stageOneVisual
+        ? _visualRegistry.stageOneSprite(StageOneVisualCatalog.grassAlt)
+        : _visualRegistry.grassTile2;
 
     if (grassTile != null) {
-      final tilePaint = Paint();
+      final tilePaint = Paint()
+        ..color = stageOneVisual
+            ? const Color(
+                0xFFFFFFFF,
+              ).withValues(alpha: StageOneVisualCatalog.groundTextureOpacity)
+            : const Color(0xFFFFFFFF);
       final cols = (size.x / _tileSize).ceil() + 1;
       final rows = (size.y / _tileSize).ceil() + 1;
 
@@ -6596,8 +6878,36 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawEnvironmentDecorations(Canvas canvas, StageDecorationLayer layer) {
+    final stageOneVisual = StageOneVisualCatalog.enabledForStage(stage.number);
     for (final decoration in stage.decorations) {
       if (decoration.layer != layer) {
+        continue;
+      }
+      if (stageOneVisual) {
+        if (StageOneVisualCatalog.shouldHideLegacyDecoration(
+          decoration.assetPath,
+        )) {
+          continue;
+        }
+        final definition = StageOneVisualCatalog.environmentForLegacyPath(
+          decoration.assetPath,
+        );
+        if (definition == null) {
+          continue;
+        }
+        final sprite = _visualRegistry.stageOneSprite(definition.assetPath);
+        if (sprite == null) {
+          continue;
+        }
+        _drawAnchoredSprite(
+          canvas,
+          sprite,
+          definition: definition,
+          worldAnchor: _decorationCellCenter(
+            decoration,
+          ).translate(0, _tileSize * 0.45),
+          opacity: decoration.opacity,
+        );
         continue;
       }
       final sprite = _visualRegistry.environmentSprite(decoration.assetPath);
@@ -6829,8 +7139,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  void _drawEnemies(Canvas canvas) {
-    for (final enemy in _enemies) {
+  void _drawEnemies(Canvas canvas, {int? onlyIndex}) {
+    for (var enemyIndex = 0; enemyIndex < _enemies.length; enemyIndex += 1) {
+      if (onlyIndex != null && enemyIndex != onlyIndex) {
+        continue;
+      }
+      final enemy = _enemies[enemyIndex];
       final visual = EnemyVisualCatalog.byKind(enemy.definition.kind);
       final direction = enemy.currentDirection;
       final directionKey = switch (direction) {
@@ -7437,6 +7751,71 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       height: size,
     );
     canvas.drawImageRect(image, src, mirroredDst, paint);
+    canvas.restore();
+  }
+
+  void _drawAnchoredSprite(
+    Canvas canvas,
+    ui.Image image, {
+    required StructureVisualDefinition definition,
+    required Offset worldAnchor,
+    double opacity = 1,
+  }) {
+    final destination = definition.destinationRect(
+      worldAnchor: worldAnchor,
+      tileSize: _tileSize,
+    );
+    if (definition.castsShadow) {
+      final pivot = worldAnchor + definition.drawOffsetTiles * _tileSize;
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: pivot.translate(0, _tileSize * 0.08),
+          width: destination.width * 0.58,
+          height: _tileSize * 0.22,
+        ),
+        Paint()..color = const Color(0x4D08131A),
+      );
+    }
+    canvas.drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      destination,
+      Paint()
+        ..filterQuality = FilterQuality.none
+        ..color = Colors.white.withValues(alpha: opacity.clamp(0.0, 1.0)),
+    );
+  }
+
+  void _drawRotatedSquareSprite(
+    Canvas canvas,
+    ui.Image image, {
+    required Offset center,
+    required double size,
+    required int quarterTurns,
+    required double opacity,
+  }) {
+    final source = Rect.fromLTWH(
+      0,
+      0,
+      image.width.toDouble(),
+      image.height.toDouble(),
+    );
+    final destination = Rect.fromCenter(
+      center: Offset.zero,
+      width: size,
+      height: size,
+    );
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate((quarterTurns % 4) * math.pi / 2);
+    canvas.drawImageRect(
+      image,
+      source,
+      destination,
+      Paint()
+        ..filterQuality = FilterQuality.none
+        ..color = Colors.white.withValues(alpha: opacity.clamp(0.0, 1.0)),
+    );
     canvas.restore();
   }
 

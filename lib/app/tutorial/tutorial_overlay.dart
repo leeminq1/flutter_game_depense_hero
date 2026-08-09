@@ -137,6 +137,23 @@ class _GuidanceCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (showSkip) ...[
+                      const SizedBox(width: 6),
+                      TextButton.icon(
+                        key: const ValueKey('tutorial-skip-camera'),
+                        onPressed: onSkip,
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFFD9C3FF),
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        icon: const Icon(Icons.skip_next_rounded, size: 18),
+                        label: const Text(
+                          '건너뛰기',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -164,27 +181,16 @@ class _GuidanceCard extends StatelessWidget {
                   const SizedBox(height: 10),
                   const _DangerPlacementDemo(),
                 ],
-                if (showContinue || showSkip) ...[
+                if (showContinue) ...[
                   const SizedBox(height: 10),
                   Align(
                     alignment: Alignment.centerRight,
                     child: FilledButton.icon(
-                      key: ValueKey(
-                        showSkip ? 'tutorial-skip-camera' : 'tutorial-continue',
-                      ),
-                      onPressed: showSkip ? onSkip : onContinue,
-                      icon: Icon(
-                        showSkip
-                            ? Icons.skip_next_rounded
-                            : Icons.check_rounded,
-                        size: 18,
-                      ),
+                      key: const ValueKey('tutorial-continue'),
+                      onPressed: onContinue,
+                      icon: const Icon(Icons.check_rounded, size: 18),
                       label: Text(
-                        showSkip
-                            ? '조작 건너뛰기'
-                            : snapshot.step == TutorialStep.recap
-                            ? '훈련 완료'
-                            : '확인',
+                        snapshot.step == TutorialStep.recap ? '훈련 완료' : '확인',
                       ),
                     ),
                   ),
@@ -292,10 +298,10 @@ class _DirectionMarkers extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: const [
-        Align(alignment: Alignment.topCenter, child: _DirectionBadge('북')),
-        Align(alignment: Alignment.bottomCenter, child: _DirectionBadge('남')),
-        Align(alignment: Alignment.centerRight, child: _DirectionBadge('동')),
-        Align(alignment: Alignment.centerLeft, child: _DirectionBadge('서')),
+        Align(alignment: Alignment(0, -0.8), child: _DirectionBadge('북')),
+        Align(alignment: Alignment(0, 0.25), child: _DirectionBadge('남')),
+        Align(alignment: Alignment(0.88, -0.15), child: _DirectionBadge('동')),
+        Align(alignment: Alignment(-0.88, -0.15), child: _DirectionBadge('서')),
       ],
     );
   }

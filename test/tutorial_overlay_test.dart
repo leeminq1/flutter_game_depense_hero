@@ -19,6 +19,19 @@ void main() {
     expect(find.text('1 / 8'), findsOneWidget);
   });
 
+  testWidgets('camera lesson keeps its skip control inside a compact card', (
+    tester,
+  ) async {
+    final director = TutorialDirector();
+    await _pumpOverlay(tester, director);
+    director.advanceTime(TutorialDirector.cameraSkipDelay);
+    await tester.pump();
+
+    final card = find.byKey(const ValueKey('tutorial-guidance-card'));
+    expect(tester.getSize(card).height, lessThanOrEqualTo(120));
+    expect(find.byKey(const ValueKey('tutorial-skip-camera')), findsOneWidget);
+  });
+
   testWidgets('direction lesson labels all four enemy fronts', (tester) async {
     final director = TutorialDirector();
     director.record(const TutorialEvent.cameraChanged());
@@ -29,6 +42,17 @@ void main() {
     expect(find.text('동'), findsOneWidget);
     expect(find.text('서'), findsOneWidget);
     expect(find.text('표시된 방향에서 적이 등장합니다.'), findsOneWidget);
+    expect(
+      tester.getCenter(find.text('남')).dy,
+      lessThan(
+        tester
+                .getTopLeft(
+                  find.byKey(const ValueKey('tutorial-guidance-card')),
+                )
+                .dy -
+            12,
+      ),
+    );
   });
 
   testWidgets('danger lesson visibly compares pass-through contact damage', (
