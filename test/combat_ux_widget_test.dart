@@ -22,7 +22,8 @@ void main() {
       find.byKey(const ValueKey('preparation-build-panel')),
       findsOneWidget,
     );
-    expect(find.textContaining('다음 WAVE:'), findsOneWidget);
+    expect(find.textContaining('다음 WAVE:'), findsNothing);
+    expect(find.byKey(const ValueKey('hud-wave')), findsOneWidget);
   });
 
   testWidgets('active wave replaces cards with a compact combat bar', (
@@ -37,6 +38,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.byKey(const ValueKey('combat-status-bar')), findsOneWidget);
+    expect(find.byKey(const ValueKey('hud-enemies')), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const ValueKey('combat-status-bar'))).height,
       inInclusiveRange(52, 60),

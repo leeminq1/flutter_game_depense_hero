@@ -19,4 +19,16 @@ void main() {
     expect(StageOneRoadTilePlan.fromMask(10).quarterTurns, 1);
     expect(StageOneRoadTilePlan.fromMask(12).quarterTurns, 0);
   });
+
+  test('stage 1 barriers face across the road instead of along it', () {
+    final verticalRoad = StageOneBarrierTilePlan.fromRoadMask(5);
+    final horizontalRoad = StageOneBarrierTilePlan.fromRoadMask(10);
+    final cornerRoad = StageOneBarrierTilePlan.fromRoadMask(12);
+
+    expect(verticalRoad.kind, StageOneBarrierTileKind.straight);
+    expect(verticalRoad.quarterTurns, 0);
+    expect(horizontalRoad.kind, StageOneBarrierTileKind.straight);
+    expect(horizontalRoad.quarterTurns, 1);
+    expect(cornerRoad.kind, StageOneBarrierTileKind.isolated);
+  });
 }

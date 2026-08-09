@@ -1565,8 +1565,9 @@ class _TopHud extends StatelessWidget {
       trailingIcon: Icons.info_outline_rounded,
       onTap: onStageInfo,
     );
-    final scrollingStatChips = <Widget>[
+    final primaryStatChips = <Widget>[
       _HudChip(
+        key: const ValueKey('hud-wave'),
         icon: Icons.waves_rounded,
         color: Colors.white70,
         label:
@@ -1575,28 +1576,22 @@ class _TopHud extends StatelessWidget {
       if (sessionController.waveInProgress &&
           sessionController.remainingEnemies > 0)
         _HudChip(
+          key: const ValueKey('hud-enemies'),
           icon: Icons.groups_rounded,
           color: const Color(0xFFFF6B6B),
           label: '${sessionController.remainingEnemies}',
         ),
-      _HudChip(
-        icon: Icons.assistant_direction_rounded,
-        color: const Color(0xFFE4C67A),
-        label: sessionController.waveInProgress
-            ? '출현: ${formatSpawnFronts(sessionController.activeFronts)}'
-            : '다음 WAVE: ${formatSpawnFronts(sessionController.nextFronts)}',
-      ),
     ];
 
-    final scrollingStats = SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
+    final primaryStats = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.center,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (var index = 0; index < scrollingStatChips.length; index++) ...[
+          for (var index = 0; index < primaryStatChips.length; index++) ...[
             if (index > 0) const SizedBox(width: 6),
-            scrollingStatChips[index],
+            primaryStatChips[index],
           ],
         ],
       ),
@@ -1605,7 +1600,7 @@ class _TopHud extends StatelessWidget {
       children: [
         coinChip,
         const SizedBox(width: 6),
-        Expanded(child: scrollingStats),
+        Expanded(child: primaryStats),
         const SizedBox(width: 6),
         stageChip,
       ],
@@ -1615,7 +1610,7 @@ class _TopHud extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 6,
       runSpacing: 6,
-      children: [coinChip, ...scrollingStatChips, stageChip],
+      children: [coinChip, ...primaryStatChips, stageChip],
     );
 
     return Container(

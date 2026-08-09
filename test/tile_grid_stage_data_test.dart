@@ -278,6 +278,20 @@ void main() {
     );
   });
 
+  test('stage 1 default hero spawn stays clear of the citadel artwork', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+
+    game.onGameResize(Vector2(430, 560));
+
+    expect(game.debugHeroSpawnCell(), (3, 12));
+  });
+
   test('runtime spawn routes stop at gate cells', () {
     for (
       var stageNumber = 1;

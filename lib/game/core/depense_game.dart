@@ -733,12 +733,18 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (citadelCell == null || citadelCell.length < 2) {
       return null;
     }
-    final preferred = <List<int>>[
-      [citadelCell[0] + 1, citadelCell[1]],
-      [citadelCell[0], citadelCell[1] - 1],
-      [citadelCell[0], citadelCell[1] + 1],
-      [citadelCell[0] - 1, citadelCell[1]],
-    ];
+    final preferred = stage.number == 1
+        ? <List<int>>[
+            [citadelCell[0] + 2, citadelCell[1]],
+            [citadelCell[0] + 2, citadelCell[1] - 1],
+            [citadelCell[0] + 1, citadelCell[1] - 2],
+          ]
+        : <List<int>>[
+            [citadelCell[0] + 1, citadelCell[1]],
+            [citadelCell[0], citadelCell[1] - 1],
+            [citadelCell[0], citadelCell[1] + 1],
+            [citadelCell[0] - 1, citadelCell[1]],
+          ];
     for (final cell in preferred) {
       if (_isHeroSpawnCellAvailable(cell)) {
         return _cellCenter(cell);
@@ -1391,7 +1397,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
     final worldPosition = _cameraTransform.worldPointAt(
-      event.localPosition.toOffset(),
+      event.canvasPosition.toOffset(),
     );
     _handleTap(Vector2(worldPosition.dx, worldPosition.dy));
   }
@@ -5356,6 +5362,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   @visibleForTesting
   Vector2 debugCitadelCenter() => _citadelCenter.clone();
 
+  @visibleForTesting
+  (int, int)? debugHeroSpawnCell() {
+    final position = _heroSpawnPosition();
+    return position == null ? null : _cellForWorldPosition(position);
+  }
+
   SpawnRouteDefinition? _spawnRouteById(String? routeId) {
     if (routeId == null) {
       return null;
@@ -6114,59 +6126,60 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (cell == null) {
       return;
     }
-    bool connects(int col, int row) {
-      final index = _barrierIndexAtCell(col, row);
-      return index != null &&
-          _barriers[index].definition.kind == barrier.definition.kind;
-    }
-
+    final visibleWaveIndex = _waveActive && _currentWaveIndex >= 0
+        ? _currentWaveIndex
+        : _currentWaveIndex + 1;
+    final roadCells =
+        visibleWaveIndex >= 0 && visibleWaveIndex < stage.waves.length
+        ? _roadCellsForWaveIndex(visibleWaveIndex)
+        : const <(int, int)>{};
     final mask = BarrierConnectivity.mask(
-      north: connects(cell.$1, cell.$2 - 1),
-      east: connects(cell.$1 + 1, cell.$2),
-      south: connects(cell.$1, cell.$2 + 1),
-      west: connects(cell.$1 - 1, cell.$2),
+      north: roadCells.contains((cell.$1, cell.$2 - 1)),
+      east: roadCells.contains((cell.$1 + 1, cell.$2)),
+      south: roadCells.contains((cell.$1, cell.$2 + 1)),
+      west: roadCells.contains((cell.$1 - 1, cell.$2)),
     );
-    final recipe = BarrierConnectivity.recipe(mask);
+    final plan = StageOneBarrierTilePlan.fromRoadMask(mask);
     final paths = StageOneVisualCatalog.barrierModulePaths(
       barrier.definition.kind,
     );
     final center = barrier.position.toOffset();
 
-    void drawModule(String key, int quarterTurns) {
-      final image = _visualRegistry.stageOneSprite(paths[key]!);
-      if (image == null) {
-        return;
-      }
+    final isStraight = plan.kind == StageOneBarrierTileKind.straight;
+    final foundationWidth = _tileSize * (isStraight ? 0.96 : 0.68);
+    final foundationHeight = _tileSize * (isStraight ? 0.38 : 0.68);
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate((plan.quarterTurns % 4) * math.pi / 2);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset.zero,
+          width: foundationWidth,
+          height: foundationHeight,
+        ),
+        Radius.circular(_tileSize * 0.08),
+      ),
+      Paint()
+        ..color = ui.Color.lerp(
+          Colors.black,
+          barrier.definition.color,
+          0.58,
+        )!.withValues(alpha: opacity),
+    );
+    canvas.restore();
+
+    final key = isStraight ? 'straight' : 'isolated';
+    final image = _visualRegistry.stageOneSprite(paths[key]!);
+    if (image != null) {
       _drawRotatedSquareSprite(
         canvas,
         image,
         center: center,
-        size: _tileSize * 1.08,
-        quarterTurns: quarterTurns,
+        size: _tileSize * (isStraight ? 1.30 : 1.16),
+        quarterTurns: plan.quarterTurns,
         opacity: opacity,
       );
-    }
-
-    switch (recipe.shape) {
-      case BarrierConnectionShape.isolated:
-        drawModule('isolated', 0);
-      case BarrierConnectionShape.cap:
-        final vertical = mask == 1 || mask == 4;
-        drawModule('straight', vertical ? 1 : 0);
-      case BarrierConnectionShape.straight:
-        drawModule('straight', mask == 5 ? 1 : 0);
-      case BarrierConnectionShape.corner:
-        final turns = switch (mask) {
-          12 => 0,
-          9 => 1,
-          3 => 2,
-          6 => 3,
-          _ => 0,
-        };
-        drawModule('corner', turns);
-      case BarrierConnectionShape.tee || BarrierConnectionShape.cross:
-        drawModule('straight', 0);
-        drawModule('straight', 1);
     }
   }
 
