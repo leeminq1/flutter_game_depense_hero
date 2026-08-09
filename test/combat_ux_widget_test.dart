@@ -26,24 +26,34 @@ void main() {
     expect(find.byKey(const ValueKey('hud-wave')), findsOneWidget);
   });
 
-  testWidgets('active wave replaces cards with a compact combat bar', (
+  testWidgets('combat keeps the full build panel height with disabled cards', (
     tester,
   ) async {
     await _pumpStageOne(tester);
 
+    final panel = find.byKey(const ValueKey('preparation-build-panel'));
+    final beforeHeight = tester.getSize(panel).height;
     final startWave = find.text('WAVE 1 시작').hitTestable();
     expect(startWave, findsOneWidget);
     await tester.tap(startWave);
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
 
-    expect(find.byKey(const ValueKey('combat-status-bar')), findsOneWidget);
+    expect(panel, findsOneWidget);
+    expect(tester.getSize(panel).height, beforeHeight);
     expect(find.byKey(const ValueKey('hud-enemies')), findsOneWidget);
-    expect(
-      tester.getSize(find.byKey(const ValueKey('combat-status-bar'))).height,
-      inInclusiveRange(52, 60),
+    expect(find.byKey(const ValueKey('combat-status-bar')), findsNothing);
+    final barrierTap = tester.widget<InkWell>(
+      find.ancestor(
+        of: find.byKey(const ValueKey('barrier-card-woodFence')),
+        matching: find.byType(InkWell),
+      ),
     );
-    expect(find.byKey(const ValueKey('preparation-build-panel')), findsNothing);
+    expect(barrierTap.onTap, isNull);
+    final dynamic tabs = tester.widget(
+      find.byWidgetPredicate((widget) => widget is SegmentedButton),
+    );
+    expect(tabs.onSelectionChanged, isNull);
   });
 
   testWidgets('pause updates immediately to a resume action', (tester) async {
@@ -56,7 +66,13 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('재개'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('combat-pause-toggle')),
+        matching: find.text('재개'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byIcon(Icons.play_arrow_rounded), findsWidgets);
   });
 

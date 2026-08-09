@@ -16,7 +16,6 @@ import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/run_offer_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
-import 'package:depense_game/game/ui/spawn_front_formatter.dart';
 import 'package:depense_game/game/tutorial/tutorial_director.dart';
 import 'package:depense_game/game/tutorial/tutorial_models.dart';
 import 'package:depense_game/game/tutorial/tutorial_stage_definition.dart';
@@ -2658,6 +2657,7 @@ class _BuildBarState extends State<_BuildBar> {
       // 웨이브 진행 중: 일시정지 ↔ 재개 토글
       final isPaused = widget.isPaused;
       return FilledButton.icon(
+        key: const ValueKey('combat-pause-toggle'),
         onPressed: widget.onTogglePause,
         style: FilledButton.styleFrom(
           backgroundColor: isPaused
@@ -2696,18 +2696,6 @@ class _BuildBarState extends State<_BuildBar> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.waveInProgress) {
-      return SizedBox(
-        key: const ValueKey('combat-status-bar'),
-        height: 56,
-        child: _CombatStatusBar(
-          sessionController: widget.sessionController,
-          isPaused: widget.isPaused,
-          onTogglePause: widget.onTogglePause,
-        ),
-      );
-    }
-
     final tutorialSnapshot = widget.tutorialSnapshot;
     if (tutorialSnapshot != null) {
       return _buildTutorialPanel(tutorialSnapshot);
@@ -2732,16 +2720,18 @@ class _BuildBarState extends State<_BuildBar> {
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
             child: _BuildTabSelector(
               activeTab: _activeTab,
-              onChanged: (tab) {
-                setState(() {
-                  _activeTab = tab;
-                  _specKind = null;
-                  _specBarrierKind = null;
-                });
-                widget.onSelect(null);
-                widget.onSelectBarrier(null);
-                widget.onSelectHero(null);
-              },
+              onChanged: canBuild
+                  ? (tab) {
+                      setState(() {
+                        _activeTab = tab;
+                        _specKind = null;
+                        _specBarrierKind = null;
+                      });
+                      widget.onSelect(null);
+                      widget.onSelectBarrier(null);
+                      widget.onSelectHero(null);
+                    }
+                  : null,
             ),
           ),
           Padding(
@@ -2780,9 +2770,11 @@ class _BuildBarState extends State<_BuildBar> {
                   if (_activeTab == _BuildTab.hero) ...[
                     _HeroBuildCard(
                       hero: chosenHero,
-                      isUnlocked: canReviveHero,
+                      isUnlocked: canBuild && canReviveHero,
                       isSelected: false,
-                      onPressed: canReviveHero ? _handleHeroCardTap : null,
+                      onPressed: canBuild && canReviveHero
+                          ? _handleHeroCardTap
+                          : null,
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -2900,80 +2892,6 @@ class _BuildBarState extends State<_BuildBar> {
   }
 }
 
-class _CombatStatusBar extends StatelessWidget {
-  const _CombatStatusBar({
-    required this.sessionController,
-    required this.isPaused,
-    required this.onTogglePause,
-  });
-
-  final GameSessionController sessionController;
-  final bool isPaused;
-  final VoidCallback? onTogglePause;
-
-  @override
-  Widget build(BuildContext context) {
-    final fronts = formatSpawnFronts(sessionController.activeFronts);
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F1720),
-        border: Border(top: BorderSide(color: Colors.white10)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Row(
-          children: [
-            Text(
-              '${sessionController.loopLabel} '
-              '${sessionController.currentWave}/${sessionController.totalWaves}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Icon(
-              Icons.groups_rounded,
-              color: Color(0xFFFF7D7D),
-              size: 17,
-            ),
-            const SizedBox(width: 3),
-            Text(
-              '${sessionController.remainingEnemies}',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                '출현: $fronts',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white60, fontSize: 11),
-              ),
-            ),
-            IconButton(
-              key: const ValueKey('combat-pause-toggle'),
-              onPressed: onTogglePause,
-              visualDensity: VisualDensity.compact,
-              tooltip: isPaused ? '재개' : '일시정지',
-              icon: Icon(
-                isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                color: const Color(0xFFE4C67A),
-                size: 22,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 double _barrierStageHitPointMultiplierForStage(int stageNumber) {
   if (stageNumber >= 20) {
     return 1.75;
@@ -2988,7 +2906,7 @@ class _BuildTabSelector extends StatelessWidget {
   const _BuildTabSelector({required this.activeTab, required this.onChanged});
 
   final _BuildTab activeTab;
-  final ValueChanged<_BuildTab> onChanged;
+  final ValueChanged<_BuildTab>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -3030,7 +2948,9 @@ class _BuildTabSelector extends StatelessWidget {
         ),
       ],
       selected: {activeTab},
-      onSelectionChanged: (selection) => onChanged(selection.first),
+      onSelectionChanged: onChanged == null
+          ? null
+          : (selection) => onChanged!(selection.first),
     );
   }
 }
