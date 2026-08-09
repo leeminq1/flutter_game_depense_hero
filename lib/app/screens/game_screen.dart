@@ -833,6 +833,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       ),
                       Expanded(
                         child: Stack(
+                          key: const ValueKey('battlefield-stack'),
                           children: [
                             Positioned.fill(
                               child: ClipRect(
@@ -981,6 +982,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                   ),
                                 ),
                               ),
+                            if (_tutorialDirector != null)
+                              Positioned.fill(
+                                child: TutorialOverlay(
+                                  director: _tutorialDirector!,
+                                  onComplete: _handleTutorialComplete,
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -1081,13 +1089,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       child: Align(
                         alignment: Alignment.topCenter,
                         child: const _StageOneRecapCard(),
-                      ),
-                    ),
-                  if (_tutorialDirector != null)
-                    Positioned.fill(
-                      child: TutorialOverlay(
-                        director: _tutorialDirector!,
-                        onComplete: _handleTutorialComplete,
                       ),
                     ),
                 ],

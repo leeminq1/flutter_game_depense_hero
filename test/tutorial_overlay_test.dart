@@ -28,6 +28,13 @@ void main() {
       expect(find.textContaining('북쪽 입구'), findsOneWidget);
       expect(find.textContaining('빛나는 길 칸'), findsOneWidget);
       expect(find.textContaining('나무 울타리'), findsOneWidget);
+      expect(
+        tester
+            .getRect(find.byKey(const ValueKey('tutorial-guidance-card')))
+            .center
+            .dy,
+        greaterThan(450),
+      );
     },
   );
 
@@ -50,6 +57,8 @@ Future<void> _pumpOverlay(
   WidgetTester tester,
   TutorialDirector director,
 ) async {
+  await tester.binding.setSurfaceSize(const Size(430, 900));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
     MaterialApp(
       home: Scaffold(

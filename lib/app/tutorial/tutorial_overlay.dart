@@ -53,12 +53,7 @@ class TutorialOverlay extends StatelessWidget {
   }
 }
 
-Alignment _cardAlignment(TutorialStep step) => switch (step) {
-  TutorialStep.cameraControls ||
-  TutorialStep.lessonWallObservation ||
-  TutorialStep.lessonTowerObservation => Alignment.bottomCenter,
-  _ => Alignment.topCenter,
-};
+Alignment _cardAlignment(TutorialStep step) => Alignment.bottomCenter;
 
 class _GuidanceCard extends StatelessWidget {
   const _GuidanceCard({

@@ -40,6 +40,13 @@ void main() {
       find.byKey(const ValueKey('tutorial-guidance-card')),
       findsOneWidget,
     );
+    expect(
+      find.ancestor(
+        of: find.byKey(const ValueKey('tutorial-guidance-card')),
+        matching: find.byKey(const ValueKey('battlefield-stack')),
+      ),
+      findsOneWidget,
+    );
     expect(find.byType(AlertDialog), findsNothing);
 
     final gameWidget = tester.widget<GameWidget<DefensePrototypeGame>>(
