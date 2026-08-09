@@ -1,6 +1,1 @@
-enum AppFlowState {
-  splash,
-  menu,
-  camp,
-  battle,
-}
+enum AppFlowState { splash, menu, tutorial, camp, battle }

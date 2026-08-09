@@ -15,6 +15,8 @@ import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/game_visual_registry.dart';
 import 'package:depense_game/game/rendering/map_texture_planner.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
+import 'package:depense_game/game/tutorial/tutorial_director.dart';
+import 'package:depense_game/game/tutorial/tutorial_models.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
@@ -77,6 +79,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     required this.metaUpgrades,
     required this.chosenHeroKind,
     this.startingCoinBonus = 0,
+    this.tutorialDirector,
   });
 
   final StageDefinition stage;
@@ -85,6 +88,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   final ResolvedMetaUpgrades metaUpgrades;
   final HeroKind chosenHeroKind;
   final int startingCoinBonus;
+  final TutorialDirector? tutorialDirector;
 
   final GameVisualRegistry _visualRegistry = GameVisualRegistry();
 
@@ -187,6 +191,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _cameraTransform.updatePan(focalPoint);
     }
     _applyCameraTransform();
+    tutorialDirector?.record(const TutorialEvent.cameraChanged());
   }
 
   @override
@@ -924,12 +929,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       audioService.play(AudioEvent.coinGain);
     }
     audioService.play(AudioEvent.uiConfirm);
+    tutorialDirector?.record(const TutorialEvent.waveStarted());
     _flushSession();
   }
 
   void togglePaused() {
     _pausedManually = !_pausedManually;
     paused = _pausedManually;
+    tutorialDirector?.setPaused(_pausedManually);
     _showStatus(_pausedManually ? '일시정지됨' : '전투 재개');
     _flushSession();
   }
@@ -1122,6 +1129,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void update(double dt) {
     audioService.update(dt);
     _updateSelectionOverlay(dt);
+    tutorialDirector?.advanceTime(
+      Duration(microseconds: (dt * Duration.microsecondsPerSecond).round()),
+    );
 
     if (_pausedManually || _stageCleared || _stageFailed) {
       if (_sessionDirty) {
@@ -1353,6 +1363,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     audioService.play(AudioEvent.towerPlace);
     _showStatus('${definition.label} 건설 완료. 사거리를 확인하고 다음 배치를 준비하세요.');
     _syncSelectedTower();
+    tutorialDirector?.record(
+      TutorialEvent.towerPlaced(
+        onRoad: _isRoadPosition(snapTarget),
+        behindWall: _hasNearbyBarrier(snapTarget),
+      ),
+    );
     _syncSession();
   }
 
@@ -1456,6 +1472,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _showStatus('${definition.label} 배치 완료. 빈 타일을 탭하면 계속 배치합니다.');
     audioService.play(AudioEvent.towerPlace);
     _rerouteEnemies();
+    tutorialDirector?.record(
+      TutorialEvent.barrierPlaced(onRoad: _isRoadPosition(snapTarget)),
+    );
     _syncSession();
   }
 
@@ -4644,6 +4663,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
     _waveActive = false;
     _remainingEnemiesInCycle = 0;
+    tutorialDirector?.record(const TutorialEvent.waveCleared());
     if (_currentWaveIndex == stage.waves.length - 1) {
       _stageCleared = true;
       _activeFronts = const [];
@@ -5138,6 +5158,31 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return null;
     }
     return (col, row);
+  }
+
+  bool _isRoadPosition(Vector2 position) {
+    final cell = _cellForWorldPosition(position);
+    if (cell == null) {
+      return false;
+    }
+    final authoredPaths = stage.pathsByDirection?.values ?? const [];
+    for (final path in authoredPaths) {
+      if (path.any(
+        (candidate) => candidate[0] == cell.$1 && candidate[1] == cell.$2,
+      )) {
+        return true;
+      }
+    }
+    return stage.pathSequence?.any(
+          (candidate) => candidate[0] == cell.$1 && candidate[1] == cell.$2,
+        ) ??
+        false;
+  }
+
+  bool _hasNearbyBarrier(Vector2 position) {
+    return _barriers.any(
+      (barrier) => barrier.position.distanceTo(position) <= _tileSize * 1.45,
+    );
   }
 
   Set<(int, int)> _cellsCrossedByMovement(Vector2 start, Vector2 end) {

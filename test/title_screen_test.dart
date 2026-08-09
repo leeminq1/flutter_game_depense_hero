@@ -7,6 +7,7 @@ import 'package:depense_game/data/persistence/progress_store.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
 import 'package:depense_game/data/persistence/store_models.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
+import 'package:depense_game/game/audio/game_audio_service.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -54,6 +55,32 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
 
     expect(store.resetCount, 1);
+    expect(
+      find.byKey(const ValueKey('tutorial-guidance-card')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('main menu exposes tutorial as a first-class action', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final store = _CountingProgressStore(await InMemoryProgressStore.open());
+
+    await _pumpMenu(tester, store);
+
+    final tutorialButton = find.byKey(const ValueKey('main-menu-tutorial'));
+    expect(tutorialButton, findsOneWidget);
+    await tester.tap(tutorialButton);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('훈련장'), findsWidgets);
+    expect(
+      find.byKey(const ValueKey('tutorial-guidance-card')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('continue is available for noncontiguous review progress', (
@@ -124,7 +151,10 @@ Future<void> _pumpMenu(WidgetTester tester, ProgressStore store) async {
 }
 
 class _TestBootstrap extends AppBootstrap {
-  _TestBootstrap(this._store);
+  _TestBootstrap(this._store) {
+    audioSettingsController = AudioSettingsController();
+    audioService = GameAudioService(audioSettingsController);
+  }
 
   final ProgressStore _store;
 

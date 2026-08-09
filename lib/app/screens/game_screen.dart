@@ -5,6 +5,7 @@ import 'package:depense_game/app/ads/result_banner_ad_service.dart';
 import 'package:depense_game/app/ads/rewarded_retry_ad_service.dart';
 import 'package:depense_game/app/ads/rewarded_retry_bonus_tracker.dart';
 import 'package:depense_game/app/bootstrap/app_bootstrap.dart';
+import 'package:depense_game/app/tutorial/tutorial_overlay.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
@@ -16,6 +17,9 @@ import 'package:depense_game/game/models/run_offer_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/ui/spawn_front_formatter.dart';
+import 'package:depense_game/game/tutorial/tutorial_director.dart';
+import 'package:depense_game/game/tutorial/tutorial_models.dart';
+import 'package:depense_game/game/tutorial/tutorial_stage_definition.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
@@ -25,11 +29,17 @@ class GameScreen extends StatefulWidget {
     required this.bootstrap,
     required this.onExitToCamp,
     this.initialStageNumber = 1,
+    this.tutorialLaunchSource,
+    this.onTutorialComplete,
+    this.showStageOneRecap = false,
   });
 
   final AppBootstrap bootstrap;
   final VoidCallback onExitToCamp;
   final int initialStageNumber;
+  final TutorialLaunchSource? tutorialLaunchSource;
+  final VoidCallback? onTutorialComplete;
+  final bool showStageOneRecap;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -46,6 +56,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   bool _isEvaluating = false;
   ResolvedMetaUpgrades? _activeMetaUpgrades;
   HeroKind? _chosenHeroKind;
+  TutorialDirector? _tutorialDirector;
+  TutorialStep? _lastTutorialStep;
+  bool _tutorialCompletionHandled = false;
+  bool _stageOneRecapVisible = false;
 
   bool _hintBannerVisible = true;
   Timer? _hintTimer;
@@ -60,7 +74,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   bool _isBackgroundPaused = false;
   int? _immediateStarsAwarded;
   StageEvaluationResult? _immediateEvaluation;
-  bool _stageOneBriefingShown = false;
   final RewardedRetryBonusTracker _rewardedRetryBonusTracker =
       RewardedRetryBonusTracker();
   bool _isShowingRewardedRetryAd = false;
@@ -75,8 +88,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _stageNumber = widget.initialStageNumber;
+    _stageOneRecapVisible = widget.showStageOneRecap;
     _sessionController = GameSessionController();
     _sessionController.addListener(_handleSessionChanged);
+    if (widget.tutorialLaunchSource != null) {
+      _tutorialDirector = TutorialDirector()
+        ..addListener(_handleTutorialChanged);
+    }
     _initialize();
   }
 
@@ -87,6 +105,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _towerActionBarTimer?.cancel();
     _disposeResultBannerAd();
     _sessionController.removeListener(_handleSessionChanged);
+    _tutorialDirector?.removeListener(_handleTutorialChanged);
+    _tutorialDirector?.dispose();
     super.dispose();
   }
 
@@ -124,8 +144,65 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   Future<void> _initialize() async {
     await _refreshOverview();
+    if (_tutorialDirector != null) {
+      _chosenHeroKind = HeroKind.knight;
+      await _loadTutorial();
+      return;
+    }
     await _chooseHero(force: true);
     await _loadStage(_stageNumber);
+  }
+
+  Future<void> _loadTutorial() async {
+    final overview =
+        _overview ??
+        await widget.bootstrap.progressStore.loadCampaignOverview(
+          totalStages: CampaignData.totalStages,
+        );
+    final resolvedMeta = MetaUpgradeCatalog.resolve(overview.metaUpgrades);
+    final stage = TutorialStageDefinition.build();
+    if (!mounted) {
+      return;
+    }
+
+    _hintTimer?.cancel();
+    _towerActionBarTimer?.cancel();
+    _resetTerminalResultUi();
+    _sessionController.hydrate(
+      stageNumber: stage.number,
+      totalStages: 1,
+      stageTitle: stage.title,
+      totalWaves: stage.cycleCount,
+      coins: stage.startingCoins + resolvedMeta.bonusStartingCoins,
+      baseHealth: stage.citadelHitPoints,
+      actNumber: 1,
+      loopLabel: 'WAVE',
+    );
+    setState(() {
+      _isBackgroundPaused = false;
+      _activeMetaUpgrades = resolvedMeta;
+      _stageNumber = 0;
+      _completionResult = null;
+      _terminalProgressSave = null;
+      _immediateStarsAwarded = null;
+      _immediateEvaluation = null;
+      _isEvaluating = false;
+      _gameEpoch += 1;
+      _hintBannerVisible = false;
+      _towerActionBarVisible = false;
+      _lastStatusText = '';
+      _lastSelectedTowerSignature = null;
+      _lastSelectedHeroSignature = null;
+      _lastSelectedBarrierSignature = null;
+      _game = DefensePrototypeGame(
+        stage: stage,
+        sessionController: _sessionController,
+        audioService: widget.bootstrap.audioService,
+        metaUpgrades: resolvedMeta,
+        chosenHeroKind: HeroKind.knight,
+        tutorialDirector: _tutorialDirector,
+      );
+    });
   }
 
   Future<void> _chooseHero({bool force = false}) async {
@@ -216,14 +293,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _hintTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) setState(() => _hintBannerVisible = false);
     });
-    if (stageNumber == 1 && !_stageOneBriefingShown) {
-      _stageOneBriefingShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _stageNumber == 1) {
-          _showStageBriefing();
-        }
-      });
-    }
   }
 
   void _showHintBanner() {
@@ -371,7 +440,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _showStageBriefing() async {
-    final stage = CampaignData.stage(_stageNumber);
+    final stage = _tutorialDirector == null
+        ? CampaignData.stage(_stageNumber)
+        : TutorialStageDefinition.build();
     await showDialog<void>(
       context: context,
       builder: (ctx) => _StageBriefingDialog(
@@ -389,9 +460,96 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     _handleTransientHud();
 
+    if (_tutorialDirector != null) {
+      return;
+    }
+
     if (_sessionController.stageCleared || _sessionController.stageFailed) {
       await _prepareTerminalResultIfNeeded();
     }
+  }
+
+  void _handleTutorialChanged() {
+    final director = _tutorialDirector;
+    if (director == null || !mounted) {
+      return;
+    }
+    final step = director.snapshot.step;
+    if (step == TutorialStep.complete) {
+      _handleTutorialComplete();
+      return;
+    }
+    if (_lastTutorialStep == step) {
+      return;
+    }
+    _lastTutorialStep = step;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _tutorialDirector?.snapshot.step != step) {
+        return;
+      }
+      final game = _game;
+      if (game == null) {
+        return;
+      }
+      switch (step) {
+        case TutorialStep.blockWithWall:
+          game.selectBarrierBuildable(BarrierKind.woodFence);
+        case TutorialStep.safeTower || TutorialStep.combinedDefense:
+          game.selectBuildable(TowerKind.archer);
+        case TutorialStep.miniWave:
+          game.selectBuildable(null);
+          game.selectBarrierBuildable(null);
+        default:
+          break;
+      }
+    });
+  }
+
+  Future<void> _handleTutorialComplete() async {
+    if (_tutorialCompletionHandled) {
+      return;
+    }
+    _tutorialCompletionHandled = true;
+    await widget.bootstrap.progressStore.setTutorialDismissed(true);
+    if (!mounted) {
+      return;
+    }
+    if (widget.tutorialLaunchSource == TutorialLaunchSource.newGame) {
+      widget.onTutorialComplete?.call();
+      return;
+    }
+
+    final replay = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('훈련을 완료했습니다'),
+        content: const Text('튜토리얼을 다시 보거나 메인 화면으로 돌아갈 수 있습니다.'),
+        actions: [
+          TextButton(
+            key: const ValueKey('tutorial-finish-home'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('홈 화면'),
+          ),
+          FilledButton(
+            key: const ValueKey('tutorial-finish-replay'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('다시 보기'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    if (replay == true) {
+      _tutorialCompletionHandled = false;
+      _lastTutorialStep = null;
+      _tutorialDirector?.restart();
+      await _loadTutorial();
+      return;
+    }
+    widget.onTutorialComplete?.call();
   }
 
   Future<void> _prepareTerminalResultIfNeeded() {
@@ -607,7 +765,11 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final currentStage = overview.stages[_stageNumber - 1];
+    final currentStage =
+        overview.stages[(_stageNumber <= 0 ? 0 : _stageNumber - 1).clamp(
+          0,
+          overview.stages.length - 1,
+        )];
     final activeMetaUpgrades =
         _activeMetaUpgrades ??
         MetaUpgradeCatalog.resolve(overview.metaUpgrades);
@@ -626,12 +788,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             animation: _sessionController,
             builder: (context, _) {
               final session = _sessionController;
+              final tutorialSnapshot = _tutorialDirector?.snapshot;
+              final tutorialAllowed = tutorialSnapshot?.allowedActions;
               final showWaveButton =
                   !session.waveInProgress &&
                   !session.stageCleared &&
                   !session.stageFailed &&
                   !session.mustResolveRunOffer &&
-                  session.currentWave < session.totalWaves;
+                  session.currentWave < session.totalWaves &&
+                  (tutorialAllowed == null ||
+                      tutorialAllowed.contains(TutorialEventType.waveStarted));
               final nextLoopNumber = session.currentWave + 1;
               final showBottomHintBanner =
                   _stageNumber >= 11 && _stageNumber <= 20;
@@ -801,9 +967,23 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         sessionController: session,
                         metaUpgrades: activeMetaUpgrades,
                         chosenHeroKind: _chosenHeroKind ?? HeroKind.knight,
-                        onSelect: game.selectBuildable,
-                        onSelectBarrier: game.selectBarrierBuildable,
-                        onSelectHero: game.selectHeroBuildable,
+                        onSelect:
+                            tutorialAllowed == null ||
+                                tutorialAllowed.contains(
+                                  TutorialEventType.towerPlaced,
+                                )
+                            ? game.selectBuildable
+                            : (_) {},
+                        onSelectBarrier:
+                            tutorialAllowed == null ||
+                                tutorialAllowed.contains(
+                                  TutorialEventType.barrierPlaced,
+                                )
+                            ? game.selectBarrierBuildable
+                            : (_) {},
+                        onSelectHero: tutorialAllowed == null
+                            ? game.selectHeroBuildable
+                            : (_) {},
                         showWaveButton: showWaveButton,
                         nextWaveLabel: session.recoveryActive
                             ? '다음 ${session.loopLabel}'
@@ -843,7 +1023,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         onAccept: game.acceptRunOffer,
                       ),
                     ),
-                  if (session.stageCleared || session.stageFailed)
+                  if (_tutorialDirector == null &&
+                      (session.stageCleared || session.stageFailed))
                     Positioned.fill(
                       child: _resultOverlayReady
                           ? _ResultOverlay(
@@ -867,9 +1048,96 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                             )
                           : const _ResultRecordingOverlay(),
                     ),
+                  if (_stageOneRecapVisible && _stageNumber == 1)
+                    Positioned(
+                      top: 112,
+                      left: 12,
+                      right: 12,
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: _StageOneRecapCard(
+                          onClose: () =>
+                              setState(() => _stageOneRecapVisible = false),
+                        ),
+                      ),
+                    ),
+                  if (_tutorialDirector != null)
+                    Positioned.fill(
+                      child: TutorialOverlay(
+                        director: _tutorialDirector!,
+                        onComplete: _handleTutorialComplete,
+                      ),
+                    ),
                 ],
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StageOneRecapCard extends StatelessWidget {
+  const _StageOneRecapCard({required this.onClose});
+
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 390),
+      child: Material(
+        key: const ValueKey('stage-one-recap'),
+        color: const Color(0xEE0C1A27),
+        elevation: 10,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 11, 8, 11),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF58CFA9)),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.shield_rounded,
+                color: Color(0xFFFFD479),
+                size: 28,
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '성벽으로 막고, 타워로 공격',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '출현 방향 확인 · 길 위 성벽 · 성벽 뒤 타워',
+                      style: TextStyle(
+                        color: Color(0xFFC9D5DF),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                key: ValueKey('stage-one-recap-close'),
+                onPressed: onClose,
+                tooltip: '닫기',
+                icon: Icon(Icons.close_rounded, color: Colors.white70),
+              ),
+            ],
           ),
         ),
       ),
@@ -1300,7 +1568,9 @@ class _TopHud extends StatelessWidget {
         _HudChip(
           icon: Icons.account_balance_rounded,
           color: const Color(0xFF7BC6FF),
-          label: 'STAGE ${sessionController.stageNumber} 정보',
+          label: sessionController.stageNumber == 0
+              ? '훈련장'
+              : 'STAGE ${sessionController.stageNumber} 정보',
           trailingIcon: Icons.info_outline_rounded,
           onTap: onStageInfo,
         ),

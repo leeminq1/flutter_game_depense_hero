@@ -7,6 +7,7 @@ import 'package:depense_game/app/screens/settings_screen.dart';
 import 'package:depense_game/app/theme/app_theme.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
+import 'package:depense_game/game/tutorial/tutorial_models.dart';
 import 'package:flutter/material.dart';
 
 class TitleScreen extends StatefulWidget {
@@ -23,6 +24,8 @@ class _TitleScreenState extends State<TitleScreen> {
   AppFlowState _flow = AppFlowState.splash;
   int _selectedStage = 1;
   bool _busy = false;
+  TutorialLaunchSource _tutorialLaunchSource = TutorialLaunchSource.mainMenu;
+  bool _showStageOneRecap = false;
 
   @override
   void initState() {
@@ -81,8 +84,28 @@ class _TitleScreenState extends State<TitleScreen> {
     setState(() {
       _busy = false;
       _selectedStage = 1;
-      _flow = AppFlowState.camp;
+      _tutorialLaunchSource = TutorialLaunchSource.newGame;
+      _flow = AppFlowState.tutorial;
     });
+  }
+
+  void _openTutorial() {
+    setState(() {
+      _tutorialLaunchSource = TutorialLaunchSource.mainMenu;
+      _flow = AppFlowState.tutorial;
+    });
+  }
+
+  void _finishTutorial() {
+    if (_tutorialLaunchSource == TutorialLaunchSource.newGame) {
+      setState(() {
+        _selectedStage = 1;
+        _showStageOneRecap = true;
+        _flow = AppFlowState.battle;
+      });
+      return;
+    }
+    setState(() => _flow = AppFlowState.menu);
   }
 
   void _continueGame() {
@@ -115,7 +138,10 @@ class _TitleScreenState extends State<TitleScreen> {
     if (!mounted) {
       return;
     }
-    setState(() => _flow = AppFlowState.camp);
+    setState(() {
+      _showStageOneRecap = false;
+      _flow = AppFlowState.camp;
+    });
   }
 
   @override
@@ -143,17 +169,28 @@ class _TitleScreenState extends State<TitleScreen> {
               busy: _busy,
               onNewGame: _startNewGame,
               onContinue: _continueGame,
+              onTutorial: _openTutorial,
               onSettings: _openSettings,
+            ),
+            AppFlowState.tutorial => GameScreen(
+              key: ValueKey('tutorial-${_tutorialLaunchSource.name}'),
+              bootstrap: widget.bootstrap,
+              initialStageNumber: 1,
+              tutorialLaunchSource: _tutorialLaunchSource,
+              onTutorialComplete: _finishTutorial,
+              onExitToCamp: () => setState(() => _flow = AppFlowState.menu),
             ),
             AppFlowState.camp => HomeScreen(
               key: const ValueKey('camp'),
               overview: overview,
               onDeployNext: () => setState(() {
                 _selectedStage = overview.recommendedStage?.stageNumber ?? 1;
+                _showStageOneRecap = false;
                 _flow = AppFlowState.battle;
               }),
               onReplayStage: (stageNumber) => setState(() {
                 _selectedStage = stageNumber;
+                _showStageOneRecap = false;
                 _flow = AppFlowState.battle;
               }),
               onOpenHelp: _openHelp,
@@ -163,6 +200,7 @@ class _TitleScreenState extends State<TitleScreen> {
               key: ValueKey('battle-$_selectedStage'),
               bootstrap: widget.bootstrap,
               initialStageNumber: _selectedStage,
+              showStageOneRecap: _showStageOneRecap,
               onExitToCamp: _returnFromBattle,
             ),
           },
@@ -329,6 +367,7 @@ class _MainMenu extends StatelessWidget {
     required this.busy,
     required this.onNewGame,
     required this.onContinue,
+    required this.onTutorial,
     required this.onSettings,
   });
 
@@ -336,6 +375,7 @@ class _MainMenu extends StatelessWidget {
   final bool busy;
   final Future<void> Function() onNewGame;
   final VoidCallback onContinue;
+  final VoidCallback onTutorial;
   final Future<void> Function() onSettings;
 
   @override
@@ -387,6 +427,15 @@ class _MainMenu extends StatelessWidget {
               const SizedBox(height: 14),
               continueButton,
             ],
+            const SizedBox(height: 14),
+            _MenuButton(
+              key: const ValueKey('main-menu-tutorial'),
+              icon: Icons.school_rounded,
+              iconColor: AppTheme.moss,
+              label: '튜토리얼 보기',
+              subtitle: '성벽·타워·적 출현 방향을 직접 연습',
+              onTap: busy ? null : onTutorial,
+            ),
             const SizedBox(height: 14),
             _MenuButton(
               icon: Icons.settings_rounded,
