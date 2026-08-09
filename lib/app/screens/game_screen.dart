@@ -15,6 +15,7 @@ import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/run_offer_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
+import 'package:depense_game/game/ui/spawn_front_formatter.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
@@ -657,6 +658,24 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                 game: game,
                               ),
                             ),
+                            if (session.cameraSnapshot.isTransformed)
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: IconButton.filledTonal(
+                                  key: const ValueKey('camera-reset'),
+                                  onPressed: game.resetCamera,
+                                  tooltip: '화면 원위치',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: const Color(0xD91A2733),
+                                    foregroundColor: const Color(0xFFE4C67A),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.center_focus_strong_rounded,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
                             if (_hintBannerVisible &&
                                 session.statusText.isNotEmpty &&
                                 !showBottomHintBanner)
@@ -729,6 +748,49 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                   onMove: game.enterHeroMoveMode,
                                   onUpgrade: game.upgradeSelectedHero,
                                   onDeselect: game.clearSelectedHero,
+                                ),
+                              ),
+                            if (!session.waveInProgress &&
+                                (session.selectedBuildable != null ||
+                                    session.selectedBarrierBuildable != null ||
+                                    session.selectedHeroBuildable != null))
+                              Positioned(
+                                left: 12,
+                                right: 12,
+                                bottom: 8,
+                                height: 76,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: _BuildSummaryStrip(
+                                    definition:
+                                        session.selectedBuildable == null
+                                        ? null
+                                        : TowerCatalog.buildMenu.firstWhere(
+                                            (tower) =>
+                                                tower.kind ==
+                                                session.selectedBuildable,
+                                          ),
+                                    barrierDefinition:
+                                        session.selectedBarrierBuildable == null
+                                        ? null
+                                        : BarrierCatalog.buildMenu.firstWhere(
+                                            (barrier) =>
+                                                barrier.kind ==
+                                                session
+                                                    .selectedBarrierBuildable,
+                                          ),
+                                    heroDefinition:
+                                        session.selectedHeroBuildable == null
+                                        ? null
+                                        : HeroCatalog.byKind(
+                                            session.selectedHeroBuildable!,
+                                          ),
+                                    barrierStageHitPointMultiplier:
+                                        _barrierStageHitPointMultiplierForStage(
+                                          _stageNumber,
+                                        ),
+                                    sessionController: session,
+                                  ),
                                 ),
                               ),
                           ],
@@ -1203,7 +1265,7 @@ class _TopHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompact = MediaQuery.sizeOf(context).width <= 420;
+    final isCompact = MediaQuery.sizeOf(context).width <= 1000;
     final statWrap = Wrap(
       alignment: WrapAlignment.end,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -1220,6 +1282,13 @@ class _TopHud extends StatelessWidget {
           color: Colors.white70,
           label:
               '${sessionController.loopLabel} ${sessionController.currentWave}/${sessionController.totalWaves}',
+        ),
+        _HudChip(
+          icon: Icons.assistant_direction_rounded,
+          color: const Color(0xFFE4C67A),
+          label: sessionController.waveInProgress
+              ? '출현: ${formatSpawnFronts(sessionController.activeFronts)}'
+              : '다음 WAVE: ${formatSpawnFronts(sessionController.nextFronts)}',
         ),
         if (sessionController.waveInProgress &&
             sessionController.remainingEnemies > 0)
@@ -2324,22 +2393,26 @@ class _BuildBarState extends State<_BuildBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.waveInProgress) {
+      return SizedBox(
+        key: const ValueKey('combat-status-bar'),
+        height: 56,
+        child: _CombatStatusBar(
+          sessionController: widget.sessionController,
+          isPaused: widget.isPaused,
+          onTogglePause: widget.onTogglePause,
+        ),
+      );
+    }
+
     final entries = TowerCatalog.buildMenu;
     final barrierEntries = BarrierCatalog.buildMenu;
     final chosenHero = HeroCatalog.byKind(widget.chosenHeroKind);
-    final specDef = _specKind != null
-        ? entries.firstWhere((tower) => tower.kind == _specKind)
-        : null;
-    final specBarrier = _specBarrierKind != null
-        ? barrierEntries.firstWhere(
-            (barrier) => barrier.kind == _specBarrierKind,
-          )
-        : null;
-    final specHero = _activeTab == _BuildTab.hero ? chosenHero : null;
     final canBuild = !widget.waveInProgress;
     final canReviveHero = widget.sessionController.heroReviveAvailable;
 
     return Container(
+      key: const ValueKey('preparation-build-panel'),
       decoration: const BoxDecoration(
         color: Color(0xFF0F1720),
         border: Border(top: BorderSide(color: Colors.white10)),
@@ -2347,19 +2420,8 @@ class _BuildBarState extends State<_BuildBar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            height: 76,
-            child: _BuildSummaryStrip(
-              definition: specDef,
-              barrierDefinition: specBarrier,
-              heroDefinition: specHero,
-              barrierStageHitPointMultiplier:
-                  _barrierStageHitPointMultiplierForStage(widget.stageNumber),
-              sessionController: widget.sessionController,
-            ),
-          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
             child: _BuildTabSelector(
               activeTab: _activeTab,
               onChanged: (tab) {
@@ -2375,7 +2437,7 @@ class _BuildBarState extends State<_BuildBar> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -2392,7 +2454,7 @@ class _BuildBarState extends State<_BuildBar> {
                             tower.kind,
                         onPressed: () => _handleCardTap(tower.kind),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                     ],
                   if (_activeTab == _BuildTab.barriers)
                     for (final barrier in barrierEntries) ...[
@@ -2405,7 +2467,7 @@ class _BuildBarState extends State<_BuildBar> {
                             barrier.kind,
                         onPressed: () => _handleBarrierCardTap(barrier.kind),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                     ],
                   if (_activeTab == _BuildTab.hero) ...[
                     _HeroBuildCard(
@@ -2414,20 +2476,95 @@ class _BuildBarState extends State<_BuildBar> {
                       isSelected: false,
                       onPressed: canReviveHero ? _handleHeroCardTap : null,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                   ],
                 ],
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
             child: SizedBox(
               width: double.infinity,
+              height: 40,
               child: _buildActionButton(),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CombatStatusBar extends StatelessWidget {
+  const _CombatStatusBar({
+    required this.sessionController,
+    required this.isPaused,
+    required this.onTogglePause,
+  });
+
+  final GameSessionController sessionController;
+  final bool isPaused;
+  final VoidCallback? onTogglePause;
+
+  @override
+  Widget build(BuildContext context) {
+    final fronts = formatSpawnFronts(sessionController.activeFronts);
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F1720),
+        border: Border(top: BorderSide(color: Colors.white10)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          children: [
+            Text(
+              '${sessionController.loopLabel} '
+              '${sessionController.currentWave}/${sessionController.totalWaves}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Icon(
+              Icons.groups_rounded,
+              color: Color(0xFFFF7D7D),
+              size: 17,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              '${sessionController.remainingEnemies}',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '출현: $fronts',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white60, fontSize: 11),
+              ),
+            ),
+            IconButton(
+              key: const ValueKey('combat-pause-toggle'),
+              onPressed: onTogglePause,
+              visualDensity: VisualDensity.compact,
+              tooltip: isPaused ? '재개' : '일시정지',
+              icon: Icon(
+                isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                color: const Color(0xFFE4C67A),
+                size: 22,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2455,6 +2592,8 @@ class _BuildTabSelector extends StatelessWidget {
       showSelectedIcon: false,
       style: ButtonStyle(
         visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: WidgetStateProperty.all(const Size(0, 32)),
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const Color(0xFF1C7E62);
@@ -2845,8 +2984,9 @@ class _BuildCard extends StatelessWidget {
       onTap: isUnlocked ? onPressed : null,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        width: 88,
-        height: 104,
+        key: ValueKey('build-card-${tower.kind.name}'),
+        width: 74,
+        height: 82,
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF1D2E1C) : const Color(0xFF161D26),
           borderRadius: BorderRadius.circular(14),
@@ -2865,23 +3005,23 @@ class _BuildCard extends StatelessWidget {
               color: isUnlocked
                   ? (isSelected ? const Color(0xFF98D67C) : tower.color)
                   : Colors.white24,
-              size: 28,
+              size: 22,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               tower.label,
               style: TextStyle(
                 color: isUnlocked ? Colors.white : Colors.white38,
-                fontSize: 13,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               '$cost',
               style: TextStyle(
                 color: isUnlocked ? const Color(0xFFE4C67A) : Colors.white24,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -2931,8 +3071,9 @@ class _BarrierBuildCard extends StatelessWidget {
       onTap: isEnabled ? onPressed : null,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        width: 88,
-        height: 104,
+        key: ValueKey('barrier-card-${barrier.kind.name}'),
+        width: 74,
+        height: 82,
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF2B261B) : const Color(0xFF161D26),
           borderRadius: BorderRadius.circular(14),
@@ -2949,9 +3090,9 @@ class _BarrierBuildCard extends StatelessWidget {
             Icon(
               _barrierIcon(barrier.kind),
               color: isEnabled ? barrier.color : Colors.white24,
-              size: 28,
+              size: 22,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               barrier.label,
               textAlign: TextAlign.center,
@@ -2959,16 +3100,16 @@ class _BarrierBuildCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: isEnabled ? Colors.white : Colors.white38,
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               '$cost',
               style: TextStyle(
                 color: isEnabled ? const Color(0xFFE4C67A) : Colors.white24,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -3007,8 +3148,9 @@ class _HeroBuildCard extends StatelessWidget {
       onTap: isUnlocked ? onPressed : null,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        width: 88,
-        height: 104,
+        key: ValueKey('hero-card-${hero.kind.name}'),
+        width: 74,
+        height: 82,
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF1C2733) : const Color(0xFF161D26),
           borderRadius: BorderRadius.circular(14),
@@ -3027,23 +3169,23 @@ class _HeroBuildCard extends StatelessWidget {
               color: isUnlocked
                   ? (isSelected ? const Color(0xFFE4C67A) : hero.color)
                   : Colors.white24,
-              size: 28,
+              size: 22,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               hero.label,
               style: TextStyle(
                 color: isUnlocked ? Colors.white : Colors.white38,
-                fontSize: 13,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               isUnlocked ? '무료 부활' : '대기',
               style: TextStyle(
                 color: isUnlocked ? const Color(0xFFE4C67A) : Colors.white24,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),

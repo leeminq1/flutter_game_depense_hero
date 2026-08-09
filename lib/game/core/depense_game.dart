@@ -924,14 +924,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       audioService.play(AudioEvent.coinGain);
     }
     audioService.play(AudioEvent.uiConfirm);
-    _syncSession();
+    _flushSession();
   }
 
   void togglePaused() {
     _pausedManually = !_pausedManually;
     paused = _pausedManually;
     _showStatus(_pausedManually ? '일시정지됨' : '전투 재개');
-    _syncSession();
+    _flushSession();
   }
 
   void upgradeSelectedTower() {
