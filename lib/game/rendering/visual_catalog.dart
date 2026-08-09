@@ -47,7 +47,7 @@ class StageOneVisualCatalog {
 
   static bool enabledForStage(int stageNumber) => stageNumber <= 1;
 
-  static StructureVisualDefinition tower(TowerKind kind) {
+  static StructureVisualDefinition tower(TowerKind kind, {int level = 1}) {
     final fileName = switch (kind) {
       TowerKind.archer => 'archer',
       TowerKind.guardBarracks => 'guard_barracks',
@@ -57,8 +57,10 @@ class StageOneVisualCatalog {
       TowerKind.ballista => 'ballista',
       TowerKind.emberkeep => 'ember_keep',
     };
+    final tier = level.clamp(1, TowerVisualCatalog.maxTier);
+    final tierSuffix = tier == 1 ? '' : '_t$tier';
     return StructureVisualDefinition(
-      assetPath: '$_root/towers/$fileName.png',
+      assetPath: '$_root/towers/$fileName$tierSuffix.png',
       sourcePixelSize: const Size(128, 160),
       footprintTiles: const Size(1, 1),
       renderTiles: const Size(1, 1.58),
@@ -182,7 +184,9 @@ class StageOneVisualCatalog {
 
   static Iterable<String> get assetPaths sync* {
     for (final kind in TowerKind.values) {
-      yield tower(kind).assetPath;
+      for (var level = 1; level <= TowerVisualCatalog.maxTier; level += 1) {
+        yield tower(kind, level: level).assetPath;
+      }
     }
     yield citadel.assetPath;
     yield villageGatehouse.assetPath;

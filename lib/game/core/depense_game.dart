@@ -6839,9 +6839,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       final tower = _towers[i];
       final visual = TowerVisualCatalog.byKind(tower.definition.kind);
       final stageOneDefinition =
-          StageOneVisualCatalog.enabledForStage(stage.number) &&
-              tower.level == 1
-          ? StageOneVisualCatalog.tower(tower.definition.kind)
+          StageOneVisualCatalog.enabledForStage(stage.number)
+          ? StageOneVisualCatalog.tower(
+              tower.definition.kind,
+              level: tower.level,
+            )
           : null;
       final sprite = stageOneDefinition == null
           ? _visualRegistry.towerSprite(

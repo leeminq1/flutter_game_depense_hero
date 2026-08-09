@@ -36,7 +36,12 @@ void main() {
 
   test('all structures and connected wall modules are declared', () {
     for (final kind in TowerKind.values) {
-      expect(StageOneVisualCatalog.tower(kind).assetPath, endsWith('.png'));
+      for (var level = 1; level <= 3; level += 1) {
+        expect(
+          StageOneVisualCatalog.tower(kind, level: level).assetPath,
+          endsWith('.png'),
+        );
+      }
     }
     for (final kind in BarrierKind.values) {
       expect(
@@ -61,6 +66,25 @@ void main() {
         'assets/sprites/environment/props/wooden_fence_segment.png',
       ),
       isTrue,
+    );
+  });
+
+  test('Stage 1 tower upgrades resolve to matching level assets', () {
+    expect(
+      StageOneVisualCatalog.tower(TowerKind.archer).assetPath,
+      endsWith('archer.png'),
+    );
+    expect(
+      StageOneVisualCatalog.tower(TowerKind.archer, level: 2).assetPath,
+      endsWith('archer_t2.png'),
+    );
+    expect(
+      StageOneVisualCatalog.tower(TowerKind.archer, level: 3).assetPath,
+      endsWith('archer_t3.png'),
+    );
+    expect(
+      StageOneVisualCatalog.tower(TowerKind.archer, level: 4).assetPath,
+      endsWith('archer_t3.png'),
     );
   });
 
