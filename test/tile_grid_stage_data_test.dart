@@ -292,6 +292,22 @@ void main() {
     expect(game.debugHeroSpawnCell(), (3, 12));
   });
 
+  test('stage 1 grid stays anchored when the bottom panel changes height', () {
+    final game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+
+    game.onGameResize(Vector2(430, 560));
+    final before = game.debugCitadelCenter();
+    game.onGameResize(Vector2(430, 760));
+
+    expect(game.debugCitadelCenter(), before);
+  });
+
   test('runtime spawn routes stop at gate cells', () {
     for (
       var stageNumber = 1;

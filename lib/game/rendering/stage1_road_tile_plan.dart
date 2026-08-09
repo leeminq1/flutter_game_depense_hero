@@ -31,13 +31,17 @@ class StageOneRoadTilePlan {
   }
 }
 
-enum StageOneBarrierTileKind { straight, isolated }
+enum StageOneBarrierTileKind { isolated }
 
-/// Stage 1 walls are barricades: their long edge must cross the road axis.
-/// A corner or junction uses the self-contained module instead of guessing an
-/// adjacency direction from neighboring barriers.
+/// Stage 1 always uses one self-contained, full-cell wall module. Neighboring
+/// roads and barriers must not change its image or rotation.
 class StageOneBarrierTilePlan {
   const StageOneBarrierTilePlan(this.kind, this.quarterTurns);
+
+  static const fullCell = StageOneBarrierTilePlan(
+    StageOneBarrierTileKind.isolated,
+    0,
+  );
 
   final StageOneBarrierTileKind kind;
   final int quarterTurns;
@@ -46,14 +50,6 @@ class StageOneBarrierTilePlan {
     if (mask < 0 || mask > 15) {
       throw RangeError.range(mask, 0, 15, 'mask');
     }
-    final hasVerticalRoad = (mask & 5) != 0;
-    final hasHorizontalRoad = (mask & 10) != 0;
-    if (hasVerticalRoad && !hasHorizontalRoad) {
-      return const StageOneBarrierTilePlan(StageOneBarrierTileKind.straight, 0);
-    }
-    if (hasHorizontalRoad && !hasVerticalRoad) {
-      return const StageOneBarrierTilePlan(StageOneBarrierTileKind.straight, 1);
-    }
-    return const StageOneBarrierTilePlan(StageOneBarrierTileKind.isolated, 0);
+    return fullCell;
   }
 }

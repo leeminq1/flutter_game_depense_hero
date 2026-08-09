@@ -20,15 +20,12 @@ void main() {
     expect(StageOneRoadTilePlan.fromMask(12).quarterTurns, 0);
   });
 
-  test('stage 1 barriers face across the road instead of along it', () {
-    final verticalRoad = StageOneBarrierTilePlan.fromRoadMask(5);
-    final horizontalRoad = StageOneBarrierTilePlan.fromRoadMask(10);
-    final cornerRoad = StageOneBarrierTilePlan.fromRoadMask(12);
+  test('stage 1 barriers use one full-cell visual for every road shape', () {
+    for (var roadMask = 0; roadMask < 16; roadMask += 1) {
+      final plan = StageOneBarrierTilePlan.fromRoadMask(roadMask);
 
-    expect(verticalRoad.kind, StageOneBarrierTileKind.straight);
-    expect(verticalRoad.quarterTurns, 0);
-    expect(horizontalRoad.kind, StageOneBarrierTileKind.straight);
-    expect(horizontalRoad.quarterTurns, 1);
-    expect(cornerRoad.kind, StageOneBarrierTileKind.isolated);
+      expect(plan.kind, StageOneBarrierTileKind.isolated);
+      expect(plan.quarterTurns, 0);
+    }
   });
 }

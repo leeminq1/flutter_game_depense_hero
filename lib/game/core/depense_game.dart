@@ -6126,28 +6126,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (cell == null) {
       return;
     }
-    final visibleWaveIndex = _waveActive && _currentWaveIndex >= 0
-        ? _currentWaveIndex
-        : _currentWaveIndex + 1;
-    final roadCells =
-        visibleWaveIndex >= 0 && visibleWaveIndex < stage.waves.length
-        ? _roadCellsForWaveIndex(visibleWaveIndex)
-        : const <(int, int)>{};
-    final mask = BarrierConnectivity.mask(
-      north: roadCells.contains((cell.$1, cell.$2 - 1)),
-      east: roadCells.contains((cell.$1 + 1, cell.$2)),
-      south: roadCells.contains((cell.$1, cell.$2 + 1)),
-      west: roadCells.contains((cell.$1 - 1, cell.$2)),
-    );
-    final plan = StageOneBarrierTilePlan.fromRoadMask(mask);
+    const plan = StageOneBarrierTilePlan.fullCell;
     final paths = StageOneVisualCatalog.barrierModulePaths(
       barrier.definition.kind,
     );
     final center = barrier.position.toOffset();
 
-    final isStraight = plan.kind == StageOneBarrierTileKind.straight;
-    final foundationWidth = _tileSize * (isStraight ? 0.96 : 0.68);
-    final foundationHeight = _tileSize * (isStraight ? 0.38 : 0.68);
+    final foundationSize = _tileSize * 0.94;
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate((plan.quarterTurns % 4) * math.pi / 2);
@@ -6155,8 +6140,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       RRect.fromRectAndRadius(
         Rect.fromCenter(
           center: Offset.zero,
-          width: foundationWidth,
-          height: foundationHeight,
+          width: foundationSize,
+          height: foundationSize,
         ),
         Radius.circular(_tileSize * 0.08),
       ),
@@ -6169,14 +6154,13 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     );
     canvas.restore();
 
-    final key = isStraight ? 'straight' : 'isolated';
-    final image = _visualRegistry.stageOneSprite(paths[key]!);
+    final image = _visualRegistry.stageOneSprite(paths['isolated']!);
     if (image != null) {
       _drawRotatedSquareSprite(
         canvas,
         image,
         center: center,
-        size: _tileSize * (isStraight ? 1.30 : 1.16),
+        size: _tileSize * 1.38,
         quarterTurns: plan.quarterTurns,
         opacity: opacity,
       );
@@ -7147,7 +7131,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final verticalSlack = size.y - gridHeight;
     return Vector2(
       math.max(0, (size.x - gridWidth) / 2),
-      verticalSlack <= 0 ? 0 : verticalSlack / 2,
+      stage.number == 1 ? 0 : (verticalSlack <= 0 ? 0 : verticalSlack / 2),
     );
   }
 
