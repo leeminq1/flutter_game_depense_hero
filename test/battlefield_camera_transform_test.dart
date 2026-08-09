@@ -4,7 +4,7 @@ import 'package:depense_game/game/input/battlefield_camera_transform.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('zoom clamps to 0.7 through 2.5 and reset returns identity', () {
+  test('zoom clamps to 1.0 through 2.5 and reset returns identity', () {
     final camera = BattlefieldCameraTransform();
 
     camera.beginGesture(const Offset(200, 300));
@@ -61,7 +61,7 @@ void main() {
     expect(camera.pan, const Offset(-400, -600));
   });
 
-  test('zooming below one centers the smaller battlefield', () {
+  test('zooming below one keeps the default fitted battlefield', () {
     final camera = BattlefieldCameraTransform();
 
     camera.beginGesture(const Offset(200, 300));
@@ -71,6 +71,7 @@ void main() {
       world: const Size(400, 600),
     );
 
-    expect(camera.pan, const Offset(60, 90));
+    expect(camera.zoom, 1);
+    expect(camera.pan, Offset.zero);
   });
 }

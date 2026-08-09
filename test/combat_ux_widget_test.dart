@@ -93,6 +93,41 @@ void main() {
     await tester.pump();
     expect(find.byKey(const ValueKey('camera-reset')), findsNothing);
   });
+
+  testWidgets('battlefield rendering is clipped to its viewport', (
+    tester,
+  ) async {
+    await _pumpStageOne(tester);
+
+    final gameFinder = find.byWidgetPredicate(
+      (widget) => widget is GameWidget<DefensePrototypeGame>,
+    );
+
+    expect(
+      find.ancestor(
+        of: gameFinder,
+        matching: find.byKey(const ValueKey('battlefield-viewport-clip')),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('coin and stage remain visible on a phone-sized HUD', (
+    tester,
+  ) async {
+    await _pumpStageOne(tester);
+
+    final coins = find.byKey(const ValueKey('hud-coins'));
+    final stage = find.byKey(const ValueKey('hud-stage'));
+    expect(coins, findsOneWidget);
+    expect(stage, findsOneWidget);
+
+    for (final finder in [coins, stage]) {
+      final rect = tester.getRect(finder);
+      expect(rect.left, greaterThanOrEqualTo(0));
+      expect(rect.right, lessThanOrEqualTo(430));
+    }
+  });
 }
 
 Future<void> _pumpStageOne(WidgetTester tester) async {

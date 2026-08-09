@@ -60,6 +60,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   TutorialStep? _lastTutorialStep;
   bool _tutorialCompletionHandled = false;
   bool _stageOneRecapVisible = false;
+  Timer? _stageOneRecapTimer;
 
   bool _hintBannerVisible = true;
   Timer? _hintTimer;
@@ -102,6 +103,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _hintTimer?.cancel();
+    _stageOneRecapTimer?.cancel();
     _towerActionBarTimer?.cancel();
     _disposeResultBannerAd();
     _sessionController.removeListener(_handleSessionChanged);
@@ -166,6 +168,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     }
 
     _hintTimer?.cancel();
+    _stageOneRecapTimer?.cancel();
     _towerActionBarTimer?.cancel();
     _resetTerminalResultUi();
     _sessionController.hydrate(
@@ -248,6 +251,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     }
 
     _hintTimer?.cancel();
+    _stageOneRecapTimer?.cancel();
     _towerActionBarTimer?.cancel();
     _resetTerminalResultUi();
     _sessionController.hydrate(
@@ -292,6 +296,19 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     });
     _hintTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) setState(() => _hintBannerVisible = false);
+    });
+    _scheduleStageOneRecapDismiss();
+  }
+
+  void _scheduleStageOneRecapDismiss() {
+    _stageOneRecapTimer?.cancel();
+    if (!_stageOneRecapVisible || _stageNumber != 1) {
+      return;
+    }
+    _stageOneRecapTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && _stageOneRecapVisible) {
+        setState(() => _stageOneRecapVisible = false);
+      }
     });
   }
 
@@ -818,9 +835,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         child: Stack(
                           children: [
                             Positioned.fill(
-                              child: GameWidget(
-                                key: ValueKey(_gameEpoch),
-                                game: game,
+                              child: ClipRect(
+                                key: const ValueKey(
+                                  'battlefield-viewport-clip',
+                                ),
+                                child: GameWidget(
+                                  key: ValueKey(_gameEpoch),
+                                  game: game,
+                                ),
                               ),
                             ),
                             if (session.cameraSnapshot.isTransformed)
@@ -1058,10 +1080,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       right: 12,
                       child: Align(
                         alignment: Alignment.topCenter,
-                        child: _StageOneRecapCard(
-                          onClose: () =>
-                              setState(() => _stageOneRecapVisible = false),
-                        ),
+                        child: const _StageOneRecapCard(),
                       ),
                     ),
                   if (_tutorialDirector != null)
@@ -1082,9 +1101,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 }
 
 class _StageOneRecapCard extends StatelessWidget {
-  const _StageOneRecapCard({required this.onClose});
-
-  final VoidCallback onClose;
+  const _StageOneRecapCard();
 
   @override
   Widget build(BuildContext context) {
@@ -1134,12 +1151,7 @@ class _StageOneRecapCard extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                key: ValueKey('stage-one-recap-close'),
-                onPressed: onClose,
-                tooltip: '닫기',
-                icon: Icon(Icons.close_rounded, color: Colors.white70),
-              ),
+              const SizedBox(width: 6),
             ],
           ),
         ),
@@ -1537,54 +1549,73 @@ class _TopHud extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCompact = MediaQuery.sizeOf(context).width <= 1000;
-    final statWrap = Wrap(
+    final coinChip = _HudChip(
+      key: const ValueKey('hud-coins'),
+      icon: Icons.monetization_on_rounded,
+      color: const Color(0xFFE4C67A),
+      label: '${sessionController.coins}',
+    );
+    final stageChip = _HudChip(
+      key: const ValueKey('hud-stage'),
+      icon: Icons.account_balance_rounded,
+      color: const Color(0xFF7BC6FF),
+      label: sessionController.stageNumber == 0
+          ? '훈련장'
+          : 'STAGE ${sessionController.stageNumber} 정보',
+      trailingIcon: Icons.info_outline_rounded,
+      onTap: onStageInfo,
+    );
+    final scrollingStatChips = <Widget>[
+      _HudChip(
+        icon: Icons.waves_rounded,
+        color: Colors.white70,
+        label:
+            '${sessionController.loopLabel} ${sessionController.currentWave}/${sessionController.totalWaves}',
+      ),
+      if (sessionController.waveInProgress &&
+          sessionController.remainingEnemies > 0)
+        _HudChip(
+          icon: Icons.groups_rounded,
+          color: const Color(0xFFFF6B6B),
+          label: '${sessionController.remainingEnemies}',
+        ),
+      _HudChip(
+        icon: Icons.assistant_direction_rounded,
+        color: const Color(0xFFE4C67A),
+        label: sessionController.waveInProgress
+            ? '출현: ${formatSpawnFronts(sessionController.activeFronts)}'
+            : '다음 WAVE: ${formatSpawnFronts(sessionController.nextFronts)}',
+      ),
+    ];
+
+    final scrollingStats = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var index = 0; index < scrollingStatChips.length; index++) ...[
+            if (index > 0) const SizedBox(width: 6),
+            scrollingStatChips[index],
+          ],
+        ],
+      ),
+    );
+    final compactStatsRow = Row(
+      children: [
+        coinChip,
+        const SizedBox(width: 6),
+        Expanded(child: scrollingStats),
+        const SizedBox(width: 6),
+        stageChip,
+      ],
+    );
+    final wideStatsRow = Wrap(
       alignment: WrapAlignment.end,
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 6,
       runSpacing: 6,
-      children: [
-        _HudChip(
-          icon: Icons.monetization_on_rounded,
-          color: const Color(0xFFE4C67A),
-          label: '${sessionController.coins}',
-        ),
-        _HudChip(
-          icon: Icons.waves_rounded,
-          color: Colors.white70,
-          label:
-              '${sessionController.loopLabel} ${sessionController.currentWave}/${sessionController.totalWaves}',
-        ),
-        _HudChip(
-          icon: Icons.assistant_direction_rounded,
-          color: const Color(0xFFE4C67A),
-          label: sessionController.waveInProgress
-              ? '출현: ${formatSpawnFronts(sessionController.activeFronts)}'
-              : '다음 WAVE: ${formatSpawnFronts(sessionController.nextFronts)}',
-        ),
-        if (sessionController.waveInProgress &&
-            sessionController.remainingEnemies > 0)
-          _HudChip(
-            icon: Icons.groups_rounded,
-            color: const Color(0xFFFF6B6B),
-            label: '${sessionController.remainingEnemies}',
-          ),
-        _HudChip(
-          icon: Icons.account_balance_rounded,
-          color: const Color(0xFF7BC6FF),
-          label: sessionController.stageNumber == 0
-              ? '훈련장'
-              : 'STAGE ${sessionController.stageNumber} 정보',
-          trailingIcon: Icons.info_outline_rounded,
-          onTap: onStageInfo,
-        ),
-      ],
-    );
-
-    final statsRow = SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      reverse: true,
-      physics: const BouncingScrollPhysics(),
-      child: statWrap,
+      children: [coinChip, ...scrollingStatChips, stageChip],
     );
 
     return Container(
@@ -1617,7 +1648,7 @@ class _TopHud extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Align(alignment: Alignment.centerRight, child: statsRow),
+                compactStatsRow,
               ],
             )
           : Row(
@@ -1634,7 +1665,7 @@ class _TopHud extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                statsRow,
+                wideStatsRow,
                 const SizedBox(width: 6),
                 _HudIconButton(
                   icon: sessionController.isPaused
@@ -2343,6 +2374,7 @@ class _HudIconButton extends StatelessWidget {
 
 class _HudChip extends StatelessWidget {
   const _HudChip({
+    super.key,
     required this.icon,
     required this.color,
     required this.label,

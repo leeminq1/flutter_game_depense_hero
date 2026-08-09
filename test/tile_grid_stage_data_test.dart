@@ -1090,6 +1090,30 @@ void main() {
     );
   });
 
+  test('stage 1 walls use visible roads while towers keep grass cells', () {
+    final dynamic game = DefensePrototypeGame(
+      stage: CampaignData.stage(1),
+      sessionController: GameSessionController(),
+      audioService: GameAudioService(AudioSettingsController()),
+      metaUpgrades: const ResolvedMetaUpgrades(),
+      chosenHeroKind: HeroKind.knight,
+    );
+    game.onGameResize(Vector2(430, 620));
+
+    final visibleRoadCells = <(int, int)>{
+      for (final path
+          in game.debugRoadRouteCellsForWaveIndex(0) as List<List<List<int>>>)
+        for (final cell in path) (cell[0], cell[1]),
+    };
+    final barrierCells =
+        game.debugBarrierBuildCellsForWaveIndex(0) as Set<(int, int)>;
+    final towerCells = game.debugTowerBuildCells() as Set<(int, int)>;
+
+    expect(barrierCells, isNotEmpty);
+    expect(barrierCells.difference(visibleRoadCells), isEmpty);
+    expect(towerCells.difference(visibleRoadCells), isNotEmpty);
+  });
+
   test('tower build costs use the development affordability pass', () {
     expect(TowerCatalog.byKind(TowerKind.archer).cost, 35);
     expect(TowerCatalog.byKind(TowerKind.guardBarracks).cost, 45);

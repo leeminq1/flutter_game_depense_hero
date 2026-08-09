@@ -453,7 +453,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _clearSelectedBarrierSelection();
     if (barrierKind != null) {
       final definition = BarrierCatalog.byKind(barrierKind);
-      _showStatus('${definition.label} 선택됨. 빈 타일을 터치해 배치하세요.');
+      _showStatus(
+        stage.number == 1
+            ? '${definition.label} 선택됨. 표시된 길 위에 배치하세요.'
+            : '${definition.label} 선택됨. 빈 타일을 터치해 배치하세요.',
+      );
       audioService.play(AudioEvent.uiSelect);
     } else {
       _showStatus('아래 배치 카드를 선택하세요.');
@@ -1644,7 +1648,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final definition = BarrierCatalog.byKind(barrierKind);
     Vector2? snapTarget;
     var bestDist = 42.0;
-    for (final cell in _buildGridPositions()) {
+    for (final cell in _barrierBuildGridPositions()) {
       final d = cell.distanceTo(position);
       if (d < bestDist) {
         bestDist = d;
@@ -1653,7 +1657,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     if (snapTarget == null) {
-      _showStatus('성벽을 배치할 수 있는 빈 타일을 선택하세요.');
+      _showStatus(
+        stage.number == 1
+            ? '성벽은 표시된 적 이동 길 위에만 배치할 수 있습니다.'
+            : '성벽을 배치할 수 있는 빈 타일을 선택하세요.',
+      );
       _syncSession();
       return;
     }
@@ -5652,6 +5660,25 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return _roadRouteCellsForWaveIndex(waveIndex);
   }
 
+  @visibleForTesting
+  Set<(int, int)> debugBarrierBuildCellsForWaveIndex(int waveIndex) {
+    return _cellSetForPositions(
+      _barrierBuildGridPositions(waveIndex: waveIndex),
+    );
+  }
+
+  @visibleForTesting
+  Set<(int, int)> debugTowerBuildCells() {
+    return _cellSetForPositions(_buildGridPositions());
+  }
+
+  Set<(int, int)> _roadCellsForWaveIndex(int waveIndex) {
+    return {
+      for (final path in _roadRouteCellsForWaveIndex(waveIndex))
+        for (final cell in path) (cell[0], cell[1]),
+    };
+  }
+
   List<List<List<int>>> _roadRouteCellsForWaveIndex(int waveIndex) {
     final cycle = _assaultCycleForIndex(waveIndex);
     final wave = _waveForIndex(waveIndex);
@@ -5695,6 +5722,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final isBarrierPlacement =
         sessionController.selectedBarrierBuildable != null;
     final selection = sessionController.selectedBuildable;
+    final isStageOneTowerPlacement = stage.number == 1 && selection != null;
     if (selection == null &&
         !isBarrierPlacement &&
         !isHeroMove &&
@@ -5705,11 +5733,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         ? const Color(0x224FC9FF)
         : isBarrierPlacement
         ? const Color(0x26E4C67A)
+        : isStageOneTowerPlacement
+        ? _slotFillColor().withValues(alpha: 0.08)
         : _slotFillColor();
     final ringColor = isHeroMove || isHeroPlacement
         ? const Color(0xFF4FC9FF)
         : isBarrierPlacement
         ? const Color(0xFFE4C67A)
+        : isStageOneTowerPlacement
+        ? _slotRingColor().withValues(alpha: 0.34)
         : _slotRingColor();
     final fillPaint = Paint()
       ..color = fillColor
@@ -5717,8 +5749,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final ringPaint = Paint()
       ..color = ringColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    for (final cell in _buildGridPositions()) {
+      ..strokeWidth = isStageOneTowerPlacement ? 1 : 2;
+    final validCells = isBarrierPlacement
+        ? _barrierBuildGridPositions()
+        : _buildGridPositions();
+    for (final cell in validCells) {
       final rect = Rect.fromCenter(
         center: cell.toOffset(),
         width: _tileSize - 6,
@@ -5939,10 +5974,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (visibleWaveIndex < 0 || visibleWaveIndex >= stage.waves.length) {
       return false;
     }
-    final cells = <(int, int)>{
-      for (final path in _roadRouteCellsForWaveIndex(visibleWaveIndex))
-        for (final cell in path) (cell[0], cell[1]),
-    };
+    final cells = _roadCellsForWaveIndex(visibleWaveIndex);
     if (cells.isEmpty) {
       return false;
     }
@@ -6378,6 +6410,32 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
     }
     return cells;
+  }
+
+  List<Vector2> _barrierBuildGridPositions({int? waveIndex}) {
+    final buildableCells = _buildGridPositions();
+    if (stage.number != 1) {
+      return buildableCells;
+    }
+    final visibleWaveIndex =
+        waveIndex ??
+        (_waveActive && _currentWaveIndex >= 0
+            ? _currentWaveIndex
+            : _currentWaveIndex + 1);
+    if (visibleWaveIndex < 0 || visibleWaveIndex >= stage.waves.length) {
+      return const [];
+    }
+    final roadCells = _roadCellsForWaveIndex(visibleWaveIndex);
+    return buildableCells
+        .where((position) {
+          final cell = _cellForWorldPosition(position);
+          return cell != null && roadCells.contains(cell);
+        })
+        .toList(growable: false);
+  }
+
+  Set<(int, int)> _cellSetForPositions(Iterable<Vector2> positions) {
+    return {for (final position in positions) ?_cellForWorldPosition(position)};
   }
 
   bool _isStaticObjectCell(int col, int row) {

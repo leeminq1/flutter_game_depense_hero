@@ -19,7 +19,7 @@ class BattlefieldCameraSnapshot {
 }
 
 class BattlefieldCameraTransform {
-  static const minZoom = 0.7;
+  static const minZoom = 1.0;
   static const maxZoom = 2.5;
   static const dragThreshold = 8.0;
 

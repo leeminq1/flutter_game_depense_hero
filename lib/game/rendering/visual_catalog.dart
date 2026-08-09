@@ -43,7 +43,7 @@ class UnitVisualDefinition {
 class StageOneVisualCatalog {
   static const String _root = 'assets/sprites/stage1';
   static const Color groundBaseColor = Color(0xFF789322);
-  static const double groundTextureOpacity = 0.22;
+  static const double groundTextureOpacity = 0.08;
 
   static bool enabledForStage(int stageNumber) => stageNumber <= 1;
 
@@ -73,9 +73,9 @@ class StageOneVisualCatalog {
     assetPath: '$_root/environment/tutorial_citadel.png',
     sourcePixelSize: Size(224, 224),
     footprintTiles: Size(3, 3),
-    renderTiles: Size(3.25, 3.25),
+    renderTiles: Size(2.6, 2.6),
     anchor: Offset(0.5, 0.82),
-    drawOffsetTiles: Offset(0, 0.45),
+    drawOffsetTiles: Offset(0, 0.2),
     baseLayer: WorldRenderLayer.structure,
     castsShadow: true,
   );

@@ -135,3 +135,23 @@
   focal stability, no accidental placement after drag, connected T/cross walls,
   natural unit overlap, 2–3 minute tutorial pacing, pause behavior, automatic
   Stage 1 transition, and menu replay/home completion routes.
+
+# 2026-08-09 Stage 1 Device UX Correction Note
+
+- Added an explicit Flutter clip directly around the Flame `GameWidget`, so a
+  2.5x canvas transform cannot paint across the top HUD or system SafeArea.
+- Changed the camera range to 1.0x–2.5x. The default/reset state fills the
+  battlefield without exposing the undersized 0.7x map.
+- Kept coin and Stage chips fixed on the compact HUD while Wave, enemy count,
+  and spawn direction use the middle horizontal scroller.
+- Made the Stage 1 recap non-blocking: it has no close button and disappears
+  after three seconds.
+- Limited Stage 1 barriers to the currently visible road cells while towers
+  retain road and grass placement. Stage 2–30 placement behavior is unchanged
+  pending Stage 1 device acceptance.
+- Reduced Stage 1 grass repetition contrast, softened tower placement slots,
+  and reduced the visual citadel from 3.25 to 2.6 tiles without changing its
+  logical footprint or combat position.
+- Verification: `flutter test` passed 128 tests, `flutter analyze` reported no
+  issues, `flutter build apk --debug` succeeded, and `adb install -r` succeeded
+  on the connected SM-F741N (`R3CX70DGKGA`).

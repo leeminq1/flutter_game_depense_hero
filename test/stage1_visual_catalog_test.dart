@@ -14,11 +14,23 @@ void main() {
     expect(StageOneVisualCatalog.groundBaseColor.a, 1);
     expect(
       StageOneVisualCatalog.groundTextureOpacity,
-      inInclusiveRange(0, 0.35),
+      inInclusiveRange(0, 0.10),
     );
     expect(
       StageOneVisualCatalog.tower(TowerKind.archer).anchor.dy,
       greaterThan(0.5),
+    );
+    expect(
+      StageOneVisualCatalog.citadel.renderTiles.width,
+      lessThanOrEqualTo(2.7),
+    );
+    expect(
+      StageOneVisualCatalog.citadel.renderTiles.height,
+      lessThanOrEqualTo(2.7),
+    );
+    expect(
+      StageOneVisualCatalog.citadel.drawOffsetTiles.dy,
+      lessThanOrEqualTo(0.25),
     );
   });
 

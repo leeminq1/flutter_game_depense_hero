@@ -95,6 +95,10 @@ void main() {
       expect(find.byKey(const ValueKey('stage-one-recap')), findsOneWidget);
       expect(find.text('성벽으로 막고, 타워로 공격'), findsOneWidget);
       expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byKey(const ValueKey('stage-one-recap-close')), findsNothing);
+
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.byKey(const ValueKey('stage-one-recap')), findsNothing);
     },
   );
 
