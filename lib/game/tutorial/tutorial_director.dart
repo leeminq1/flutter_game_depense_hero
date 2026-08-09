@@ -1,4 +1,5 @@
 import 'package:depense_game/game/tutorial/tutorial_models.dart';
+import 'package:depense_game/game/tutorial/tutorial_stage_definition.dart';
 import 'package:flutter/foundation.dart';
 
 class TutorialDirector extends ChangeNotifier {
@@ -6,7 +7,6 @@ class TutorialDirector extends ChangeNotifier {
     : _step = initialStep;
 
   static const cameraSkipDelay = Duration(seconds: 5);
-  static const dangerDemoDuration = Duration(milliseconds: 2400);
 
   TutorialStep _step;
   Duration _stepElapsed = Duration.zero;
@@ -30,30 +30,48 @@ class TutorialDirector extends ChangeNotifier {
     }
     final wasSkippable = snapshot.canSkip;
     _stepElapsed += elapsed;
-    if (_step == TutorialStep.dangerousTowerDemo &&
-        _stepElapsed >= dangerDemoDuration) {
-      _moveTo(TutorialStep.combinedDefense);
-      return;
-    }
     if (wasSkippable != snapshot.canSkip) {
       notifyListeners();
     }
   }
 
   void record(TutorialEvent event) {
+    if (!snapshot.accepts(event)) {
+      return;
+    }
     switch ((_step, event.type)) {
       case (TutorialStep.cameraControls, TutorialEventType.cameraChanged):
-        _moveTo(TutorialStep.enemyDirections);
-      case (TutorialStep.blockWithWall, TutorialEventType.barrierPlaced)
-          when event.onRoad:
-        _moveTo(TutorialStep.safeTower);
-      case (TutorialStep.safeTower, TutorialEventType.towerPlaced)
-          when !event.onRoad:
-        _moveTo(TutorialStep.dangerousTowerDemo);
-      case (TutorialStep.combinedDefense, TutorialEventType.towerPlaced)
-          when event.behindWall:
-        _moveTo(TutorialStep.miniWave);
-      case (TutorialStep.miniWave, TutorialEventType.waveCleared):
+        _moveTo(TutorialStep.lessonWallPlacement);
+      case (TutorialStep.lessonWallPlacement, TutorialEventType.barrierPlaced):
+        _moveTo(TutorialStep.lessonWallObservation);
+      case (
+        TutorialStep.lessonWallObservation,
+        TutorialEventType.enemyBlockedByWall,
+      ):
+        _moveTo(TutorialStep.lessonTowerPlacement);
+      case (TutorialStep.lessonTowerPlacement, TutorialEventType.towerPlaced):
+        _moveTo(TutorialStep.lessonTowerObservation);
+      case (
+        TutorialStep.lessonTowerObservation,
+        TutorialEventType.enemyPassedTower,
+      ):
+        _moveTo(TutorialStep.practiceWallPlacement);
+      case (
+        TutorialStep.practiceWallPlacement,
+        TutorialEventType.barrierPlaced,
+      ):
+        _moveTo(TutorialStep.practiceRoadTowerPlacement);
+      case (
+        TutorialStep.practiceRoadTowerPlacement,
+        TutorialEventType.towerPlaced,
+      ):
+        _moveTo(TutorialStep.practiceGrassTowerPlacement);
+      case (
+        TutorialStep.practiceGrassTowerPlacement,
+        TutorialEventType.towerPlaced,
+      ):
+        _moveTo(TutorialStep.practiceDefense);
+      case (TutorialStep.practiceDefense, TutorialEventType.waveCleared):
         _moveTo(TutorialStep.recap);
       default:
         break;
@@ -61,25 +79,14 @@ class TutorialDirector extends ChangeNotifier {
   }
 
   void continueCurrentStep() {
-    switch (_step) {
-      case TutorialStep.enemyDirections:
-        _moveTo(TutorialStep.blockWithWall);
-      case TutorialStep.recap:
-        _moveTo(TutorialStep.complete);
-      default:
-        break;
+    if (_step == TutorialStep.recap) {
+      _moveTo(TutorialStep.complete);
     }
   }
 
   void skipCurrentStep() {
     if (snapshot.canSkip) {
-      _moveTo(TutorialStep.enemyDirections);
-    }
-  }
-
-  void recordDangerDemoCompleted() {
-    if (_step == TutorialStep.dangerousTowerDemo) {
-      _moveTo(TutorialStep.combinedDefense);
+      _moveTo(TutorialStep.lessonWallPlacement);
     }
   }
 
@@ -110,50 +117,76 @@ TutorialSnapshot _snapshotFor(TutorialStep step, {required bool canSkip}) {
       simulationSpeed: 1,
       allowedActions: const {TutorialEventType.cameraChanged},
     ),
-    TutorialStep.enemyDirections => TutorialSnapshot(
+    TutorialStep.lessonWallPlacement => TutorialSnapshot(
       step: step,
-      title: '적이 오는 방향',
-      body: '북·남·동·서 중 표시된 방향에서 적이 등장합니다. 길은 성채까지 이어집니다.',
-      canSkip: false,
-      simulationSpeed: 1,
-      allowedActions: const {},
-    ),
-    TutorialStep.blockWithWall => TutorialSnapshot(
-      step: step,
-      title: '성벽으로 길 막기',
-      body: '길 위의 강조 칸에 성벽을 배치하세요. 몬스터는 성벽 앞에서 멈춰 공격합니다.',
+      title: '① 성벽으로 길 막기',
+      body: '적은 북쪽 입구에서 성으로 내려옵니다. 아래 나무 울타리 카드를 누르고 빛나는 길 칸에 놓으세요.',
       canSkip: false,
       simulationSpeed: 1,
       allowedActions: const {TutorialEventType.barrierPlaced},
+      requiredBuild: TutorialBuildChoice.woodFence,
+      targetCell: TutorialStageDefinition.lessonWallCell,
     ),
-    TutorialStep.safeTower => TutorialSnapshot(
+    TutorialStep.lessonWallObservation => TutorialSnapshot(
       step: step,
-      title: '안전한 타워 배치',
-      body: '초록색 땅에 타워를 배치하세요. 타워는 길 밖에서도 사거리 안의 적을 공격합니다.',
-      canSkip: false,
-      simulationSpeed: 1,
-      allowedActions: const {TutorialEventType.towerPlaced},
-    ),
-    TutorialStep.dangerousTowerDemo => TutorialSnapshot(
-      step: step,
-      title: '타워만 세우면 위험해요',
-      body: '타워만으로는 몬스터를 막지 못합니다. 몬스터가 통과하면서 종류별 접촉 피해를 줍니다.',
+      title: '성벽이 적을 멈춥니다',
+      body: '1.5× 실제 시범입니다. 적이 성벽 앞에서 멈춰 공격하는 모습을 확인하세요.',
       canSkip: false,
       simulationSpeed: 1.5,
-      allowedActions: const {},
+      allowedActions: const {TutorialEventType.enemyBlockedByWall},
     ),
-    TutorialStep.combinedDefense => TutorialSnapshot(
+    TutorialStep.lessonTowerPlacement => TutorialSnapshot(
       step: step,
-      title: '성벽 뒤에 타워 배치',
-      body: '성벽은 길을 막고 타워는 뒤에서 공격합니다. 강조된 안전 칸에 타워를 배치하세요.',
+      title: '② 타워는 공격하지만 막지 못해요',
+      body: '이번에는 아래 궁수 카드를 누르고 빛나는 길 칸에 놓으세요.',
       canSkip: false,
       simulationSpeed: 1,
       allowedActions: const {TutorialEventType.towerPlaced},
+      requiredBuild: TutorialBuildChoice.archer,
+      targetCell: TutorialStageDefinition.lessonTowerCell,
     ),
-    TutorialStep.miniWave => TutorialSnapshot(
+    TutorialStep.lessonTowerObservation => TutorialSnapshot(
       step: step,
-      title: '미니 WAVE 방어',
-      body: '직접 WAVE를 시작하고 방어를 확인하세요. 일시정지 버튼도 언제든 사용할 수 있습니다.',
+      title: '타워만 지으면 적이 통과합니다',
+      body: '1.5× 실제 시범입니다. 타워는 적을 막지 못합니다. 적이 지나가면 타워의 에너지가 줄어듭니다.',
+      canSkip: false,
+      simulationSpeed: 1.5,
+      allowedActions: const {TutorialEventType.enemyPassedTower},
+    ),
+    TutorialStep.practiceWallPlacement => TutorialSnapshot(
+      step: step,
+      title: '③ 직접 방어선을 완성하세요',
+      body: '먼저 나무 울타리를 빛나는 길 칸에 놓아 적을 막으세요.',
+      canSkip: false,
+      simulationSpeed: 1,
+      allowedActions: const {TutorialEventType.barrierPlaced},
+      requiredBuild: TutorialBuildChoice.woodFence,
+      targetCell: TutorialStageDefinition.practiceWallCell,
+    ),
+    TutorialStep.practiceRoadTowerPlacement => TutorialSnapshot(
+      step: step,
+      title: '성벽 바로 뒤에 궁수 배치',
+      body: '성 쪽의 빛나는 길 칸에 궁수를 놓으세요. 성벽이 막는 동안 뒤에서 공격합니다.',
+      canSkip: false,
+      simulationSpeed: 1,
+      allowedActions: const {TutorialEventType.towerPlaced},
+      requiredBuild: TutorialBuildChoice.archer,
+      targetCell: TutorialStageDefinition.practiceRoadTowerCell,
+    ),
+    TutorialStep.practiceGrassTowerPlacement => TutorialSnapshot(
+      step: step,
+      title: '초록색 땅에도 궁수 배치',
+      body: '옆의 빛나는 초록색 칸에 궁수를 하나 더 놓으세요. 길 밖에서도 사거리 안의 적을 공격합니다.',
+      canSkip: false,
+      simulationSpeed: 1,
+      allowedActions: const {TutorialEventType.towerPlaced},
+      requiredBuild: TutorialBuildChoice.archer,
+      targetCell: TutorialStageDefinition.practiceGrassTowerCell,
+    ),
+    TutorialStep.practiceDefense => TutorialSnapshot(
+      step: step,
+      title: '④ 적 2명을 막아보세요',
+      body: '준비가 끝났습니다. 아래 방어 시작을 누르면 북쪽에서 적 2명이 옵니다.',
       canSkip: false,
       simulationSpeed: 1,
       allowedActions: const {
@@ -164,7 +197,7 @@ TutorialSnapshot _snapshotFor(TutorialStep step, {required bool canSkip}) {
     TutorialStep.recap => TutorialSnapshot(
       step: step,
       title: '훈련 완료',
-      body: '출현 방향 확인 · 성벽으로 차단 · 타워는 길 밖이나 성벽 뒤 · 성벽과 타워를 함께 사용',
+      body: '성벽은 길을 막고, 타워는 뒤나 초록색 땅에서 공격합니다. 이 조합이 기본 방어선입니다.',
       canSkip: false,
       simulationSpeed: 1,
       allowedActions: const {},
@@ -172,7 +205,7 @@ TutorialSnapshot _snapshotFor(TutorialStep step, {required bool canSkip}) {
     TutorialStep.complete => TutorialSnapshot(
       step: step,
       title: '훈련 완료',
-      body: '이제 성채를 지킬 준비가 되었습니다.',
+      body: '이제 Stage 1에서 직접 방어선을 만들어 보세요.',
       canSkip: false,
       simulationSpeed: 1,
       allowedActions: const {},

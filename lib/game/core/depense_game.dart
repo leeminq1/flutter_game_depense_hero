@@ -21,6 +21,7 @@ import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:depense_game/game/rendering/world_render_item.dart';
 import 'package:depense_game/game/tutorial/tutorial_director.dart';
 import 'package:depense_game/game/tutorial/tutorial_models.dart';
+import 'package:depense_game/game/tutorial/tutorial_stage_definition.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
@@ -170,6 +171,12 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   bool _sessionDirty = false;
   bool _heroAutoPlacePending = false;
   final Vector2 _walkDelta = Vector2.zero();
+  TutorialStep? _preparedTutorialStep;
+  _TutorialDemonstration? _tutorialDemonstration;
+  double _tutorialObservationTimer = 0;
+  double _tutorialPulseTime = 0;
+  bool _tutorialWallBlockObserved = false;
+  bool _tutorialTowerContactObserved = false;
 
   bool get _isSiegeMode =>
       stage.assaultCycles.isNotEmpty &&
@@ -214,6 +221,96 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void resetCamera() {
     _cameraTransform.reset();
     _applyCameraTransform();
+  }
+
+  void prepareTutorialStep(TutorialStep step) {
+    if (tutorialDirector == null || _preparedTutorialStep == step) {
+      return;
+    }
+    _preparedTutorialStep = step;
+    _tutorialObservationTimer = 0;
+    _tutorialWallBlockObserved = false;
+    _tutorialTowerContactObserved = false;
+    sessionController.setSelectedBuildable(null);
+    sessionController.setSelectedBarrierBuildable(null);
+    sessionController.setSelectedHeroBuildable(null);
+    _clearSelectedTowerSelection();
+    _clearSelectedBarrierSelection();
+    _clearSelectedHeroSelection();
+
+    switch (step) {
+      case TutorialStep.lessonWallPlacement ||
+          TutorialStep.lessonTowerPlacement ||
+          TutorialStep.practiceWallPlacement:
+        _clearTutorialSandbox();
+      case TutorialStep.lessonWallObservation:
+        _startTutorialDemonstration(_TutorialDemonstration.wallBlock);
+      case TutorialStep.lessonTowerObservation:
+        _startTutorialDemonstration(_TutorialDemonstration.towerPassThrough);
+      case TutorialStep.practiceDefense:
+        _tutorialDemonstration = null;
+        _activeFronts = const [];
+        _nextFronts = const [SpawnDirection.north];
+        _showStatus('방어 시작을 누르면 북쪽에서 적 2명이 옵니다.');
+      case TutorialStep.cameraControls ||
+          TutorialStep.practiceRoadTowerPlacement ||
+          TutorialStep.practiceGrassTowerPlacement ||
+          TutorialStep.recap ||
+          TutorialStep.complete:
+        _tutorialDemonstration = null;
+    }
+    _flushSession();
+  }
+
+  void _clearTutorialSandbox() {
+    _enemies.clear();
+    _towers.clear();
+    _barriers.clear();
+    _heroes.clear();
+    _projectiles.clear();
+    _beams.clear();
+    _pulses.clear();
+    _impacts.clear();
+    _floatingTexts.clear();
+    _tutorialDemonstration = null;
+    _currentWaveIndex = -1;
+    _currentSpawnGroupIndex = 0;
+    _spawnedInGroup = 0;
+    _spawnTimer = 0;
+    _waveActive = false;
+    _stageCleared = false;
+    _stageFailed = false;
+    _remainingEnemiesInCycle = 0;
+    _activeFronts = const [];
+    _nextFronts = const [SpawnDirection.north];
+    _coins = 0;
+    _towersBuilt = 0;
+    _builtTowerKinds.clear();
+    _maxTowerLevel = 1;
+  }
+
+  void _startTutorialDemonstration(_TutorialDemonstration demonstration) {
+    _enemies.clear();
+    _projectiles.clear();
+    _impacts.clear();
+    _floatingTexts.clear();
+    _tutorialDemonstration = demonstration;
+    _tutorialObservationTimer = 0;
+    _activeFronts = const [SpawnDirection.north];
+    _nextFronts = const [];
+    final enemy = _Enemy.fromDefinition(
+      TutorialStageDefinition.demonstrationEnemy,
+      spawnDirection: SpawnDirection.north,
+      routeId: 'tutorial_north_lane',
+    )..debugId = _nextEnemyDebugId++;
+    _assignSiegePathForEnemy(enemy);
+    _placeEnemyOnPath(enemy);
+    _enemies.add(enemy);
+    _showStatus(
+      demonstration == _TutorialDemonstration.wallBlock
+          ? '1.5× 시범: 적이 성벽 앞에서 멈추는지 보세요.'
+          : '1.5× 시범: 적이 타워를 통과하며 에너지를 깎습니다.',
+    );
   }
 
   @override
@@ -306,6 +403,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void selectBuildable(TowerKind? towerKind) {
+    final tutorialSnapshot = tutorialDirector?.snapshot;
+    if (towerKind != null &&
+        tutorialSnapshot != null &&
+        (tutorialSnapshot.requiredBuild != TutorialBuildChoice.archer ||
+            towerKind != TowerKind.archer)) {
+      _showStatus('훈련에서는 표시된 궁수 카드만 사용할 수 있습니다.');
+      audioService.play(AudioEvent.uiError);
+      return;
+    }
     if (towerKind != null &&
         !TowerCatalog.isUnlocked(towerKind, metaUpgrades)) {
       final definition = TowerCatalog.byKind(towerKind);
@@ -332,6 +438,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void selectBarrierBuildable(BarrierKind? barrierKind) {
+    final tutorialSnapshot = tutorialDirector?.snapshot;
+    if (barrierKind != null &&
+        tutorialSnapshot != null &&
+        (tutorialSnapshot.requiredBuild != TutorialBuildChoice.woodFence ||
+            barrierKind != BarrierKind.woodFence)) {
+      _showStatus('훈련에서는 표시된 나무 울타리만 사용할 수 있습니다.');
+      audioService.play(AudioEvent.uiError);
+      return;
+    }
     sessionController.setSelectedBarrierBuildable(barrierKind);
     _clearSelectedTowerSelection();
     _clearSelectedHeroSelection();
@@ -566,7 +681,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _queueChosenHeroAutoPlace() {
-    if (_heroAutoPlacePending ||
+    if (tutorialDirector != null ||
+        _heroAutoPlacePending ||
         _autoHeroPlaced ||
         _heroes.isNotEmpty ||
         _citadelCenter == Vector2.zero()) {
@@ -755,6 +871,37 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   double debugTowerBaseRangeFor(TowerKind kind) => _towerBaseRange(kind);
 
   @visibleForTesting
+  void debugPlaceTutorialTarget() {
+    final snapshot = tutorialDirector?.snapshot;
+    final target = snapshot?.targetCell;
+    final requiredBuild = snapshot?.requiredBuild;
+    if (target == null || requiredBuild == null) {
+      return;
+    }
+    final position = _cellCenter([target.col, target.row]);
+    switch (requiredBuild) {
+      case TutorialBuildChoice.woodFence:
+        selectBarrierBuildable(BarrierKind.woodFence);
+        _handleBarrierPlacement(position, BarrierKind.woodFence);
+      case TutorialBuildChoice.archer:
+        selectBuildable(TowerKind.archer);
+        _handlePlacement(position);
+    }
+  }
+
+  @visibleForTesting
+  int get debugTutorialCoinCount => _coins;
+
+  @visibleForTesting
+  int get debugTutorialTowerCount => _towers.length;
+
+  @visibleForTesting
+  int get debugTutorialBarrierCount => _barriers.length;
+
+  @visibleForTesting
+  int get debugTutorialEnemyCount => _enemies.length;
+
+  @visibleForTesting
   double debugTowerCombatRangeFor(TowerKind kind, {int level = 1}) {
     return _towerCurrentRange(
       _TowerPlacement(
@@ -863,6 +1010,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   void startNextWave() {
     if (_waveActive || _stageCleared || _stageFailed) {
+      return;
+    }
+    final tutorialSnapshot = tutorialDirector?.snapshot;
+    if (tutorialSnapshot != null &&
+        !tutorialSnapshot.allowedActions.contains(
+          TutorialEventType.waveStarted,
+        )) {
+      _showStatus('안내된 배치를 먼저 완료하세요.');
+      audioService.play(AudioEvent.uiError);
       return;
     }
     if (sessionController.mustResolveRunOffer) {
@@ -1133,6 +1289,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   void update(double dt) {
     audioService.update(dt);
     _updateSelectionOverlay(dt);
+    _tutorialPulseTime += dt;
     tutorialDirector?.advanceTime(
       Duration(microseconds: (dt * Duration.microsecondsPerSecond).round()),
     );
@@ -1146,13 +1303,16 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
 
-    _updateRecovery(dt);
-    _updateWaveSpawning(dt);
-    _updateEnemies(dt);
-    _updateTowers(dt);
-    _updateHeroes(dt);
-    _updateBombardments(dt);
-    _updateVisuals(dt);
+    final simulationDt =
+        dt * (tutorialDirector?.snapshot.simulationSpeed ?? 1.0);
+    _updateRecovery(simulationDt);
+    _updateWaveSpawning(simulationDt);
+    _updateEnemies(simulationDt);
+    _updateTowers(simulationDt);
+    _updateHeroes(simulationDt);
+    _updateBombardments(simulationDt);
+    _updateVisuals(simulationDt);
+    _updateTutorialDemonstration(simulationDt);
     if (_waveActive &&
         _enemies.isEmpty &&
         _pendingEnemySpawnsForCurrentWave() > 0) {
@@ -1161,8 +1321,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _reconcileRemainingEnemyCount();
     _maybeTriggerStageEvent();
     _checkWaveResolution();
-    _updateCombatDebugSummary(dt);
-    _syncTimer += dt;
+    _updateCombatDebugSummary(simulationDt);
+    _syncTimer += simulationDt;
     if (_syncTimer >= 0.066) {
       _syncTimer = 0;
       if (_sessionDirty) {
@@ -1196,6 +1356,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawFrontTelegraphs(canvas);
     _drawSpawnCue(canvas);
     _drawSlots(canvas);
+    _drawTutorialGuidance(canvas);
     _drawSelectionRanges(canvas);
     _drawPulses(canvas);
     if (stageOneVisual) {
@@ -1323,6 +1484,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       return;
     }
 
+    final snapCell = _cellForWorldPosition(snapTarget);
+    if (!_acceptTutorialPlacement(
+      choice: TutorialBuildChoice.archer,
+      cell: snapCell,
+    )) {
+      return;
+    }
+
     final definition = TowerCatalog.byKind(selection);
     if (!definition.isUnlocked(metaUpgrades)) {
       _showStatus(
@@ -1332,7 +1501,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _syncSession();
       return;
     }
-    final buildCost = _towerBuildCost(definition);
+    final buildCost = tutorialDirector == null
+        ? _towerBuildCost(definition)
+        : 0;
     if (_coins < buildCost) {
       _showStatus('${definition.label} 건설에 필요한 코인이 부족합니다.');
       audioService.play(AudioEvent.uiError);
@@ -1378,11 +1549,34 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _syncSelectedTower();
     tutorialDirector?.record(
       TutorialEvent.towerPlaced(
-        onRoad: _isRoadPosition(snapTarget),
-        behindWall: _hasNearbyBarrier(snapTarget),
+        kind: definition.kind,
+        col: snapCell!.$1,
+        row: snapCell.$2,
       ),
     );
     _syncSession();
+  }
+
+  bool _acceptTutorialPlacement({
+    required TutorialBuildChoice choice,
+    required (int, int)? cell,
+  }) {
+    final snapshot = tutorialDirector?.snapshot;
+    if (snapshot == null) {
+      return true;
+    }
+    final target = snapshot.targetCell;
+    if (snapshot.requiredBuild != choice ||
+        target == null ||
+        cell == null ||
+        cell.$1 != target.col ||
+        cell.$2 != target.row) {
+      _showStatus('빛나는 칸에 배치하세요. 다른 칸에는 지어지지 않습니다.');
+      audioService.play(AudioEvent.uiError);
+      _syncSession();
+      return false;
+    }
+    return true;
   }
 
   void _handleHeroPlacement(Vector2 position, HeroKind heroKind) {
@@ -1463,7 +1657,17 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       _syncSession();
       return;
     }
-    final buildCost = _barrierBuildCost(definition);
+
+    final snapCell = _cellForWorldPosition(snapTarget);
+    if (!_acceptTutorialPlacement(
+      choice: TutorialBuildChoice.woodFence,
+      cell: snapCell,
+    )) {
+      return;
+    }
+    final buildCost = tutorialDirector == null
+        ? _barrierBuildCost(definition)
+        : 0;
     if (_coins < buildCost) {
       _showStatus('${definition.label} 배치에 ${definition.cost} 골드가 필요합니다.');
       audioService.play(AudioEvent.uiError);
@@ -1486,7 +1690,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     audioService.play(AudioEvent.towerPlace);
     _rerouteEnemies();
     tutorialDirector?.record(
-      TutorialEvent.barrierPlaced(onRoad: _isRoadPosition(snapTarget)),
+      TutorialEvent.barrierPlaced(
+        kind: definition.kind,
+        col: snapCell!.$1,
+        row: snapCell.$2,
+      ),
     );
     _syncSession();
   }
@@ -3020,6 +3228,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       tower.hitPoints -= damage;
       totalDamage += damage;
       hitAnyTower = true;
+      if (_tutorialDemonstration == _TutorialDemonstration.towerPassThrough) {
+        _tutorialTowerContactObserved = true;
+      }
       enemy.towerContactCooldowns[tower.contactId] = 1.1;
       _logEnemyEvent(
         'HIT_TOWER_PASS_THROUGH',
@@ -3338,6 +3549,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         enemy.distanceToCitadel = enemy.position.distanceTo(_citadelCenter);
       }
       return true;
+    }
+
+    if (_tutorialDemonstration == _TutorialDemonstration.wallBlock) {
+      _tutorialWallBlockObserved = true;
     }
 
     if (enemy.towerAttackCooldown > 0) {
@@ -4659,6 +4874,37 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
+  void _updateTutorialDemonstration(double dt) {
+    final demonstration = _tutorialDemonstration;
+    if (demonstration == null) {
+      return;
+    }
+    final observed = switch (demonstration) {
+      _TutorialDemonstration.wallBlock => _tutorialWallBlockObserved,
+      _TutorialDemonstration.towerPassThrough => _tutorialTowerContactObserved,
+    };
+    if (!observed) {
+      return;
+    }
+
+    _tutorialObservationTimer += dt;
+    final holdSeconds = demonstration == _TutorialDemonstration.wallBlock
+        ? 0.9
+        : 0.65;
+    if (_tutorialObservationTimer < holdSeconds) {
+      return;
+    }
+
+    _tutorialDemonstration = null;
+    if (demonstration == _TutorialDemonstration.wallBlock) {
+      _showStatus('확인! 성벽이 길을 막아 적을 멈췄습니다.');
+      tutorialDirector?.record(const TutorialEvent.enemyBlockedByWall());
+    } else {
+      _showStatus('확인! 적이 타워를 통과했고 타워의 에너지가 줄었습니다.');
+      tutorialDirector?.record(const TutorialEvent.enemyPassedTower());
+    }
+  }
+
   void _checkWaveResolution() {
     if (!_waveActive || _currentWaveIndex < 0) {
       return;
@@ -5173,31 +5419,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     return (col, row);
   }
 
-  bool _isRoadPosition(Vector2 position) {
-    final cell = _cellForWorldPosition(position);
-    if (cell == null) {
-      return false;
-    }
-    final authoredPaths = stage.pathsByDirection?.values ?? const [];
-    for (final path in authoredPaths) {
-      if (path.any(
-        (candidate) => candidate[0] == cell.$1 && candidate[1] == cell.$2,
-      )) {
-        return true;
-      }
-    }
-    return stage.pathSequence?.any(
-          (candidate) => candidate[0] == cell.$1 && candidate[1] == cell.$2,
-        ) ??
-        false;
-  }
-
-  bool _hasNearbyBarrier(Vector2 position) {
-    return _barriers.any(
-      (barrier) => barrier.position.distanceTo(position) <= _tileSize * 1.45,
-    );
-  }
-
   Set<(int, int)> _cellsCrossedByMovement(Vector2 start, Vector2 end) {
     final cells = <(int, int)>{};
     final distance = start.distanceTo(end);
@@ -5466,7 +5687,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawSlots(Canvas canvas) {
-    if (_waveActive) {
+    if (_waveActive || tutorialDirector != null) {
       return;
     }
     final isHeroMove = sessionController.heroMoveMode;
@@ -5507,6 +5728,118 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       canvas.drawRRect(rrect, fillPaint);
       canvas.drawRRect(rrect, ringPaint);
     }
+  }
+
+  void _drawTutorialGuidance(Canvas canvas) {
+    final snapshot = tutorialDirector?.snapshot;
+    if (snapshot == null) {
+      return;
+    }
+
+    final entryCenter = _cellCenter(const [7, 0]).toOffset();
+    final pulse = (math.sin(_tutorialPulseTime * math.pi * 2) + 1) / 2;
+    final entryColor = Color.lerp(
+      const Color(0xFF77A7FF),
+      const Color(0xFFB9D3FF),
+      pulse,
+    )!;
+    canvas.drawCircle(
+      entryCenter,
+      _tileSize * (0.36 + (pulse * 0.06)),
+      Paint()..color = entryColor.withValues(alpha: 0.22),
+    );
+    canvas.drawCircle(
+      entryCenter,
+      _tileSize * 0.34,
+      Paint()
+        ..color = entryColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
+    );
+    final arrow = Path()
+      ..moveTo(entryCenter.dx - 6, entryCenter.dy - 5)
+      ..lineTo(entryCenter.dx + 6, entryCenter.dy - 5)
+      ..lineTo(entryCenter.dx, entryCenter.dy + 6)
+      ..close();
+    canvas.drawPath(arrow, Paint()..color = entryColor);
+    _paintTutorialWorldLabel(
+      canvas,
+      text: '북쪽 적 입구',
+      center: Offset(entryCenter.dx, entryCenter.dy + (_tileSize * 0.75)),
+      color: const Color(0xFFB9D3FF),
+    );
+
+    final target = snapshot.targetCell;
+    if (target == null) {
+      return;
+    }
+    final center = _cellCenter([target.col, target.row]).toOffset();
+    final targetColor = snapshot.requiredBuild == TutorialBuildChoice.woodFence
+        ? const Color(0xFFFFD166)
+        : const Color(0xFF75E6C4);
+    final rect = Rect.fromCenter(
+      center: center,
+      width: _tileSize * 0.86,
+      height: _tileSize * 0.86,
+    );
+    final rrect = RRect.fromRectAndRadius(
+      rect,
+      Radius.circular(_tileSize * 0.16),
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()..color = targetColor.withValues(alpha: 0.25 + (pulse * 0.12)),
+    );
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = targetColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3 + pulse,
+    );
+    canvas.drawRRect(
+      rrect.inflate(4 + (pulse * 3)),
+      Paint()
+        ..color = targetColor.withValues(alpha: 0.45 - (pulse * 0.15))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+    _paintTutorialWorldLabel(
+      canvas,
+      text: snapshot.requiredBuild == TutorialBuildChoice.woodFence
+          ? '성벽을 여기에'
+          : '궁수를 여기에',
+      center: Offset(center.dx, center.dy - (_tileSize * 0.82)),
+      color: targetColor,
+    );
+  }
+
+  void _paintTutorialWorldLabel(
+    Canvas canvas, {
+    required String text,
+    required Offset center,
+    required Color color,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: math.max(10, _tileSize * 0.34),
+          fontWeight: FontWeight.w900,
+          shadows: const [
+            Shadow(color: Color(0xFF06101A), blurRadius: 4),
+            Shadow(color: Color(0xFF06101A), offset: Offset(1, 1)),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    )..layout();
+    painter.paint(
+      canvas,
+      Offset(center.dx - (painter.width / 2), center.dy - (painter.height / 2)),
+    );
   }
 
   void _drawObstacles(Canvas canvas, {int? onlyIndex}) {
@@ -8287,6 +8620,8 @@ class _BarrierPlacement {
     shortDescription: '적을 붙잡아 타워가 공격할 시간을 벌어줍니다.',
   );
 }
+
+enum _TutorialDemonstration { wallBlock, towerPassThrough }
 
 class _Enemy {
   _Enemy.fromDefinition(

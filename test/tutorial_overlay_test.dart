@@ -5,9 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('shows a transparent guided card instead of a blocking dialog', (
-    tester,
-  ) async {
+  testWidgets('shows a compact transparent five-part guide', (tester) async {
     final director = TutorialDirector();
     await _pumpOverlay(tester, director);
 
@@ -16,59 +14,35 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(AlertDialog), findsNothing);
-    expect(find.text('1 / 8'), findsOneWidget);
+    expect(find.text('1 / 5'), findsOneWidget);
   });
 
-  testWidgets('camera lesson keeps its skip control inside a compact card', (
-    tester,
-  ) async {
-    final director = TutorialDirector();
-    await _pumpOverlay(tester, director);
-    director.advanceTime(TutorialDirector.cameraSkipDelay);
-    await tester.pump();
+  testWidgets(
+    'wall lesson explains the single north entrance and exact action',
+    (tester) async {
+      final director = TutorialDirector(
+        initialStep: TutorialStep.lessonWallPlacement,
+      );
+      await _pumpOverlay(tester, director);
 
-    final card = find.byKey(const ValueKey('tutorial-guidance-card'));
-    expect(tester.getSize(card).height, lessThanOrEqualTo(120));
-    expect(find.byKey(const ValueKey('tutorial-skip-camera')), findsOneWidget);
-  });
+      expect(find.textContaining('북쪽 입구'), findsOneWidget);
+      expect(find.textContaining('빛나는 길 칸'), findsOneWidget);
+      expect(find.textContaining('나무 울타리'), findsOneWidget);
+    },
+  );
 
-  testWidgets('direction lesson labels all four enemy fronts', (tester) async {
-    final director = TutorialDirector();
-    director.record(const TutorialEvent.cameraChanged());
-    await _pumpOverlay(tester, director);
-
-    expect(find.text('북'), findsOneWidget);
-    expect(find.text('남'), findsOneWidget);
-    expect(find.text('동'), findsOneWidget);
-    expect(find.text('서'), findsOneWidget);
-    expect(find.text('표시된 방향에서 적이 등장합니다.'), findsOneWidget);
-    expect(
-      tester.getCenter(find.text('남')).dy,
-      lessThan(
-        tester
-                .getTopLeft(
-                  find.byKey(const ValueKey('tutorial-guidance-card')),
-                )
-                .dy -
-            12,
-      ),
-    );
-  });
-
-  testWidgets('danger lesson visibly compares pass-through contact damage', (
+  testWidgets('tower observation uses real-game copy and no fake animation', (
     tester,
   ) async {
     final director = TutorialDirector(
-      initialStep: TutorialStep.dangerousTowerDemo,
+      initialStep: TutorialStep.lessonTowerObservation,
     );
     await _pumpOverlay(tester, director);
 
-    expect(find.byKey(const ValueKey('danger-placement-demo')), findsOneWidget);
-    expect(find.text('1.5× 자동 시범'), findsOneWidget);
-    expect(
-      find.text('타워만으로는 몬스터를 막지 못합니다. 몬스터가 통과하면서 종류별 접촉 피해를 줍니다.'),
-      findsOneWidget,
-    );
+    expect(find.text('1.5× 실제 시범'), findsOneWidget);
+    expect(find.textContaining('타워는 적을 막지 못합니다'), findsOneWidget);
+    expect(find.textContaining('에너지가 줄어듭니다'), findsOneWidget);
+    expect(find.byKey(const ValueKey('danger-placement-demo')), findsNothing);
   });
 }
 

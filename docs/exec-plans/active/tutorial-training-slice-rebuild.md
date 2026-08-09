@@ -47,3 +47,18 @@ precise target-cell guide.
   `git diff --check`, and `flutter build apk --debug`.
 - Install/run the new debug build on the connected device for user acceptance.
 
+## Implementation Status - 2026-08-09
+
+- Replaced the Stage 1-derived tutorial map with a central-citadel, north-only
+  training lane.
+- Reduced the tutorial to five learning parts with exact build-card and
+  target-cell guidance.
+- Tutorial builds are free and restricted to wood fence/archer at the current
+  target cell; hero placement and unrelated cards are unavailable.
+- Wall blocking and tower pass-through are driven by real enemies at 1.5x
+  simulation speed. The final practice uses one wall, two archers, and exactly
+  two normal-speed enemies.
+- Automated integration coverage runs the real simulation through both demos
+  and the final defense.
+- Device acceptance is still required for visual clarity, tap comfort, and
+  pacing on the connected SM F741N.

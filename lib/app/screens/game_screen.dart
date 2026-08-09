@@ -491,16 +491,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       if (game == null) {
         return;
       }
-      switch (step) {
-        case TutorialStep.blockWithWall:
+      game.prepareTutorialStep(step);
+      switch (director.snapshot.requiredBuild) {
+        case TutorialBuildChoice.woodFence:
           game.selectBarrierBuildable(BarrierKind.woodFence);
-        case TutorialStep.safeTower || TutorialStep.combinedDefense:
+        case TutorialBuildChoice.archer:
           game.selectBuildable(TowerKind.archer);
-        case TutorialStep.miniWave:
+        case null:
           game.selectBuildable(null);
           game.selectBarrierBuildable(null);
-        default:
-          break;
       }
     });
   }
@@ -916,7 +915,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                                   onDeselect: game.clearSelectedHero,
                                 ),
                               ),
-                            if (!session.waveInProgress &&
+                            if (_tutorialDirector == null &&
+                                !session.waveInProgress &&
                                 (session.selectedBuildable != null ||
                                     session.selectedBarrierBuildable != null ||
                                     session.selectedHeroBuildable != null))
@@ -967,6 +967,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                         sessionController: session,
                         metaUpgrades: activeMetaUpgrades,
                         chosenHeroKind: _chosenHeroKind ?? HeroKind.knight,
+                        tutorialSnapshot: tutorialSnapshot,
                         onSelect:
                             tutorialAllowed == null ||
                                 tutorialAllowed.contains(
@@ -985,7 +986,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                             ? game.selectHeroBuildable
                             : (_) {},
                         showWaveButton: showWaveButton,
-                        nextWaveLabel: session.recoveryActive
+                        nextWaveLabel: tutorialSnapshot != null
+                            ? '방어 시작'
+                            : session.recoveryActive
                             ? '다음 ${session.loopLabel}'
                             : '${session.loopLabel} $nextLoopNumber 시작',
                         onStartWave: game.startNextWave,
@@ -2525,6 +2528,7 @@ class _BuildBar extends StatefulWidget {
     required this.sessionController,
     required this.metaUpgrades,
     required this.chosenHeroKind,
+    this.tutorialSnapshot,
     required this.onSelect,
     required this.onSelectBarrier,
     required this.onSelectHero,
@@ -2540,6 +2544,7 @@ class _BuildBar extends StatefulWidget {
   final GameSessionController sessionController;
   final ResolvedMetaUpgrades metaUpgrades;
   final HeroKind chosenHeroKind;
+  final TutorialSnapshot? tutorialSnapshot;
   final ValueChanged<TowerKind?> onSelect;
   final ValueChanged<BarrierKind?> onSelectBarrier;
   final ValueChanged<HeroKind?> onSelectHero;
@@ -2675,6 +2680,11 @@ class _BuildBarState extends State<_BuildBar> {
       );
     }
 
+    final tutorialSnapshot = widget.tutorialSnapshot;
+    if (tutorialSnapshot != null) {
+      return _buildTutorialPanel(tutorialSnapshot);
+    }
+
     final entries = TowerCatalog.buildMenu;
     final barrierEntries = BarrierCatalog.buildMenu;
     final chosenHero = HeroCatalog.byKind(widget.chosenHeroKind);
@@ -2758,6 +2768,102 @@ class _BuildBarState extends State<_BuildBar> {
               width: double.infinity,
               height: 40,
               child: _buildActionButton(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTutorialPanel(TutorialSnapshot snapshot) {
+    final requiredBuild = snapshot.requiredBuild;
+    if (requiredBuild == null) {
+      return Container(
+        key: const ValueKey('tutorial-build-panel'),
+        padding: const EdgeInsets.fromLTRB(10, 7, 10, 8),
+        decoration: const BoxDecoration(
+          color: Color(0xFF0F1720),
+          border: Border(top: BorderSide(color: Colors.white12)),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 40,
+          child: widget.showWaveButton
+              ? _buildActionButton()
+              : const Center(
+                  child: Text(
+                    '실제 움직임을 확인하세요',
+                    style: TextStyle(
+                      color: Color(0xFFFFD479),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+        ),
+      );
+    }
+
+    final card = switch (requiredBuild) {
+      TutorialBuildChoice.woodFence => _BarrierBuildCard(
+        barrier: BarrierCatalog.byKind(BarrierKind.woodFence),
+        sessionController: widget.sessionController,
+        isEnabled: true,
+        isSelected:
+            widget.sessionController.selectedBarrierBuildable ==
+            BarrierKind.woodFence,
+        showFree: true,
+        onPressed: () => widget.onSelectBarrier(BarrierKind.woodFence),
+      ),
+      TutorialBuildChoice.archer => _BuildCard(
+        tower: TowerCatalog.byKind(TowerKind.archer),
+        sessionController: widget.sessionController,
+        isUnlocked: true,
+        isSelected:
+            widget.sessionController.selectedBuildable == TowerKind.archer,
+        showFree: true,
+        onPressed: () => widget.onSelect(TowerKind.archer),
+      ),
+    };
+
+    return Container(
+      key: const ValueKey('tutorial-build-panel'),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F1720),
+        border: Border(top: BorderSide(color: Color(0x5562D8B4))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.touch_app_rounded,
+            color: Color(0xFF75E6C4),
+            size: 24,
+          ),
+          const SizedBox(width: 10),
+          Container(
+            key: const ValueKey('tutorial-required-build-card'),
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(color: const Color(0xFF75E6C4), width: 2),
+              boxShadow: const [
+                BoxShadow(color: Color(0x8862D8B4), blurRadius: 12),
+              ],
+            ),
+            child: card,
+          ),
+          const SizedBox(width: 11),
+          const Flexible(
+            child: Text(
+              '이 카드만 사용해\n빛나는 칸에 배치',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12.5,
+                height: 1.35,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],
@@ -3236,6 +3342,7 @@ class _BuildCard extends StatelessWidget {
     required this.isUnlocked,
     required this.isSelected,
     required this.onPressed,
+    this.showFree = false,
   });
 
   final TowerDefinition tower;
@@ -3243,6 +3350,7 @@ class _BuildCard extends StatelessWidget {
   final bool isUnlocked;
   final bool isSelected;
   final VoidCallback onPressed;
+  final bool showFree;
 
   @override
   Widget build(BuildContext context) {
@@ -3288,7 +3396,7 @@ class _BuildCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              '$cost',
+              showFree ? '무료' : '$cost',
               style: TextStyle(
                 color: isUnlocked ? const Color(0xFFE4C67A) : Colors.white24,
                 fontSize: 11,
@@ -3321,6 +3429,7 @@ class _BarrierBuildCard extends StatelessWidget {
     required this.isEnabled,
     required this.isSelected,
     required this.onPressed,
+    this.showFree = false,
   });
 
   final BarrierDefinition barrier;
@@ -3328,6 +3437,7 @@ class _BarrierBuildCard extends StatelessWidget {
   final bool isEnabled;
   final bool isSelected;
   final VoidCallback onPressed;
+  final bool showFree;
 
   @override
   Widget build(BuildContext context) {
@@ -3376,7 +3486,7 @@ class _BarrierBuildCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              '$cost',
+              showFree ? '무료' : '$cost',
               style: TextStyle(
                 color: isEnabled ? const Color(0xFFE4C67A) : Colors.white24,
                 fontSize: 11,

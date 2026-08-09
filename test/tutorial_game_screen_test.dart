@@ -5,7 +5,10 @@ import 'package:depense_game/data/persistence/progress_store.dart';
 import 'package:depense_game/game/audio/audio_settings_controller.dart';
 import 'package:depense_game/game/audio/game_audio_service.dart';
 import 'package:depense_game/game/core/depense_game.dart';
+import 'package:depense_game/game/models/stage_definition.dart';
+import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/tutorial/tutorial_models.dart';
+import 'package:depense_game/game/tutorial/tutorial_stage_definition.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -46,6 +49,24 @@ void main() {
     );
     expect(gameWidget.game!.stage.number, 0);
     expect(gameWidget.game!.tutorialDirector, isNotNull);
+
+    gameWidget.game!.tutorialDirector!.record(
+      const TutorialEvent.cameraChanged(),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('tutorial-required-build-card')),
+      findsOneWidget,
+    );
+    expect(find.text('무료'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('barrier-card-woodFence')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('build-card-archer')), findsNothing);
+    expect(find.byType(SegmentedButton), findsNothing);
   });
 
   testWidgets(
@@ -105,15 +126,44 @@ void main() {
         .game!;
     final director = game.tutorialDirector!;
     director.record(const TutorialEvent.cameraChanged());
-    director.continueCurrentStep();
-    director.record(const TutorialEvent.barrierPlaced(onRoad: true));
+    final lessonWall = TutorialStageDefinition.lessonWallCell;
     director.record(
-      const TutorialEvent.towerPlaced(onRoad: false, behindWall: false),
+      TutorialEvent.barrierPlaced(
+        kind: BarrierKind.woodFence,
+        col: lessonWall.col,
+        row: lessonWall.row,
+      ),
     );
-    director.recordDangerDemoCompleted();
+    director.record(const TutorialEvent.enemyBlockedByWall());
+    final lessonTower = TutorialStageDefinition.lessonTowerCell;
     director.record(
-      const TutorialEvent.towerPlaced(onRoad: true, behindWall: true),
+      TutorialEvent.towerPlaced(
+        kind: TowerKind.archer,
+        col: lessonTower.col,
+        row: lessonTower.row,
+      ),
     );
+    director.record(const TutorialEvent.enemyPassedTower());
+    final practiceWall = TutorialStageDefinition.practiceWallCell;
+    director.record(
+      TutorialEvent.barrierPlaced(
+        kind: BarrierKind.woodFence,
+        col: practiceWall.col,
+        row: practiceWall.row,
+      ),
+    );
+    for (final cell in [
+      TutorialStageDefinition.practiceRoadTowerCell,
+      TutorialStageDefinition.practiceGrassTowerCell,
+    ]) {
+      director.record(
+        TutorialEvent.towerPlaced(
+          kind: TowerKind.archer,
+          col: cell.col,
+          row: cell.row,
+        ),
+      );
+    }
     director.record(const TutorialEvent.waveCleared());
     director.continueCurrentStep();
     await tester.pump();

@@ -1,53 +1,99 @@
+import 'package:depense_game/game/models/stage_definition.dart';
+import 'package:depense_game/game/models/tower_definition.dart';
+
 enum TutorialLaunchSource { newGame, mainMenu }
 
 enum TutorialStep {
   cameraControls,
-  enemyDirections,
-  blockWithWall,
-  safeTower,
-  dangerousTowerDemo,
-  combinedDefense,
-  miniWave,
+  lessonWallPlacement,
+  lessonWallObservation,
+  lessonTowerPlacement,
+  lessonTowerObservation,
+  practiceWallPlacement,
+  practiceRoadTowerPlacement,
+  practiceGrassTowerPlacement,
+  practiceDefense,
   recap,
   complete,
 }
+
+enum TutorialBuildChoice { woodFence, archer }
 
 enum TutorialEventType {
   cameraChanged,
   barrierPlaced,
   towerPlaced,
+  enemyBlockedByWall,
+  enemyPassedTower,
   waveStarted,
   waveCleared,
+}
+
+class TutorialCell {
+  const TutorialCell(this.col, this.row);
+
+  final int col;
+  final int row;
+
+  @override
+  bool operator ==(Object other) =>
+      other is TutorialCell && other.col == col && other.row == row;
+
+  @override
+  int get hashCode => Object.hash(col, row);
 }
 
 class TutorialEvent {
   const TutorialEvent._(
     this.type, {
-    this.onRoad = false,
-    this.behindWall = false,
+    this.barrierKind,
+    this.towerKind,
+    this.col,
+    this.row,
   });
 
   const TutorialEvent.cameraChanged() : this._(TutorialEventType.cameraChanged);
 
-  const TutorialEvent.barrierPlaced({required bool onRoad})
-    : this._(TutorialEventType.barrierPlaced, onRoad: onRoad);
+  const TutorialEvent.barrierPlaced({
+    required BarrierKind kind,
+    required int col,
+    required int row,
+  }) : this._(
+         TutorialEventType.barrierPlaced,
+         barrierKind: kind,
+         col: col,
+         row: row,
+       );
 
   const TutorialEvent.towerPlaced({
-    required bool onRoad,
-    required bool behindWall,
+    required TowerKind kind,
+    required int col,
+    required int row,
   }) : this._(
          TutorialEventType.towerPlaced,
-         onRoad: onRoad,
-         behindWall: behindWall,
+         towerKind: kind,
+         col: col,
+         row: row,
        );
+
+  const TutorialEvent.enemyBlockedByWall()
+    : this._(TutorialEventType.enemyBlockedByWall);
+
+  const TutorialEvent.enemyPassedTower()
+    : this._(TutorialEventType.enemyPassedTower);
 
   const TutorialEvent.waveStarted() : this._(TutorialEventType.waveStarted);
 
   const TutorialEvent.waveCleared() : this._(TutorialEventType.waveCleared);
 
   final TutorialEventType type;
-  final bool onRoad;
-  final bool behindWall;
+  final BarrierKind? barrierKind;
+  final TowerKind? towerKind;
+  final int? col;
+  final int? row;
+
+  TutorialCell? get cell =>
+      col == null || row == null ? null : TutorialCell(col!, row!);
 }
 
 class TutorialSnapshot {
@@ -58,6 +104,8 @@ class TutorialSnapshot {
     required this.canSkip,
     required this.simulationSpeed,
     required this.allowedActions,
+    this.requiredBuild,
+    this.targetCell,
   });
 
   final TutorialStep step;
@@ -66,15 +114,35 @@ class TutorialSnapshot {
   final bool canSkip;
   final double simulationSpeed;
   final Set<TutorialEventType> allowedActions;
+  final TutorialBuildChoice? requiredBuild;
+  final TutorialCell? targetCell;
 
   int get displayStep => switch (step) {
     TutorialStep.cameraControls => 1,
-    TutorialStep.enemyDirections => 2,
-    TutorialStep.blockWithWall => 3,
-    TutorialStep.safeTower => 4,
-    TutorialStep.dangerousTowerDemo => 5,
-    TutorialStep.combinedDefense => 6,
-    TutorialStep.miniWave => 7,
-    TutorialStep.recap || TutorialStep.complete => 8,
+    TutorialStep.lessonWallPlacement || TutorialStep.lessonWallObservation => 2,
+    TutorialStep.lessonTowerPlacement ||
+    TutorialStep.lessonTowerObservation => 3,
+    TutorialStep.practiceWallPlacement ||
+    TutorialStep.practiceRoadTowerPlacement ||
+    TutorialStep.practiceGrassTowerPlacement => 4,
+    TutorialStep.practiceDefense ||
+    TutorialStep.recap ||
+    TutorialStep.complete => 5,
   };
+
+  bool accepts(TutorialEvent event) {
+    if (!allowedActions.contains(event.type)) {
+      return false;
+    }
+    final expectedCell = targetCell;
+    if (expectedCell != null && event.cell != expectedCell) {
+      return false;
+    }
+    return switch (requiredBuild) {
+      TutorialBuildChoice.woodFence =>
+        event.barrierKind == BarrierKind.woodFence,
+      TutorialBuildChoice.archer => event.towerKind == TowerKind.archer,
+      null => true,
+    };
+  }
 }
