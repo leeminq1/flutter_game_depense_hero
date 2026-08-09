@@ -4,6 +4,7 @@ import 'package:depense_game/game/audio/audio_settings_controller.dart';
 import 'package:depense_game/game/audio/game_audio_service.dart';
 import 'package:depense_game/game/core/depense_game.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
+import 'package:depense_game/game/input/battlefield_camera_transform.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
@@ -44,6 +45,22 @@ void main() {
       controller.setSelectedBarrierBuildable(null);
       expect(controller.selectedBarrierBuildable, isNull);
       expect(notifications, 2);
+    });
+
+    test('camera snapshot only notifies when the transform changes', () {
+      final controller = GameSessionController();
+      var notifications = 0;
+      controller.addListener(() => notifications += 1);
+
+      controller.setCameraSnapshot(
+        const BattlefieldCameraSnapshot(zoom: 1.4, pan: Offset(12, -8)),
+      );
+      controller.setCameraSnapshot(
+        const BattlefieldCameraSnapshot(zoom: 1.4, pan: Offset(12, -8)),
+      );
+
+      expect(notifications, 1);
+      expect(controller.cameraSnapshot.isTransformed, isTrue);
     });
 
     test('updateRuntime only notifies when runtime values actually change', () {

@@ -6,6 +6,7 @@ import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/audio/audio_event.dart';
 import 'package:depense_game/game/audio/game_audio_service.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
+import 'package:depense_game/game/input/battlefield_camera_transform.dart';
 import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/run_offer_definition.dart';
@@ -151,7 +152,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   int? _lastLoggedUiWave;
   String? _lastLoggedUiBattleState;
 
-  double _zoom = 1.0;
+  final BattlefieldCameraTransform _cameraTransform =
+      BattlefieldCameraTransform();
   double _scaleStart = 1.0;
 
   Shader? _cachedBgShader;
@@ -169,13 +171,40 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   @override
   void onScaleStart(ScaleStartInfo info) {
-    _scaleStart = _zoom;
+    _scaleStart = _cameraTransform.zoom;
+    _cameraTransform.beginGesture(info.eventPosition.widget.toOffset());
   }
 
   @override
   void onScaleUpdate(ScaleUpdateInfo info) {
-    _zoom = (_scaleStart * info.scale.global.x).clamp(0.7, 2.5);
-    camera.viewfinder.zoom = _zoom;
+    final focalPoint = info.eventPosition.widget.toOffset();
+    if (info.pointerCount >= 2) {
+      _cameraTransform.applyScale(
+        scale: _scaleStart * info.scale.global.x,
+        focalPoint: focalPoint,
+      );
+    } else {
+      _cameraTransform.updatePan(focalPoint);
+    }
+    _applyCameraTransform();
+  }
+
+  @override
+  void onScaleEnd(ScaleEndInfo info) {
+    _cameraTransform.endGesture();
+  }
+
+  void _applyCameraTransform() {
+    _cameraTransform.clampPan(
+      viewport: ui.Size(size.x, size.y),
+      world: ui.Size(size.x, size.y),
+    );
+    sessionController.setCameraSnapshot(_cameraTransform.snapshot);
+  }
+
+  void resetCamera() {
+    _cameraTransform.reset();
+    _applyCameraTransform();
   }
 
   @override
@@ -233,6 +262,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
+    _applyCameraTransform();
     _cachedBgShader = null;
     _gridOrigin = _resolvedGridOrigin();
     _pathsByDirection = _resolvedPathsByDirection();
@@ -1139,6 +1169,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       Paint()..shader = _cachedBgShader!,
     );
 
+    canvas.save();
+    canvas.translate(_cameraTransform.pan.dx, _cameraTransform.pan.dy);
+    canvas.scale(_cameraTransform.zoom);
     _drawGroundTexture(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.background);
     _drawRoadTiles(canvas);
@@ -1160,12 +1193,19 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawImpacts(canvas);
     _drawFloatingTexts(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.foreground);
+    canvas.restore();
   }
 
   @override
-  void onTapDown(TapDownEvent event) {
-    super.onTapDown(event);
-    _handleTap(event.localPosition);
+  void onTapUp(TapUpEvent event) {
+    super.onTapUp(event);
+    if (_cameraTransform.suppressTap) {
+      return;
+    }
+    final worldPosition = _cameraTransform.worldPointAt(
+      event.localPosition.toOffset(),
+    );
+    _handleTap(Vector2(worldPosition.dx, worldPosition.dy));
   }
 
   void _handleTap(Vector2 position) {

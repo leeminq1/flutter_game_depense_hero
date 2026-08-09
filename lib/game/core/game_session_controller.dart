@@ -1,3 +1,4 @@
+import 'package:depense_game/game/input/battlefield_camera_transform.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/run_offer_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
@@ -131,6 +132,7 @@ class GameSessionController extends ChangeNotifier {
   bool heroMoveMode = false;
   Set<String> builtTowerKinds = const {};
   String statusText = '아래 카드를 탭해서 건물을 배치하세요.';
+  BattlefieldCameraSnapshot cameraSnapshot = const BattlefieldCameraSnapshot();
   List<String> activeFronts = const [];
   List<String> nextFronts = const [];
   double recoverySecondsRemaining = 0;
@@ -201,7 +203,16 @@ class GameSessionController extends ChangeNotifier {
     waveInProgress = false;
     currentWave = 0;
     _selectionVersion = 0;
+    cameraSnapshot = const BattlefieldCameraSnapshot();
     statusText = '아래 카드를 탭해서 건물을 배치하세요.';
+    notifyListeners();
+  }
+
+  void setCameraSnapshot(BattlefieldCameraSnapshot value) {
+    if (cameraSnapshot == value) {
+      return;
+    }
+    cameraSnapshot = value;
     notifyListeners();
   }
 
