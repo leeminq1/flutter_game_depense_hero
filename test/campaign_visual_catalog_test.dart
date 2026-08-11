@@ -1,5 +1,6 @@
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
+import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/rendering/campaign_road_tile_plan.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:flutter/services.dart';
@@ -93,6 +94,28 @@ void main() {
     for (final assetPath in CampaignVisualCatalog.assetPaths.toSet()) {
       final data = await rootBundle.load(assetPath);
       expect(data.lengthInBytes, greaterThan(0), reason: assetPath);
+    }
+  });
+
+  test('every authored campaign landmark resolves to upgraded artwork', () {
+    final landmarkPaths = <String>{
+      for (var stageNumber = 2; stageNumber <= 30; stageNumber += 1)
+        for (final decoration in CampaignData.stage(stageNumber).decorations)
+          if (decoration.assetPath.contains('/landmarks/'))
+            decoration.assetPath,
+    };
+
+    expect(landmarkPaths, isNotEmpty);
+    for (final legacyPath in landmarkPaths) {
+      final definition = CampaignVisualCatalog.environmentForLegacyPath(
+        legacyPath,
+      );
+      expect(definition, isNotNull, reason: legacyPath);
+      expect(
+        definition!.assetPath,
+        isNot(legacyPath),
+        reason: '$legacyPath still renders its legacy 96px artwork',
+      );
     }
   });
 

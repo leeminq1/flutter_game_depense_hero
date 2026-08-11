@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:depense_game/game/rendering/bombardment_visual_plan.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -48,6 +50,18 @@ void main() {
         lifetime: 1,
       ),
       throwsArgumentError,
+    );
+  });
+
+  test('moving effect sprites do not add supplemental guide trails', () {
+    final gameSource = File(
+      'lib/game/core/depense_game.dart',
+    ).readAsStringSync();
+
+    expect(
+      gameSource,
+      isNot(contains('final trailStart =')),
+      reason: 'Projectile sprites already contain their authored trails.',
     );
   });
 }

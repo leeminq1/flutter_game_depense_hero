@@ -739,24 +739,26 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (citadelCell == null || citadelCell.length < 2) {
       return null;
     }
-    final preferred = stage.number == 1
-        ? <List<int>>[
-            [citadelCell[0] + 2, citadelCell[1]],
-            [citadelCell[0] + 2, citadelCell[1] - 1],
-            [citadelCell[0] + 1, citadelCell[1] - 2],
-          ]
-        : <List<int>>[
-            [citadelCell[0] + 1, citadelCell[1]],
-            [citadelCell[0], citadelCell[1] - 1],
-            [citadelCell[0], citadelCell[1] + 1],
-            [citadelCell[0] - 1, citadelCell[1]],
-          ];
+    final preferred = <List<int>>[
+      [citadelCell[0], citadelCell[1] + 2],
+      [citadelCell[0] + 2, citadelCell[1]],
+      [citadelCell[0] - 2, citadelCell[1]],
+      [citadelCell[0], citadelCell[1] - 2],
+      [citadelCell[0] + 1, citadelCell[1] + 2],
+      [citadelCell[0] - 1, citadelCell[1] + 2],
+      [citadelCell[0] + 2, citadelCell[1] + 1],
+      [citadelCell[0] - 2, citadelCell[1] + 1],
+      [citadelCell[0] + 2, citadelCell[1] - 1],
+      [citadelCell[0] - 2, citadelCell[1] - 1],
+      [citadelCell[0] + 1, citadelCell[1] - 2],
+      [citadelCell[0] - 1, citadelCell[1] - 2],
+    ];
     for (final cell in preferred) {
       if (_isHeroSpawnCellAvailable(cell)) {
         return _cellCenter(cell);
       }
     }
-    for (var radius = 1; radius <= 4; radius += 1) {
+    for (var radius = 2; radius <= 5; radius += 1) {
       for (var dx = -radius; dx <= radius; dx += 1) {
         for (var dy = -radius; dy <= radius; dy += 1) {
           if (dx.abs() + dy.abs() != radius) {
@@ -1669,11 +1671,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
 
     if (snapTarget == null) {
-      _showStatus(
-        stage.number == 1
-            ? '성벽은 표시된 적 이동 길 위에만 배치할 수 있습니다.'
-            : '성벽을 배치할 수 있는 빈 타일을 선택하세요.',
-      );
+      _showStatus('성벽은 표시된 적 이동 길 위에만 배치할 수 있습니다.');
       _syncSession();
       return;
     }
@@ -6416,9 +6414,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
 
   List<Vector2> _barrierBuildGridPositions({int? waveIndex}) {
     final buildableCells = _buildGridPositions();
-    if (stage.number != 1) {
-      return buildableCells;
-    }
     final visibleWaveIndex =
         waveIndex ??
         (_waveActive && _currentWaveIndex >= 0
@@ -7421,15 +7416,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       final t = (projectile.age / projectile.lifetime).clamp(0.0, 1.0);
       final travel = projectile.to - projectile.from;
       final position = projectile.from + (travel * t);
-      final trailStart = projectile.from + (travel * math.max(0.0, t - 0.18));
-      canvas.drawLine(
-        trailStart.toOffset(),
-        position.toOffset(),
-        Paint()
-          ..color = projectile.color.withValues(alpha: (1 - t) * 0.52)
-          ..strokeWidth = projectile.radius * 1.25
-          ..strokeCap = StrokeCap.round,
-      );
       final sprite = projectile.effectId == null
           ? null
           : _visualRegistry.effectSprite(projectile.effectId!);
@@ -7491,16 +7477,6 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         final travel = bombardment.to - bombardment.from;
         final position = bombardment.from + (travel * warningT);
         position.y -= math.sin(warningT * math.pi) * 54;
-        final trailStart =
-            bombardment.from + (travel * math.max(0.0, warningT - 0.16));
-        canvas.drawLine(
-          trailStart.toOffset(),
-          position.toOffset(),
-          Paint()
-            ..color = const Color(0xFFFFB05F).withValues(alpha: 0.42)
-            ..strokeWidth = 7
-            ..strokeCap = StrokeCap.round,
-        );
         for (var sparkIndex = 1; sparkIndex <= 3; sparkIndex += 1) {
           final sparkT = math.max(0.0, warningT - (sparkIndex * 0.035));
           final sparkPosition = bombardment.from + (travel * sparkT);

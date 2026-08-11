@@ -62,6 +62,22 @@ class CampaignThemeVisualDefinition {
 class CampaignVisualCatalog {
   static const String _structureRoot = 'assets/sprites/stage1';
   static const String _roadRoot = 'assets/sprites/campaign/tiles';
+  static const String _landmarkRoot =
+      'assets/sprites/campaign/environment/landmarks';
+
+  static const Map<String, double> _upgradedLandmarkRenderHeights = {
+    'watch_post.png': 2.5,
+    'checkpoint_tower.png': 2.7,
+    'bandit_stockade.png': 2.75,
+    'cemetery_statue.png': 2.3,
+    'mausoleum_gate.png': 2.8,
+    'ritual_arch.png': 2.6,
+    'cursed_chapel_front.png': 3.0,
+    'gate_ruin.png': 2.85,
+    'bastion_wall_chunk.png': 3.3,
+    'infernal_gate.png': 3.15,
+    'throne_road_monument.png': 2.6,
+  };
 
   static bool enabledForStage(int stageNumber) =>
       stageNumber >= 0 && stageNumber <= 30;
@@ -214,9 +230,30 @@ class CampaignVisualCatalog {
     castsShadow: true,
   );
 
+  static StructureVisualDefinition _upgradedLandmark(
+    String fileName,
+    double renderHeight,
+  ) {
+    return StructureVisualDefinition(
+      assetPath: '$_landmarkRoot/$fileName',
+      sourcePixelSize: const Size(256, 256),
+      footprintTiles: const Size(2, 2),
+      renderTiles: Size(renderHeight, renderHeight),
+      anchor: const Offset(0.5, 0.94),
+      drawOffsetTiles: const Offset(0, 0.08),
+      baseLayer: WorldRenderLayer.structure,
+      castsShadow: true,
+    );
+  }
+
   static StructureVisualDefinition? environmentForLegacyPath(String path) {
     if (path.endsWith('/village_gate.png')) {
       return villageGatehouse;
+    }
+    final fileName = path.substring(path.lastIndexOf('/') + 1);
+    final landmarkRenderHeight = _upgradedLandmarkRenderHeights[fileName];
+    if (landmarkRenderHeight != null && path.contains('/landmarks/')) {
+      return _upgradedLandmark(fileName, landmarkRenderHeight);
     }
     if (path.endsWith('/road_signpost.png')) {
       return roadSignpost;
@@ -275,6 +312,9 @@ class CampaignVisualCatalog {
     yield well.assetPath;
     yield brokenSupplyWagon.assetPath;
     yield supplyCart.assetPath;
+    for (final entry in _upgradedLandmarkRenderHeights.entries) {
+      yield _upgradedLandmark(entry.key, entry.value).assetPath;
+    }
     yield grassBase;
     yield grassAlt;
     for (final kind in CampaignRoadTileKind.values) {

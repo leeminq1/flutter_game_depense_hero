@@ -182,3 +182,25 @@
 - Current verification: deterministic asset exporters pass `--check`, all 140
   Flutter tests pass, and `flutter analyze` reports no issues. Android debug
   build and real-device review remain the final handoff gates.
+
+# 2026-08-11 Device Review Correction: Heroes And Landmarks
+
+- Device screenshots confirmed Stage 2-30 heroes spawned inside the enlarged
+  citadel artwork because the shared candidate list preferred a one-cell offset.
+- Hero auto-placement now starts outside the full citadel render footprint,
+  preferring the visually forward/south side and falling back to clear side cells.
+- Eleven remaining legacy 96px campaign landmarks were replaced by theme-aware
+  256px top-down 3/4 assets and mapped through `CampaignVisualCatalog`.
+- Regression coverage checks every campaign hero spawn and every authored
+  landmark path rather than sampling Stage 1 only.
+
+# 2026-08-11 Device Review Correction: Placement And Projectile Trails
+
+- Removed the supplemental line trails drawn behind regular projectiles and
+  bombardment shells. Authored projectile sprites remain responsible for their
+  own readable motion effects.
+- Applied the road-only barrier placement rule to Stages 1-30 instead of Stage
+  1 alone. Barrier slot guidance and tap placement now use the same filtered
+  cells for the currently visible Wave routes.
+- Added regression coverage for every Wave in every campaign Stage and a
+  renderer source contract that rejects supplemental guide-line trails.

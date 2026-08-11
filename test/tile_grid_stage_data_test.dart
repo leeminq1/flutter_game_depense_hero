@@ -294,6 +294,36 @@ void main() {
     expect(game.debugHeroSpawnCell(), (3, 12));
   });
 
+  test('every campaign hero spawn stays outside the citadel artwork', () {
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
+      final stage = CampaignData.stage(stageNumber);
+      final game = DefensePrototypeGame(
+        stage: stage,
+        sessionController: GameSessionController(),
+        audioService: GameAudioService(AudioSettingsController()),
+        metaUpgrades: const ResolvedMetaUpgrades(),
+        chosenHeroKind: HeroKind.knight,
+      );
+
+      game.onGameResize(Vector2(430, 560));
+
+      final spawnCell = game.debugHeroSpawnCell();
+      expect(spawnCell, isNotNull, reason: 'Stage $stageNumber');
+      expect(
+        stageCitadelFootprintCells(
+          stage.citadelCell,
+          visualSpanCells: CampaignVisualCatalog.citadel.renderTiles.width,
+        ),
+        isNot(contains(spawnCell)),
+        reason: 'Stage $stageNumber hero spawn $spawnCell overlaps the citadel',
+      );
+    }
+  });
+
   test('stage 1 grid remains centered when the battlefield height changes', () {
     final game = DefensePrototypeGame(
       stage: CampaignData.stage(1),
@@ -1165,7 +1195,44 @@ void main() {
     );
   });
 
-  test('stage 1 walls use visible roads while towers keep grass cells', () {
+  test('campaign walls use only the currently visible road cells', () {
+    for (var stageNumber = 1; stageNumber <= 30; stageNumber += 1) {
+      final stage = CampaignData.stage(stageNumber);
+      final dynamic game = DefensePrototypeGame(
+        stage: stage,
+        sessionController: GameSessionController(),
+        audioService: GameAudioService(AudioSettingsController()),
+        metaUpgrades: const ResolvedMetaUpgrades(),
+        chosenHeroKind: HeroKind.knight,
+      );
+      game.onGameResize(Vector2(430, 620));
+
+      for (var waveIndex = 0; waveIndex < stage.waves.length; waveIndex += 1) {
+        final visibleRoadCells = <(int, int)>{
+          for (final path
+              in game.debugRoadRouteCellsForWaveIndex(waveIndex)
+                  as List<List<List<int>>>)
+            for (final cell in path) (cell[0], cell[1]),
+        };
+        final barrierCells =
+            game.debugBarrierBuildCellsForWaveIndex(waveIndex)
+                as Set<(int, int)>;
+
+        expect(
+          barrierCells,
+          isNotEmpty,
+          reason: 'Stage $stageNumber Wave ${waveIndex + 1}',
+        );
+        expect(
+          barrierCells.difference(visibleRoadCells),
+          isEmpty,
+          reason: 'Stage $stageNumber Wave ${waveIndex + 1}',
+        );
+      }
+    }
+  });
+
+  test('stage 1 towers keep grass build cells', () {
     final dynamic game = DefensePrototypeGame(
       stage: CampaignData.stage(1),
       sessionController: GameSessionController(),
@@ -1180,12 +1247,8 @@ void main() {
           in game.debugRoadRouteCellsForWaveIndex(0) as List<List<List<int>>>)
         for (final cell in path) (cell[0], cell[1]),
     };
-    final barrierCells =
-        game.debugBarrierBuildCellsForWaveIndex(0) as Set<(int, int)>;
     final towerCells = game.debugTowerBuildCells() as Set<(int, int)>;
 
-    expect(barrierCells, isNotEmpty);
-    expect(barrierCells.difference(visibleRoadCells), isEmpty);
     expect(towerCells.difference(visibleRoadCells), isNotEmpty);
   });
 
