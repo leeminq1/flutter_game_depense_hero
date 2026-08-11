@@ -224,3 +224,14 @@
   (`R3CX70DGKGA`).
 - `kUnlockAllCampaignStagesForDevelopment` remains enabled for this requested
   review build and must be disabled before production AAB packaging.
+
+# 2026-08-11 Production 1.0.33 Ending Interaction Note
+
+- Removed timed and tap-based advancement from the Stage 30 ending. Players
+  move forward with a left swipe and return with a right swipe; boundary
+  swipes do not leave the four authored scenes.
+- Kept ending skip, final result, replay, background progress persistence, and
+  reward idempotence unchanged.
+- Incremented the production package to `1.0.33+34` and disabled
+  `kUnlockAllCampaignStagesForDevelopment` so a fresh profile starts with
+  Stage 1 only.

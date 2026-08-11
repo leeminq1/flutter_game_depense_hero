@@ -57,4 +57,4 @@
 - 네이티브/Android는 로컬 persistence store를 사용한다.
 - Web 또는 테스트 경로는 in-memory store를 사용할 수 있다.
 - 저장 모델은 Stage 진행도, 메타 업그레이드, 오디오 설정, 재화, 이어하기 가능 여부를 보관한다.
-- 현재 테스트 빌드는 `kUnlockAllCampaignStagesForDevelopment = true`를 통해 전체 Stage를 열어둔다.
+- 프로덕션 빌드는 `kUnlockAllCampaignStagesForDevelopment = false`로 Stage 진행 조건을 적용한다.

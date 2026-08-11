@@ -49,5 +49,5 @@
 
 - 플레이어가 Stage를 클리어하면 별과 보상을 얻고 다음 Stage가 열린다.
 - 실패해도 일부 보상/진행 기록은 남을 수 있다.
-- 현재 비공개 테스트 빌드는 `kUnlockAllCampaignStagesForDevelopment = true`라 전체 Stage가
-  해금되어 있다. 운영 배포 전에는 이 값을 끈다.
+- 프로덕션 빌드는 `kUnlockAllCampaignStagesForDevelopment = false`이며, 전체 Stage를
+  일괄 해금하지 않는다.

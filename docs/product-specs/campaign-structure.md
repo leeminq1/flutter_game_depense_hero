@@ -17,8 +17,8 @@
 - 저장소는 `currentCampaignStage`, Stage별 별, 클리어 여부, 메타 업그레이드를 저장한다.
 - `hasResumableRun`은 `currentCampaignStage > 1`일 때 true다.
 - Stage 1만 실패하거나 중단한 상태에서는 이어하기가 비활성이다.
-- 현재 비공개 테스트 빌드에서는 `kUnlockAllCampaignStagesForDevelopment = true`라 모든
-  Stage 선택이 열린다. 운영 배포 전에는 false로 바꾼다.
+- 프로덕션 빌드는 `kUnlockAllCampaignStagesForDevelopment = false`이며, Stage는 작성된
+  진행 조건과 이전 Stage 클리어 결과에 따라서만 열린다.
 
 ## Stage 이벤트 주사위
 

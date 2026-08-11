@@ -11,12 +11,14 @@ void main() {
     expect(stageRecordStarsForTest(incompleteRecord), 0);
   });
 
-  test('development build exposes all stages for content review', () async {
+  test('production profile starts with Stage 1 only', () async {
     final store = await InMemoryProgressStore.open();
     final overview = await store.loadCampaignOverview(totalStages: 30);
 
     expect(overview.stages, hasLength(30));
-    expect(overview.stages.every((stage) => stage.unlocked), isTrue);
+    expect(overview.stages.where((stage) => stage.unlocked), hasLength(1));
+    expect(overview.stages.first.unlocked, isTrue);
+    expect(overview.stages.skip(1).every((stage) => !stage.unlocked), isTrue);
   });
 
   test('stage failures do not downgrade stars', () async {
