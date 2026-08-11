@@ -235,3 +235,7 @@
 - Incremented the production package to `1.0.33+34` and disabled
   `kUnlockAllCampaignStagesForDevelopment` so a fresh profile starts with
   Stage 1 only.
+- Production verification completed with zero `flutter analyze` issues, all
+  152 Flutter tests passing, and a successful signed release AAB build.
+- The packaged release manifest reports `versionName="1.0.33"` and
+  `versionCode="34"`; `jarsigner -verify` reports `jar verified`.
