@@ -5,7 +5,9 @@ import 'package:depense_game/app/ads/result_banner_ad_service.dart';
 import 'package:depense_game/app/ads/rewarded_retry_ad_service.dart';
 import 'package:depense_game/app/ads/rewarded_retry_bonus_tracker.dart';
 import 'package:depense_game/app/bootstrap/app_bootstrap.dart';
+import 'package:depense_game/app/ending/campaign_ending_flow.dart';
 import 'package:depense_game/app/tutorial/tutorial_overlay.dart';
+import 'package:depense_game/app/widgets/campaign_ending_overlay.dart';
 import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/data/meta/meta_upgrade_definitions.dart';
 import 'package:depense_game/data/persistence/progression_models.dart';
@@ -82,6 +84,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   ResultBannerAdHandle? _resultBannerAd;
   bool _resultOverlayReady = false;
   int _resultPreparationGeneration = 0;
+  bool _campaignEndingCompleted = false;
+  int _campaignEndingEpoch = 0;
 
   @override
   void initState() {
@@ -120,7 +124,26 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _resultPreparationGeneration += 1;
     _terminalResultPreparation = null;
     _resultOverlayReady = false;
+    _campaignEndingCompleted = false;
+    _campaignEndingEpoch += 1;
     _disposeResultBannerAd();
+  }
+
+  void _completeCampaignEnding() {
+    if (!mounted || _campaignEndingCompleted) return;
+    setState(() => _campaignEndingCompleted = true);
+  }
+
+  void _replayCampaignEnding() {
+    if (!mounted ||
+        _stageNumber != finalCampaignStageNumber ||
+        !_sessionController.stageCleared) {
+      return;
+    }
+    setState(() {
+      _campaignEndingCompleted = false;
+      _campaignEndingEpoch += 1;
+    });
   }
 
   @override
@@ -803,6 +826,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             animation: _sessionController,
             builder: (context, _) {
               final session = _sessionController;
+              final showCampaignEnding = shouldPlayCampaignEnding(
+                stageNumber: _stageNumber,
+                stageCleared: session.stageCleared,
+                stageFailed: session.stageFailed,
+                endingCompleted: _campaignEndingCompleted,
+              );
               final tutorialSnapshot = _tutorialDirector?.snapshot;
               final tutorialAllowed = tutorialSnapshot?.allowedActions;
               final showWaveButton =
@@ -1058,7 +1087,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   if (_tutorialDirector == null &&
                       (session.stageCleared || session.stageFailed))
                     Positioned.fill(
-                      child: _resultOverlayReady
+                      child: showCampaignEnding
+                          ? CampaignEndingOverlay(
+                              key: ValueKey(
+                                'campaign-ending-$_campaignEndingEpoch',
+                              ),
+                              onComplete: _completeCampaignEnding,
+                              onSkip: _completeCampaignEnding,
+                            )
+                          : _resultOverlayReady
                           ? _ResultOverlay(
                               sessionController: session,
                               completionResult: _completionResult,
@@ -1073,6 +1110,11 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                               onRewardedRetry: _retryStageWithRewardedAd,
                               onNextStage: _goToNextStageFromResult,
                               onReturnToCamp: _returnToCampFromResult,
+                              onReplayEnding:
+                                  _stageNumber == finalCampaignStageNumber &&
+                                      session.stageCleared
+                                  ? _replayCampaignEnding
+                                  : null,
                               isShowingRewardedRetryAd:
                                   _isShowingRewardedRetryAd,
                               rewardedRetryStatusText: _rewardedRetryStatusText,
@@ -3898,6 +3940,7 @@ class _ResultOverlay extends StatelessWidget {
     required this.onRewardedRetry,
     required this.onNextStage,
     required this.onReturnToCamp,
+    required this.onReplayEnding,
     required this.isShowingRewardedRetryAd,
     required this.rewardedRetryStatusText,
     required this.resultBannerAd,
@@ -3914,6 +3957,7 @@ class _ResultOverlay extends StatelessWidget {
   final VoidCallback onRewardedRetry;
   final VoidCallback onNextStage;
   final VoidCallback onReturnToCamp;
+  final VoidCallback? onReplayEnding;
   final bool isShowingRewardedRetryAd;
   final String? rewardedRetryStatusText;
   final ResultBannerAdHandle? resultBannerAd;
@@ -3923,6 +3967,7 @@ class _ResultOverlay extends StatelessWidget {
     final cleared = sessionController.stageCleared;
 
     return Container(
+      key: const Key('campaign-final-result'),
       color: Colors.black54,
       alignment: Alignment.center,
       child: Container(
@@ -4020,6 +4065,7 @@ class _ResultOverlay extends StatelessWidget {
             const SizedBox(height: 24),
             if (cleared && hasNextStage)
               _LargeButton(
+                key: const Key('campaign-next-stage'),
                 label: '다음 STAGE',
                 color: const Color(0xFF98D67C),
                 onPressed: isSavingProgress ? null : onNextStage,
@@ -4051,13 +4097,24 @@ class _ResultOverlay extends StatelessWidget {
               ],
               const SizedBox(height: 12),
             ],
+            if (cleared && onReplayEnding != null) ...[
+              _LargeButton(
+                key: const Key('campaign-ending-replay-result'),
+                label: '엔딩 다시 보기',
+                color: const Color(0xFFE4C67A),
+                onPressed: isSavingProgress ? null : onReplayEnding,
+              ),
+              const SizedBox(height: 12),
+            ],
             _LargeButton(
+              key: const Key('campaign-final-retry'),
               label: '다시 도전',
               color: const Color(0xFF486581),
               onPressed: isSavingProgress ? null : onRetry,
             ),
             const SizedBox(height: 12),
             _LargeButton(
+              key: const Key('campaign-final-home'),
               label: '캠프로 돌아가기',
               color: Colors.transparent,
               onPressed: isSavingProgress ? null : onReturnToCamp,
@@ -4181,6 +4238,7 @@ class _RewardRow extends StatelessWidget {
 
 class _LargeButton extends StatelessWidget {
   const _LargeButton({
+    super.key,
     required this.label,
     required this.color,
     required this.onPressed,
