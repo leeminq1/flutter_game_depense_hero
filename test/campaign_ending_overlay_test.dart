@@ -26,7 +26,15 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('ending reveals enemies, heroes, citadel, and final message', (
+  Future<void> swipe(WidgetTester tester, double dx) async {
+    await tester.drag(
+      find.byKey(const Key('campaign-ending-overlay')),
+      Offset(dx, 0),
+    );
+    await tester.pump();
+  }
+
+  testWidgets('bidirectional swipes reveal scenes and stay within bounds', (
     tester,
   ) async {
     await pumpEnding(tester);
@@ -40,33 +48,44 @@ void main() {
     );
     expect(find.byKey(const Key('campaign-ending-citadel')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('campaign-ending-overlay')));
-    await tester.pump();
+    await swipe(tester, 90);
+    expect(find.byKey(const Key('campaign-ending-scene-0')), findsOneWidget);
+
+    await swipe(tester, -90);
     expect(find.byKey(const Key('campaign-ending-scene-1')), findsOneWidget);
     expect(
       find.byKey(const Key('campaign-ending-hero-knight')),
       findsOneWidget,
     );
 
-    await tester.tap(find.byKey(const Key('campaign-ending-overlay')));
-    await tester.pump();
+    await swipe(tester, 90);
+    expect(find.byKey(const Key('campaign-ending-scene-0')), findsOneWidget);
+
+    await swipe(tester, -90);
+    await swipe(tester, -90);
     expect(find.byKey(const Key('campaign-ending-scene-2')), findsOneWidget);
     expect(find.byKey(const Key('campaign-ending-citadel')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('campaign-ending-overlay')));
-    await tester.pump();
+    await swipe(tester, -90);
     expect(find.byKey(const Key('campaign-ending-scene-3')), findsOneWidget);
     expect(find.textContaining('힘든 하루를 지나'), findsOneWidget);
     expect(find.byKey(const Key('campaign-ending-result')), findsOneWidget);
+
+    await swipe(tester, -90);
+    expect(find.byKey(const Key('campaign-ending-scene-3')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('ending auto-advances and skip fires once', (tester) async {
+  testWidgets('waiting and tapping do not advance, while skip fires once', (
+    tester,
+  ) async {
     var skipCount = 0;
     await pumpEnding(tester, onSkip: () => skipCount += 1);
 
-    await tester.pump(const Duration(seconds: 4));
-    expect(find.byKey(const Key('campaign-ending-scene-1')), findsOneWidget);
+    await tester.pump(const Duration(seconds: 15));
+    await tester.tap(find.byKey(const Key('campaign-ending-overlay')));
+    await tester.pump();
+    expect(find.byKey(const Key('campaign-ending-scene-0')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('campaign-ending-skip')));
     await tester.pump();
@@ -79,8 +98,7 @@ void main() {
     await pumpEnding(tester, onComplete: () => completeCount += 1);
 
     for (var index = 0; index < 3; index += 1) {
-      await tester.tap(find.byKey(const Key('campaign-ending-overlay')));
-      await tester.pump();
+      await swipe(tester, -90);
     }
     await tester.tap(find.byKey(const Key('campaign-ending-result')));
     await tester.pump();

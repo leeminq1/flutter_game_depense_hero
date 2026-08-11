@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
@@ -20,51 +18,55 @@ class CampaignEndingOverlay extends StatefulWidget {
 }
 
 class _CampaignEndingOverlayState extends State<CampaignEndingOverlay> {
-  static const _sceneDurations = <Duration>[
-    Duration(seconds: 4),
-    Duration(seconds: 4),
-    Duration(seconds: 5),
-  ];
+  static const double _minimumSwipeDistance = 44;
+  static const double _minimumSwipeVelocity = 350;
 
-  Timer? _timer;
   int _scene = 0;
   bool _callbackFired = false;
+  double _dragDx = 0;
+  double _dragDy = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _scheduleNextScene();
+  void _resetDrag() {
+    _dragDx = 0;
+    _dragDy = 0;
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  void _handleDragUpdate(DragUpdateDetails details) {
+    _dragDx += details.delta.dx;
+    _dragDy += details.delta.dy;
   }
 
-  void _scheduleNextScene() {
-    _timer?.cancel();
-    if (_scene >= _sceneDurations.length) return;
-    _timer = Timer(_sceneDurations[_scene], _advance);
+  void _handleDragEnd(DragEndDetails details) {
+    final velocityDx = details.velocity.pixelsPerSecond.dx;
+    final horizontal = _dragDx.abs() > _dragDy.abs();
+    final deliberate =
+        _dragDx.abs() >= _minimumSwipeDistance ||
+        velocityDx.abs() >= _minimumSwipeVelocity;
+    if (horizontal && deliberate) {
+      final direction = _dragDx.abs() >= _minimumSwipeDistance
+          ? _dragDx
+          : velocityDx;
+      _setScene(_scene + (direction < 0 ? 1 : -1));
+    }
+    _resetDrag();
   }
 
-  void _advance() {
-    if (!mounted || _scene >= 3) return;
-    setState(() => _scene += 1);
-    _scheduleNextScene();
+  void _setScene(int scene) {
+    if (!mounted) return;
+    final nextScene = scene.clamp(0, 3);
+    if (nextScene == _scene) return;
+    setState(() => _scene = nextScene);
   }
 
   void _skip() {
     if (_callbackFired) return;
     _callbackFired = true;
-    _timer?.cancel();
     widget.onSkip();
   }
 
   void _complete() {
     if (_callbackFired) return;
     _callbackFired = true;
-    _timer?.cancel();
     widget.onComplete();
   }
 
@@ -73,7 +75,10 @@ class _CampaignEndingOverlayState extends State<CampaignEndingOverlay> {
     return GestureDetector(
       key: const Key('campaign-ending-overlay'),
       behavior: HitTestBehavior.opaque,
-      onTap: _advance,
+      onPanStart: (_) => _resetDrag(),
+      onPanUpdate: _handleDragUpdate,
+      onPanEnd: _handleDragEnd,
+      onPanCancel: _resetDrag,
       child: ColoredBox(
         color: const Color(0xFF07111E),
         child: Stack(
