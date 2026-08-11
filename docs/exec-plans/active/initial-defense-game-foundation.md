@@ -204,3 +204,23 @@
   cells for the currently visible Wave routes.
 - Added regression coverage for every Wave in every campaign Stage and a
   renderer source contract that rejects supplemental guide-line trails.
+
+# 2026-08-11 Stage 30 Campaign Ending Verification Note
+
+- Added a Stage 30-only campaign ending that plays on any successful clear
+  before the existing result overlay. Stage 30 failure and Stages 1-29 retain
+  their existing result flow.
+- Kept terminal progress recording in the background as soon as the run ends,
+  so the ending does not delay or duplicate reward persistence.
+- Added four tap-advance scenes with automatic 4s/4s/5s pacing, a skip action,
+  an explicit final `결과 보기` action, and a result-screen `엔딩 다시 보기`
+  action that does not save or award progress again.
+- Reused the exact campaign citadel, five hero sprites, and representative
+  enemy sprites over a newly generated portrait dawn battlefield. The prompt,
+  source, provenance, export path, and runtime usage are recorded in
+  `docs/generated/campaign-ending-asset-spec.md`.
+- Verified `flutter analyze` with zero issues, all 152 Flutter tests, and
+  `flutter build apk --debug`. Installed and launched the build on SM F741N
+  (`R3CX70DGKGA`).
+- `kUnlockAllCampaignStagesForDevelopment` remains enabled for this requested
+  review build and must be disabled before production AAB packaging.
