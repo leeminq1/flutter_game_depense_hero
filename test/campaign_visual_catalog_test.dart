@@ -9,6 +9,14 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('campaign ending dawn background is bundled', () async {
+    final data = await rootBundle.load(
+      'assets/images/campaign_ending_dawn.png',
+    );
+
+    expect(data.lengthInBytes, greaterThan(10000));
+  });
+
   test('tutorial and all 30 campaign stages use campaign visuals', () {
     expect(CampaignVisualCatalog.enabledForStage(0), isTrue);
     for (var stage = 1; stage <= 30; stage += 1) {

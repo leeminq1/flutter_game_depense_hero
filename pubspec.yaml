@@ -71,6 +71,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/splash.png
+    - assets/images/
     - assets/legal/
     - assets/stage_previews/
     - assets/audio/
