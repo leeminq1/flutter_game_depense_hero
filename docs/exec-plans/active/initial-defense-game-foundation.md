@@ -155,3 +155,30 @@
 - Verification: `flutter test` passed 128 tests, `flutter analyze` reported no
   issues, `flutter build apk --debug` succeeded, and `adb install -r` succeeded
   on the connected SM-F741N (`R3CX70DGKGA`).
+
+# 2026-08-11 Campaign Visual Expansion Review-Build Note
+
+- Fast-forwarded the accepted Stage 1 work into local `main` and removed the
+  redundant local feature branch so device testing continues from one working
+  tree.
+- Replaced the Stage 1-only visual switch with a campaign visual catalog used
+  by the tutorial and Stages 1-30.
+- Kept the completed level 1-3 tower art, full-cell barrier art, and player
+  citadel consistent across the campaign.
+- Added six environment treatments aligned with the existing five-Stage theme
+  brackets. Stage data, enemy stats, Wave pressure, structure values, and
+  combat balance were not changed.
+- Replaced the incomplete four-module road family with deterministic isolated,
+  cap, straight, corner, tee, and cross modules. All 16 connectivity masks and
+  every active Wave route across Stages 1-30 are covered by tests.
+- Removed the four superseded Stage 1 road files after verifying they had no
+  remaining runtime, test, tool, or asset-manifest references.
+- Added a four-frame bombardment shell strip and six-frame non-looping impact
+  strip while preserving bombardment probability, target selection, damage,
+  radius, and timing.
+- Enabled `kUnlockAllCampaignStagesForDevelopment` for the requested local
+  content-review build. It remains release-unsafe and must be disabled before
+  production packaging.
+- Current verification: deterministic asset exporters pass `--check`, all 140
+  Flutter tests pass, and `flutter analyze` reports no issues. Android debug
+  build and real-device review remain the final handoff gates.

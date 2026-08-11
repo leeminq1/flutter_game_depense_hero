@@ -15,7 +15,8 @@ import 'package:depense_game/game/models/tower_definition.dart';
 import 'package:depense_game/game/rendering/game_visual_registry.dart';
 import 'package:depense_game/game/rendering/map_texture_planner.dart';
 import 'package:depense_game/game/rendering/barrier_connectivity.dart';
-import 'package:depense_game/game/rendering/stage1_road_tile_plan.dart';
+import 'package:depense_game/game/rendering/bombardment_visual_plan.dart';
+import 'package:depense_game/game/rendering/campaign_road_tile_plan.dart';
 import 'package:depense_game/game/rendering/structure_visual_definition.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:depense_game/game/rendering/world_render_item.dart';
@@ -86,7 +87,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     this.startingCoinBonus = 0,
     this.tutorialDirector,
   }) : _cameraTransform = BattlefieldCameraTransform(
-         defaultZoom: stage.number == 1 ? 1.1 : 1,
+         defaultZoom: stage.number >= 1 && stage.number <= 30 ? 1.1 : 1,
        );
 
   final StageDefinition stage;
@@ -1351,7 +1352,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   @override
   void render(Canvas canvas) {
     super.render(canvas);
-    final stageOneVisual = StageOneVisualCatalog.enabledForStage(stage.number);
+    final campaignVisual = CampaignVisualCatalog.enabledForStage(stage.number);
 
     _cachedBgShader ??= _backgroundShader();
     canvas.drawRect(
@@ -1365,7 +1366,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawGroundTexture(canvas);
     _drawEnvironmentDecorations(canvas, StageDecorationLayer.background);
     _drawRoadTiles(canvas);
-    if (!stageOneVisual) {
+    if (!campaignVisual) {
       _drawObstacles(canvas);
     }
     _drawFrontTelegraphs(canvas);
@@ -1374,8 +1375,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawTutorialGuidance(canvas);
     _drawSelectionRanges(canvas);
     _drawPulses(canvas);
-    if (stageOneVisual) {
-      _drawStageOneSortedStructures(canvas);
+    if (campaignVisual) {
+      _drawCampaignSortedStructures(canvas);
     } else {
       _drawBarriers(canvas);
       _drawCitadel(canvas);
@@ -1386,7 +1387,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     _drawStrikes(canvas);
     _drawProjectiles(canvas);
     _drawBombardments(canvas);
-    if (!stageOneVisual) {
+    if (!campaignVisual) {
       _drawEnemies(canvas);
     }
     _drawImpacts(canvas);
@@ -5612,8 +5613,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (tileGrid == null || tileGrid.isEmpty) {
       return;
     }
-    if (StageOneVisualCatalog.enabledForStage(stage.number) &&
-        _drawStageOneRoadTiles(canvas)) {
+    if (CampaignVisualCatalog.enabledForStage(stage.number) &&
+        _drawCampaignRoadTiles(canvas)) {
       return;
     }
     final roadPaths = _visibleRoadPaths();
@@ -5739,7 +5740,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final isBarrierPlacement =
         sessionController.selectedBarrierBuildable != null;
     final selection = sessionController.selectedBuildable;
-    final isStageOneTowerPlacement = stage.number == 1 && selection != null;
+    final isCampaignTowerPlacement =
+        CampaignVisualCatalog.enabledForStage(stage.number) &&
+        selection != null;
     if (selection == null &&
         !isBarrierPlacement &&
         !isHeroMove &&
@@ -5750,14 +5753,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         ? const Color(0x224FC9FF)
         : isBarrierPlacement
         ? const Color(0x26E4C67A)
-        : isStageOneTowerPlacement
+        : isCampaignTowerPlacement
         ? _slotFillColor().withValues(alpha: 0.08)
         : _slotFillColor();
     final ringColor = isHeroMove || isHeroPlacement
         ? const Color(0xFF4FC9FF)
         : isBarrierPlacement
         ? const Color(0xFFE4C67A)
-        : isStageOneTowerPlacement
+        : isCampaignTowerPlacement
         ? _slotRingColor().withValues(alpha: 0.34)
         : _slotRingColor();
     final fillPaint = Paint()
@@ -5766,7 +5769,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     final ringPaint = Paint()
       ..color = ringColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = isStageOneTowerPlacement ? 1 : 2;
+      ..strokeWidth = isCampaignTowerPlacement ? 1 : 2;
     final validCells = isBarrierPlacement
         ? _barrierBuildGridPositions()
         : _buildGridPositions();
@@ -5903,21 +5906,22 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       if (obstacle.occupiedCells.isEmpty) {
         continue;
       }
-      final stageOneDefinition =
-          StageOneVisualCatalog.enabledForStage(stage.number)
-          ? StageOneVisualCatalog.environmentForLegacyPath(obstacle.assetPath)
+      final campaignDefinition =
+          CampaignVisualCatalog.enabledForStage(stage.number)
+          ? CampaignVisualCatalog.environmentForLegacyPath(obstacle.assetPath)
           : null;
-      final sprite = stageOneDefinition == null
+      final sprite = campaignDefinition == null
           ? _visualRegistry.environmentSprite(obstacle.assetPath)
-          : _visualRegistry.stageOneSprite(stageOneDefinition.assetPath);
+          : _visualRegistry.campaignSprite(campaignDefinition.assetPath);
       final center = _obstacleCenter(obstacle);
-      final size = _obstacleVisualSize(obstacle);
+      final theme = CampaignVisualCatalog.theme(stage.environmentTheme);
+      final size = _obstacleVisualSize(obstacle) * theme.environmentScale;
       if (sprite != null) {
-        if (stageOneDefinition != null) {
+        if (campaignDefinition != null) {
           _drawAnchoredSprite(
             canvas,
             sprite,
-            definition: stageOneDefinition,
+            definition: campaignDefinition,
             worldAnchor: _obstacleGroundAnchor(obstacle),
             opacity: obstacle.opacity,
           );
@@ -5935,7 +5939,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  void _drawStageOneSortedStructures(Canvas canvas) {
+  void _drawCampaignSortedStructures(Canvas canvas) {
     final items = <WorldRenderItem>[
       WorldRenderItem(
         layer: WorldRenderLayer.structure.index,
@@ -5984,7 +5988,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  bool _drawStageOneRoadTiles(Canvas canvas) {
+  bool _drawCampaignRoadTiles(Canvas canvas) {
     final visibleWaveIndex = _waveActive && _currentWaveIndex >= 0
         ? _currentWaveIndex
         : _currentWaveIndex + 1;
@@ -6008,14 +6012,9 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         south: cells.contains((cell.$1, cell.$2 + 1)),
         west: cells.contains((cell.$1 - 1, cell.$2)),
       );
-      final plan = StageOneRoadTilePlan.fromMask(mask);
-      final path = switch (plan.kind) {
-        StageOneRoadTileKind.cap => StageOneVisualCatalog.roadCap,
-        StageOneRoadTileKind.straight => StageOneVisualCatalog.roadStraight,
-        StageOneRoadTileKind.corner => StageOneVisualCatalog.roadCorner,
-        StageOneRoadTileKind.fill => StageOneVisualCatalog.roadFill,
-      };
-      final image = _visualRegistry.stageOneSprite(path);
+      final plan = CampaignRoadTilePlan.fromMask(mask);
+      final path = CampaignVisualCatalog.roadAsset(plan.kind);
+      final image = _visualRegistry.campaignSprite(path);
       if (image == null) {
         return false;
       }
@@ -6023,9 +6022,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
         canvas,
         image,
         center: _cellCenter([cell.$1, cell.$2]).toOffset(),
-        size: _tileSize * 1.04,
+        size: _tileSize,
         quarterTurns: plan.quarterTurns,
-        opacity: _waveActive ? 0.96 : 0.90,
+        opacity: _waveActive ? 1 : 0.96,
+        tintColor: CampaignVisualCatalog.theme(stage.environmentTheme).roadTint,
       );
     }
     return true;
@@ -6041,14 +6041,14 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       final isFortressWall =
           barrier.definition.kind == BarrierKind.fortressWall;
       final isSelected = i == _selectedBarrierIndex;
-      final stageOneVisual = StageOneVisualCatalog.enabledForStage(
+      final campaignVisual = CampaignVisualCatalog.enabledForStage(
         stage.number,
       );
-      final sprite = stageOneVisual
+      final sprite = campaignVisual
           ? null
           : _visualRegistry.barrierSprite(barrier.definition.kind);
-      if (stageOneVisual) {
-        _drawStageOneBarrier(canvas, barrier, opacity: isSelected ? 1 : 0.96);
+      if (campaignVisual) {
+        _drawCampaignBarrier(canvas, barrier, opacity: isSelected ? 1 : 0.96);
       } else if (sprite != null) {
         _drawSprite(
           canvas,
@@ -6122,7 +6122,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     }
   }
 
-  void _drawStageOneBarrier(
+  void _drawCampaignBarrier(
     Canvas canvas,
     _BarrierPlacement barrier, {
     required double opacity,
@@ -6131,8 +6131,8 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (cell == null) {
       return;
     }
-    const plan = StageOneBarrierTilePlan.fullCell;
-    final paths = StageOneVisualCatalog.barrierModulePaths(
+    const plan = CampaignBarrierTilePlan.fullCell;
+    final paths = CampaignVisualCatalog.barrierModulePaths(
       barrier.definition.kind,
     );
     final center = barrier.position.toOffset();
@@ -6159,7 +6159,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     );
     canvas.restore();
 
-    final image = _visualRegistry.stageOneSprite(paths['isolated']!);
+    final image = _visualRegistry.campaignSprite(paths['isolated']!);
     if (image != null) {
       _drawRotatedSquareSprite(
         canvas,
@@ -6228,20 +6228,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     if (_citadelCenter == Vector2.zero()) {
       return;
     }
-    final stageOneVisual = StageOneVisualCatalog.enabledForStage(stage.number);
-    final sprite = stageOneVisual
-        ? _visualRegistry.stageOneSprite(
-            StageOneVisualCatalog.citadel.assetPath,
+    final campaignVisual = CampaignVisualCatalog.enabledForStage(stage.number);
+    final sprite = campaignVisual
+        ? _visualRegistry.campaignSprite(
+            CampaignVisualCatalog.citadel.assetPath,
           )
         : _visualRegistry.environmentSprite(
             'assets/sprites/environment/landmarks/central_citadel.png',
           );
     if (sprite != null) {
-      if (stageOneVisual) {
+      if (campaignVisual) {
         _drawAnchoredSprite(
           canvas,
           sprite,
-          definition: StageOneVisualCatalog.citadel,
+          definition: CampaignVisualCatalog.citadel,
           worldAnchor: _citadelCenter.toOffset(),
         );
       } else {
@@ -6838,20 +6838,20 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
       final tower = _towers[i];
       final visual = TowerVisualCatalog.byKind(tower.definition.kind);
-      final stageOneDefinition =
-          StageOneVisualCatalog.enabledForStage(stage.number)
-          ? StageOneVisualCatalog.tower(
+      final campaignDefinition =
+          CampaignVisualCatalog.enabledForStage(stage.number)
+          ? CampaignVisualCatalog.tower(
               tower.definition.kind,
               level: tower.level,
             )
           : null;
-      final sprite = stageOneDefinition == null
+      final sprite = campaignDefinition == null
           ? _visualRegistry.towerSprite(
               tower.definition.kind,
               level: tower.level,
               branchId: tower.branchId,
             )
-          : _visualRegistry.stageOneSprite(stageOneDefinition.assetPath);
+          : _visualRegistry.campaignSprite(campaignDefinition.assetPath);
       final center = tower.position.toOffset();
       final isSelected = i == _selectedTowerIndex;
       final towerRenderSize = _tileSize * 1.12;
@@ -6865,11 +6865,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           ),
       );
       if (sprite != null) {
-        if (stageOneDefinition != null) {
+        if (campaignDefinition != null) {
           _drawAnchoredSprite(
             canvas,
             sprite,
-            definition: stageOneDefinition,
+            definition: campaignDefinition,
             worldAnchor: center,
           );
         } else {
@@ -7064,27 +7064,32 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawGroundTexture(Canvas canvas) {
-    final stageOneVisual = StageOneVisualCatalog.enabledForStage(stage.number);
-    if (stageOneVisual) {
+    final campaignVisual = CampaignVisualCatalog.enabledForStage(stage.number);
+    final campaignTheme = CampaignVisualCatalog.theme(stage.environmentTheme);
+    if (campaignVisual) {
       canvas.drawRect(
         Rect.fromLTWH(0, 0, size.x, size.y),
-        Paint()..color = StageOneVisualCatalog.groundBaseColor,
+        Paint()..color = campaignTheme.groundBaseColor,
       );
     }
-    final grassTile = stageOneVisual
-        ? _visualRegistry.stageOneSprite(StageOneVisualCatalog.grassBase)
+    final grassTile = campaignVisual
+        ? _visualRegistry.campaignSprite(CampaignVisualCatalog.grassBase)
         : _visualRegistry.grassTile;
-    final grassTile2 = stageOneVisual
-        ? _visualRegistry.stageOneSprite(StageOneVisualCatalog.grassAlt)
+    final grassTile2 = campaignVisual
+        ? _visualRegistry.campaignSprite(CampaignVisualCatalog.grassAlt)
         : _visualRegistry.grassTile2;
 
     if (grassTile != null) {
       final tilePaint = Paint()
-        ..color = stageOneVisual
-            ? const Color(
-                0xFFFFFFFF,
-              ).withValues(alpha: StageOneVisualCatalog.groundTextureOpacity)
+        ..color = campaignVisual
+            ? Colors.white.withValues(alpha: campaignTheme.groundTextureOpacity)
             : const Color(0xFFFFFFFF);
+      if (campaignVisual) {
+        tilePaint.colorFilter = ColorFilter.mode(
+          campaignTheme.groundTextureTint,
+          BlendMode.modulate,
+        );
+      }
       final cols = (size.x / _tileSize).ceil() + 1;
       final rows = (size.y / _tileSize).ceil() + 1;
 
@@ -7272,50 +7277,48 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawEnvironmentDecorations(Canvas canvas, StageDecorationLayer layer) {
-    final stageOneVisual = StageOneVisualCatalog.enabledForStage(stage.number);
+    final campaignVisual = CampaignVisualCatalog.enabledForStage(stage.number);
+    final campaignTheme = CampaignVisualCatalog.theme(stage.environmentTheme);
     for (final decoration in stage.decorations) {
       if (decoration.layer != layer) {
         continue;
       }
-      if (stageOneVisual) {
-        if (StageOneVisualCatalog.shouldHideLegacyDecoration(
+      if (campaignVisual) {
+        if (CampaignVisualCatalog.shouldHideLegacyDecoration(
           decoration.assetPath,
         )) {
           continue;
         }
-        final definition = StageOneVisualCatalog.environmentForLegacyPath(
+        final definition = CampaignVisualCatalog.environmentForLegacyPath(
           decoration.assetPath,
         );
-        if (definition == null) {
+        if (definition != null) {
+          final sprite = _visualRegistry.campaignSprite(definition.assetPath);
+          if (sprite != null) {
+            _drawAnchoredSprite(
+              canvas,
+              sprite,
+              definition: definition,
+              worldAnchor: _decorationCellCenter(
+                decoration,
+              ).translate(0, _tileSize * 0.45),
+              opacity: decoration.opacity,
+            );
+          }
           continue;
         }
-        final sprite = _visualRegistry.stageOneSprite(definition.assetPath);
-        if (sprite == null) {
-          continue;
-        }
-        _drawAnchoredSprite(
-          canvas,
-          sprite,
-          definition: definition,
-          worldAnchor: _decorationCellCenter(
-            decoration,
-          ).translate(0, _tileSize * 0.45),
-          opacity: decoration.opacity,
-        );
-        continue;
       }
       final sprite = _visualRegistry.environmentSprite(decoration.assetPath);
       if (sprite == null) {
         continue;
       }
       final isLandmark = decoration.assetPath.contains('/landmarks/');
-      final baseSize = isLandmark ? 86.0 : 44.0;
-      final center = isLandmark
-          ? Offset(
-              decoration.position.dx * size.x,
-              decoration.position.dy * size.y,
-            )
-          : _decorationCellCenter(decoration);
+      final baseSize =
+          _tileSize *
+          (isLandmark
+              ? 2.05 * campaignTheme.landmarkScale
+              : 1.05 * campaignTheme.environmentScale);
+      final center = _decorationCellCenter(decoration);
       _drawSprite(
         canvas,
         sprite,
@@ -7452,8 +7455,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
   }
 
   void _drawBombardments(Canvas canvas) {
-    final sprite = _visualRegistry.effectSprite(
-      EffectVisualCatalog.cannonballProjectile,
+    final shellStrip = _visualRegistry.effectSprite(
+      EffectVisualCatalog.bombardmentShellStrip,
+    );
+    final impactStrip = _visualRegistry.effectSprite(
+      EffectVisualCatalog.bombardmentImpactStrip,
     );
     for (final bombardment in _bombardments) {
       if (bombardment.age < 0) {
@@ -7464,9 +7470,11 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
           .toDouble();
       final warningAlpha = bombardment.impacted ? 0.0 : (0.58 - warningT * 0.3);
       if (!bombardment.impacted) {
+        final pulse =
+            0.94 + (math.sin(bombardment.age * (8 + warningT * 10)) * 0.06);
         canvas.drawCircle(
           bombardment.to.toOffset(),
-          bombardment.radius,
+          bombardment.radius * pulse,
           Paint()
             ..color = const Color(0xFFFF6B4A).withValues(alpha: warningAlpha)
             ..style = PaintingStyle.stroke
@@ -7493,14 +7501,32 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
             ..strokeWidth = 7
             ..strokeCap = StrokeCap.round,
         );
-        if (sprite != null) {
-          _drawOrientedSpriteRect(
+        for (var sparkIndex = 1; sparkIndex <= 3; sparkIndex += 1) {
+          final sparkT = math.max(0.0, warningT - (sparkIndex * 0.035));
+          final sparkPosition = bombardment.from + (travel * sparkT);
+          sparkPosition.y -= math.sin(sparkT * math.pi) * 54;
+          canvas.drawCircle(
+            sparkPosition.toOffset(),
+            3.6 - sparkIndex * 0.7,
+            Paint()
+              ..color = const Color(
+                0xFFFFB05F,
+              ).withValues(alpha: 0.42 - sparkIndex * 0.09),
+          );
+        }
+        if (shellStrip != null) {
+          _drawOrientedAtlasFrame(
             canvas,
-            sprite,
+            shellStrip,
+            frame: BombardmentVisualPlan.shellFrame(
+              age: bombardment.age,
+              warningSeconds: bombardment.warningSeconds,
+            ),
+            frameCount: BombardmentVisualPlan.shellFrameCount,
             center: position.toOffset(),
-            width: 42,
-            height: 42,
-            angle: math.atan2(travel.y, travel.x),
+            width: 50,
+            height: 50,
+            angle: math.atan2(travel.y, travel.x) - (math.pi / 4),
           );
         } else {
           canvas.drawCircle(
@@ -7522,6 +7548,23 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
                   (bombardment.lifetime - bombardment.warningSeconds))
               .clamp(0.0, 1.0);
       final impactProgress = impactT.toDouble();
+      if (impactStrip != null) {
+        _drawOrientedAtlasFrame(
+          canvas,
+          impactStrip,
+          frame: BombardmentVisualPlan.impactFrame(
+            age: bombardment.age,
+            warningSeconds: bombardment.warningSeconds,
+            lifetime: bombardment.lifetime,
+          ),
+          frameCount: BombardmentVisualPlan.impactFrameCount,
+          center: bombardment.to.toOffset(),
+          width: bombardment.radius * 2.35,
+          height: bombardment.radius * 2.35,
+          angle: 0,
+          opacity: 1 - (impactProgress * 0.12),
+        );
+      }
       canvas.drawCircle(
         bombardment.to.toOffset(),
         bombardment.radius * (0.35 + impactProgress * 0.65),
@@ -8187,6 +8230,7 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     required double size,
     required int quarterTurns,
     required double opacity,
+    Color? tintColor,
   }) {
     final source = Rect.fromLTWH(
       0,
@@ -8208,7 +8252,10 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       destination,
       Paint()
         ..filterQuality = FilterQuality.none
-        ..color = Colors.white.withValues(alpha: opacity.clamp(0.0, 1.0)),
+        ..color = Colors.white.withValues(alpha: opacity.clamp(0.0, 1.0))
+        ..colorFilter = tintColor == null
+            ? null
+            : ColorFilter.mode(tintColor, BlendMode.modulate),
     );
     canvas.restore();
   }
@@ -8243,6 +8290,44 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
     canvas.translate(center.dx, center.dy);
     canvas.rotate(angle);
     canvas.drawImageRect(image, src, dst, paint);
+    canvas.restore();
+  }
+
+  void _drawOrientedAtlasFrame(
+    Canvas canvas,
+    ui.Image image, {
+    required int frame,
+    required int frameCount,
+    required Offset center,
+    required double width,
+    required double height,
+    required double angle,
+    double opacity = 1,
+  }) {
+    final safeFrame = frame.clamp(0, frameCount - 1);
+    final frameWidth = image.width / frameCount;
+    final source = Rect.fromLTWH(
+      safeFrame * frameWidth,
+      0,
+      frameWidth,
+      image.height.toDouble(),
+    );
+    final destination = Rect.fromCenter(
+      center: Offset.zero,
+      width: width,
+      height: height,
+    );
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(angle);
+    canvas.drawImageRect(
+      image,
+      source,
+      destination,
+      Paint()
+        ..filterQuality = FilterQuality.none
+        ..color = Colors.white.withValues(alpha: opacity.clamp(0.0, 1.0)),
+    );
     canvas.restore();
   }
 

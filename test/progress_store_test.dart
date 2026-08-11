@@ -1,7 +1,6 @@
 import 'package:depense_game/data/persistence/game_collection_models.dart';
 import 'package:depense_game/data/persistence/in_memory_progress_store.dart';
 import 'package:depense_game/data/persistence/local_progress_store.dart';
-import 'package:depense_game/data/persistence/progression_dev_flags.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,12 +16,7 @@ void main() {
     final overview = await store.loadCampaignOverview(totalStages: 30);
 
     expect(overview.stages, hasLength(30));
-    if (kUnlockAllCampaignStagesForDevelopment) {
-      expect(overview.stages.every((stage) => stage.unlocked), isTrue);
-    } else {
-      expect(overview.stages.first.unlocked, isTrue);
-      expect(overview.stages[1].unlocked, isFalse);
-    }
+    expect(overview.stages.every((stage) => stage.unlocked), isTrue);
   });
 
   test('stage failures do not downgrade stars', () async {

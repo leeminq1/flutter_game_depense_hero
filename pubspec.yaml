@@ -89,6 +89,8 @@ flutter:
     - assets/sprites/stage1/walls/stone/
     - assets/sprites/stage1/walls/fortress/
     - assets/sprites/stage1/walls/keep/
+    - assets/sprites/campaign/
+    - assets/sprites/campaign/tiles/
     - assets/sprites/towers/
     - assets/sprites/enemies/
     - assets/sprites/enemies/banner_captain/

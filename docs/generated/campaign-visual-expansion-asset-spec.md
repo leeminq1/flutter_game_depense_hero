@@ -236,3 +236,58 @@ Acceptance:
 - Transparent corners and no magenta fringe after export.
 - Does not obscure more than the authored bombardment radius at peak frame.
 
+## Generation and Export Record
+
+- Generated: 2026-08-11
+- Tool: OpenAI built-in image generation
+- Use case: `stylized-concept`
+- Source status: generated specifically for this project. The only image inputs
+  were project-owned Stage 1 road modules and the project-owned cannonball
+  sprite. No third-party sprite pack or external artwork was introduced.
+- Project use: final PNGs are project-controlled generated assets subject to
+  the image-generation service/account terms under which they were created.
+
+### Road source and export
+
+- Raw source: `docs/generated/campaign-road-modules-source.png`
+- Chroma-removed source:
+  `docs/generated/campaign-road-modules-source-alpha.png`
+- Chroma removal: installed image-generation helper, border-sampled key
+  `#F404F3`, soft matte, despill, transparent threshold 12, opaque threshold
+  220, one-pixel edge contraction.
+- Deterministic exporter: `tool/build_campaign_road_tiles.py`
+- Export validation: 64x64 RGBA, transparent corners, exact 24-pixel road
+  opening on connected edges, zero road opening on disconnected edges, and
+  byte-reproducible `--check` mode.
+- AI topology was treated only as a texture source. The exporter rebuilt the
+  isolated, cap, straight, corner, tee, and cross geometry to prevent false
+  exits and tile-edge gaps.
+
+Final outputs:
+
+- `assets/sprites/campaign/tiles/road_isolated.png`
+- `assets/sprites/campaign/tiles/road_cap.png`
+- `assets/sprites/campaign/tiles/road_straight.png`
+- `assets/sprites/campaign/tiles/road_corner.png`
+- `assets/sprites/campaign/tiles/road_tee.png`
+- `assets/sprites/campaign/tiles/road_cross.png`
+
+### Bombardment source and export
+
+- Raw source: `docs/generated/campaign-bombardment-source.png`
+- Chroma-removed source:
+  `docs/generated/campaign-bombardment-source-alpha.png`
+- Chroma removal: installed image-generation helper with explicit generated
+  key `#FB03F8`, tolerance 18, soft matte, despill, transparent threshold 18,
+  opaque threshold 150, and one-pixel edge contraction. The explicit key was
+  required because the source atlas includes white registration grid lines.
+- Deterministic exporter: `tool/extract_bombardment_effects.py`
+- Export validation: registered 96x96 RGBA frame cells, transparent corners,
+  non-empty frames, preserved relative impact scale, and byte-reproducible
+  `--check` mode.
+
+Final outputs:
+
+- `assets/sprites/effects/bombardment_shell_strip.png` — four frames
+- `assets/sprites/effects/bombardment_impact_strip.png` — six frames
+

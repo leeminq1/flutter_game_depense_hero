@@ -4,6 +4,7 @@ import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
+import 'package:depense_game/game/rendering/campaign_road_tile_plan.dart';
 import 'package:depense_game/game/rendering/structure_visual_definition.dart';
 
 enum VisualTokenShape {
@@ -40,12 +41,85 @@ class UnitVisualDefinition {
   final int frames;
 }
 
-class StageOneVisualCatalog {
-  static const String _root = 'assets/sprites/stage1';
-  static const Color groundBaseColor = Color(0xFF789322);
-  static const double groundTextureOpacity = 0.08;
+class CampaignThemeVisualDefinition {
+  const CampaignThemeVisualDefinition({
+    required this.groundBaseColor,
+    required this.groundTextureTint,
+    required this.groundTextureOpacity,
+    required this.roadTint,
+    required this.environmentScale,
+    required this.landmarkScale,
+  });
 
-  static bool enabledForStage(int stageNumber) => stageNumber <= 1;
+  final Color groundBaseColor;
+  final Color groundTextureTint;
+  final double groundTextureOpacity;
+  final Color roadTint;
+  final double environmentScale;
+  final double landmarkScale;
+}
+
+class CampaignVisualCatalog {
+  static const String _structureRoot = 'assets/sprites/stage1';
+  static const String _roadRoot = 'assets/sprites/campaign/tiles';
+
+  static bool enabledForStage(int stageNumber) =>
+      stageNumber >= 0 && stageNumber <= 30;
+
+  static CampaignThemeVisualDefinition theme(StageEnvironmentTheme theme) {
+    return switch (theme) {
+      StageEnvironmentTheme.frontierRoad => const CampaignThemeVisualDefinition(
+        groundBaseColor: Color(0xFF789322),
+        groundTextureTint: Color(0xFFFFFFFF),
+        groundTextureOpacity: 0.08,
+        roadTint: Color(0xFFFFFFFF),
+        environmentScale: 1,
+        landmarkScale: 1.12,
+      ),
+      StageEnvironmentTheme.banditCrossroads =>
+        const CampaignThemeVisualDefinition(
+          groundBaseColor: Color(0xFF756F28),
+          groundTextureTint: Color(0xFFE8DA99),
+          groundTextureOpacity: 0.10,
+          roadTint: Color(0xFFE9C77F),
+          environmentScale: 1.02,
+          landmarkScale: 1.16,
+        ),
+      StageEnvironmentTheme.graveFields => const CampaignThemeVisualDefinition(
+        groundBaseColor: Color(0xFF4A6141),
+        groundTextureTint: Color(0xFFB8C7A4),
+        groundTextureOpacity: 0.12,
+        roadTint: Color(0xFFC9B79A),
+        environmentScale: 1.02,
+        landmarkScale: 1.18,
+      ),
+      StageEnvironmentTheme.cursedChapel => const CampaignThemeVisualDefinition(
+        groundBaseColor: Color(0xFF43364D),
+        groundTextureTint: Color(0xFFA88EB8),
+        groundTextureOpacity: 0.12,
+        roadTint: Color(0xFFC0A298),
+        environmentScale: 1.04,
+        landmarkScale: 1.2,
+      ),
+      StageEnvironmentTheme.bastionApproach =>
+        const CampaignThemeVisualDefinition(
+          groundBaseColor: Color(0xFF4A4D48),
+          groundTextureTint: Color(0xFFA8AAA3),
+          groundTextureOpacity: 0.11,
+          roadTint: Color(0xFFC5B59A),
+          environmentScale: 1.04,
+          landmarkScale: 1.22,
+        ),
+      StageEnvironmentTheme.throneMarch => const CampaignThemeVisualDefinition(
+        groundBaseColor: Color(0xFF58392B),
+        groundTextureTint: Color(0xFFC18A64),
+        groundTextureOpacity: 0.13,
+        roadTint: Color(0xFFCB9468),
+        environmentScale: 1.05,
+        landmarkScale: 1.24,
+      ),
+    };
+  }
 
   static StructureVisualDefinition tower(TowerKind kind, {int level = 1}) {
     final fileName = switch (kind) {
@@ -60,7 +134,7 @@ class StageOneVisualCatalog {
     final tier = level.clamp(1, TowerVisualCatalog.maxTier);
     final tierSuffix = tier == 1 ? '' : '_t$tier';
     return StructureVisualDefinition(
-      assetPath: '$_root/towers/$fileName$tierSuffix.png',
+      assetPath: '$_structureRoot/towers/$fileName$tierSuffix.png',
       sourcePixelSize: const Size(128, 160),
       footprintTiles: const Size(1, 1),
       renderTiles: const Size(1, 1.58),
@@ -72,7 +146,7 @@ class StageOneVisualCatalog {
   }
 
   static const StructureVisualDefinition citadel = StructureVisualDefinition(
-    assetPath: '$_root/environment/tutorial_citadel.png',
+    assetPath: '$_structureRoot/environment/tutorial_citadel.png',
     sourcePixelSize: Size(224, 224),
     footprintTiles: Size(3, 3),
     renderTiles: Size(2.6, 2.6),
@@ -84,7 +158,7 @@ class StageOneVisualCatalog {
 
   static const StructureVisualDefinition villageGatehouse =
       StructureVisualDefinition(
-        assetPath: '$_root/environment/village_gatehouse.png',
+        assetPath: '$_structureRoot/environment/village_gatehouse.png',
         sourcePixelSize: Size(256, 256),
         footprintTiles: Size(2, 3),
         renderTiles: Size(2.7, 2.7),
@@ -96,7 +170,7 @@ class StageOneVisualCatalog {
 
   static const StructureVisualDefinition roadSignpost =
       StructureVisualDefinition(
-        assetPath: '$_root/environment/road_signpost.png',
+        assetPath: '$_structureRoot/environment/road_signpost.png',
         sourcePixelSize: Size(112, 144),
         footprintTiles: Size(1, 1),
         renderTiles: Size(0.95, 1.2),
@@ -107,7 +181,7 @@ class StageOneVisualCatalog {
       );
 
   static const StructureVisualDefinition well = StructureVisualDefinition(
-    assetPath: '$_root/environment/well.png',
+    assetPath: '$_structureRoot/environment/well.png',
     sourcePixelSize: Size(160, 160),
     footprintTiles: Size(1, 1),
     renderTiles: Size(1.35, 1.35),
@@ -119,7 +193,7 @@ class StageOneVisualCatalog {
 
   static const StructureVisualDefinition brokenSupplyWagon =
       StructureVisualDefinition(
-        assetPath: '$_root/environment/broken_supply_wagon.png',
+        assetPath: '$_structureRoot/environment/broken_supply_wagon.png',
         sourcePixelSize: Size(192, 160),
         footprintTiles: Size(1, 1),
         renderTiles: Size(1.5, 1.25),
@@ -130,7 +204,7 @@ class StageOneVisualCatalog {
       );
 
   static const StructureVisualDefinition supplyCart = StructureVisualDefinition(
-    assetPath: '$_root/environment/supply_cart.png',
+    assetPath: '$_structureRoot/environment/supply_cart.png',
     sourcePixelSize: Size(128, 128),
     footprintTiles: Size(1, 1),
     renderTiles: Size(1.2, 1.2),
@@ -162,12 +236,19 @@ class StageOneVisualCatalog {
   static bool shouldHideLegacyDecoration(String path) =>
       path.endsWith('/wooden_fence_segment.png');
 
-  static const String grassBase = '$_root/tiles/grass_base.png';
-  static const String grassAlt = '$_root/tiles/grass_alt.png';
-  static const String roadStraight = '$_root/tiles/road_straight.png';
-  static const String roadCorner = '$_root/tiles/road_corner.png';
-  static const String roadCap = '$_root/tiles/road_cap.png';
-  static const String roadFill = '$_root/tiles/road_fill.png';
+  static const String grassBase = '$_structureRoot/tiles/grass_base.png';
+  static const String grassAlt = '$_structureRoot/tiles/grass_alt.png';
+
+  static String roadAsset(CampaignRoadTileKind kind) {
+    return switch (kind) {
+      CampaignRoadTileKind.isolated => '$_roadRoot/road_isolated.png',
+      CampaignRoadTileKind.cap => '$_roadRoot/road_cap.png',
+      CampaignRoadTileKind.straight => '$_roadRoot/road_straight.png',
+      CampaignRoadTileKind.corner => '$_roadRoot/road_corner.png',
+      CampaignRoadTileKind.tee => '$_roadRoot/road_tee.png',
+      CampaignRoadTileKind.cross => '$_roadRoot/road_cross.png',
+    };
+  }
 
   static Map<String, String> barrierModulePaths(BarrierKind kind) {
     final material = switch (kind) {
@@ -176,9 +257,9 @@ class StageOneVisualCatalog {
       BarrierKind.reinforcedWall || BarrierKind.fortressWall => 'fortress',
     };
     return {
-      'isolated': '$_root/walls/$material/isolated.png',
-      'straight': '$_root/walls/$material/straight.png',
-      'corner': '$_root/walls/$material/corner.png',
+      'isolated': '$_structureRoot/walls/$material/isolated.png',
+      'straight': '$_structureRoot/walls/$material/straight.png',
+      'corner': '$_structureRoot/walls/$material/corner.png',
     };
   }
 
@@ -196,14 +277,13 @@ class StageOneVisualCatalog {
     yield supplyCart.assetPath;
     yield grassBase;
     yield grassAlt;
-    yield roadStraight;
-    yield roadCorner;
-    yield roadCap;
-    yield roadFill;
+    for (final kind in CampaignRoadTileKind.values) {
+      yield roadAsset(kind);
+    }
     for (final kind in BarrierKind.values) {
       yield* barrierModulePaths(kind).values;
     }
-    yield '$_root/walls/keep/straight.png';
+    yield '$_structureRoot/walls/keep/straight.png';
   }
 }
 
@@ -374,6 +454,8 @@ class EffectVisualCatalog {
   static const siegeBoltProjectile = 'siege_bolt_projectile';
   static const arcaneBoltProjectile = 'arcane_bolt_projectile';
   static const cannonballProjectile = 'cannonball_projectile';
+  static const bombardmentShellStrip = 'bombardment_shell_strip';
+  static const bombardmentImpactStrip = 'bombardment_impact_strip';
   static const shurikenProjectile = 'shuriken_projectile';
   static const bossShockwaveImpact = 'boss_shockwave_impact';
   static const frostImpact = 'frost_impact';
@@ -386,6 +468,8 @@ class EffectVisualCatalog {
     siegeBoltProjectile: '$_basePath/siege_bolt_projectile.png',
     arcaneBoltProjectile: '$_basePath/arcane_bolt_projectile.png',
     cannonballProjectile: '$_basePath/cannonball_projectile.png',
+    bombardmentShellStrip: '$_basePath/bombardment_shell_strip.png',
+    bombardmentImpactStrip: '$_basePath/bombardment_impact_strip.png',
     shurikenProjectile: '$_basePath/shuriken_projectile.png',
     bossShockwaveImpact: '$_basePath/boss_shockwave_impact.png',
     frostImpact: '$_basePath/frost_impact.png',

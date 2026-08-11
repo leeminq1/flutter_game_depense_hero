@@ -10,6 +10,8 @@ import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
 import 'package:depense_game/game/models/stage_definition.dart';
 import 'package:depense_game/game/models/tower_definition.dart';
+import 'package:depense_game/game/rendering/barrier_connectivity.dart';
+import 'package:depense_game/game/rendering/campaign_road_tile_plan.dart';
 import 'package:depense_game/game/rendering/visual_catalog.dart';
 import 'package:flame/game.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -403,6 +405,48 @@ void main() {
             reason:
                 'Stage $stageNumber wave ${waveIndex + 1} should draw the '
                 'same road cells used by route ${route.id}',
+          );
+        }
+      }
+    }
+  });
+
+  test('every campaign wave route resolves to exact road topology masks', () {
+    for (
+      var stageNumber = 1;
+      stageNumber <= CampaignData.totalStages;
+      stageNumber += 1
+    ) {
+      final stage = CampaignData.stage(stageNumber);
+      final game = DefensePrototypeGame(
+        stage: stage,
+        sessionController: GameSessionController(),
+        audioService: GameAudioService(AudioSettingsController()),
+        metaUpgrades: const ResolvedMetaUpgrades(),
+        chosenHeroKind: HeroKind.knight,
+      );
+      game.onGameResize(Vector2(728, 728));
+
+      for (var waveIndex = 0; waveIndex < stage.waves.length; waveIndex += 1) {
+        final cells = {
+          for (final path in game.debugRoadRouteCellsForWaveIndex(waveIndex))
+            for (final cell in path) (cell[0], cell[1]),
+        };
+        expect(cells, isNotEmpty, reason: 'Stage $stageNumber Wave $waveIndex');
+
+        for (final cell in cells) {
+          final mask = BarrierConnectivity.mask(
+            north: cells.contains((cell.$1, cell.$2 - 1)),
+            east: cells.contains((cell.$1 + 1, cell.$2)),
+            south: cells.contains((cell.$1, cell.$2 + 1)),
+            west: cells.contains((cell.$1 - 1, cell.$2)),
+          );
+          expect(
+            CampaignRoadTilePlan.fromMask(mask).resolvedMask,
+            mask,
+            reason:
+                'Stage $stageNumber Wave ${waveIndex + 1} cell '
+                '(${cell.$1}, ${cell.$2})',
           );
         }
       }
