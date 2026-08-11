@@ -28,9 +28,10 @@ the result does not evaluate or save rewards again.
 
 ## Ending Structure
 
-The ending contains four automatically advancing scenes with a maximum total
-duration of about 20 seconds. A tap advances the current scene immediately.
-The upper-right `건너뛰기` action exits directly to the prepared result.
+The ending reaches its final call to action after about 20 seconds of automatic
+scene progression. The final scene then waits for the player. A tap advances
+the current scene immediately, and the upper-right `건너뛰기` action exits
+directly to the prepared result.
 
 ### Scene 1: Silence After The Last Wave
 
