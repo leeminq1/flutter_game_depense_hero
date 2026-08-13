@@ -249,3 +249,7 @@
   upgrades, branches, and other rewards unchanged.
 - Incremented the production package to `1.0.34+35` while keeping
   `kUnlockAllCampaignStagesForDevelopment = false`.
+- Production verification completed with zero `flutter analyze` issues, all
+  153 Flutter tests passing, and a successful release AAB build.
+- The packaged release manifest reports `versionName="1.0.34"` and
+  `versionCode="35"`; `jarsigner -verify` reports `jar verified`.
