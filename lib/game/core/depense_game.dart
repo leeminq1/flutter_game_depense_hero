@@ -6,6 +6,7 @@ import 'package:depense_game/data/campaign/campaign_data.dart';
 import 'package:depense_game/game/audio/audio_event.dart';
 import 'package:depense_game/game/audio/game_audio_service.dart';
 import 'package:depense_game/game/core/game_session_controller.dart';
+import 'package:depense_game/game/economy/coin_mill_income_policy.dart';
 import 'package:depense_game/game/input/battlefield_camera_transform.dart';
 import 'package:depense_game/game/models/enemy_definition.dart';
 import 'package:depense_game/game/models/hero_definition.dart';
@@ -3186,13 +3187,15 @@ class DefensePrototypeGame extends FlameGame with TapCallbacks, ScaleDetector {
       }
 
       if (tower.definition.kind == TowerKind.coinMill) {
-        tower.economyTimer -= dt;
-        if (tower.economyTimer <= 0) {
-          tower.economyTimer = tower.definition.economyInterval ?? 3;
-          _coins +=
-              (tower.definition.economyIncome ?? 1) +
-              metaUpgrades.coinMillIncomeBonus;
-          audioService.play(AudioEvent.coinGain);
+        if (shouldAdvanceCoinMillIncome(waveActive: _waveActive)) {
+          tower.economyTimer -= dt;
+          if (tower.economyTimer <= 0) {
+            tower.economyTimer = tower.definition.economyInterval ?? 3;
+            _coins +=
+                (tower.definition.economyIncome ?? 1) +
+                metaUpgrades.coinMillIncomeBonus;
+            audioService.play(AudioEvent.coinGain);
+          }
         }
         continue;
       }

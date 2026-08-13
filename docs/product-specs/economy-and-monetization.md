@@ -15,8 +15,9 @@
   - Stage 30: 850
 - 처치 보상은 적 기본 보상, Stage 보상 배율, 강도, 0.90 밸런스 배율로 계산한다.
 - Wave 회복 골드는 Stage/Wave 정의의 `recoveryGoldBonus`를 사용한다.
-- 금화 방앗간(`coinMill`)은 4.5초마다 기본 4골드를 생산하고, `commerce_guild` 레벨만큼
-  수익이 추가된다.
+- 금화 방앗간(`coinMill`)은 WAVE 전투가 진행되는 동안에만 4.5초마다 기본 4골드를
+  생산하고, `commerce_guild` 레벨만큼 수익이 추가된다. 준비·WAVE 사이 대기·일시정지
+  중에는 남은 생산 시간이 동결되며, 기존 WAVE 시작 보너스는 별도로 유지된다.
 
 ## Meta Gold
 
