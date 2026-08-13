@@ -239,3 +239,13 @@
   152 Flutter tests passing, and a successful signed release AAB build.
 - The packaged release manifest reports `versionName="1.0.33"` and
   `versionCode="34"`; `jarsigner -verify` reports `jar verified`.
+
+# 2026-08-13 Production 1.0.34 Coin Mill Timing Note
+
+- Restricted the Coin Mill's 4.5-second periodic income timer to active Wave
+  combat only. Initial preparation, between-Wave recovery, manual pause, Stage
+  clear, and Stage failure preserve the remaining timer without advancing it.
+- Kept the existing one-time Wave-start Coin Mill bonus and all economy values,
+  upgrades, branches, and other rewards unchanged.
+- Incremented the production package to `1.0.34+35` while keeping
+  `kUnlockAllCampaignStagesForDevelopment = false`.
